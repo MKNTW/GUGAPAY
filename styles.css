@@ -15,14 +15,13 @@ main {
     align-items: center;
     padding: 20px;
     gap: 20px;
-    width: calc(100% - 100px); /* Subtract 100px (50px padding on each side) from 100% */
-    max-width: 600px; /* Ensure the main content doesn't exceed 600px */
 }
 
 .window {
-    width: 100%;
-    background-color: #F2F3F4; /* Reverted background color for both game and wallet sections */
-    color: #3D5A80; /* Text color for better contrast */
+    width: 90%;
+    max-width: 500px; /* Reduced max width for both game and wallet sections */
+    background-color: #F2F3F4;
+    color: #3D5A80;
     text-align: center;
     padding: 20px;
     border-radius: 10px;
@@ -31,25 +30,24 @@ main {
 }
 
 #game {
-    color: #3D5A80; /* Text color for game section */
+    color: #3D5A80;
 }
 
 #tapArea {
-    width: 300px;
-    height: 300px;
+    width: 250px; /* Reduced size for tap area */
+    height: 250px; /* Reduced size for tap area */
     display: flex;
     justify-content: center;
     align-items: center;
     font-size: 24px;
     cursor: pointer;
-    color: #3D5A80;
     border-radius: 50%;
     user-select: none;
     background-image: url('https://i.ibb.co/ySWx2mC/image.png');
     background-size: cover;
     background-position: center;
     transition: transform 0.05s ease-in-out;
-    margin: 0 auto; /* Center tapping area horizontally */
+    margin: 0 auto;
 }
 
 #tapArea:hover {
@@ -59,11 +57,11 @@ main {
 #coins {
     margin-top: 20px;
     font-size: 30px;
-    color: #3D5A80; /* Text color for coins display */
+    color: #3D5A80;
 }
 
 #walletSection {
-    color: #3D5A80; /* Text color for wallet section */
+    color: #3D5A80;
 }
 
 #walletSection label,
@@ -82,6 +80,9 @@ main {
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s ease;
+    display: block; /* Ensure the button takes the full width available */
+    margin: 10px auto; /* Center the button horizontally */
+    text-align: center;
 }
 
 #confirmWalletBtn:hover {
@@ -90,8 +91,8 @@ main {
 
 @media (max-width: 768px) {
     #tapArea {
-        width: 250px;
-        height: 250px;
+        width: 200px;
+        height: 200px;
         font-size: 20px;
     }
     #coins {
@@ -101,8 +102,8 @@ main {
 
 @media (max-width: 480px) {
     #tapArea {
-        width: 200px;
-        height: 200px;
+        width: 150px;
+        height: 150px;
         font-size: 16px;
     }
     #coins {
