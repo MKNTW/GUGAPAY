@@ -8,12 +8,29 @@ body {
     align-items: center;
     justify-content: center;
 }
+
+header {
+    width: 100%;
+    text-align: center;
+    font-size: 18px;
+    background-color: #3d5a80;
+    color: white;
+    padding: 10px 0;
+}
+
+#userId {
+    margin-top: 20px;
+    font-size: 24px;
+    color: #3d5a80;
+}
+
 main {
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 20px;
 }
+
 #game {
     text-align: center;
     background-color: white;
@@ -21,6 +38,7 @@ main {
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
+
 #tapArea {
     width: 300px;
     height: 300px;
@@ -37,14 +55,17 @@ main {
     background-position: center;
     transition: transform 0.06s ease-in-out;
 }
+
 #tapArea:hover {
     transform: scale(1.05);
 }
+
 #coins {
     margin-top: 20px;
     font-size: 30px;
     color: #3d5a80;
 }
+
 @media (max-width: 768px) {
     #tapArea {
         width: 250px;
@@ -55,6 +76,7 @@ main {
         font-size: 24px;
     }
 }
+
 @media (max-width: 480px) {
     #tapArea {
         width: 200px;
