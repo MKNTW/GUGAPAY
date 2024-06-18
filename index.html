@@ -3,18 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tap to Earn ZCOIN</title>
+    <title>Theme Switcher</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js" defer></script>
 </head>
 <body>
     <main>
+        <div id="connect"></div>
         <div id="game">
-            <div id="tapArea">
-                <div id="tapFeedback" class="tap-feedback">+0.0001</div>
-            </div>
-            <div id="coins">ZCOIN: 0</div>
+            <div id="coins">Coins: 100</div>
+            <div id="tapArea"></div>
+            <div class="tap-feedback"></div>
         </div>
     </main>
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+            const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+                manifestUrl: 'https://mkntw.github.io/tonconnect-manifest.json', 
+                buttonRootId: 'connect'
+            });
+        });
+    </script>
     <script src="script.js"></script>
 </body>
 </html>
