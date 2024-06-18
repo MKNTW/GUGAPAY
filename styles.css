@@ -19,7 +19,7 @@ main {
 
 .window {
     width: 90%;
-    max-width: 500px; /* Reduced max width for both game and wallet sections */
+    max-width: 500px; /* Reduced max width for the game section */
     background-color: #F2F3F4;
     color: #3D5A80;
     text-align: center;
@@ -58,35 +58,6 @@ main {
     margin-top: 20px;
     font-size: 30px;
     color: #3D5A80;
-}
-
-#walletSection {
-    color: #3D5A80;
-}
-
-#walletSection label,
-#walletSection input,
-#walletSection button {
-    margin: 10px 0;
-    width: 100%;
-    max-width: 400px;
-}
-
-#confirmWalletBtn {
-    background-color: #3D5A80;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    display: block; /* Ensure the button takes the full width available */
-    margin: 10px auto; /* Center the button horizontally */
-    text-align: center;
-}
-
-#confirmWalletBtn:hover {
-    background-color: #293B54;
 }
 
 @media (max-width: 768px) {
