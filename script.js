@@ -1,28 +1,19 @@
-// Функция для извлечения ZCOIN из локального хранилища
+// Function to retrieve ZCOIN from local storage
 function getCoinsFromStorage() {
     return parseFloat(localStorage.getItem('coins')) || 0;
 }
 
-// Функция для сохранения ZCOIN в локальное хранилище
+// Function to save ZCOIN to local storage
 function saveCoinsToStorage(coins) {
     localStorage.setItem('coins', coins.toString());
 }
 
-// Переменные для работы с монетами, тапами и временем
-let coins = getCoinsFromStorage();
+// Измененная часть для работы с монетами и Local Storage
 
-// Устанавливаем начальное значение ZCOIN
+let coins = getCoinsFromStorage();
 document.getElementById('coins').innerText = `ZCOIN: ${coins.toFixed(5)}`;
 
-// Добавляем слушателя события на кнопку для тапа
 document.getElementById('tapArea').addEventListener('click', function(event) {
-    // Проверяем, достигнут ли лимит тапов и нужно ли его сбросить
-    if (tapCount >= tapLimit && !isTapLimitResetNeeded()) {
-        alert('Вы достигли лимита тапов на этот период. Пожалуйста, подождите до сброса лимита.');
-        return;
-    }
-
-    // Увеличиваем количество монет и сохраняем в локальное хранилище
     coins += 0.00001;
     document.getElementById('coins').innerText = `ZCOIN: ${coins.toFixed(5)}`;
     saveCoinsToStorage(coins);
@@ -53,7 +44,7 @@ document.getElementById('tapArea').addEventListener('click', function(event) {
     event.stopPropagation();
 });
 
-// Загрузка страницы: обновляем количество монет и информацию о лимите на тапы
+// При загрузке страницы обновляем количество монет из хранилища
 window.onload = function() {
     coins = getCoinsFromStorage();
     document.getElementById('coins').innerText = `ZCOIN: ${coins.toFixed(5)}`;
