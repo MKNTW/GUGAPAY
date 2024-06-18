@@ -8,21 +8,8 @@ function saveCoinsToStorage(coins) {
     localStorage.setItem('coins', coins.toString());
 }
 
-// Function to save wallet name to local storage
-function saveWalletName(name) {
-    localStorage.setItem('walletName', name);
-}
-
-// Function to get wallet name from local storage
-function getWalletName() {
-    return localStorage.getItem('walletName') || '';
-}
-
 let coins = getCoinsFromStorage();
 document.getElementById('coins').innerText = `ZCOIN: ${coins.toFixed(5)}`;
-
-// Update wallet display if already stored
-document.getElementById('walletDisplay').innerText = `Кошелек: ${getWalletName()}`;
 
 document.getElementById('tapArea').addEventListener('click', function() {
     coins += 0.00001;
@@ -36,12 +23,8 @@ document.getElementById('tapArea').addEventListener('click', function() {
     }, 50);
 });
 
-// Save wallet name on button click
-document.getElementById('confirmWalletBtn').addEventListener('click', function() {
-    const walletName = document.getElementById('walletNameInput').value.trim();
-    if (walletName !== '') {
-        saveWalletName(walletName);
-        document.getElementById('walletDisplay').innerText = `Кошелек: ${walletName}`;
-        document.getElementById('walletNameInput').value = ''; // Clear input field
-    }
-});
+// On page load, update coins from storage
+window.onload = function() {
+    coins = getCoinsFromStorage();
+    document.getElementById('coins').innerText = `ZCOIN: ${coins.toFixed(5)}`;
+};
