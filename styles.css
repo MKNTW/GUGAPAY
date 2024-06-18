@@ -68,26 +68,22 @@ main {
         opacity: 1;
         transform: translateY(0);
     }
+    25% {
+        opacity: 1;
+        transform: translateY(-12.5px);
+    }
+    50% {
+        opacity: 1;
+        transform: translateY(-25px);
+    }
+    75% {
+        opacity: 1;
+        transform: translateY(-37.5px);
+    }
     100% {
         opacity: 0;
-        transform: translateY(-30px);
+        transform: translateY(-50px);
     }
-}
-
-#tapLimitProgress {
-    width: 100%;
-    height: 10px;
-    background-color: #ddd;
-    border-radius: 5px;
-    margin-bottom: 10px;
-}
-
-#tapLimitProgressFill {
-    height: 100%;
-    background-color: #3D5A80;
-    border-radius: 5px;
-    width: 0;
-    transition: width 0.3s ease-in-out;
 }
 
 #tapLimitText {
