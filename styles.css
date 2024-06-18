@@ -15,6 +15,9 @@ main {
     align-items: center;
     justify-content: center;
     padding: 20px;
+    width: 100%;
+    height: 100%;
+    position: relative;
 }
 
 #game {
@@ -24,10 +27,28 @@ main {
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     margin-bottom: 20px;
-    max-width: 500px; /* Увеличен макс. размер */
+    max-width: 500px;
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+#coins {
+    position: absolute;
+    top: 25%; /* 3/4 от экрана сверху */
+    width: 100%;
+    text-align: center;
+    font-size: 48px; /* Увеличен размер шрифта */
+    color: #3D5A80;
+    margin: 0;
+    transform: translateY(-50%);
 }
 
 #tapArea {
+    position: absolute;
+    bottom: 33%; /* 1/3 от экрана снизу */
+    left: 50%;
+    transform: translateX(-50%);
     width: 400px; /* Увеличен размер */
     height: 400px; /* Увеличен размер */
     display: flex;
@@ -42,17 +63,10 @@ main {
     background-size: cover;
     background-position: center;
     transition: transform 0.05s ease-in-out;
-    position: relative; /* Для позиционирования элемента +0.0001 */
 }
 
 #tapArea:hover {
     transform: scale(1.05); /* Увеличиваем кнопку при наведении */
-}
-
-#coins {
-    font-size: 48px; /* Увеличен размер шрифта */
-    margin-bottom: 10px;
-    color: #3D5A80;
 }
 
 .tap-feedback {
