@@ -15,14 +15,14 @@ main {
     align-items: center;
     padding: 20px;
     gap: 20px;
-    width: 100%; /* Ensure main takes the full width of the viewport */
+    width: calc(100% - 100px); /* Subtract 100px (50px padding on each side) from 100% */
+    max-width: 600px; /* Ensure the main content doesn't exceed 600px */
 }
 
 .window {
-    width: 90%;
-    max-width: 600px;
-    background-color: #3D5A80; /* Background color for both game and wallet sections */
-    color: white; /* Change text color to white for better contrast */
+    width: 100%;
+    background-color: #F2F3F4; /* Reverted background color for both game and wallet sections */
+    color: #3D5A80; /* Text color for better contrast */
     text-align: center;
     padding: 20px;
     border-radius: 10px;
@@ -31,7 +31,7 @@ main {
 }
 
 #game {
-    color: white; /* Text color for game section */
+    color: #3D5A80; /* Text color for game section */
 }
 
 #tapArea {
@@ -58,11 +58,11 @@ main {
 #coins {
     margin-top: 20px;
     font-size: 30px;
-    color: white; /* Text color for coins display */
+    color: #3D5A80; /* Text color for coins display */
 }
 
 #walletSection {
-    color: white; /* Text color for wallet section */
+    color: #3D5A80; /* Text color for wallet section */
 }
 
 #walletSection label,
@@ -74,8 +74,8 @@ main {
 }
 
 #confirmWalletBtn {
-    background-color: white;
-    color: #3D5A80;
+    background-color: #3D5A80;
+    color: white;
     border: none;
     padding: 10px 20px;
     border-radius: 5px;
@@ -84,7 +84,7 @@ main {
 }
 
 #confirmWalletBtn:hover {
-    background-color: #f0f0f0;
+    background-color: #293B54;
 }
 
 @media (max-width: 768px) {
