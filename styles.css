@@ -38,7 +38,7 @@ main {
     cursor: pointer;
     border-radius: 50%;
     user-select: none;
-    background-image: url('Image_033.jpg');
+    background-image: url('IMG_0033.png');
     background-size: cover;
     background-position: center;
     transition: transform 0.05s ease-in-out;
