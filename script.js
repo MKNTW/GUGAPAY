@@ -17,7 +17,7 @@ document.getElementById('sendCoinsBtn').addEventListener('click', function() {
     sendCoinsToTelegram(coins);
 });
 
-// Предположим, что в Telegram. WebApp. onEvent можно добавить обработчик события
+// Предположим, что в Telegram.WebApp.onEvent можно добавить обработчик события
 Telegram.WebApp.onEvent("mainButtonClicked", function() {
     sendCoinsToTelegram(coins);
 });
@@ -25,5 +25,3 @@ Telegram.WebApp.onEvent("mainButtonClicked", function() {
 // Предположим, что у нас есть доступ к ID пользователя через tg.initDataUnsafe.user.id
 let userId = tg.initDataUnsafe.user.id;
 updateUserId(userId);
-
-userId.appendChild(p):
