@@ -4,75 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tap to Earn ZCOIN</title>
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            align-items: center;
-            justify-content: center;
-        }
-        main {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        #game {
-            text-align: center;
-            background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        #tapArea {
-            width: 300px;
-            height: 300px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 24px;
-            color: white;
-            cursor: pointer;
-            border-radius: 50%;
-            user-select: none;
-            background-color: #3D5A80;
-            background-image: url('https://i.ibb.co/ySWx2mC/image.png');
-            background-size: cover;
-            background-position: center;
-            transition: transform 0.05s ease-in-out;
-        }
-        #tapArea:hover {
-            transform: scale(1.05); /* Увеличиваем кнопку при наведении */
-        }
-        #coins {
-            margin-top: 20px;
-            font-size: 30px;
-        }
-        @media (max-width: 768px) {
-            #tapArea {
-                width: 250px;
-                height: 250px;
-                font-size: 20px;
-            }
-            #coins {
-                font-size: 24px;
-            }
-        }
-        @media (max-width: 480px) {
-            #tapArea {
-                width: 200px;
-                height: 200px;
-                font-size: 16px;
-            }
-            #coins {
-                font-size: 20px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <main>
@@ -81,49 +13,6 @@
             <div id="coins">ZCOIN: 0</div>
         </div>
     </main>
-
-    <script>
-        // Function to retrieve ZCOIN from local storage
-        function getCoinsFromStorage() {
-            return parseFloat(localStorage.getItem('coins')) || 0;
-        }
-
-        // Function to save ZCOIN to local storage
-        function saveCoinsToStorage(coins) {
-            localStorage.setItem('coins', coins.toString());
-        }
-
-        let coins = getCoinsFromStorage();
-        document.getElementById('coins').innerText = `ZCOIN: ${coins.toFixed(4)}`;
-
-        document.getElementById('tapArea').addEventListener('click', function() {
-            coins += 0.0001;
-            document.getElementById('coins').innerText = `ZCOIN: ${coins.toFixed(4)}`;
-            saveCoinsToStorage(coins);
-
-            // Анимация нажатия кнопки
-            this.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                this.style.transform = 'scale(1)';
-            }, 50);
-        });
-
-        // On page load, update coins from storage
-        window.onload = function() {
-            coins = getCoinsFromStorage();
-            document.getElementById('coins').innerText = `ZCOIN: ${coins.toFixed(4)}`;
-        };
-    </script>
-
-    <script>
-        // Git initialization commands
-        console.log('echo "# mkntw.github.io" >> README.md');
-        console.log('git init');
-        console.log('git add README.md');
-        console.log('git commit -m "first commit"');
-        console.log('git branch -M main');
-        console.log('git remote add origin https://github.com/MKNTW/mkntw.github.io.git');
-        console.log('git push -u origin main');
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
