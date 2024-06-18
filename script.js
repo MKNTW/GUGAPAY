@@ -13,16 +13,35 @@ function saveCoinsToStorage(coins) {
 let coins = getCoinsFromStorage();
 document.getElementById('coins').innerText = `ZCOIN: ${coins.toFixed(5)}`;
 
-document.getElementById('tapArea').addEventListener('click', function() {
-    coins += 0.0001; // Изменили количество начисляемых монет на 0.0001
+document.getElementById('tapArea').addEventListener('click', function(event) {
+    coins += 0.0001;
     document.getElementById('coins').innerText = `ZCOIN: ${coins.toFixed(5)}`;
     saveCoinsToStorage(coins);
+
+    // Создаем элемент для отображения текста +0.0001
+    const tapFeedback = document.createElement('div');
+    tapFeedback.textContent = '+0.0001';
+    tapFeedback.classList.add('tap-feedback');
+    this.appendChild(tapFeedback);
+
+    // Анимация появления и исчезновения текста
+    setTimeout(() => {
+        tapFeedback.style.animation = 'tapFeedbackAnimation 1s forwards';
+    }, 50);
+
+    // Удаляем элемент после завершения анимации
+    setTimeout(() => {
+        tapFeedback.remove();
+    }, 1050);
 
     // Анимация нажатия кнопки
     this.style.transform = 'scale(0.95)';
     setTimeout(() => {
         this.style.transform = 'scale(1)';
     }, 50);
+
+    // Предотвращаем всплытие события клика
+    event.stopPropagation();
 });
 
 // При загрузке страницы обновляем количество монет из хранилища
