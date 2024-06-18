@@ -42,6 +42,7 @@ main {
     align-items: center;
     font-size: 24px;
     cursor: pointer;
+    color: #3D5A80;
     border-radius: 50%;
     user-select: none;
     background-image: url('https://i.ibb.co/ySWx2mC/image.png');
