@@ -1,4 +1,3 @@
-// Функция для отправки данных в Telegram бота
 function sendCoinsToTelegram(coins) {
     // Предположим, что tg.sendData отправляет данные в Telegram
     tg.sendData({ coins: coins.toFixed(5) });
