@@ -14,13 +14,13 @@ let coins = getCoinsFromStorage();
 document.getElementById('coins').innerText = `ZCOIN: ${coins.toFixed(5)}`;
 
 document.getElementById('tapArea').addEventListener('click', function(event) {
-    coins += 0.0001;
+    coins += 0.00001;
     document.getElementById('coins').innerText = `ZCOIN: ${coins.toFixed(5)}`;
     saveCoinsToStorage(coins);
 
     // Создаем элемент для отображения текста +0.0001
     const tapFeedback = document.createElement('div');
-    tapFeedback.textContent = '+0.0001';
+    tapFeedback.textContent = '+0.00001';
     tapFeedback.classList.add('tap-feedback');
     this.appendChild(tapFeedback);
 
