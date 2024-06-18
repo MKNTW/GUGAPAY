@@ -66,6 +66,37 @@ main {
     color: #3d5a80;
 }
 
+#sendCoinsBtn {
+    margin-top: 20px;
+    font-size: 18px;
+    padding: 10px 20px;
+    background-color: #3d5a80;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+#sendCoinsBtn:hover {
+    background-color: #27496d;
+}
+
+.usercard {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 300px;
+    text-align: center;
+}
+
+.usercard p {
+    font-size: 16px;
+    color: #333;
+}
+
 @media (max-width: 768px) {
     #tapArea {
         width: 250px;
@@ -74,6 +105,13 @@ main {
     }
     #coins {
         font-size: 24px;
+    }
+    #sendCoinsBtn {
+        font-size: 16px;
+        padding: 8px 16px;
+    }
+    .usercard {
+        width: 250px;
     }
 }
 
@@ -85,5 +123,12 @@ main {
     }
     #coins {
         font-size: 20px;
+    }
+    #sendCoinsBtn {
+        font-size: 14px;
+        padding: 6px 12px;
+    }
+    .usercard {
+        width: 200px;
     }
 }
