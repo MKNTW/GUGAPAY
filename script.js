@@ -1,60 +1,76 @@
-document.getElementById('register').addEventListener('click', async () => {
+// Пример хранения пользователей и их состояния в игре без серверной базы данных
+
+// Объект для хранения пользователей
+let users = [];
+
+// Функция для регистрации нового пользователя
+function registerUser(username, password) {
+    // Проверяем, что пользователь с таким именем не существует
+    const existingUser = users.find(user => user.username === username);
+    if (existingUser) {
+        return false; // Пользователь уже существует
+    }
+
+    // Создаем нового пользователя и добавляем в список
+    const newUser = {
+        username,
+        password,
+        coins: 0
+    };
+    users.push(newUser);
+    return true; // Пользователь успешно зарегистрирован
+}
+
+// Функция для авторизации пользователя
+function loginUser(username, password) {
+    // Находим пользователя в списке по имени и паролю
+    const user = users.find(user => user.username === username && user.password === password);
+    return user ? user : null; // Возвращаем найденного пользователя или null, если пользователь не найден
+}
+
+// Функция для обработки тапа
+function handleTap() {
+    const user = getCurrentUser();
+    if (user) {
+        user.coins += 0.00001;
+        updateCoins(user.coins);
+    }
+}
+
+// Функция для получения текущего пользователя (в данном случае, просто первого в списке)
+function getCurrentUser() {
+    return users.length > 0 ? users[0] : null;
+}
+
+// Функция для обновления отображения количества монет
+function updateCoins(coins) {
+    document.getElementById('coins').innerText = `ZCOIN: ${coins.toFixed(5)}`;
+}
+
+// Обработчики событий для кнопок регистрации, входа и тапа
+document.getElementById('register').addEventListener('click', () => {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
-    const response = await fetch('/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-    });
-    if (response.ok) {
+    const registered = registerUser(username, password);
+    if (registered) {
         alert('Registered successfully');
     } else {
-        alert('Registration failed');
+        alert('User already exists');
     }
 });
 
-document.getElementById('login').addEventListener('click', async () => {
+document.getElementById('login').addEventListener('click', () => {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
-    const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-    });
-    const data = await response.json();
-    if (response.ok) {
-        localStorage.setItem('token', data.token);
+    const user = loginUser(username, password);
+    if (user) {
+        alert('Logged in successfully');
         document.getElementById('auth').style.display = 'none';
         document.getElementById('game').style.display = 'block';
-        loadCoins();
+        updateCoins(user.coins);
     } else {
         alert('Login failed');
     }
 });
 
-async function loadCoins() {
-    const token = localStorage.getItem('token');
-    const response = await fetch('/api/coins', {
-        headers: { 'x-auth-token': token }
-    });
-    const data = await response.json();
-    if (response.ok) {
-        document.getElementById('coins').innerText = `ZCOIN: ${data.coins.toFixed(5)}`;
-    } else {
-        alert('Failed to load coins');
-    }
-}
-
-document.getElementById('tapArea').addEventListener('click', async () => {
-    const token = localStorage.getItem('token');
-    const response = await fetch('/api/tap', {
-        method: 'POST',
-        headers: { 'x-auth-token': token }
-    });
-    const data = await response.json();
-    if (response.ok) {
-        document.getElementById('coins').innerText = `ZCOIN: ${data.coins.toFixed(5)}`;
-    } else {
-        alert('Failed to update coins');
-    }
-});
+document.getElementById('tapArea').addEventListener('click', handleTap);
