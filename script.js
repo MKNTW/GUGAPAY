@@ -45,4 +45,16 @@ async function loadCoins() {
     }
 }
 
-document.get
+document.getElementById('tapArea').addEventListener('click', async () => {
+    const token = localStorage.getItem('token');
+    const response = await fetch('/api/tap', {
+        method: 'POST',
+        headers: { 'x-auth-token': token }
+    });
+    const data = await response.json();
+    if (response.ok) {
+        document.getElementById('coins').innerText = `ZCOIN: ${data.coins.toFixed(5)}`;
+    } else {
+        alert('Failed to update coins');
+    }
+});
