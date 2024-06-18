@@ -36,7 +36,7 @@ main {
     background-image: url('https://i.ibb.co/ySWx2mC/image.png');
     background-size: cover;
     background-position: center;
-    transition: transform 0.05s ease-in-out;
+    transition: transform 0.06s ease-in-out;
 }
 #tapArea:hover {
     transform: scale(1.05);
