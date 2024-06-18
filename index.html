@@ -1,13 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tap to Earn ZCOIN</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
 <body>
     <main>
         <div id="game">
             <div id="tapArea"></div>
             <div id="coins">ZCOIN: 0</div>
-            <div id="walletInput">
-                <input type="text" id="walletInputField" placeholder="Введите ваш Ton кошелек">
-                <div id="walletDisplay"></div>
-            </div>
+        </div>
+
+        <!-- Wallet input section -->
+        <div id="walletSection">
+            <label for="walletNameInput">Ваш Ton кошелек:</label>
+            <input type="text" id="walletNameInput" placeholder="Введите ваш Ton кошелек">
+            <button id="confirmWalletBtn">Подтвердить</button>
+            <div id="walletDisplay"></div>
         </div>
     </main>
     <script src="script.js"></script>
 </body>
+</html>
