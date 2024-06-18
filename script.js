@@ -1,30 +1,20 @@
-// Function to retrieve ZCOIN from local storage
-function getCoinsFromStorage() {
-    return parseFloat(localStorage.getItem('coins')) || 0;
+// Функция для отправки данных в Telegram бота
+function sendCoinsToTelegram(coins) {
+    // Предположим, что tg.sendData отправляет данные в Telegram
+    tg.sendData({ coins: coins.toFixed(5) });
 }
 
-// Function to save ZCOIN to local storage
-function saveCoinsToStorage(coins) {
-    localStorage.setItem('coins', coins.toString());
-}
-
-let coins = getCoinsFromStorage();
-document.getElementById('coins').innerText = `ZCOIN: ${coins.toFixed(5)}`;
-
-document.getElementById('tapArea').addEventListener('click', function() {
-    coins += 0.00001;
-    document.getElementById('coins').innerText = `ZCOIN: ${coins.toFixed(5)}`;
-    saveCoinsToStorage(coins);
-
-    // Button press animation
-    this.style.transform = 'scale(0.95)';
-    setTimeout(() => {
-        this.style.transform = 'scale(1)';
-    }, 50);
+// Обработчик клика по кнопке "Отправить монеты в Telegram"
+document.getElementById('sendCoinsBtn').addEventListener('click', function() {
+    sendCoinsToTelegram(coins);
 });
 
-// On page load, update coins from storage
-window.onload = function() {
-    coins = getCoinsFromStorage();
-    document.getElementById('coins').innerText = `ZCOIN: ${coins.toFixed(5)}`;
-};
+// Функция для обновления ID пользователя на экране
+function updateUserId(userId) {
+    document.getElementById('userIdValue').textContent = userId;
+}
+
+// Предположим, что в Telegram. WebApp. onEvent можно добавить обработчик события
+Telegram.WebApp.onEvent("mainButtonClicked", function() {
+    sendCoinsToTelegram(coins);
+});
