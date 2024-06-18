@@ -1,30 +1,32 @@
-// Function to retrieve ZCOIN from local storage
-function getCoinsFromStorage() {
-    return parseFloat(localStorage.getItem('coins')) || 0;
+// Function to retrieve Ton wallet from local storage
+function getTonWalletFromStorage() {
+    return localStorage.getItem('tonWallet') || '';
 }
 
-// Function to save ZCOIN to local storage
-function saveCoinsToStorage(coins) {
-    localStorage.setItem('coins', coins.toString());
+// Function to save Ton wallet to local storage
+function saveTonWalletToStorage(wallet) {
+    localStorage.setItem('tonWallet', wallet);
 }
 
-let coins = getCoinsFromStorage();
-document.getElementById('coins').innerText = `ZCOIN: ${coins.toFixed(5)}`;
-
-document.getElementById('tapArea').addEventListener('click', function() {
-    coins += 0.00001;
-    document.getElementById('coins').innerText = `ZCOIN: ${coins.toFixed(5)}`;
-    saveCoinsToStorage(coins);
-
-    // Button press animation
-    this.style.transform = 'scale(0.95)';
-    setTimeout(() => {
-        this.style.transform = 'scale(1)';
-    }, 50);
-});
-
-// On page load, update coins from storage
+// Display Ton wallet on page load
 window.onload = function() {
-    coins = getCoinsFromStorage();
-    document.getElementById('coins').innerText = `ZCOIN: ${coins.toFixed(5)}`;
+    const storedWallet = getTonWalletFromStorage();
+    if (storedWallet) {
+        displayTonWallet(storedWallet);
+    }
 };
+
+// Function to display Ton wallet
+function displayTonWallet(wallet) {
+    const walletDisplay = document.getElementById('walletDisplay');
+    walletDisplay.innerText = `Кошелек: ${wallet}`;
+}
+
+// Event listener for input field
+const walletInputField = document.getElementById('walletInputField');
+walletInputField.addEventListener('change', function() {
+    const wallet = this.value.trim();
+    saveTonWalletToStorage(wallet);
+    displayTonWallet(wallet);
+    this.value = ''; // Clear input field after saving
+});
