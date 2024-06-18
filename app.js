@@ -25,3 +25,5 @@ Telegram.WebApp.onEvent("mainButtonClicked", function() {
 // Предположим, что у нас есть доступ к ID пользователя через tg.initDataUnsafe.user.id
 let userId = tg.initDataUnsafe.user.id;
 updateUserId(userId);
+
+userId.appendChild(p):
