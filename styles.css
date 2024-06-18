@@ -69,32 +69,10 @@ main {
         opacity: 1;
         transform: translateY(0);
     }
-    25% {
-        opacity: 1;
-        transform: translateY(-12.5px);
-    }
-    50% {
-        opacity: 1;
-        transform: translateY(-25px);
-    }
-    75% {
-        opacity: 1;
-        transform: translateY(-37.5px);
-    }
     100% {
         opacity: 0;
-        transform: translateY(-50px);
+        transform: translateY(-30px);
     }
-}
-
-#tapLimitText {
-    font-size: 14px;
-    margin-bottom: 5px;
-}
-
-#tapRefreshTime {
-    font-size: 14px;
-    color: #666;
 }
 
 @media (max-width: 768px) {
