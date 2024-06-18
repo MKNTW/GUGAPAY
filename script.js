@@ -1,76 +1,67 @@
-// Пример хранения пользователей и их состояния в игре без серверной базы данных
-
-// Объект для хранения пользователей
-let users = [];
-
-// Функция для регистрации нового пользователя
-function registerUser(username, password) {
-    // Проверяем, что пользователь с таким именем не существует
-    const existingUser = users.find(user => user.username === username);
-    if (existingUser) {
-        return false; // Пользователь уже существует
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+}
+main {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+#game {
+    text-align: center;
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+#tapArea {
+    width: 300px;
+    height: 300px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    color: white;
+    cursor: pointer;
+    border-radius: 50%;
+    user-select: none;
+    background-color: #3D5A80;
+    background-image: url('https://i.ibb.co/ySWx2mC/image.png');
+    background-size: cover;
+    background-position: center;
+    transition: transform 0.05s ease-in-out;
+}
+#tapArea:hover {
+    transform: scale(1.05);
+}
+#coins {
+    margin-top: 20px;
+    font-size: 30px;
+}
+@media (max-width: 768px) {
+    #tapArea {
+        width: 250px;
+        height: 250px;
+        font-size: 20px;
     }
-
-    // Создаем нового пользователя и добавляем в список
-    const newUser = {
-        username,
-        password,
-        coins: 0
-    };
-    users.push(newUser);
-    return true; // Пользователь успешно зарегистрирован
-}
-
-// Функция для авторизации пользователя
-function loginUser(username, password) {
-    // Находим пользователя в списке по имени и паролю
-    const user = users.find(user => user.username === username && user.password === password);
-    return user ? user : null; // Возвращаем найденного пользователя или null, если пользователь не найден
-}
-
-// Функция для обработки тапа
-function handleTap() {
-    const user = getCurrentUser();
-    if (user) {
-        user.coins += 0.00001;
-        updateCoins(user.coins);
+    #coins {
+        font-size: 24px;
     }
 }
-
-// Функция для получения текущего пользователя (в данном случае, просто первого в списке)
-function getCurrentUser() {
-    return users.length > 0 ? users[0] : null;
-}
-
-// Функция для обновления отображения количества монет
-function updateCoins(coins) {
-    document.getElementById('coins').innerText = `ZCOIN: ${coins.toFixed(5)}`;
-}
-
-// Обработчики событий для кнопок регистрации, входа и тапа
-document.getElementById('register').addEventListener('click', () => {
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    const registered = registerUser(username, password);
-    if (registered) {
-        alert('Registered successfully');
-    } else {
-        alert('User already exists');
+@media (max-width: 480px) {
+    #tapArea {
+        width: 200px;
+        height: 200px;
+        font-size: 16px;
     }
-});
-
-document.getElementById('login').addEventListener('click', () => {
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    const user = loginUser(username, password);
-    if (user) {
-        alert('Logged in successfully');
-        document.getElementById('auth').style.display = 'none';
-        document.getElementById('game').style.display = 'block';
-        updateCoins(user.coins);
-    } else {
-        alert('Login failed');
+    #coins {
+        font-size: 20px;
     }
-});
-
-document.getElementById('tapArea').addEventListener('click', handleTap);
+}
