@@ -14,7 +14,7 @@ let coins = getCoinsFromStorage();
 document.getElementById('coins').innerText = `ZCOIN: ${coins.toFixed(5)}`;
 
 document.getElementById('tapArea').addEventListener('click', function() {
-    coins += 0.00001;
+    coins += 0.0001;
     document.getElementById('coins').innerText = `ZCOIN: ${coins.toFixed(5)}`;
     saveCoinsToStorage(coins);
 
