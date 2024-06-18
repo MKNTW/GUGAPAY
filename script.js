@@ -14,18 +14,18 @@ let coins = getCoinsFromStorage();
 document.getElementById('coins').innerText = `ZCOIN: ${coins.toFixed(5)}`;
 
 document.getElementById('tapArea').addEventListener('click', function() {
-    coins += 0.0001;
+    coins += 0.0001; // Изменили количество начисляемых монет на 0.0001
     document.getElementById('coins').innerText = `ZCOIN: ${coins.toFixed(5)}`;
     saveCoinsToStorage(coins);
 
-    // Button press animation
+    // Анимация нажатия кнопки
     this.style.transform = 'scale(0.95)';
     setTimeout(() => {
         this.style.transform = 'scale(1)';
     }, 50);
 });
 
-// On page load, update coins from storage
+// При загрузке страницы обновляем количество монет из хранилища
 window.onload = function() {
     coins = getCoinsFromStorage();
     document.getElementById('coins').innerText = `ZCOIN: ${coins.toFixed(5)}`;
