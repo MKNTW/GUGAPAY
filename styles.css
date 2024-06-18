@@ -8,19 +8,30 @@ body {
     align-items: center;
     justify-content: center;
 }
+
 main {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
     padding: 20px;
+    gap: 20px; /* Spacing between game and input sections */
 }
-#game {
+
+.window {
+    width: 100%;
+    max-width: 600px; /* Max width for both game and input sections */
     text-align: center;
     background-color: white;
     padding: 20px;
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
+
+#game {
+    background-color: #3D5A80;
+    color: white;
+}
+
 #tapArea {
     width: 300px;
     height: 300px;
@@ -28,23 +39,37 @@ main {
     justify-content: center;
     align-items: center;
     font-size: 24px;
-    color: white;
     cursor: pointer;
     border-radius: 50%;
     user-select: none;
-    background-color: #3D5A80;
     background-image: url('https://i.ibb.co/ySWx2mC/image.png');
     background-size: cover;
     background-position: center;
     transition: transform 0.05s ease-in-out;
 }
+
 #tapArea:hover {
     transform: scale(1.05);
 }
+
 #coins {
     margin-top: 20px;
     font-size: 30px;
 }
+
+#walletSection {
+    background-color: #3D5A80;
+    color: white;
+}
+
+#walletSection label,
+#walletSection input,
+#walletSection button {
+    margin: 10px 0;
+    width: 100%;
+    max-width: 400px;
+}
+
 @media (max-width: 768px) {
     #tapArea {
         width: 250px;
@@ -55,6 +80,7 @@ main {
         font-size: 24px;
     }
 }
+
 @media (max-width: 480px) {
     #tapArea {
         width: 200px;
@@ -65,5 +91,3 @@ main {
         font-size: 20px;
     }
 }
-
-//
