@@ -9,25 +9,11 @@ body {
     justify-content: center;
 }
 
-header {
-    width: 100%;
-    text-align: center;
-    font-size: 18px;
-    background-color: #3d5a80;
-    color: white;
-    padding: 10px 0;
-}
-
-#userId {
-    margin-top: 20px;
-    font-size: 24px;
-    color: #3d5a80;
-}
-
 main {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
+    justify-content: center;
     padding: 20px;
 }
 
@@ -37,6 +23,8 @@ main {
     padding: 20px;
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    max-width: 400px;
 }
 
 #tapArea {
@@ -50,39 +38,66 @@ main {
     cursor: pointer;
     border-radius: 50%;
     user-select: none;
-    background-image: url('IMG_0033.png');
+    background-image: url('Image_033.jpg');
     background-size: cover;
     background-position: center;
-    transition: transform 0.06s ease-in-out;
+    transition: transform 0.05s ease-in-out;
+    position: relative; /* Для позиционирования элемента +0.0001 */
 }
 
 #tapArea:hover {
-    transform: scale(1.05);
-}
-
-/* Добавляем стили для анимации текста при тапе */
-.tap-feedback {
-    position: absolute;
-    display: none;
-    font-size: 16px;
-    color: white;
-    background-color: rgba(0, 0, 0, 0.5);
-    border-radius: 5px;
-    padding: 5px 10px;
-    z-index: 1000;
-}
-
-/* Анимация появления и исчезновения текста */
-@keyframes tapFeedbackAnimation {
-    0% { opacity: 1; transform: translateY(0); }
-    50% { opacity: 1; transform: translateY(-20px); }
-    100% { opacity: 0; transform: translateY(-40px); }
+    transform: scale(1.05); /* Увеличиваем кнопку при наведении */
 }
 
 #coins {
-    margin-top: 20px;
-    font-size: 30px;
-    color: #3d5a80;
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+.tap-feedback {
+    position: absolute;
+    color: #3D5A80;
+    font-size: 18px;
+    font-weight: bold;
+    animation: tapFeedbackAnimation 1s forwards;
+    opacity: 0;
+}
+
+@keyframes tapFeedbackAnimation {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+}
+
+#tapLimitProgress {
+    width: 100%;
+    height: 10px;
+    background-color: #ddd;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+#tapLimitProgressFill {
+    height: 100%;
+    background-color: #3D5A80;
+    border-radius: 5px;
+    width: 0;
+    transition: width 0.3s ease-in-out;
+}
+
+#tapLimitText {
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+#tapRefreshTime {
+    font-size: 14px;
+    color: #666;
 }
 
 @media (max-width: 768px) {
@@ -92,7 +107,12 @@ main {
         font-size: 20px;
     }
     #coins {
-        font-size: 24px;
+        font-size: 20px;
+    }
+    .tap-feedback {
+        font-size: 16px;
+    }
+}
 
 @media (max-width: 480px) {
     #tapArea {
@@ -101,5 +121,9 @@ main {
         font-size: 16px;
     }
     #coins {
-        font-size: 20px;
+        font-size: 18px;
     }
+    .tap-feedback {
+        font-size: 14px;
+    }
+}
