@@ -42,14 +42,14 @@ main {
 }
 
 #coin-icon {
-    height: 52px;
+    height: 58px;
     margin-left: 2px;
     margin-top: -590px;
 }
 
 #coins {
     text-align: center;
-    font-size: 48px;
+    font-size: 58px;
     pointer-events: none; /* Disable pointer events */
     margin-top: -590px; /* Move it higher */
     z-index: 1; /* Ensure coins appear above #tapArea */
