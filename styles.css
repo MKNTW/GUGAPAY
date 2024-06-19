@@ -132,10 +132,10 @@ main {
         left: calc(50% - 125px); /* Adjust positioning for smallest screens */
     }
     #coins {
-        font-size: 24px;
+        font-size: 35px;
     }
     #coin-icon {
-        height: 24px;
+        height: 35px;
     }
     .tap-feedback {
         font-size: 18px;
