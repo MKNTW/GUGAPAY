@@ -51,6 +51,7 @@ main {
     font-size: 35px;
     pointer-events: none;
     z-index: 1;
+    color: orange; /* Set text color to orange */
 }
 
 /* Tap area styles */
@@ -69,7 +70,7 @@ main {
     background-size: cover;
     background-position: center;
     transition: transform 0.05s ease-in-out;
-    color: inherit;
+    color: orange; /* Set text color to orange */
 }
 
 /* Hover effect for tap area */
@@ -85,11 +86,7 @@ main {
     animation: tapFeedbackAnimation 1s forwards;
     pointer-events: none;
     transform: translate(-50%, -100%);
-    background: linear-gradient(to right, gray, blue, red);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-fill-color: transparent;
+    color: orange; /* Set text color to orange */
 }
 
 @keyframes tapFeedbackAnimation {
@@ -156,11 +153,13 @@ main {
     margin-bottom: 8px;
     font-size: 18px;
     font-family: inherit;
+    color: orange; /* Set text color to orange */
 }
 
 /* Featured text styles */
 .featured {
     font-weight: 800;
+    color: orange; /* Set text color to orange */
 }
 
 /* Section styles */
@@ -169,6 +168,7 @@ main {
     margin: 20px;
     border: 2px #AEFF6A solid;
     border-radius: 8px;
+    color: orange; /* Set text color to orange */
 }
 
 /* Connect button container styles */
@@ -187,7 +187,7 @@ main {
     border-radius: 5px;
     cursor: pointer;
     background-color: #4CAF50;
-    color: white;
+    color: orange; /* Set text color to orange */
     transition: background-color 0.3s;
 }
 
@@ -198,9 +198,5 @@ main {
 /* Gradient text styles */
 .gradient-text, #coins, .tap-feedback, .connect-button {
     font-family: "Archivo Black";
-    background: linear-gradient(to right, blue, red);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-fill-color: transparent;
+    color: orange; /* Set text color to orange */
 }
