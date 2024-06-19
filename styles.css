@@ -2,9 +2,6 @@
 body, html {
     margin: 0;
     font-family: "Archivo Black";
-    background-image: url('IMG_0083.jpeg'); /* Убран пробел перед скобкой */
-    background-size: cover;
-    background-position: center;
     overflow-x: hidden; /* Prevent horizontal scrolling on the entire page */
 }
 
@@ -68,7 +65,7 @@ main {
     border-radius: 10px;
     margin-bottom: -200px;
     user-select: none;
-    background-image: url('IMG_0092.png');
+    background-image: url('IMG_0096.png');
     background-size: cover;
     background-position: center;
     transition: transform 0.05s ease-in-out;
