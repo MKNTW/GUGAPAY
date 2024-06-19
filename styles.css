@@ -1,39 +1,38 @@
-body {
+/* Reset default margin and set up font */
+body, html {
     margin: 0;
     font-family: "Archivo Black";
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    align-items: center;
-    justify-content: center;
-    background-image: url('IMG_0083.jpeg');
+    background-image: url('IMG_0083.jpeg'); /* Убран пробел перед скобкой */
     background-size: cover;
     background-position: center;
+    overflow-x: hidden; /* Prevent horizontal scrolling on the entire page */
 }
 
+/* Main container styles */
 main {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     width: 100%;
-    height: 100%;
+    min-height: 100vh;
     position: relative;
+    overflow-x: hidden; /* Prevent horizontal scrolling for the main content */
 }
 
+/* Game container styles */
 #game {
     width: 100%;
-    max-width: 600px;
+    max-width: 600px; /* Adjust max-width as necessary */
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: center;
     padding: 20px;
     border-radius: 10px;
-   
-    position: relative; /* Ensure relative positioning for child elements */
 }
 
+/* Coins container styles */
 #coins-container {
     display: flex;
     align-items: center;
@@ -41,44 +40,47 @@ main {
     margin-right: 3px;
 }
 
+/* Coin icon styles */
 #coin-icon {
-    height: 58px;
+    height: 35px;
     margin-left: 2px;
-    margin-top: -590px;
+    margin-top: -470px;
 }
 
+/* Coins count styles */
 #coins {
     text-align: center;
-    font-size: 58px;
-    pointer-events: none; /* Disable pointer events */
-    margin-top: -590px; /* Move it higher */
-    z-index: 1; /* Ensure coins appear above #tapArea */
+    margin-top: -470px;
+    font-size: 35px;
+    pointer-events: none;
+    z-index: 1;
 }
 
+/* Tap area styles */
 #tapArea {
-    width: 300px;
-    height: 300px;
+    width: 300px; /* Default width */
+    height: 300px; /* Default height */
     display: flex;
     justify-content: center;
     align-items: center;
     font-size: 30px;
     cursor: pointer;
-    border-radius: 10px; /* Make it square with rounded corners */
+    border-radius: 10px;
+    margin-bottom: -200px;
     user-select: none;
     background-image: url('IMG_0092.png');
     background-size: cover;
     background-position: center;
     transition: transform 0.05s ease-in-out;
-    margin-top: auto;
-    margin-bottom: -300px;
     color: inherit;
-   
 }
 
+/* Hover effect for tap area */
 #tapArea:hover {
     transform: scale(1.05);
 }
 
+/* Tap feedback animation */
 .tap-feedback {
     position: absolute;
     font-size: 24px;
@@ -104,6 +106,7 @@ main {
     }
 }
 
+/* Media queries for responsive adjustments */
 @media (max-width: 768px) {
     #tapArea {
         width: 400px;
@@ -113,10 +116,10 @@ main {
         left: calc(50% - 200px); /* Adjust positioning for smaller screens */
     }
     #coins {
-        font-size: 36px;
+        font-size: 35px;
     }
     #coin-icon {
-        height: 36px;
+        height: 35px;
     }
     .tap-feedback {
         font-size: 20px;
@@ -142,12 +145,14 @@ main {
     }
 }
 
+/* Additional styles */
 .archivo-black-regular {
     font-family: "Archivo Black", sans-serif;
     font-weight: 400;
     font-style: normal;
 }
 
+/* Button styles */
 #tonconnect-buttons > button {
     display: block;
     padding: 8px;
@@ -156,10 +161,12 @@ main {
     font-family: inherit;
 }
 
+/* Featured text styles */
 .featured {
     font-weight: 800;
 }
 
+/* Section styles */
 .section {
     padding: 20px;
     margin: 20px;
@@ -167,12 +174,14 @@ main {
     border-radius: 8px;
 }
 
+/* Connect button container styles */
 .connect-button-container {
     position: absolute;
     top: 10px;
     right: 10px;
 }
 
+/* Connect button styles */
 .connect-button {
     padding: 10px 20px;
     font-size: 16px;
@@ -189,6 +198,7 @@ main {
     background-color: #45a049;
 }
 
+/* Gradient text styles */
 .gradient-text, #coins, .tap-feedback, .connect-button {
     font-family: "Archivo Black";
     background: linear-gradient(to right, blue, red);
