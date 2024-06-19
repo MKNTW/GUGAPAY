@@ -3,27 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Theme Switcher</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+    <title>ZCOIN GAME</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js" defer></script>
+    <script src="https://unpkg.com/@tonconnect/sdk@0.0.34/dist/tonconnect-sdk.min.js"></script>
 </head>
 <body>
+    <div id="connect" class="connect-button-container"></div>
     <main>
-        <div id="connect"></div>
-        <div id="game">
-            <div id="coins">Coins: 100</div>
+         <div id="game">
+            <div id="coins">Zcoin 0</div>
             <div id="tapArea"></div>
             <div class="tap-feedback"></div>
-        </div>
+         </div>
     </main>
-    <script>
-document.addEventListener('DOMContentLoaded', function() {
-            const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-                manifestUrl: 'https://mkntw.github.io/tonconnect-manifest.json', 
-                buttonRootId: 'connect'
-            });
-        });
-    </script>
     <script src="script.js"></script>
 </body>
 </html>
