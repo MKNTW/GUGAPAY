@@ -60,7 +60,7 @@ connectButton.addEventListener('click', async () => {
     try {
         await tonConnect.connect();
         alert('Connected successfully!');
-        // Дополнительные действия после успешного подключения
+        // Дополнительные действия послее успешного подключения
     } catch (error) {
         console.error('Connection failed', error);
         alert('Connection failed');
