@@ -6,7 +6,7 @@ body {
     min-height: 100vh;
     align-items: center;
     justify-content: center;
-    background-image: url('https://ibb.co/LxNrzF9'); /* Replace with your image path */
+    background-image: url('IMG_0083.jpeg'); /* Replace with your image path */
     background-size: cover; /* Cover the entire background */
     background-position: center; /* Center the background image */
 }
@@ -51,7 +51,7 @@ main {
     cursor: pointer; /* Изменяем курсор при наведении */
     border-radius: 50%; /* Закругление углов */
     user-select: none; /* Отключаем выделение текста */
-    background-image: url('IMG_0033.jpg'); /* Фоновое изображение */
+    background-image: url('IMG_0033.png'); /* Фоновое изображение */
     background-size: cover; /* Масштабируем изображение */
     background-position: center; /* Позиционируем изображение по центру */
     transition: transform 0.05s ease-in-out; /* Анимация при наведении */
