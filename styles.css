@@ -6,7 +6,7 @@ body {
     min-height: 100vh;
     align-items: center;
     justify-content: center;
-    background-image: url('IMG2.JPG');
+    background-image: url('IMG_0083.jpeg');
     background-size: cover;
     background-position: center;
 }
@@ -52,7 +52,7 @@ main {
     cursor: pointer;
     border-radius: 50%;
     user-select: none;
-    background-image: url('IMG1.png');
+    background-image: url('IMG_0076.png');
     background-size: cover;
     background-position: center;
     transition: transform 0.1s ease-in-out;
