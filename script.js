@@ -20,7 +20,12 @@ document.getElementById('tapArea').addEventListener('click', function(event) {
     const tapFeedback = document.createElement('div');
     tapFeedback.textContent = '+0.00001';
     tapFeedback.classList.add('tap-feedback');
-    this.appendChild(tapFeedback);
+
+    // Установка позиции на основе координат клика
+    tapFeedback.style.left = `${event.clientX}px`;
+    tapFeedback.style.top = `${event.clientY}px`;
+
+    document.body.appendChild(tapFeedback);
 
     setTimeout(() => {
         tapFeedback.style.animation = 'tapFeedbackAnimation 1s forwards';
