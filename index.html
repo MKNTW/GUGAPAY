@@ -14,11 +14,19 @@
     <div id="connect" class="connect-button-container"></div>
     <main>
          <div id="game">
-            <div id="coins">Zcoin 0</div>
+            <div id="coins"></div>
+            <img src="IMG1.png" id="coin-icon" alt="Coin Icon"></div>
             <div id="tapArea"></div>
             <div class="tap-feedback"></div>
          </div>
     </main>
     <script src="script.js"></script>
+    <script>
+      window.onload = async () => {
+        const connector = new TonConnectSDK.TonConnect();  // (2)
+        const walletsList = await connector.getWallets();  // (3)   
+        console.log(walletsList);
+      }
+    </script>
 </body>
 </html>
