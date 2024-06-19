@@ -1,14 +1,14 @@
 body {
     margin: 0;
-    font-family: "Archivo Black", sans-serif;
+    font-family: "Archivo Black";
     display: flex;
     flex-direction: column;
     min-height: 100vh;
     align-items: center;
     justify-content: center;
-    background-image: url('IMG_0083.jpeg');
-    background-size: cover;
-    background-position: center;
+    background-image: url('IMG2.JPG'); /* Replace with your image path */
+    background-size: cover; /* Cover the entire background */
+    background-position: center; /* Center the background image */
 }
 
 main {
@@ -31,84 +31,123 @@ main {
     justify-content: center;
 }
 
-#coins {
-    position: fixed;
-    bottom: 20%; /* Перемещаем монеты ближе к центру */
+       #coins {
+    position: static;
+    bottom: calc(100% - 100px); /* Перемещаем блок на 20px выше */
     width: 100%;
     text-align: center;
-    font-size: 64px; /* Увеличиваем размер шрифта для большей заметности */
+    font-size: 48px;
     color: inherit;
     margin: 0;
-    z-index: 1; /* Помещаем над другими элементами */
 }
 
 #tapArea {
-    width: 600px; /* Увеличиваем размер области для нажатия */
-    height: 600px;
+    width: 400px; /* Ширина области для нажатия */
+    height: 400px; /* Высота области для нажатия */
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 36px; /* Увеличиваем размер шрифта */
-    cursor: pointer;
-    border-radius: 50%;
-    user-select: none;
-    background-image: url('IMG_0033.png');
-    background-size: cover;
-    background-position: center;
-    transition: transform 0.1s ease-in-out;
-    margin-top: 30%; /* Отступ сверху */
-    z-index: 2; /* Помещаем над монетами */
+    font-size: 30px; /* Размер шрифта */
+    cursor: pointer; /* Изменяем курсор при наведении */
+    border-radius: 50%; /* Закругление углов */
+    user-select: none; /* Отключаем выделение текста */
+    background-image: url('IMG1.png'); /* Фоновое изображение */
+    background-size: cover; /* Масштабируем изображение */
+    background-position: center; /* Позиционируем изображение по центру */
+    transition: transform 0.05s ease-in-out; /* Анимация при наведении */
+    margin-top: 40%; /* Отступ сверху */
 }
 
 #tapArea:hover {
-    transform: scale(1.1); /* Увеличиваем при наведении */
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Добавляем тень для поднятия */
+    transform: scale(1.05); /* Увеличиваем при наведении */
 }
 
 .tap-feedback {
     position: absolute;
-    font-size: 24px;
-    font-weight: bold;
-    animation: tapFeedbackAnimation 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
-    opacity: 0;
-    z-index: 3; /* Помещаем над всеми элементами */
+    font-size: 24px; /* Размер шрифта */
+    font-weight: bold; /* Жирный текст */
+    animation: tapFeedbackAnimation 1s forwards; /* Анимация отзыва при нажатии */
+    opacity: 0; /* Непрозрачность */
 }
 
 @keyframes tapFeedbackAnimation {
     0% {
-        opacity: 1;
-        transform: translateY(0);
+        opacity: 1; /* Непрозрачность */
+        transform: translateY(0); /* Положение текста */
     }
     100% {
-        opacity: 0;
-        transform: translateY(-30px);
+        opacity: 0; /* Непрозрачность */
+        transform: translateY(-30px); /* Положение текста */
     }
 }
 
 @media (max-width: 768px) {
     #tapArea {
-        width: 400px; /* Адаптируем размер для меньших экранов */
-        height: 400px;
-        font-size: 28px; /* Уменьшаем размер шрифта */
+        width: 400px; /* Ширина области для нажатия */
+        height: 400px; /* Высота области для нажатия */
+        font-size: 24px; /* Размер шрифта */
     }
     #coins {
-        font-size: 48px;
+        font-size: 36px; /* Размер шрифта */
     }
     .tap-feedback {
-        font-size: 20px;
+        font-size: 20px; /* Размер шрифта */
     }
 }
 
 @media (max-width: 480px) {
     #tapArea {
-        width: 300px;
-        height: 300px;
-        font-size: 24px;
+        width: 250px; /* Ширина области для нажатия */
+        height: 250px; /* Высота области для нажатия */
+        font-size: 20px; /* Размер шрифта */
     }
     #coins {
-        font-size: 36px;
+        font-size: 24px; /* Размер шрифта */
     }
     .tap-feedback {
-        font-size: 18px;
+        font-size: 18px; /* Размер шрифта */
     }
+}
+
+.archivo-black-regular {
+  font-family: "Archivo Black", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+#tonconnect-buttons>button {
+        display: block;
+        padding: 8px; margin-bottom: 8px;
+        font-size: 18px; font-family: inherit;
+      }
+      .featured {
+        font-weight: 800;
+      }
+
+      .section {
+        padding: 20px; margin: 20px;
+        border: 2px #AEFF6A solid; border-radius: 8px;
+}
+
+/* Стили для кнопки подключения TonConnect */
+.connect-button-container {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.connect-button {
+    padding: 10px 20px;
+    font-size: 16px;
+    font-family: inherit;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #4CAF50; /* Цвет кнопки */
+    color: white; /* Цвет текста */
+    transition: background-color 0.3s;
+}
+
+.connect-button:hover {
+    background-color: #45a049; /* Цвет кнопки при наведении */
 }
