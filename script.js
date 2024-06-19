@@ -10,11 +10,11 @@ function saveCoinsToStorage(coins) {
 
 // Измененная часть для работы с монетами и Local Storage
 let coins = getCoinsFromStorage();
-document.getElementById('coins').innerText = `ZCOIN: ${coins.toFixed(5)}`;
+document.getElementById('coins').innerText = ` ${coins.toFixed(5)}`;
 
 document.getElementById('tapArea').addEventListener('click', function(event) {
     coins += 0.00001;
-    document.getElementById('coins').innerText = `ZCOIN: ${coins.toFixed(5)}`;
+    document.getElementById('coins').innerText = ` ${coins.toFixed(5)}`;
     saveCoinsToStorage(coins);
 
     const tapFeedback = document.createElement('div');
@@ -41,7 +41,7 @@ document.getElementById('tapArea').addEventListener('click', function(event) {
 // При загрузке страницы обновляем количество монет из хранилища
 window.onload = function() {
     coins = getCoinsFromStorage();
-    document.getElementById('coins').innerText = `ZCOIN: ${coins.toFixed(5)}`;
+    document.getElementById('coins').innerText = ` ${coins.toFixed(5)}`;
 };
 
 // Инициализация TonConnect
