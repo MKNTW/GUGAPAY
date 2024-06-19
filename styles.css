@@ -1,13 +1,14 @@
-/* Общие стили для всего контента */
 body {
     margin: 0;
-    font-family: Arial, sans-serif;
+    font-family: "Archivo Black", sans-serif;
     display: flex;
     flex-direction: column;
     min-height: 100vh;
     align-items: center;
     justify-content: center;
-    background-color: #f0f0f0; /* Цвет фона страницы */
+    background-image: url('IMG2.JPG');
+    background-size: cover;
+    background-position: center;
 }
 
 main {
@@ -18,18 +19,6 @@ main {
     width: 100%;
     height: 100%;
     position: relative;
-}
-
-/* Стили для кнопки переключения темы */
-.theme-button {
-    width: 50px; /* Ширина кнопки */
-    height: 50px; /* Высота кнопки */
-    border-radius: 50%; /* Закругление углов для создания круглой формы */
-    border: none; /* Убираем границу */
-    cursor: pointer; /* Изменяем курсор при наведении */
-    background-image: url('IMG_0075.JPG'); /* Фоновое изображение */
-    background-size: cover; /* Масштабируем изображение */
-    background-position: center; /* Позиционируем изображение по центру */
 }
 
 #game {
@@ -43,80 +32,83 @@ main {
 }
 
 #coins {
-    position: absolute;
-    bottom: 75%; /* Положение монет */
+    position: fixed;
+    bottom: 20%; /* Перемещаем монеты ближе к центру */
     width: 100%;
     text-align: center;
-    font-size: 48px; /* Размер шрифта */
-    color: inherit; /* Наследуем цвет текста */
+    font-size: 64px; /* Увеличиваем размер шрифта для большей заметности */
+    color: inherit;
     margin: 0;
-    transform: translateY(50%);
+    z-index: 1; /* Помещаем над другими элементами */
 }
 
 #tapArea {
-    width: 400px; /* Ширина области для нажатия */
-    height: 400px; /* Высота области для нажатия */
+    width: 600px; /* Увеличиваем размер области для нажатия */
+    height: 600px;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 30px; /* Размер шрифта */
-    cursor: pointer; /* Изменяем курсор при наведении */
-    border-radius: 50%; /* Закругление углов */
-    user-select: none; /* Отключаем выделение текста */
-    background-image: url('IMG_0033.png'); /* Фоновое изображение */
-    background-size: cover; /* Масштабируем изображение */
-    background-position: center; /* Позиционируем изображение по центру */
-    transition: transform 0.05s ease-in-out; /* Анимация при наведении */
-    margin-top: 40%; /* Отступ сверху */
+    font-size: 36px; /* Увеличиваем размер шрифта */
+    cursor: pointer;
+    border-radius: 50%;
+    user-select: none;
+    background-image: url('IMG1.png');
+    background-size: cover;
+    background-position: center;
+    transition: transform 0.1s ease-in-out;
+    margin-top: 30%; /* Отступ сверху */
+    z-index: 2; /* Помещаем над монетами */
 }
 
 #tapArea:hover {
-    transform: scale(1.05); /* Увеличиваем при наведении */
+    transform: scale(1.1); /* Увеличиваем при наведении */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Добавляем тень для поднятия */
 }
 
 .tap-feedback {
     position: absolute;
-    font-size: 24px; /* Размер шрифта */
-    font-weight: bold; /* Жирный текст */
-    animation: tapFeedbackAnimation 1s forwards; /* Анимация отзыва при нажатии */
-    opacity: 0; /* Непрозрачность */
+    font-size: 24px;
+    font-weight: bold;
+    animation: tapFeedbackAnimation 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+    opacity: 0;
+    z-index: 3; /* Помещаем над всеми элементами */
 }
 
 @keyframes tapFeedbackAnimation {
     0% {
-        opacity: 1; /* Непрозрачность */
-        transform: translateY(0); /* Положение текста */
+        opacity: 1;
+        transform: translateY(0);
     }
     100% {
-        opacity: 0; /* Непрозрачность */
-        transform: translateY(-30px); /* Положение текста */
+        opacity: 0;
+        transform: translateY(-30px);
     }
 }
 
 @media (max-width: 768px) {
     #tapArea {
-        width: 300px; /* Ширина области для нажатия */
-        height: 300px; /* Высота области для нажатия */
-        font-size: 24px; /* Размер шрифта */
+        width: 400px; /* Адаптируем размер для меньших экранов */
+        height: 400px;
+        font-size: 28px; /* Уменьшаем размер шрифта */
     }
     #coins {
-        font-size: 36px; /* Размер шрифта */
+        font-size: 48px;
     }
     .tap-feedback {
-        font-size: 20px; /* Размер шрифта */
+        font-size: 20px;
     }
 }
 
 @media (max-width: 480px) {
     #tapArea {
-        width: 250px; /* Ширина области для нажатия */
-        height: 250px; /* Высота области для нажатия */
-        font-size: 20px; /* Размер шрифта */
+        width: 300px;
+        height: 300px;
+        font-size: 24px;
     }
     #coins {
-        font-size: 24px; /* Размер шрифта */
+        font-size: 36px;
     }
     .tap-feedback {
-        font-size: 18px; /* Размер шрифта */
+        font-size: 18px;
     }
 }
