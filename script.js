@@ -33,6 +33,7 @@ function addCoins(amount, x, y) {
     }, 1050);
 }
 
+// Handler for tap events
 function handleTap(event) {
     const amount = 0.00001;
     const x = event.clientX || (event.touches && event.touches[0].clientX);
@@ -48,6 +49,7 @@ function handleTap(event) {
     event.stopPropagation();
 }
 
+// Handler for touch events
 function handleTouch(event) {
     Array.from(event.touches).forEach(touch => {
         handleTap(touch);
