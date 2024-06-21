@@ -8,19 +8,22 @@ function saveCoinsToStorage(coins) {
     localStorage.setItem('coins', coins.toString());
 }
 
-// Function to add coins and display feedback
-function addCoins(amount, x, y) {
-    coins += amount;
+// Измененная часть для работы с монетами и Local Storage
+let coins = getCoinsFromStorage();
+document.getElementById('coins').innerText = ` ${coins.toFixed(5)}`;
+
+document.getElementById('tapArea').addEventListener('click', function(event) {
+    coins += 0.00001;
     document.getElementById('coins').innerText = ` ${coins.toFixed(5)}`;
     saveCoinsToStorage(coins);
 
     const tapFeedback = document.createElement('div');
-    tapFeedback.textContent = `+${amount.toFixed(5)}`;
+    tapFeedback.textContent = '+0.00001';
     tapFeedback.classList.add('tap-feedback');
 
-    // Set position based on click/touch coordinates
-    tapFeedback.style.left = `${x}px`;
-    tapFeedback.style.top = `${y}px`;
+    // Установка позиции на основе координат клика
+    tapFeedback.style.left = `${event.clientX}px`;
+    tapFeedback.style.top = `${event.clientY}px`;
 
     document.body.appendChild(tapFeedback);
 
@@ -31,45 +34,25 @@ function addCoins(amount, x, y) {
     setTimeout(() => {
         tapFeedback.remove();
     }, 1050);
-}
 
-// Handler for tap events
-function handleTap(event) {
-    const amount = 0.00001;
-    const x = event.clientX || (event.touches && event.touches[0].clientX);
-    const y = event.clientY || (event.touches && event.touches[0].clientY);
-
-    addCoins(amount, x, y);
-
-    event.target.style.transform = 'scale(0.95)';
+    this.style.transform = 'scale(0.95)';
     setTimeout(() => {
-        event.target.style.transform = 'scale(1)';
+        this.style.transform = 'scale(1)';
     }, 50);
 
     event.stopPropagation();
-}
+});
 
-// Handler for touch events
-function handleTouch(event) {
-    Array.from(event.touches).forEach(touch => {
-        handleTap(touch);
-    });
-}
-
-const tapArea = document.getElementById('tapArea');
-tapArea.addEventListener('click', handleTap);
-tapArea.addEventListener('touchstart', handleTouch);
-
-// Initialize coins from storage on page load
+// При загрузке страницы обновляем количество монет из хранилища
 window.onload = function() {
     coins = getCoinsFromStorage();
     document.getElementById('coins').innerText = ` ${coins.toFixed(5)}`;
 };
 
-// Initialize TonConnect
+// Инициализация TonConnect
 const tonConnect = new TonConnect();
 
-// Create connect button
+// Создание кнопки подключения
 const connectButton = document.createElement('button');
 connectButton.innerText = 'Connect Ton Wallet';
 connectButton.classList.add('connect-button');
@@ -77,7 +60,7 @@ connectButton.addEventListener('click', async () => {
     try {
         await tonConnect.connect();
         alert('Connected successfully!');
-        // Additional actions after successful connection
+        // Дополнительные действия послее успешного подключения
     } catch (error) {
         console.error('Connection failed', error);
         alert('Connection failed');
