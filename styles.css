@@ -1,35 +1,60 @@
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Archivo Black', sans-serif;
+    margin: 0;
     padding: 20px;
+    background: #1a1a1a;
+    color: white;
 }
 
-#auth {
-    margin-bottom: 20px;
+.connect-container {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
 }
 
-#phraseTable {
-    display: none;
-    margin-top: 10px;
+.connect-button {
+    padding: 12px 24px;
+    background: #007bff;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s;
 }
 
-#phraseTable td {
-    padding: 5px;
-    border: 1px solid #ccc;
+.connect-button:hover {
+    background: #0056b3;
+}
+
+.game-container {
+    text-align: center;
+    margin-top: 100px;
 }
 
 #balance {
+    font-size: 48px;
+    color: #28a745;
+    margin: 30px 0;
+}
+
+.mine-button {
+    width: 250px;
+    height: 250px;
+    margin: 0 auto;
+    background: #28a745;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 24px;
-    margin: 20px 0;
-}
-
-#userId {
-    font-weight: bold;
-}
-
-button {
-    padding: 10px;
-    background: #4CAF50;
-    color: white;
-    border: none;
     cursor: pointer;
+    transition: transform 0.1s;
+    box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+}
+
+.mine-button:active {
+    transform: scale(0.95);
 }
