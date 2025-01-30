@@ -1,10 +1,10 @@
-const SERVER_URL = "https://some-cats-beam.loca.lt";
+const SERVER_URL = "https://shy-sites-draw.loca.lt";
 
 let userId = null;
 
 // Регистрация
 document.getElementById("registerBtn").addEventListener("click", async () => {
-    const response = await fetch(`https://some-cats-beam.loca.lt}/register`, { method: "POST" });
+    const response = await fetch(`https://shy-sites-draw.loca.lt/register`, { method: "POST" });
     const data = await response.json();
 
     if (data.success) {
@@ -17,7 +17,7 @@ document.getElementById("registerBtn").addEventListener("click", async () => {
 document.getElementById("loginBtn").addEventListener("click", async () => {
     const phrase = document.getElementById("inputPhrase").value;
 
-    const response = await fetch(`https://some-cats-beam.loca.lt/login`, {
+    const response = await fetch(`https://shy-sites-draw.loca.lt/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phrase })
