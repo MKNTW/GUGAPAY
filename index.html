@@ -1,28 +1,26 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gugacoin</title>
-    <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        #auth { margin-bottom: 20px; }
-        #phrase { font-weight: bold; margin: 10px 0; }
-        #balance { font-size: 24px; margin: 20px 0; }
-        button { padding: 10px; background: #4CAF50; color: white; border: none; cursor: pointer; }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+    <title>TON Miner</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script>
 </head>
 <body>
-    <div id="auth">
-        <button id="registerBtn">Зарегистрироваться</button>
-        <div id="phrase"></div>
-        <input type="text" id="inputPhrase" placeholder="Введите вашу фразу">
-        <button id="loginBtn">Войти</button>
+    <div class="connect-container">
+        <button id="connect-button" class="connect-button">Connect Wallet</button>
+        <div id="wallet-info"></div>
     </div>
-    <div id="main" style="display: none;">
-        <div id="balance">Монеты: <span>0</span></div>
-        <button id="logoutBtn">Выйти</button>
-    </div>
+
+    <main>
+        <div class="game-container">
+            <div id="balance">0.00000</div>
+            <div id="mine-button" class="mine-button">MINE TON</div>
+        </div>
+    </main>
+
     <script src="script.js"></script>
 </body>
 </html>
