@@ -1,70 +1,48 @@
-// Function to retrieve ZCOIN from local storage
-function getCoinsFromStorage() {
-    return parseFloat(localStorage.getItem('coins')) || 0;
-}
+let userId = null;
 
-// Function to save ZCOIN to local storage
-function saveCoinsToStorage(coins) {
-    localStorage.setItem('coins', coins.toString());
-}
+// Регистрация
+document.getElementById("registerBtn").addEventListener("click", async () => {
+    const response = await fetch(`${SERVER_URL}/register`, { method: "POST" });
+    const data = await response.json();
 
-// Измененная часть для работы с монетами и Local Storage
-let coins = getCoinsFromStorage();
-document.getElementById('coins').innerText = ` ${coins.toFixed(5)}`;
-
-document.getElementById('tapArea').addEventListener('click', function(event) {
-    coins += 0.00001;
-    document.getElementById('coins').innerText = ` ${coins.toFixed(5)}`;
-    saveCoinsToStorage(coins);
-
-    const tapFeedback = document.createElement('div');
-    tapFeedback.textContent = '+0.00001';
-    tapFeedback.classList.add('tap-feedback');
-
-    // Установка позиции на основе координат клика
-    tapFeedback.style.left = `${event.clientX}px`;
-    tapFeedback.style.top = `${event.clientY}px`;
-
-    document.body.appendChild(tapFeedback);
-
-    setTimeout(() => {
-        tapFeedback.style.animation = 'tapFeedbackAnimation 1s forwards';
-    }, 50);
-
-    setTimeout(() => {
-        tapFeedback.remove();
-    }, 1050);
-
-    this.style.transform = 'scale(0.95)';
-    setTimeout(() => {
-        this.style.transform = 'scale(1)';
-    }, 50);
-
-    event.stopPropagation();
-});
-
-// При загрузке страницы обновляем количество монет из хранилища
-window.onload = function() {
-    coins = getCoinsFromStorage();
-    document.getElementById('coins').innerText = ` ${coins.toFixed(5)}`;
-};
-
-// Инициализация TonConnect
-const tonConnect = new TonConnect();
-
-// Создание кнопки подключения
-const connectButton = document.createElement('button');
-connectButton.innerText = 'Connect Ton Wallet';
-connectButton.classList.add('connect-button');
-connectButton.addEventListener('click', async () => {
-    try {
-        await tonConnect.connect();
-        alert('Connected successfully!');
-        // Дополнительные действия послее успешного подключения
-    } catch (error) {
-        console.error('Connection failed', error);
-        alert('Connection failed');
+    if (data.success) {
+        const words = data.phrase.split(" ");
+        for (let i = 1; i <= 12; i++) {
+            document.getElementById(`word${i}`).textContent = words[i - 1];
+        }
+        document.getElementById("phraseTable").style.display = "block";
+        alert("Сохраните фразу! Её нельзя восстановить.");
     }
 });
 
-document.getElementById('connect').appendChild(connectButton);
+// Вход
+document.getElementById("loginBtn").addEventListener("click", async () => {
+    const phrase = Array.from({ length: 12 }, (_, i) => 
+        document.getElementById(`word${i + 1}`).textContent
+    ).join(" ");
+
+    const response = await fetch(`${SERVER_URL}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phrase })
+    });
+    const data = await response.json();
+
+    if (data.success) {
+        userId = data.userId;
+        document.getElementById("auth").style.display = "none";
+        document.getElementById("phraseTable").style.display = "none";
+        document.getElementById("main").style.display = "block";
+        document.getElementById("userId").textContent = userId;
+        document.querySelector("#balance span").textContent = data.coins.toFixed(5);
+    } else {
+        alert(data.error || "Ошибка входа");
+    }
+});
+
+// Выход
+document.getElementById("logoutBtn").addEventListener("click", () => {
+    userId = null;
+    document.getElementById("auth").style.display = "block";
+    document.getElementById("main").style.display = "none";
+});
