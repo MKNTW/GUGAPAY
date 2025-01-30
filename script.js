@@ -2,7 +2,7 @@ let userId = null;
 
 // Регистрация
 document.getElementById("registerBtn").addEventListener("click", async () => {
-    const response = await fetch(`${SERVER_URL}/register`, { method: "POST" });
+    const response = await fetch(`https://f4be6fd44474fdeeed350e5b0a6f3936.serveo.net/register`, { method: "POST" });
     const data = await response.json();
 
     if (data.success) {
@@ -21,7 +21,7 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
         document.getElementById(`word${i + 1}`).textContent
     ).join(" ");
 
-    const response = await fetch(`${SERVER_URL}/login`, {
+    const response = await fetch(`https://f4be6fd44474fdeeed350e5b0a6f3936.serveo.net/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phrase })
