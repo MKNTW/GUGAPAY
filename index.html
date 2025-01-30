@@ -1,32 +1,40 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
-    <title>ZCOIN GAME</title>
+    <title>ZCoin</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="https://unpkg.com/@tonconnect/sdk@0.0.34/dist/tonconnect-sdk.min.js"></script>
 </head>
 <body>
-    <div id="connect" class="connect-button-container"></div>
-    <main>
-         <div id="game">
-            <div id="coins"></div>
-            <img src="IMG_0033.png" id="coin-icon" alt="Coin Icon"></div>
-            <div id="tapArea"></div>
-            <div class="tap-feedback"></div>
-         </div>
-    </main>
+    <div id="auth">
+        <button id="registerBtn">Создать кошелек</button>
+        <button id="loginBtn">Войти</button>
+    </div>
+
+    <div id="phraseTable">
+        <table>
+            <tr><td>1</td><td id="word1"></td></tr>
+            <tr><td>2</td><td id="word2"></td></tr>
+            <tr><td>3</td><td id="word3"></td></tr>
+            <tr><td>4</td><td id="word4"></td></tr>
+            <tr><td>5</td><td id="word5"></td></tr>
+            <tr><td>6</td><td id="word6"></td></tr>
+            <tr><td>7</td><td id="word7"></td></tr>
+            <tr><td>8</td><td id="word8"></td></tr>
+            <tr><td>9</td><td id="word9"></td></tr>
+            <tr><td>10</td><td id="word10"></td></tr>
+            <tr><td>11</td><td id="word11"></td></tr>
+            <tr><td>12</td><td id="word12"></td></tr>
+        </table>
+    </div>
+
+    <div id="main">
+        <div>Ваш ID: <span id="userId"></span></div>
+        <div id="balance">Монеты: <span>0</span></div>
+        <button id="logoutBtn">Выйти</button>
+    </div>
+
     <script src="script.js"></script>
-    <script>
-      window.onload = async () => {
-        const connector = new TonConnectSDK.TonConnect();  // (2)
-        const walletsList = await connector.getWallets();  // (3)   
-        console.log(walletsList);
-      }
-    </script>
 </body>
 </html>
