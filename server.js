@@ -111,11 +111,7 @@ app.post('/login', async (req, res) => {
 // Обновление баланса
 app.post('/update', async (req, res) => {
     try {
-        const { userId, amount } = req.body;
-
-        if (typeof amount !== 'number' || amount <= 0) {
-            return res.status(400).json({ success: false, error: 'Invalid amount' });
-        }
+        const { userId } = req.body;
 
         // Получение текущего баланса пользователя
         const { data: userData, error: fetchError } = await supabase
@@ -129,7 +125,7 @@ app.post('/update', async (req, res) => {
         }
 
         const currentBalance = userData.balance || 0; // Устанавливаем значение по умолчанию
-        const newBalance = currentBalance + amount;
+        const newBalance = currentBalance + 1; // Добавляем 1 минимальную единицу
 
         // Обновление баланса
         const { data, error } = await supabase
@@ -147,40 +143,6 @@ app.post('/update', async (req, res) => {
     } catch (error) {
         console.error('[Update] Error:', error.stack);
         res.status(500).json({ success: false, error: 'Update failed' });
-    }
-});
-
-// Получение данных пользователя
-app.get('/user', async (req, res) => {
-    try {
-        const { userId } = req.query;
-
-        if (!userId) {
-            return res.status(400).json({ success: false, error: 'User ID is required' });
-        }
-
-        const { data, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('user_id', userId)
-            .single();
-
-        if (error || !data) {
-            return res.status(404).json({ success: false, error: 'User not found' });
-        }
-
-        // Убедитесь, что поле balance существует и имеет значение по умолчанию (0)
-        const user = {
-            user_id: data.user_id,
-            username: data.username,
-            balance: data.balance || 0
-        };
-
-        console.log(`[User] Data fetched for user: ${userId}`);
-        res.json({ success: true, user });
-    } catch (error) {
-        console.error('[User] Error:', error.stack);
-        res.status(500).json({ success: false, error: 'Failed to fetch user data' });
     }
 });
 
