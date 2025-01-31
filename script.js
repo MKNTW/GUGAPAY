@@ -118,7 +118,7 @@ function logout() {
 // Перевод монет
 async function transferCoins() {
     const toUserId = document.getElementById('toUserId').value;
-    const amount = parseFloat(document.getElementById('transferAmount').value);
+    const amount = parseInt(document.getElementById('transferAmount').value, 10);
 
     if (!toUserId || !amount || amount <= 0) {
         alert('❌ Введите корректные данные');
@@ -153,23 +153,23 @@ async function fetchUserData() {
         const data = await response.json();
 
         if (data.success && data.user) {
-            const balance = data.user.balance || 0; // Устанавливаем значение по умолчанию
+            const balance = data.user.balance || 0; // Баланс в минимальных единицах
 
             // Проверка, что balance является числом
             if (typeof balance === 'number') {
                 userIdSpan.textContent = currentUserId;
-                balanceSpan.textContent = balance.toFixed(5); // Форматируем до 5 знаков после запятой
+                balanceSpan.textContent = balance.toString(); // Отображаем баланс как целое число
             } else {
                 console.error('[Fetch User Data] Error: Balance is not a number');
-                balanceSpan.textContent = '0.00000'; // Устанавливаем значение по умолчанию
+                balanceSpan.textContent = '0'; // Устанавливаем значение по умолчанию
             }
         } else {
             console.error('[Fetch User Data] Error: Invalid response from server');
-            balanceSpan.textContent = '0.00000'; // Устанавливаем значение по умолчанию
+            balanceSpan.textContent = '0'; // Устанавливаем значение по умолчанию
         }
     } catch (error) {
         console.error('[Fetch User Data] Error:', error);
-        balanceSpan.textContent = '0.00000'; // Устанавливаем значение по умолчанию
+        balanceSpan.textContent = '0'; // Устанавливаем значение по умолчанию
     }
 }
 
@@ -181,7 +181,7 @@ document.getElementById('tapArea').addEventListener('click', async () => {
         await fetch(`${API_URL}/update`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: currentUserId, amount: 0.00001 })
+            body: JSON.stringify({ userId: currentUserId })
         });
 
         // Обновляем данные пользователя
