@@ -59,7 +59,10 @@ app.post('/register', async (req, res) => {
     try {
         const { username, password } = req.body;
 
-        // Проверка длины пароля
+        // Валидация данных
+        if (!username || !password) {
+            return res.status(400).json({ success: false, error: 'Username and password are required' });
+        }
         if (password.length < 6) {
             return res.status(400).json({ success: false, error: 'Password must be at least 6 characters long' });
         }
@@ -75,7 +78,10 @@ app.post('/register', async (req, res) => {
             .select();
 
         if (error) {
-            console.error('[Register] Error:', error.message);
+            console.error('[Register] Supabase Error:', error.message);
+            if (error.message.includes('unique_violation')) {
+                return res.status(409).json({ success: false, error: 'Username already exists' });
+            }
             return res.status(500).json({ success: false, error: 'Registration failed' });
         }
 
