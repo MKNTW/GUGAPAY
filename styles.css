@@ -1,202 +1,159 @@
-/* Reset default margin and set up font */
-body, html {
+body {
     margin: 0;
-    font-family: "Archivo Black";
-    overflow-x: hidden; /* Prevent horizontal scrolling on the entire page */
-}
-
-/* Main container styles */
-main {
+    padding: 0;
+    font-family: 'Archivo Black', sans-serif;
+    background: #1a1a1a;
+    color: white;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    min-height: 100vh;
-    position: relative;
-    overflow-x: hidden; /* Prevent horizontal scrolling for the main content */
 }
 
-/* Game container styles */
-#game {
-    width: 100%;
-    max-width: 600px; /* Adjust max-width as necessary */
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    border-radius: 10px;
-}
-
-/* Coins container styles */
-#coins-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 3px;
-}
-
-/* Coin icon styles */
-#coin-icon {
-    height: 35px;
-    margin-left: 2px;
-    margin-top: -470px;
-}
-
-/* Coins count styles */
-#coins {
-    text-align: center;
-    margin-top: -470px;
-    font-size: 35px;
-    pointer-events: none;
-    z-index: 1;
-    color: #f45d44; /* Set text color to orange */
-}
-
-/* Tap area styles */
-#tapArea {
-    width: 300px; /* Default width */
-    height: 300px; /* Default height */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 30px;
-    cursor: pointer;
-    border-radius: 10px;
-    margin-bottom: -200px;
-    user-select: none;
-    background-image: url('11.jpg');
-    background-size: cover;
-    background-position: center;
-    transition: transform 0.05s ease-in-out;
-    color: #f45d44; /* Set text color to orange */
-}
-
-/* Hover effect for tap area */
-#tapArea:hover {
-    transform: scale(1.05);
-}
-
-/* Tap feedback animation */
-.tap-feedback {
+.auth-container {
     position: absolute;
-    font-size: 24px;
-    font-weight: bold;
-    animation: tapFeedbackAnimation 1s forwards;
-    pointer-events: none;
-    transform: translate(-50%, -100%);
-    color: #f45d44; /* Set text color to orange */
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 1000;
 }
 
-@keyframes tapFeedbackAnimation {
-    0% {
-        opacity: 1;
-        transform: translate(-50%, -100%);
-    }
-    100% {
-        opacity: 0;
-        transform: translate(-50%, -200%);
-    }
-}
-
-/* Media queries for responsive adjustments */
-@media (max-width: 768px) {
-    #tapArea {
-        width: 400px;
-        height: 400px;
-        font-size: 24px;
-        top: calc(50% - 200px); /* Adjust positioning for smaller screens */
-        left: calc(50% - 200px); /* Adjust positioning for smaller screens */
-    }
-    #coins {
-        font-size: 35px;
-    }
-    #coin-icon {
-        height: 35px;
-    }
-    .tap-feedback {
-        font-size: 20px;
-    }
-}
-
-@media (max-width: 480px) {
-    #tapArea {
-        width: 250px;
-        height: 250px;
-        font-size: 20px;
-        top: calc(50% - 125px); /* Adjust positioning for smallest screens */
-        left: calc(50% - 125px); /* Adjust positioning for smallest screens */
-    }
-    #coins {
-        font-size: 35px;
-    }
-    #coin-icon {
-        height: 35px;
-    }
-    .tap-feedback {
-        font-size: 18px;
-    }
-}
-
-/* Additional styles */
-.archivo-black-regular {
-    font-family: "Archivo Black", sans-serif;
-    font-weight: 400;
-    font-style: normal;
-}
-
-/* Button styles */
-#tonconnect-buttons > button {
-    display: block;
-    padding: 8px;
-    margin-bottom: 8px;
-    font-size: 18px;
-    font-family: inherit;
-    color: #f45d44; /* Set text color to orange */
-}
-
-/* Featured text styles */
-.featured {
-    font-weight: 800;
-    color: #f45d44; /* Set text color to orange */
-}
-
-/* Section styles */
-.section {
-    padding: 20px;
-    margin: 20px;
-    border: 2px #AEFF6A solid;
-    border-radius: 8px;
-    color: #f45d44; /* Set text color to orange */
-}
-
-/* Connect button container styles */
-.connect-button-container {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-}
-
-/* Connect button styles */
-.connect-button {
+.auth-button {
     padding: 10px 20px;
-    font-size: 16px;
-    font-family: inherit;
     border: none;
     border-radius: 5px;
+    color: white;
     cursor: pointer;
-    background-color: #4CAF50;
-    color: #f45d44; /* Set text color to orange */
-    transition: background-color 0.3s;
+    font-family: inherit;
+    transition: transform 0.2s;
 }
 
-.connect-button:hover {
-    background-color: #45a049;
+#loginBtn, #registerBtn {
+    background: #4CAF50;
 }
 
-/* Gradient text styles */
-.gradient-text, #coins, .tap-feedback, .connect-button {
-    font-family: "Archivo Black";
-    color: #fe0000; /* Set text color to orange */
+#logoutBtn {
+    background: #ff4444;
+}
+
+#userInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    background: rgba(0,0,0,0.7);
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.modal-content {
+    background: #2a2a2a;
+    padding: 20px;
+    border-radius: 10px;
+    width: 300px;
+    text-align: center;
+}
+
+.modal-content input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #444;
+    border-radius: 5px;
+    background: #333;
+    color: white;
+}
+
+.modal-content button {
+    margin: 5px;
+    padding: 10px 20px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+#game {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    position: relative;
+}
+
+#tapArea {
+    background: #4CAF50;
+    padding: 30px 60px;
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 24px;
+    user-select: none;
+    transition: transform 0.1s;
+    position: fixed;
+    bottom: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    max-width: 300px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+#tapArea:active {
+    transform: translateX(-50%) scale(0.95);
+}
+
+#transferBtn {
+    background: #007bff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+    font-family: inherit;
+    transition: transform 0.2s;
+    position: fixed;
+    bottom: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+#transferBtn:hover {
+    transform: translateX(-50%) scale(1.05);
+}
+
+@media (max-width: 600px) {
+    #tapArea {
+        padding: 25px 40px;
+        font-size: 20px;
+        bottom: 30px;
+        width: 90%;
+    }
+
+    #transferBtn {
+        bottom: 100px;
+    }
+
+    .auth-container {
+        top: 10px;
+        right: 10px;
+        flex-direction: column;
+    }
+
+    .modal-content {
+        width: 90%;
+    }
 }
