@@ -136,7 +136,7 @@ app.post('/update', async (req, res) => {
         // Обновление баланса
         const { data, error } = await supabase
             .from('users')
-            .update({ balance: supabase.raw(`balance + ${amount}`) })
+            .update({ balance: supabase.helpers.increment(amount) }) // Используем increment
             .eq('user_id', userId)
             .select();
 
