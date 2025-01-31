@@ -1,118 +1,144 @@
-import { TonConnect } from '@tonconnect/sdk';
-
-// Указываем URL манифеста с вашего GitHub Pages
-const connector = new TonConnect({
-    manifestUrl: 'https://mkntw.github.io/tonconnect-manifest.json'
-});
+const API_URL = "https://cyan-areas-worry.loca.lt";
+let currentUserId = null;
 
 // Элементы интерфейса
-const connectButton = document.getElementById('connect-button');
-const mineButton = document.getElementById('mine-button');
-const balanceElement = document.getElementById('balance');
-const walletInfo = document.getElementById('wallet-info');
+const loginBtn = document.getElementById('loginBtn');
+const registerBtn = document.getElementById('registerBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+const userInfo = document.getElementById('userInfo');
+const userIdSpan = document.getElementById('userId');
+const balanceSpan = document.getElementById('balance');
 
-let userAddress = null;
-let balance = 0;
+// Модальные окна
+const registerModal = document.getElementById('registerModal');
+const loginModal = document.getElementById('loginModal');
 
-// Инициализация приложения
-async function init() {
-    // Восстановление сессии
-    if (connector.connected) {
-        await handleWalletConnect();
-    }
-    
-    // Подписка на изменения состояния
-    connector.onStatusChange(wallet => {
-        if (wallet) {
-            handleWalletConnect(wallet);
-        } else {
-            handleWalletDisconnect();
-        }
-    });
-}
-
-// Обработчик подключения кошелька
-async function handleWalletConnect(wallet) {
-    try {
-        userAddress = wallet.account.address;
-        
-        // Обновление UI
-        connectButton.textContent = `Connected: ${shortAddress(userAddress)}`;
-        walletInfo.textContent = `Wallet: ${wallet.device.appName}`;
-        
-        // Загрузка баланса
-        await loadBalance();
-        
-        console.log('Wallet connected:', wallet);
-    } catch (error) {
-        console.error('Connection error:', error);
-    }
-}
-
-// Обработчик отключения кошелька
-function handleWalletDisconnect() {
-    userAddress = null;
-    balance = 0;
-    connectButton.textContent = 'Connect Wallet';
-    walletInfo.textContent = '';
-    updateBalance();
-}
-
-// Загрузка баланса с сервера
-async function loadBalance() {
-    if (!userAddress) return;
-    
-    try {
-        // Используем серверный URL для запроса баланса
-        const response = await fetch(`https://silver-buses-burn.loca.lt/balance?address=${userAddress}`);
-        const data = await response.json();
-        balance = data.balance || 0;
-        updateBalance();
-    } catch (error) {
-        console.error('Balance load error:', error);
-    }
-}
-
-// Обновление баланса
-function updateBalance() {
-    balanceElement.textContent = balance.toFixed(5);
-}
-
-// Обработчик майнинга
-mineButton.addEventListener('click', async () => {
-    if (!userAddress) {
-        alert('Please connect wallet first!');
-        return;
-    }
-    
-    try {
-        // Отправка транзакции
-        const transaction = {
-            messages: [
-                {
-                    address: userAddress,
-                    amount: '1000000' // 0.001 TON
-                }
-            ]
-        };
-        
-        // Подписание транзакции
-        const result = await connector.sendTransaction(transaction);
-        
-        // Обновление баланса
-        balance += 0.001;
-        updateBalance();
-        
-        console.log('Transaction successful:', result);
-    } catch (error) {
-        console.error('Mining error:', error);
+// Инициализация
+document.addEventListener('DOMContentLoaded', () => {
+    const savedUserId = localStorage.getItem('userId');
+    if (savedUserId) {
+        currentUserId = savedUserId;
+        updateUI();
+        fetchUserData();
     }
 });
 
-// Вспомогательные функции
-function shortAddress(address) {
-    return `${address.slice(0, 4)}...${address.slice(-4)}`;
+// Обновление интерфейса
+function updateUI() {
+    if (currentUserId) {
+        loginBtn.classList.add('hidden');
+        registerBtn.classList.add('hidden');
+        logoutBtn.classList.remove('hidden');
+        userInfo.classList.remove('hidden');
+    } else {
+        loginBtn.classList.remove('hidden');
+        registerBtn.classList.remove('hidden');
+        logoutBtn.classList.add('hidden');
+        userInfo.classList.add('hidden');
+    }
 }
 
-// Инициализация при загрузке
-document.addEventListener('DOMContentLoaded', init);
+// Обработчики кнопок
+loginBtn.addEventListener('click', () => loginModal.classList.remove('hidden'));
+registerBtn.addEventListener('click', () => registerModal.classList.remove('hidden'));
+logoutBtn.addEventListener('click', logout);
+
+function closeModals() {
+    registerModal.classList.add('hidden');
+    loginModal.classList.add('hidden');
+}
+
+// Регистрация
+async function register() {
+    const login = document.getElementById('regLogin').value;
+    const password = document.getElementById('regPassword').value;
+
+    try {
+        const response = await fetch(`https://cyan-areas-worry.loca.lt/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: login, password })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            alert(`✅ Аккаунт создан! Ваш ID: ${data.userId}`);
+            closeModals();
+        } else {
+            alert('❌ Ошибка регистрации');
+        }
+    } catch (error) {
+        alert('🚫 Ошибка сети');
+    }
+}
+
+// Авторизация
+async function login() {
+    const login = document.getElementById('loginInput').value;
+    const password = document.getElementById('passwordInput').value;
+
+    try {
+        const response = await fetch(`https://cyan-areas-worry.loca.lt/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: login, password })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            currentUserId = data.userId;
+            localStorage.setItem('userId', currentUserId);
+            updateUI();
+            closeModals();
+            fetchUserData();
+        } else {
+            alert('❌ Неверный логин или пароль');
+        }
+    } catch (error) {
+        alert('🚫 Ошибка сети');
+    }
+}
+
+// Выход
+function logout() {
+    localStorage.removeItem('userId');
+    currentUserId = null;
+    updateUI();
+    closeModals();
+}
+
+// Клик по кнопке MINE
+document.getElementById('tapArea').addEventListener('click', async () => {
+    if (!currentUserId) return;
+
+    try {
+        const response = await fetch(`https://cyan-areas-worry.loca.lt/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: currentUserId, amount: 0.00001 })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            balanceSpan.textContent = (parseFloat(balanceSpan.textContent) + 0.00001).toFixed(5);
+        }
+    } catch (error) {
+        console.error(error);
+    }
+});
+
+// Получение данных пользователя
+async function fetchUserData() {
+    try {
+        const response = await fetch(`https://cyan-areas-worry.loca.lt/user?userId=${currentUserId}`);
+        const data = await response.json();
+        if (data.success) {
+            userIdSpan.textContent = currentUserId;
+            balanceSpan.textContent = data.balance.toFixed(5);
+        }
+    } catch (error) {
+        console.error(error);
+    }
+}
