@@ -11,10 +11,48 @@ const port = process.env.PORT || 3000;
 app.use(cors({ origin: '*' })); // Разрешаем запросы с любых доменов
 app.use(express.json()); // Парсим JSON-данные из запросов
 
+// Проверка переменных окружения
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
+    console.error('[Supabase] Error: SUPABASE_URL or SUPABASE_KEY is missing');
+    process.exit(1); // Остановка сервера, если переменные не определены
+}
+
 // Подключение к Supabase
 const SUPABASE_URL = process.env.SUPABASE_URL; // URL вашего Supabase проекта
 const SUPABASE_KEY = process.env.SUPABASE_KEY; // Анонимный ключ доступа
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Маршрут для корневого URL (/)
+app.get('/', (req, res) => {
+    res.send(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>GUGACOIN</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    background: #1a1a1a;
+                    color: white;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                    margin: 0;
+                }
+                h1 {
+                    font-size: 2.5rem;
+                }
+            </style>
+        </head>
+        <body>
+            <h1>Welcome to GUGACOIN!</h1>
+        </body>
+        </html>
+    `);
+});
 
 // Регистрация пользователя
 app.post('/register', async (req, res) => {
