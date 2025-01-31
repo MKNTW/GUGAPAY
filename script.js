@@ -1,4 +1,4 @@
-const API_URL = "https://mkntw-github-io.onrender.com";
+const API_URL = "https://mkntw-github-io.onrender.com"; // Убедитесь, что URL указан корректно
 let currentUserId = null;
 
 // Элементы интерфейса
@@ -150,6 +150,10 @@ async function transferCoins() {
 async function fetchUserData() {
     try {
         const response = await fetch(`${API_URL}/user?userId=${currentUserId}`);
+        if (!response.ok) {
+            throw new Error(`Server responded with status ${response.status}`);
+        }
+
         const data = await response.json();
 
         if (data.success && data.user) {
@@ -168,7 +172,7 @@ async function fetchUserData() {
             balanceSpan.textContent = '0'; // Устанавливаем значение по умолчанию
         }
     } catch (error) {
-        console.error('[Fetch User Data] Error:', error);
+        console.error('[Fetch User Data] Error:', error.message);
         balanceSpan.textContent = '0'; // Устанавливаем значение по умолчанию
     }
 }
@@ -178,15 +182,20 @@ document.getElementById('tapArea').addEventListener('click', async () => {
     if (!currentUserId) return;
 
     try {
-        await fetch(`${API_URL}/update`, {
+        const response = await fetch(`${API_URL}/update`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: currentUserId })
         });
 
+        if (!response.ok) {
+            throw new Error(`Server responded with status ${response.status}`);
+        }
+
         // Обновляем данные пользователя
         fetchUserData();
     } catch (error) {
         console.error(error);
+        alert('🚫 Ошибка при попытке добыть монеты');
     }
 });
