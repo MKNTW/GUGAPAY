@@ -108,22 +108,38 @@ app.post('/update', async (req, res) => {
     try {
         const { userId, amount } = req.body;
 
+        // Проверка типа данных
         if (typeof amount !== 'number' || amount <= 0) {
             return res.status(400).json({ success: false, error: 'Invalid amount' });
         }
 
+        // Получение текущего баланса пользователя
+        const { data: userData, error: fetchError } = await supabase
+            .from('users')
+            .select('balance')
+            .eq('user_id', userId)
+            .single();
+
+        if (fetchError || !userData) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        const currentBalance = userData.balance;
+        const newBalance = currentBalance + amount;
+
+        // Обновление баланса
         const { data, error } = await supabase
             .from('users')
-            .update({ balance: supabase.raw(`balance + ${amount}`) })
+            .update({ balance: newBalance })
             .eq('user_id', userId)
             .select();
 
         if (error || !data) {
-            return res.status(404).json({ success: false, error: 'User not found' });
+            return res.status(500).json({ success: false, error: 'Failed to update balance' });
         }
 
-        console.log(`[Update] Balance updated for user: ${userId}, new balance: ${data[0].balance}`);
-        res.json({ success: true, balance: data[0].balance });
+        console.log(`[Update] Balance updated for user: ${userId}, new balance: ${newBalance}`);
+        res.json({ success: true, balance: newBalance });
     } catch (error) {
         console.error('[Update] Error:', error.stack);
         res.status(500).json({ success: false, error: 'Update failed' });
