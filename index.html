@@ -4,20 +4,44 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
-    <title>TON Miner</title>
+    <title>ZCOIN GAME</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script>
 </head>
 <body>
-    <div class="connect-container">
-        <button id="connect-button" class="connect-button">Connect Wallet</button>
-        <div id="wallet-info"></div>
+    <div class="auth-container">
+        <button id="loginBtn" class="auth-button">Войти</button>
+        <button id="registerBtn" class="auth-button">Регистрация</button>
+        <button id="logoutBtn" class="auth-button hidden">Выйти</button>
+        <div id="userInfo" class="hidden">
+            <span>ID: <span id="userId">000000</span></span>
+            <span>Баланс: <span id="balance">0.00000</span></span>
+        </div>
+    </div>
+
+    <!-- Модальные окна -->
+    <div id="registerModal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Регистрация</h2>
+            <input type="text" id="regLogin" placeholder="Логин" required>
+            <input type="password" id="regPassword" placeholder="Пароль" required>
+            <button onclick="register()">Создать аккаунт</button>
+            <button onclick="closeModals()">Отмена</button>
+        </div>
+    </div>
+
+    <div id="loginModal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Вход</h2>
+            <input type="text" id="loginInput" placeholder="Логин" required>
+            <input type="password" id="passwordInput" placeholder="Пароль" required>
+            <button onclick="login()">Войти</button>
+            <button onclick="closeModals()">Отмена</button>
+        </div>
     </div>
 
     <main>
-        <div class="game-container">
-            <div id="balance">0.00000</div>
-            <div id="mine-button" class="mine-button"></div>
+        <div id="game">
+            <div id="tapArea">MINE</div>
         </div>
     </main>
 
