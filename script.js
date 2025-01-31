@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:3001";
+const API_URL = "https://mkntw-github-io.onrender.com";
 let currentUserId = null;
 
 // Элементы интерфейса
@@ -60,7 +60,7 @@ async function register() {
     const password = document.getElementById('regPassword').value;
 
     try {
-        const response = await fetch(`${API_URL}/register`, {
+        const response = await fetch(`https://mkntw-github-io.onrender.com/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: login, password })
@@ -85,7 +85,7 @@ async function login() {
     const password = document.getElementById('passwordInput').value;
 
     try {
-        const response = await fetch(`${API_URL}/login`, {
+        const response = await fetch(`https://mkntw-github-io.onrender.com/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: login, password })
@@ -126,7 +126,7 @@ async function transferCoins() {
     }
 
     try {
-        const response = await fetch(`${API_URL}/transfer`, {
+        const response = await fetch(`https://mkntw-github-io.onrender.com/transfer`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ fromUserId: currentUserId, toUserId, amount })
@@ -149,7 +149,7 @@ async function transferCoins() {
 // Получение данных пользователя
 async function fetchUserData() {
     try {
-        const response = await fetch(`${API_URL}/user?userId=${currentUserId}`);
+        const response = await fetch(`https://mkntw-github-io.onrender.com/user?userId=${currentUserId}`);
         const data = await response.json();
         if (data.success) {
             userIdSpan.textContent = currentUserId;
@@ -165,7 +165,7 @@ document.getElementById('tapArea').addEventListener('click', async () => {
     if (!currentUserId) return;
 
     try {
-        await fetch(`${API_URL}/update`, {
+        await fetch(`https://mkntw-github-io.onrender.com/update`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: currentUserId, amount: 0.00001 })
