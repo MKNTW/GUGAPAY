@@ -1,4 +1,4 @@
-const API_URL = "https://cyan-areas-worry.loca.lt";
+const API_URL = "https://seven-brooms-pay.loca.lt";
 let currentUserId = null;
 
 // Элементы интерфейса
@@ -54,7 +54,7 @@ async function register() {
     const password = document.getElementById('regPassword').value;
 
     try {
-        const response = await fetch(`https://cyan-areas-worry.loca.lt/register`, {
+        const response = await fetch(`https://seven-brooms-pay.loca.lt/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: login, password })
@@ -79,7 +79,7 @@ async function login() {
     const password = document.getElementById('passwordInput').value;
 
     try {
-        const response = await fetch(`https://cyan-areas-worry.loca.lt/login`, {
+        const response = await fetch(`https://seven-brooms-pay.loca.lt/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: login, password })
@@ -114,7 +114,7 @@ document.getElementById('tapArea').addEventListener('click', async () => {
     if (!currentUserId) return;
 
     try {
-        const response = await fetch(`https://cyan-areas-worry.loca.lt/update`, {
+        const response = await fetch(`https://seven-brooms-pay.loca.lt/update`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: currentUserId, amount: 0.00001 })
@@ -132,7 +132,7 @@ document.getElementById('tapArea').addEventListener('click', async () => {
 // Получение данных пользователя
 async function fetchUserData() {
     try {
-        const response = await fetch(`https://cyan-areas-worry.loca.lt/user?userId=${currentUserId}`);
+        const response = await fetch(`https://seven-brooms-pay.loca.lt/user?userId=${currentUserId}`);
         const data = await response.json();
         if (data.success) {
             userIdSpan.textContent = currentUserId;
