@@ -1,192 +1,253 @@
-const API_URL = "https://mkntw-github-io.onrender.com";
-let currentUserId = null;
+const express = require('express');
+const { createClient } = require('@supabase/supabase-js');
+const bcrypt = require('bcryptjs');
+const cors = require('cors');
+require('dotenv').config();
 
-// Элементы интерфейса
-const loginBtn = document.getElementById('loginBtn');
-const registerBtn = document.getElementById('registerBtn');
-const logoutBtn = document.getElementById('logoutBtn');
-const userInfo = document.getElementById('userInfo');
-const userIdSpan = document.getElementById('userId');
-const balanceSpan = document.getElementById('balance');
-const transferBtn = document.getElementById('transferBtn');
+const app = express();
+const port = process.env.PORT || 3000;
 
-// Модальные окна
-const registerModal = document.getElementById('registerModal');
-const loginModal = document.getElementById('loginModal');
-const transferModal = document.getElementById('transferModal');
+// Middleware
+app.use(cors({ origin: '*' }));
+app.use(express.json());
 
-// Инициализация
-document.addEventListener('DOMContentLoaded', () => {
-    const savedUserId = localStorage.getItem('userId');
-    if (savedUserId) {
-        currentUserId = savedUserId;
-        updateUI();
-        fetchUserData();
+// Проверка переменных окружения
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
+    console.error('[Supabase] Error: SUPABASE_URL or SUPABASE_KEY is missing');
+    process.exit(1);
+}
+
+// Подключение к Supabase
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Маршрут для корневого URL (/)
+app.get('/', (req, res) => {
+    res.send(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>GUGACOIN</title>
+        </head>
+        <body>
+            <h1>Welcome to GUGACOIN!</h1>
+        </body>
+        </html>
+    `);
+});
+
+// Регистрация пользователя
+app.post('/register', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+
+        if (!username || !password) {
+            return res.status(400).json({ success: false, error: 'Username and password are required' });
+        }
+        if (password.length < 6) {
+            return res.status(400).json({ success: false, error: 'Password must be at least 6 characters long' });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const userId = Math.floor(100000 + Math.random() * 900000).toString();
+
+        const { data, error } = await supabase
+            .from('users')
+            .insert([{ username, password: hashedPassword, user_id: userId, balance: 0 }])
+            .select();
+
+        if (error) {
+            console.error('[Register] Supabase Error:', error.message);
+            if (error.message.includes('unique_violation')) {
+                return res.status(409).json({ success: false, error: 'Username already exists' });
+            }
+            return res.status(500).json({ success: false, error: 'Registration failed' });
+        }
+
+        console.log(`[Register] New user created: ${username}`);
+        res.json({ success: true, userId });
+    } catch (error) {
+        console.error('[Register] Error:', error.stack);
+        res.status(500).json({ success: false, error: 'Registration failed' });
     }
 });
 
-// Обновление интерфейса
-function updateUI() {
-    if (currentUserId) {
-        loginBtn.classList.add('hidden');
-        registerBtn.classList.add('hidden');
-        logoutBtn.classList.remove('hidden');
-        userInfo.classList.remove('hidden');
-        transferBtn.classList.remove('hidden');
-    } else {
-        loginBtn.classList.remove('hidden');
-        registerBtn.classList.remove('hidden');
-        logoutBtn.classList.add('hidden');
-        userInfo.classList.add('hidden');
-        transferBtn.classList.add('hidden');
-    }
-}
-
-// Обработчики кнопок
-loginBtn.addEventListener('click', () => loginModal.classList.remove('hidden'));
-registerBtn.addEventListener('click', () => registerModal.classList.remove('hidden'));
-logoutBtn.addEventListener('click', logout);
-transferBtn.addEventListener('click', () => transferModal.classList.remove('hidden'));
-
-function closeModals() {
-    registerModal.classList.add('hidden');
-    loginModal.classList.add('hidden');
-    transferModal.classList.add('hidden');
-}
-
-// Регистрация
-async function register() {
-    const login = document.getElementById('regLogin').value;
-    const password = document.getElementById('regPassword').value;
-
+// Авторизация пользователя
+app.post('/login', async (req, res) => {
     try {
-        const response = await fetch(`${API_URL}/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: login, password })
-        });
+        const { username, password } = req.body;
 
-        const data = await response.json();
-        
-        if (data.success) {
-            alert(`✅ Аккаунт создан! Ваш ID: ${data.userId}`);
-            closeModals();
-        } else {
-            alert('❌ Ошибка регистрации');
+        const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('username', username)
+            .single();
+
+        if (error || !data) {
+            return res.status(401).json({ success: false, error: 'Invalid credentials' });
         }
+
+        const isPasswordValid = await bcrypt.compare(password, data.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({ success: false, error: 'Invalid credentials' });
+        }
+
+        console.log(`[Login] User logged in: ${username}`);
+        res.json({ success: true, userId: data.user_id, balance: data.balance });
     } catch (error) {
-        alert('🚫 Ошибка сети');
+        console.error('[Login] Error:', error.stack);
+        res.status(500).json({ success: false, error: 'Login failed' });
     }
-}
+});
 
-// Авторизация
-async function login() {
-    const login = document.getElementById('loginInput').value;
-    const password = document.getElementById('passwordInput').value;
-
+// Обновление баланса
+app.post('/update', async (req, res) => {
     try {
-        const response = await fetch(`${API_URL}/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: login, password })
-        });
+        const { userId, amount } = req.body;
 
-        const data = await response.json();
-        
-        if (data.success) {
-            currentUserId = data.userId;
-            localStorage.setItem('userId', currentUserId);
-            updateUI();
-            closeModals();
-            fetchUserData();
-        } else {
-            alert('❌ Неверный логин или пароль');
+        if (typeof amount !== 'number' || amount <= 0) {
+            return res.status(400).json({ success: false, error: 'Invalid amount' });
         }
-    } catch (error) {
-        alert('🚫 Ошибка сети');
-    }
-}
 
-// Выход
-function logout() {
-    localStorage.removeItem('userId');
-    currentUserId = null;
-    updateUI();
-    closeModals();
-}
+        // Получение текущего баланса пользователя
+        const { data: userData, error: fetchError } = await supabase
+            .from('users')
+            .select('balance')
+            .eq('user_id', userId)
+            .single();
 
-// Перевод монет
-async function transferCoins() {
-    const toUserId = document.getElementById('toUserId').value;
-    const amount = parseFloat(document.getElementById('transferAmount').value);
-
-    if (!toUserId || !amount || amount <= 0) {
-        alert('❌ Введите корректные данные');
-        return;
-    }
-
-    try {
-        const response = await fetch(`${API_URL}/transfer`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fromUserId: currentUserId, toUserId, amount })
-        });
-
-        const data = await response.json();
-        
-        if (data.success) {
-            alert(`✅ Перевод успешен! Новый баланс: ${data.fromBalance}`);
-            closeModals();
-            fetchUserData();
-        } else {
-            alert(`❌ Ошибка перевода: ${data.error}`);
+        if (fetchError || !userData) {
+            return res.status(404).json({ success: false, error: 'User not found' });
         }
+
+        const currentBalance = userData.balance || 0; // Устанавливаем значение по умолчанию
+        const newBalance = currentBalance + amount;
+
+        // Обновление баланса
+        const { data, error } = await supabase
+            .from('users')
+            .update({ balance: newBalance })
+            .eq('user_id', userId)
+            .select();
+
+        if (error || !data) {
+            return res.status(500).json({ success: false, error: 'Failed to update balance' });
+        }
+
+        console.log(`[Update] Balance updated for user: ${userId}, new balance: ${newBalance}`);
+        res.json({ success: true, balance: newBalance });
     } catch (error) {
-        alert('🚫 Ошибка сети');
+        console.error('[Update] Error:', error.stack);
+        res.status(500).json({ success: false, error: 'Update failed' });
     }
-}
+});
 
 // Получение данных пользователя
-async function fetchUserData() {
+app.get('/user', async (req, res) => {
     try {
-        const response = await fetch(`${API_URL}/user?userId=${currentUserId}`);
-        const data = await response.json();
+        const { userId } = req.query;
 
-        if (data.success && data.user) {
-            const balance = data.user.balance || 0; // Устанавливаем значение по умолчанию
-
-            // Проверка, что balance является числом
-            if (typeof balance === 'number') {
-                userIdSpan.textContent = currentUserId;
-                balanceSpan.textContent = balance.toFixed(5); // Форматируем до 5 знаков после запятой
-            } else {
-                console.error('[Fetch User Data] Error: Balance is not a number');
-                balanceSpan.textContent = '0.00000'; // Устанавливаем значение по умолчанию
-            }
-        } else {
-            console.error('[Fetch User Data] Error: Invalid response from server');
-            balanceSpan.textContent = '0.00000'; // Устанавливаем значение по умолчанию
+        if (!userId) {
+            return res.status(400).json({ success: false, error: 'User ID is required' });
         }
+
+        const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('user_id', userId)
+            .single();
+
+        if (error || !data) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        // Убедитесь, что поле balance существует и имеет значение по умолчанию (0)
+        const user = {
+            user_id: data.user_id,
+            username: data.username,
+            balance: data.balance || 0
+        };
+
+        console.log(`[User] Data fetched for user: ${userId}`);
+        res.json({ success: true, user });
     } catch (error) {
-        console.error('[Fetch User Data] Error:', error);
-        balanceSpan.textContent = '0.00000'; // Устанавливаем значение по умолчанию
+        console.error('[User] Error:', error.stack);
+        res.status(500).json({ success: false, error: 'Failed to fetch user data' });
     }
-}
+});
 
-// Клик по кнопке MINE
-document.getElementById('tapArea').addEventListener('click', async () => {
-    if (!currentUserId) return;
-
+// Перевод монет
+app.post('/transfer', async (req, res) => {
     try {
-        await fetch(`${API_URL}/update`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: currentUserId, amount: 0.00001 })
-        });
+        const { fromUserId, toUserId, amount } = req.body;
 
-        // Обновляем данные пользователя
-        fetchUserData();
+        if (typeof amount !== 'number' || amount <= 0) {
+            return res.status(400).json({ success: false, error: 'Invalid amount' });
+        }
+
+        // Получение данных отправителя
+        const { data: fromUser, error: fromError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('user_id', fromUserId)
+            .single();
+
+        if (fromError || !fromUser) {
+            return res.status(404).json({ success: false, error: 'Sender not found' });
+        }
+
+        // Проверка баланса отправителя
+        if ((fromUser.balance || 0) < amount) {
+            return res.status(400).json({ success: false, error: 'Insufficient balance' });
+        }
+
+        // Получение данных получателя
+        const { data: toUser, error: toError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('user_id', toUserId)
+            .single();
+
+        if (toError || !toUser) {
+            return res.status(404).json({ success: false, error: 'Recipient not found' });
+        }
+
+        // Обновление балансов
+        const newFromBalance = (fromUser.balance || 0) - amount;
+        const newToBalance = (toUser.balance || 0) + amount;
+
+        await supabase
+            .from('users')
+            .update({ balance: newFromBalance })
+            .eq('user_id', fromUserId);
+
+        await supabase
+            .from('users')
+            .update({ balance: newToBalance })
+            .eq('user_id', toUserId);
+
+        console.log(`[Transfer] Success: ${amount} coins transferred from ${fromUserId} to ${toUserId}`);
+        res.json({ success: true, fromBalance: newFromBalance, toBalance: newToBalance });
     } catch (error) {
-        console.error(error);
+        console.error('[Transfer] Error:', error.stack);
+        res.status(500).json({ success: false, error: 'Transfer failed' });
     }
+});
+
+// Обработка ошибок
+app.use((req, res) => {
+    res.status(404).json({ success: false, error: 'Route not found' });
+});
+
+app.use((err, req, res, next) => {
+    console.error('[Server] Error:', err.stack);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+});
+
+// Запуск сервера
+app.listen(port, '0.0.0.0', () => {
+    console.log(`[Server] Running on http://localhost:${port}`);
 });
