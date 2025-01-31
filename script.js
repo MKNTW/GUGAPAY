@@ -8,10 +8,12 @@ const logoutBtn = document.getElementById('logoutBtn');
 const userInfo = document.getElementById('userInfo');
 const userIdSpan = document.getElementById('userId');
 const balanceSpan = document.getElementById('balance');
+const transferBtn = document.getElementById('transferBtn');
 
 // Модальные окна
 const registerModal = document.getElementById('registerModal');
 const loginModal = document.getElementById('loginModal');
+const transferModal = document.getElementById('transferModal');
 
 // Инициализация
 document.addEventListener('DOMContentLoaded', () => {
@@ -30,11 +32,13 @@ function updateUI() {
         registerBtn.classList.add('hidden');
         logoutBtn.classList.remove('hidden');
         userInfo.classList.remove('hidden');
+        transferBtn.classList.remove('hidden');
     } else {
         loginBtn.classList.remove('hidden');
         registerBtn.classList.remove('hidden');
         logoutBtn.classList.add('hidden');
         userInfo.classList.add('hidden');
+        transferBtn.classList.add('hidden');
     }
 }
 
@@ -42,10 +46,12 @@ function updateUI() {
 loginBtn.addEventListener('click', () => loginModal.classList.remove('hidden'));
 registerBtn.addEventListener('click', () => registerModal.classList.remove('hidden'));
 logoutBtn.addEventListener('click', logout);
+transferBtn.addEventListener('click', () => transferModal.classList.remove('hidden'));
 
 function closeModals() {
     registerModal.classList.add('hidden');
     loginModal.classList.add('hidden');
+    transferModal.classList.add('hidden');
 }
 
 // Регистрация
@@ -54,7 +60,7 @@ async function register() {
     const password = document.getElementById('regPassword').value;
 
     try {
-        const response = await fetch(`https://lazy-boxes-sit.loca.ltt/register`, {
+        const response = await fetch(`https://lazy-boxes-sit.loca.lt/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: login, password })
@@ -109,25 +115,36 @@ function logout() {
     closeModals();
 }
 
-// Клик по кнопке MINE
-document.getElementById('tapArea').addEventListener('click', async () => {
-    if (!currentUserId) return;
+// Перевод монет
+async function transferCoins() {
+    const toUserId = document.getElementById('toUserId').value;
+    const amount = parseFloat(document.getElementById('transferAmount').value);
+
+    if (!toUserId || !amount || amount <= 0) {
+        alert('❌ Введите корректные данные');
+        return;
+    }
 
     try {
-        const response = await fetch(`https://lazy-boxes-sit.loca.lt/update`, {
+        const response = await fetch(`https://lazy-boxes-sit.loca.lt/transfer`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: currentUserId, amount: 0.00001 })
+            body: JSON.stringify({ fromUserId: currentUserId, toUserId, amount })
         });
 
         const data = await response.json();
+        
         if (data.success) {
-            balanceSpan.textContent = (parseFloat(balanceSpan.textContent) + 0.00001).toFixed(5);
+            alert(`✅ Перевод успешен! Новый баланс: ${data.fromBalance}`);
+            closeModals();
+            fetchUserData();
+        } else {
+            alert(`❌ Ошибка перевода: ${data.error}`);
         }
     } catch (error) {
-        console.error(error);
+        alert('🚫 Ошибка сети');
     }
-});
+}
 
 // Получение данных пользователя
 async function fetchUserData() {
@@ -142,3 +159,20 @@ async function fetchUserData() {
         console.error(error);
     }
 }
+
+// Клик по кнопке MINE
+document.getElementById('tapArea').addEventListener('click', async () => {
+    if (!currentUserId) return;
+
+    try {
+        await fetch(`${API_URL}/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: currentUserId, amount: 0.00001 })
+        });
+
+        fetchUserData();
+    } catch (error) {
+        console.error(error);
+    }
+});
