@@ -67,12 +67,12 @@ async function register() {
         });
 
         const data = await response.json();
-        
+
         if (data.success) {
             alert(`✅ Аккаунт создан! Ваш ID: ${data.userId}`);
             closeModals();
         } else {
-            alert('❌ Ошибка регистрации');
+            alert(`❌ Ошибка регистрации: ${data.error}`);
         }
     } catch (error) {
         alert('🚫 Ошибка сети');
@@ -92,7 +92,7 @@ async function login() {
         });
 
         const data = await response.json();
-        
+
         if (data.success) {
             currentUserId = data.userId;
             localStorage.setItem('userId', currentUserId);
@@ -100,7 +100,7 @@ async function login() {
             closeModals();
             fetchUserData();
         } else {
-            alert('❌ Неверный логин или пароль');
+            alert(`❌ Ошибка входа: ${data.error}`);
         }
     } catch (error) {
         alert('🚫 Ошибка сети');
@@ -133,7 +133,7 @@ async function transferCoins() {
         });
 
         const data = await response.json();
-        
+
         if (data.success) {
             alert(`✅ Перевод успешен! Новый баланс: ${data.fromBalance}`);
             closeModals();
@@ -153,37 +153,26 @@ async function fetchUserData() {
         const data = await response.json();
 
         if (data.success && data.user) {
-            const balance = data.user.balance;
+            const balance = data.user.balance || 0; // Устанавливаем значение по умолчанию
 
-            // Проверка, что balance существует и является числом
+            // Проверка, что balance является числом
             if (typeof balance === 'number') {
                 userIdSpan.textContent = currentUserId;
                 balanceSpan.textContent = balance.toFixed(5); // Форматируем до 5 знаков после запятой
             } else {
                 console.error('[Fetch User Data] Error: Balance is not a number');
+                balanceSpan.textContent = '0.00000'; // Устанавливаем значение по умолчанию
             }
         } else {
             console.error('[Fetch User Data] Error: Invalid response from server');
+            balanceSpan.textContent = '0.00000'; // Устанавливаем значение по умолчанию
         }
     } catch (error) {
         console.error('[Fetch User Data] Error:', error);
+        balanceSpan.textContent = '0.00000'; // Устанавливаем значение по умолчанию
     }
 }
 
 // Клик по кнопке MINE
 document.getElementById('tapArea').addEventListener('click', async () => {
     if (!currentUserId) return;
-
-    try {
-        await fetch(`${API_URL}/update`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: currentUserId, amount: 0.00001 })
-        });
-
-        // Обновляем данные пользователя
-        fetchUserData();
-    } catch (error) {
-        console.error(error);
-    }
-});
