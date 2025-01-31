@@ -60,7 +60,7 @@ async function register() {
     const password = document.getElementById('regPassword').value;
 
     try {
-        const response = await fetch(`https://mkntw-github-io.onrender.com/register`, {
+        const response = await fetch(`${API_URL}/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: login, password })
@@ -85,7 +85,7 @@ async function login() {
     const password = document.getElementById('passwordInput').value;
 
     try {
-        const response = await fetch(`https://mkntw-github-io.onrender.com/login`, {
+        const response = await fetch(`${API_URL}/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: login, password })
@@ -126,7 +126,7 @@ async function transferCoins() {
     }
 
     try {
-        const response = await fetch(`https://mkntw-github-io.onrender.com/transfer`, {
+        const response = await fetch(`${API_URL}/transfer`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ fromUserId: currentUserId, toUserId, amount })
@@ -149,14 +149,24 @@ async function transferCoins() {
 // Получение данных пользователя
 async function fetchUserData() {
     try {
-        const response = await fetch(`https://mkntw-github-io.onrender.com/user?userId=${currentUserId}`);
+        const response = await fetch(`${API_URL}/user?userId=${currentUserId}`);
         const data = await response.json();
-        if (data.success) {
-            userIdSpan.textContent = currentUserId;
-            balanceSpan.textContent = data.balance.toFixed(5);
+
+        if (data.success && data.user) {
+            const balance = data.user.balance;
+
+            // Проверка, что balance существует и является числом
+            if (typeof balance === 'number') {
+                userIdSpan.textContent = currentUserId;
+                balanceSpan.textContent = balance.toFixed(5); // Форматируем до 5 знаков после запятой
+            } else {
+                console.error('[Fetch User Data] Error: Balance is not a number');
+            }
+        } else {
+            console.error('[Fetch User Data] Error: Invalid response from server');
         }
     } catch (error) {
-        console.error(error);
+        console.error('[Fetch User Data] Error:', error);
     }
 }
 
@@ -165,12 +175,13 @@ document.getElementById('tapArea').addEventListener('click', async () => {
     if (!currentUserId) return;
 
     try {
-        await fetch(`https://mkntw-github-io.onrender.com/update`, {
+        await fetch(`${API_URL}/update`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: currentUserId, amount: 0.00001 })
         });
 
+        // Обновляем данные пользователя
         fetchUserData();
     } catch (error) {
         console.error(error);
