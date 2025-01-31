@@ -108,7 +108,6 @@ app.post('/update', async (req, res) => {
     try {
         const { userId, amount } = req.body;
 
-        // Проверка типа данных
         if (typeof amount !== 'number' || amount <= 0) {
             return res.status(400).json({ success: false, error: 'Invalid amount' });
         }
