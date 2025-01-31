@@ -176,3 +176,17 @@ async function fetchUserData() {
 // Клик по кнопке MINE
 document.getElementById('tapArea').addEventListener('click', async () => {
     if (!currentUserId) return;
+
+    try {
+        await fetch(`${API_URL}/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: currentUserId, amount: 0.00001 })
+        });
+
+        // Обновляем данные пользователя
+        fetchUserData();
+    } catch (error) {
+        console.error(error);
+    }
+});
