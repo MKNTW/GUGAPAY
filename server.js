@@ -22,43 +22,21 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Маршрут для корневого URL (/)
-app.get('/', (req, res) => {
-    res.send(`
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>GUGACOIN</title>
-        </head>
-        <body>
-            <h1>Welcome to GUGACOIN!</h1>
-        </body>
-        </html>
-    `);
-});
-
 // Регистрация пользователя
 app.post('/register', async (req, res) => {
     try {
         const { username, password } = req.body;
 
-        // Проверка наличия данных
         if (!username || !password) {
             return res.status(400).json({ success: false, error: 'Username and password are required' });
         }
-
-        // Проверка длины пароля
         if (password.length < 6) {
             return res.status(400).json({ success: false, error: 'Password must be at least 6 characters long' });
         }
 
-        // Хэширование пароля
         const hashedPassword = await bcrypt.hash(password, 10);
         const userId = Math.floor(100000 + Math.random() * 900000).toString();
 
-        // Добавление пользователя в базу данных
         const { data, error } = await supabase
             .from('users')
             .insert([{ username, password: hashedPassword, user_id: userId, balance: 0 }])
@@ -76,7 +54,7 @@ app.post('/register', async (req, res) => {
         res.json({ success: true, userId });
     } catch (error) {
         console.error('[Register] Error:', error.stack);
-        res.status(500).json({ success: false, error: 'An unexpected error occurred during registration' });
+        res.status(500).json({ success: false, error: 'Registration failed' });
     }
 });
 
@@ -101,7 +79,7 @@ app.post('/login', async (req, res) => {
         }
 
         console.log(`[Login] User logged in: ${username}`);
-        res.json({ success: true, userId: data.user_id, balance: data.balance });
+        res.json({ success: true, userId: data.user_id });
     } catch (error) {
         console.error('[Login] Error:', error.stack);
         res.status(500).json({ success: false, error: 'Login failed' });
@@ -113,7 +91,6 @@ app.post('/update', async (req, res) => {
     try {
         const { userId } = req.body;
 
-        // Получение текущего баланса пользователя
         const { data: userData, error: fetchError } = await supabase
             .from('users')
             .select('balance')
@@ -124,25 +101,51 @@ app.post('/update', async (req, res) => {
             return res.status(404).json({ success: false, error: 'User not found' });
         }
 
-        const currentBalance = userData.balance || 0; // Устанавливаем значение по умолчанию
-        const newBalance = currentBalance + 1; // Добавляем 1 минимальную единицу
+        const newBalance = (userData.balance || 0) + 1;
 
-        // Обновление баланса
-        const { data, error } = await supabase
+        await supabase
             .from('users')
             .update({ balance: newBalance })
-            .eq('user_id', userId)
-            .select();
-
-        if (error || !data) {
-            return res.status(500).json({ success: false, error: 'Failed to update balance' });
-        }
+            .eq('user_id', userId);
 
         console.log(`[Update] Balance updated for user: ${userId}, new balance: ${newBalance}`);
         res.json({ success: true, balance: newBalance });
     } catch (error) {
         console.error('[Update] Error:', error.stack);
         res.status(500).json({ success: false, error: 'Update failed' });
+    }
+});
+
+// Получение данных пользователя
+app.get('/user', async (req, res) => {
+    try {
+        const { userId } = req.query;
+
+        if (!userId) {
+            return res.status(400).json({ success: false, error: 'User ID is required' });
+        }
+
+        const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('user_id', userId)
+            .single();
+
+        if (error || !data) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        const user = {
+            user_id: data.user_id,
+            username: data.username,
+            balance: data.balance || 0
+        };
+
+        console.log(`[User] Data fetched for user: ${userId}`);
+        res.json({ success: true, user });
+    } catch (error) {
+        console.error('[User] Error:', error.stack);
+        res.status(500).json({ success: false, error: 'Failed to fetch user data' });
     }
 });
 
@@ -155,7 +158,6 @@ app.post('/transfer', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Invalid amount' });
         }
 
-        // Получение данных отправителя
         const { data: fromUser, error: fromError } = await supabase
             .from('users')
             .select('*')
@@ -166,12 +168,10 @@ app.post('/transfer', async (req, res) => {
             return res.status(404).json({ success: false, error: 'Sender not found' });
         }
 
-        // Проверка баланса отправителя
         if ((fromUser.balance || 0) < amount) {
             return res.status(400).json({ success: false, error: 'Insufficient balance' });
         }
 
-        // Получение данных получателя
         const { data: toUser, error: toError } = await supabase
             .from('users')
             .select('*')
@@ -182,7 +182,6 @@ app.post('/transfer', async (req, res) => {
             return res.status(404).json({ success: false, error: 'Recipient not found' });
         }
 
-        // Обновление балансов
         const newFromBalance = (fromUser.balance || 0) - amount;
         const newToBalance = (toUser.balance || 0) + amount;
 
@@ -202,16 +201,6 @@ app.post('/transfer', async (req, res) => {
         console.error('[Transfer] Error:', error.stack);
         res.status(500).json({ success: false, error: 'Transfer failed' });
     }
-});
-
-// Обработка ошибок
-app.use((req, res) => {
-    res.status(404).json({ success: false, error: 'Route not found' });
-});
-
-app.use((err, req, res, next) => {
-    console.error('[Server] Error:', err.stack);
-    res.status(500).json({ success: false, error: 'Internal server error' });
 });
 
 // Запуск сервера
