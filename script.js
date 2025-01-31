@@ -42,16 +42,9 @@ function updateUI() {
     }
 }
 
-// Обработчики кнопок
-loginBtn.addEventListener('click', () => loginModal.classList.remove('hidden'));
-registerBtn.addEventListener('click', () => registerModal.classList.remove('hidden'));
-logoutBtn.addEventListener('click', logout);
-transferBtn.addEventListener('click', () => transferModal.classList.remove('hidden'));
-
-function closeModals() {
-    registerModal.classList.add('hidden');
-    loginModal.classList.add('hidden');
-    transferModal.classList.add('hidden');
+// Функция для форматирования чисел
+function formatBalance(balance) {
+    return balance.toLocaleString('en-US'); // Добавляет разделители тысяч (например, 1,000,000)
 }
 
 // Регистрация
@@ -135,7 +128,7 @@ async function transferCoins() {
         const data = await response.json();
 
         if (data.success) {
-            alert(`✅ Перевод успешен! Новый баланс: ${data.fromBalance}`);
+            alert(`✅ Перевод успешен! Новый баланс: ${formatBalance(data.fromBalance)}`);
             closeModals();
             fetchUserData();
         } else {
@@ -162,7 +155,7 @@ async function fetchUserData() {
             // Проверка, что balance является числом
             if (typeof balance === 'number') {
                 userIdSpan.textContent = currentUserId;
-                balanceSpan.textContent = balance.toString(); // Отображаем баланс как целое число
+                balanceSpan.textContent = formatBalance(balance); // Отображаем баланс в удобном формате
             } else {
                 console.error('[Fetch User Data] Error: Balance is not a number');
                 balanceSpan.textContent = '0'; // Устанавливаем значение по умолчанию
