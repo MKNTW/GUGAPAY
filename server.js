@@ -49,7 +49,7 @@ app.get('/', (req, res) => {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>ZCOIN GAME</title>
+            <title>GUGACOIN</title>
             <style>
                 body {
                     font-family: Arial, sans-serif;
@@ -67,7 +67,7 @@ app.get('/', (req, res) => {
             </style>
         </head>
         <body>
-            <h1>ZCOIN GAME</h1>
+            <h1>GUGACOIN</h1>
         </body>
         </html>
     `);
