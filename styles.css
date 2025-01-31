@@ -9,7 +9,6 @@ body {
     flex-direction: column;
 }
 
-/* Контейнер с кнопками Войти/Регистрация */
 .auth-container {
     position: absolute;
     top: 20px;
@@ -19,7 +18,6 @@ body {
     z-index: 1000;
 }
 
-/* Общие стили кнопок */
 .auth-button {
     padding: 10px 20px;
     border: none;
@@ -38,7 +36,6 @@ body {
     background: #ff4444;
 }
 
-/* Блок с ID и балансом */
 #userInfo {
     display: flex;
     flex-direction: column;
@@ -48,7 +45,6 @@ body {
     border-radius: 5px;
 }
 
-/* Модальные окна */
 .modal {
     position: fixed;
     top: 0;
@@ -89,7 +85,6 @@ body {
     display: none !important;
 }
 
-/* Игровая зона */
 #game {
     flex: 1;
     display: flex;
@@ -99,7 +94,6 @@ body {
     position: relative;
 }
 
-/* Кнопка MINE */
 #tapArea {
     background: #4CAF50;
     padding: 30px 60px;
@@ -122,13 +116,35 @@ body {
     transform: translateX(-50%) scale(0.95);
 }
 
-/* Адаптив для мобилок */
+#transferBtn {
+    background: #007bff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+    font-family: inherit;
+    transition: transform 0.2s;
+    position: fixed;
+    bottom: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+#transferBtn:hover {
+    transform: translateX(-50%) scale(1.05);
+}
+
 @media (max-width: 600px) {
     #tapArea {
         padding: 25px 40px;
         font-size: 20px;
         bottom: 30px;
         width: 90%;
+    }
+
+    #transferBtn {
+        bottom: 100px;
     }
 
     .auth-container {
