@@ -44,16 +44,21 @@ app.post('/register', async (req, res) => {
     try {
         const { username, password } = req.body;
 
+        // Проверка наличия данных
         if (!username || !password) {
             return res.status(400).json({ success: false, error: 'Username and password are required' });
         }
+
+        // Проверка длины пароля
         if (password.length < 6) {
             return res.status(400).json({ success: false, error: 'Password must be at least 6 characters long' });
         }
 
+        // Хэширование пароля
         const hashedPassword = await bcrypt.hash(password, 10);
         const userId = Math.floor(100000 + Math.random() * 900000).toString();
 
+        // Добавление пользователя в базу данных
         const { data, error } = await supabase
             .from('users')
             .insert([{ username, password: hashedPassword, user_id: userId, balance: 0 }])
@@ -71,7 +76,7 @@ app.post('/register', async (req, res) => {
         res.json({ success: true, userId });
     } catch (error) {
         console.error('[Register] Error:', error.stack);
-        res.status(500).json({ success: false, error: 'Registration failed' });
+        res.status(500).json({ success: false, error: 'An unexpected error occurred during registration' });
     }
 });
 
