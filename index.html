@@ -18,7 +18,7 @@
         </div>
     </div>
 
-    <!-- Модальные окна -->
+    <!-- Модальное окно регистрации -->
     <div id="registerModal" class="modal hidden">
         <div class="modal-content">
             <h2>Регистрация</h2>
@@ -29,6 +29,7 @@
         </div>
     </div>
 
+    <!-- Модальное окно входа -->
     <div id="loginModal" class="modal hidden">
         <div class="modal-content">
             <h2>Вход</h2>
@@ -39,9 +40,21 @@
         </div>
     </div>
 
+    <!-- Модальное окно перевода -->
+    <div id="transferModal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Перевод монет</h2>
+            <input type="text" id="toUserId" placeholder="ID получателя" required>
+            <input type="number" id="transferAmount" placeholder="Количество монет" required>
+            <button onclick="transferCoins()">Перевести</button>
+            <button onclick="closeModals()">Отмена</button>
+        </div>
+    </div>
+
     <main>
         <div id="game">
             <div id="tapArea">MINE</div>
+            <button id="transferBtn" class="hidden">Перевести монеты</button>
         </div>
     </main>
 
