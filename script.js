@@ -1,5 +1,6 @@
 const API_URL = "https://mkntw-github-io.onrender.com"; // Убедитесь, что URL указан корректно
 let currentUserId = null;
+let isAuthModalVisible = true; // Флаг для управления видимостью модального окна авторизации
 
 // Элементы интерфейса
 const loginBtn = document.getElementById('loginBtn');
@@ -43,6 +44,7 @@ function updateUI() {
         if (transferBtn) transferBtn.classList.remove('hidden');
         if (mineBtn) mineBtn.classList.remove('hidden'); // Показываем кнопку MINE
         if (historyBtn) historyBtn.classList.remove('hidden'); // Показываем кнопку Операции
+        isAuthModalVisible = false; // Скрываем модальное окно авторизации
         closeModal('authModal'); // Закрываем окно авторизации
     } else {
         if (loginBtn) loginBtn.classList.remove('hidden');
@@ -52,6 +54,7 @@ function updateUI() {
         if (transferBtn) transferBtn.classList.add('hidden');
         if (mineBtn) mineBtn.classList.add('hidden'); // Скрываем кнопку MINE
         if (historyBtn) historyBtn.classList.add('hidden'); // Скрываем кнопку Операции
+        isAuthModalVisible = true; // Показываем модальное окно авторизации
         openAuthModal(); // Открываем окно авторизации
     }
 
@@ -82,13 +85,19 @@ function createModal(id, content) {
 // Открытие модального окна
 function openModal(modalId) {
     const modal = document.getElementById(modalId);
-    if (modal) modal.classList.remove('hidden');
+    if (modal && !isAuthModalVisible) {
+        isAuthModalVisible = true; // Обновляем флаг
+        modal.classList.remove('hidden');
+    }
 }
 
 // Закрытие модального окна
 function closeModal(modalId) {
     const modal = document.getElementById(modalId);
-    if (modal) modal.classList.add('hidden');
+    if (modal && isAuthModalVisible) {
+        isAuthModalVisible = false; // Обновляем флаг
+        modal.classList.add('hidden');
+    }
 }
 
 // Открытие модального окна авторизации
@@ -192,7 +201,6 @@ async function login() {
             localStorage.setItem('userId', currentUserId); // Сохраняем ID в localStorage
             updateUI();
             fetchUserData(); // Загружаем данные пользователя
-            closeModal('authModal'); // Закрываем окно авторизации
             alert(`✅ Вы успешно зашли в аккаунт! Ваш ID: ${currentUserId}`); // Уведомление о входе
         } else {
             alert(`❌ Ошибка входа: ${data.error}`);
