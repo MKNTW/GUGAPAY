@@ -1,6 +1,5 @@
 const API_URL = "https://mkntw-github-io.onrender.com"; // Убедитесь, что URL указан корректно
 let currentUserId = null;
-let isAuthModalVisible = true; // Флаг для управления видимостью модального окна авторизации
 
 // Элементы интерфейса
 const loginBtn = document.getElementById('loginBtn');
@@ -37,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Обновление интерфейса
 function updateUI() {
     if (currentUserId) {
+        // Пользователь вошёл в систему
         if (loginBtn) loginBtn.classList.add('hidden');
         if (registerBtn) registerBtn.classList.add('hidden');
         if (logoutBtn) logoutBtn.classList.remove('hidden');
@@ -44,9 +44,9 @@ function updateUI() {
         if (transferBtn) transferBtn.classList.remove('hidden');
         if (mineBtn) mineBtn.classList.remove('hidden'); // Показываем кнопку MINE
         if (historyBtn) historyBtn.classList.remove('hidden'); // Показываем кнопку Операции
-        isAuthModalVisible = false; // Скрываем модальное окно авторизации
         closeModal('authModal'); // Закрываем окно авторизации
     } else {
+        // Пользователь не вошёл в систему
         if (loginBtn) loginBtn.classList.remove('hidden');
         if (registerBtn) registerBtn.classList.remove('hidden');
         if (logoutBtn) logoutBtn.classList.add('hidden');
@@ -54,7 +54,6 @@ function updateUI() {
         if (transferBtn) transferBtn.classList.add('hidden');
         if (mineBtn) mineBtn.classList.add('hidden'); // Скрываем кнопку MINE
         if (historyBtn) historyBtn.classList.add('hidden'); // Скрываем кнопку Операции
-        isAuthModalVisible = true; // Показываем модальное окно авторизации
         openAuthModal(); // Открываем окно авторизации
     }
 
@@ -85,19 +84,13 @@ function createModal(id, content) {
 // Открытие модального окна
 function openModal(modalId) {
     const modal = document.getElementById(modalId);
-    if (modal && !isAuthModalVisible) {
-        isAuthModalVisible = true; // Обновляем флаг
-        modal.classList.remove('hidden');
-    }
+    if (modal) modal.classList.remove('hidden');
 }
 
 // Закрытие модального окна
 function closeModal(modalId) {
     const modal = document.getElementById(modalId);
-    if (modal && isAuthModalVisible) {
-        isAuthModalVisible = false; // Обновляем флаг
-        modal.classList.add('hidden');
-    }
+    if (modal) modal.classList.add('hidden');
 }
 
 // Открытие модального окна авторизации
