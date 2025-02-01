@@ -10,11 +10,15 @@ const userIdSpan = document.getElementById('userId');
 const balanceSpan = document.getElementById('balance');
 const transferBtn = document.getElementById('transferBtn');
 const mineBtn = document.getElementById('mineBtn'); // Кнопка MINE
+const historyBtn = document.getElementById('historyBtn'); // Кнопка Операции
 
 // Модальные окна
 const registerModal = document.getElementById('registerModal');
 const loginModal = document.getElementById('loginModal');
 const transferModal = document.getElementById('transferModal');
+const historyModal = document.getElementById('historyModal'); // Модальное окно истории
+const transactionList = document.getElementById('transactionList'); // Список транзакций
+const closeHistoryBtn = document.getElementById('closeHistoryBtn'); // Кнопка закрытия истории
 
 // Инициализация
 document.addEventListener('DOMContentLoaded', () => {
@@ -32,17 +36,17 @@ document.addEventListener('DOMContentLoaded', () => {
         closeModals(); // Закрываем все модальные окна
         loginModal.classList.remove('hidden'); // Открываем окно входа
     });
-
     registerBtn.addEventListener('click', () => {
         closeModals(); // Закрываем все модальные окна
         registerModal.classList.remove('hidden'); // Открываем окно регистрации
     });
-
     logoutBtn.addEventListener('click', logout);
     transferBtn.addEventListener('click', () => {
         closeModals(); // Закрываем все модальные окна
         transferModal.classList.remove('hidden'); // Открываем окно перевода
     });
+    historyBtn.addEventListener('click', openHistoryModal); // Открываем окно истории операций
+    closeHistoryBtn.addEventListener('click', closeHistoryModal); // Закрываем окно истории
 
     // Клик по кнопке MINE
     mineBtn.addEventListener('click', async () => {
@@ -77,6 +81,7 @@ function updateUI() {
         userInfo.classList.remove('hidden');
         transferBtn.classList.remove('hidden');
         mineBtn.classList.remove('hidden'); // Показываем кнопку MINE
+        historyBtn.classList.remove('hidden'); // Показываем кнопку Операции
     } else {
         loginBtn.classList.remove('hidden');
         registerBtn.classList.remove('hidden');
@@ -84,6 +89,7 @@ function updateUI() {
         userInfo.classList.add('hidden');
         transferBtn.classList.add('hidden');
         mineBtn.classList.add('hidden'); // Скрываем кнопку MINE
+        historyBtn.classList.add('hidden'); // Скрываем кнопку Операции
     }
 }
 
@@ -218,9 +224,68 @@ async function fetchUserData() {
     }
 }
 
+// Открытие модального окна истории
+function openHistoryModal() {
+    if (!currentUserId) return;
+
+    fetchTransactionHistory();
+    historyModal.classList.remove('hidden');
+}
+
+// Закрытие модального окна истории
+function closeHistoryModal() {
+    historyModal.classList.add('hidden');
+    transactionList.innerHTML = ''; // Очищаем список транзакций
+}
+
+// Получение истории операций
+async function fetchTransactionHistory() {
+    try {
+        const response = await fetch(`${API_URL}/transactions?userId=${currentUserId}`);
+        if (!response.ok) {
+            throw new Error(`Server responded with status ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success && data.transactions) {
+            displayTransactionHistory(data.transactions);
+        } else {
+            console.error('[Fetch Transactions] Error: Invalid response from server');
+        }
+    } catch (error) {
+        console.error('[Fetch Transactions] Error:', error.message);
+    }
+}
+
+// Отображение истории операций
+function displayTransactionHistory(transactions) {
+    transactionList.innerHTML = ''; // Очищаем список
+
+    if (transactions.length === 0) {
+        transactionList.innerHTML = '<li>Нет операций</li>';
+        return;
+    }
+
+    transactions.forEach(tx => {
+        const li = document.createElement('li');
+        const date = new Date(tx.created_at).toLocaleString(); // Форматируем дату
+        const amount = formatBalance(tx.amount);
+
+        if (tx.type === 'sent') {
+            li.textContent = `Переведено: ${amount} монет пользователю ${tx.to_user_id} (${date})`;
+        } else {
+            li.textContent = `Получено: ${amount} монет от пользователя ${tx.from_user_id} (${date})`;
+        }
+
+        transactionList.appendChild(li);
+    });
+}
+
 // Закрытие модальных окон
 function closeModals() {
     registerModal.classList.add('hidden');
     loginModal.classList.add('hidden');
     transferModal.classList.add('hidden');
+    historyModal.classList.add('hidden');
 }
