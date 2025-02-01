@@ -76,6 +76,9 @@ function updateUI() {
         if (mineBtn) mineBtn.classList.add('hidden'); // Скрываем кнопку MINE
         if (historyBtn) historyBtn.classList.add('hidden'); // Скрываем кнопку Операции
     }
+
+    // Закрываем все модальные окна при загрузке страницы
+    closeModals();
 }
 
 // Функция для форматирования чисел
