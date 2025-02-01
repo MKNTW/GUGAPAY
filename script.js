@@ -166,8 +166,15 @@ async function transferCoins() {
     const toUserId = document.getElementById('toUserId').value;
     const amount = parseInt(document.getElementById('transferAmount').value, 10);
 
+    // Проверяем, что данные введены корректно
     if (!toUserId || !amount || amount <= 0) {
         alert('❌ Введите корректные данные');
+        return;
+    }
+
+    // Запрещаем перевод самому себе
+    if (toUserId === currentUserId) {
+        alert('❌ Вы не можете перевести монеты самому себе');
         return;
     }
 
