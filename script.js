@@ -79,6 +79,18 @@ function createModal(id, content) {
     return modal;
 }
 
+// Открытие модального окна
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) modal.classList.remove('hidden');
+}
+
+// Закрытие модального окна
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) modal.classList.add('hidden');
+}
+
 // Открытие модального окна авторизации
 function openAuthModal() {
     let authModal = document.getElementById('authModal');
@@ -284,63 +296,6 @@ function closeHistoryModal() {
     closeModal('historyModal');
 }
 
-// Открытие модального окна
-function openModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) modal.classList.remove('hidden');
-}
-
-// Закрытие модального окна
-function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) modal.classList.add('hidden');
-}
-
-// Получение истории операций
-async function fetchTransactionHistory() {
-    try {
-        const response = await fetch(`${API_URL}/transactions?userId=${currentUserId}`);
-        if (!response.ok) {
-            throw new Error(`Server responded with status ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (data.success && data.transactions) {
-            displayTransactionHistory(data.transactions);
-        } else {
-            console.error('[Fetch Transactions] Error: Invalid response from server');
-        }
-    } catch (error) {
-        console.error('[Fetch Transactions] Error:', error.message);
-    }
-}
-
-// Отображение истории операций
-function displayTransactionHistory(transactions) {
-    const transactionList = document.getElementById('transactionList');
-    if (transactionList) transactionList.innerHTML = ''; // Очищаем список
-
-    if (transactions.length === 0) {
-        if (transactionList) transactionList.innerHTML = '<li>Нет операций</li>';
-        return;
-    }
-
-    transactions.forEach(tx => {
-        const li = document.createElement('li');
-        const date = new Date(tx.created_at).toLocaleString(); // Форматируем дату
-        const amount = formatBalance(tx.amount);
-
-        if (tx.type === 'sent') {
-            li.textContent = `Переведено: ${amount} монет пользователю ${tx.to_user_id} (${date})`;
-        } else {
-            li.textContent = `Получено: ${amount} монет от пользователя ${tx.from_user_id} (${date})`;
-        }
-
-        if (transactionList) transactionList.appendChild(li);
-    });
-}
-
 // Перевод монет
 async function sendTransfer() {
     const toUserId = document.getElementById('toUserIdInput').value;
@@ -401,4 +356,48 @@ async function mineCoins() {
         console.error(error);
         alert('🚫 Ошибка при попытке добыть монеты');
     }
+}
+
+// Получение истории операций
+async function fetchTransactionHistory() {
+    try {
+        const response = await fetch(`${API_URL}/transactions?userId=${currentUserId}`);
+        if (!response.ok) {
+            throw new Error(`Server responded with status ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success && data.transactions) {
+            displayTransactionHistory(data.transactions);
+        } else {
+            console.error('[Fetch Transactions] Error: Invalid response from server');
+        }
+    } catch (error) {
+        console.error('[Fetch Transactions] Error:', error.message);
+    }
+}
+
+function displayTransactionHistory(transactions) {
+    const transactionList = document.getElementById('transactionList');
+    if (transactionList) transactionList.innerHTML = ''; // Очищаем список
+
+    if (transactions.length === 0) {
+        if (transactionList) transactionList.innerHTML = '<li>Нет операций</li>';
+        return;
+    }
+
+    transactions.forEach(tx => {
+        const li = document.createElement('li');
+        const date = new Date(tx.created_at).toLocaleString(); // Форматируем дату
+        const amount = formatBalance(tx.amount);
+
+        if (tx.type === 'sent') {
+            li.textContent = `Переведено: ${amount} монет пользователю ${tx.to_user_id} (${date})`;
+        } else {
+            li.textContent = `Получено: ${amount} монет от пользователя ${tx.from_user_id} (${date})`;
+        }
+
+        if (transactionList) transactionList.appendChild(li);
+    });
 }
