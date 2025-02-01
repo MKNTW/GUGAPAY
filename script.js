@@ -18,8 +18,16 @@ const loginModal = document.getElementById('loginModal');
 const transferModal = document.getElementById('transferModal');
 const historyModal = document.getElementById('historyModal'); // Модальное окно истории
 const transactionList = document.getElementById('transactionList'); // Список транзакций
-const closeHistoryBtn = document.getElementById('closeHistoryBtn'); // Кнопка закрытия истории
+
+// Кнопки закрытия модальных окон
+const closeRegisterBtn = document.getElementById('closeRegisterBtn');
+const closeLoginBtn = document.getElementById('closeLoginBtn');
 const closeTransferBtn = document.getElementById('closeTransferBtn'); // Кнопка закрытия перевода
+const closeHistoryBtn = document.getElementById('closeHistoryBtn'); // Кнопка закрытия истории
+
+// Кнопки отправки модальных окон
+const registerSubmitBtn = document.getElementById('registerSubmitBtn'); // Кнопка отправки регистрации
+const loginSubmitBtn = document.getElementById('loginSubmitBtn'); // Кнопка отправки входа
 const sendTransferBtn = document.getElementById('sendTransferBtn'); // Кнопка отправки перевода
 
 // Инициализация
@@ -39,8 +47,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (logoutBtn) logoutBtn.addEventListener('click', logout);
     if (transferBtn) transferBtn.addEventListener('click', openTransferModal); // Открываем окно перевода при нажатии на кнопку "Transfer"
     if (historyBtn) historyBtn.addEventListener('click', openHistoryModal); // Открываем окно истории операций при нажатии на кнопку "Операции"
-    if (closeHistoryBtn) closeHistoryBtn.addEventListener('click', closeHistoryModal); // Закрываем окно истории
+    if (closeRegisterBtn) closeRegisterBtn.addEventListener('click', closeRegisterModal);
+    if (closeLoginBtn) closeLoginBtn.addEventListener('click', closeLoginModal);
     if (closeTransferBtn) closeTransferBtn.addEventListener('click', closeTransferModal); // Закрываем окно перевода
+    if (closeHistoryBtn) closeHistoryBtn.addEventListener('click', closeHistoryModal); // Закрываем окно истории
+    if (registerSubmitBtn) registerSubmitBtn.addEventListener('click', register); // Отправляем регистрацию
+    if (loginSubmitBtn) loginSubmitBtn.addEventListener('click', login); // Отправляем вход
     if (sendTransferBtn) sendTransferBtn.addEventListener('click', sendTransfer); // Отправляем перевод
     if (mineBtn) mineBtn.addEventListener('click', mineCoins); // Клик по кнопке MINE
 });
@@ -87,7 +99,7 @@ async function register() {
 
         if (data.success) {
             alert(`✅ Аккаунт создан! Ваш ID: ${data.userId}`);
-            closeModals();
+            closeRegisterModal();
         } else {
             alert(`❌ Ошибка регистрации: ${data.error}`);
         }
@@ -115,7 +127,7 @@ async function login() {
             currentUserId = data.userId;
             localStorage.setItem('userId', currentUserId); // Сохраняем ID в localStorage
             updateUI();
-            closeModals();
+            closeLoginModal();
             fetchUserData(); // Загружаем данные пользователя
         } else {
             alert(`❌ Ошибка входа: ${data.error}`);
@@ -134,16 +146,26 @@ function logout() {
     closeModals();
 }
 
+// Открытие модального окна регистрации
+function openRegisterModal() {
+    closeModals(); // Закрываем все модальные окна
+    if (registerModal) registerModal.classList.remove('hidden'); // Открываем окно регистрации
+}
+
+// Закрытие модального окна регистрации
+function closeRegisterModal() {
+    if (registerModal) registerModal.classList.add('hidden');
+}
+
 // Открытие модального окна входа
 function openLoginModal() {
     closeModals(); // Закрываем все модальные окна
     if (loginModal) loginModal.classList.remove('hidden'); // Открываем окно входа
 }
 
-// Открытие модального окна регистрации
-function openRegisterModal() {
-    closeModals(); // Закрываем все модальные окна
-    if (registerModal) registerModal.classList.remove('hidden'); // Открываем окно регистрации
+// Закрытие модального окна входа
+function closeLoginModal() {
+    if (loginModal) loginModal.classList.add('hidden');
 }
 
 // Открытие модального окна перевода
@@ -234,7 +256,7 @@ async function sendTransfer() {
         if (data.success) {
             alert(`✅ Перевод успешен! Новый баланс: ${formatBalance(data.fromBalance)}`);
             closeTransferModal();
-            fetchUserData(); // Обновляем данные пользователя
+            fetchUserData();
         } else {
             alert(`❌ Ошибка перевода: ${data.error}`);
         }
