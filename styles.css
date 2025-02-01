@@ -1,6 +1,6 @@
 /* Общие стили */
 body {
-    font-family: 'Merriweather', serif; /* Применяем шрифт Merriweather */
+    font-family: 'Merriweather', serif; /* Применяем Merriweather для основного текста */
     margin: 0;
     padding: 0;
     display: flex;
@@ -25,7 +25,8 @@ button {
     font-size: 16px;
     color: white;
     transition: background-color 0.3s ease;
-    font-family: 'Merriweather', serif; /* Применяем шрифт к кнопкам */
+    font-family: 'Oswald', sans-serif; /* Применяем Oswald для кнопок */
+    text-transform: uppercase; /* Делаем текст заглавными буквами */
 }
 
 /* Кнопка Войти (зелёная) */
@@ -73,7 +74,7 @@ button {
     left: 20px;
     text-align: left;
     color: #333;
-    font-family: 'Merriweather', serif; /* Применяем шрифт */
+    font-family: 'Merriweather', serif; /* Применяем Merriweather */
 }
 
 #userInfo p {
@@ -91,7 +92,8 @@ button {
     background-color: #28a745;
     color: white;
     transition: background-color 0.3s ease;
-    font-family: 'Merriweather', serif; /* Применяем шрифт */
+    font-family: 'Oswald', sans-serif; /* Применяем Oswald */
+    text-transform: uppercase; /* Делаем текст заглавными буквами */
 }
 
 #mineBtn:hover {
@@ -119,7 +121,7 @@ button {
     width: 300px;
     position: relative;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    font-family: 'Merriweather', serif; /* Применяем шрифт */
+    font-family: 'Merriweather', serif; /* Применяем Merriweather */
 }
 
 .close-btn {
@@ -134,7 +136,8 @@ button {
     border-radius: 50%;
     transition: background-color 0.3s ease;
     font-size: 14px;
-    font-family: 'Merriweather', serif; /* Применяем шрифт */
+    font-family: 'Oswald', sans-serif; /* Применяем Oswald */
+    text-transform: uppercase; /* Делаем текст заглавными буквами */
 }
 
 .close-btn:hover {
@@ -146,7 +149,8 @@ button {
     font-size: 18px;
     color: #333;
     text-align: center;
-    font-family: 'Merriweather', serif; /* Применяем шрифт */
+    font-family: 'Oswald', sans-serif; /* Применяем Oswald */
+    text-transform: uppercase; /* Делаем текст заглавными буквами */
 }
 
 .modal-content label {
@@ -154,7 +158,7 @@ button {
     margin-top: 10px;
     font-size: 16px;
     color: #555;
-    font-family: 'Merriweather', serif; /* Применяем шрифт */
+    font-family: 'Merriweather', serif; /* Применяем Merriweather */
 }
 
 .modal-content input {
@@ -164,7 +168,7 @@ button {
     box-sizing: border-box;
     border: 1px solid #ccc;
     border-radius: 4px;
-    font-family: 'Merriweather', serif; /* Применяем шрифт */
+    font-family: 'Merriweather', serif; /* Применяем Merriweather */
 }
 
 .modal-content button {
@@ -175,7 +179,8 @@ button {
     width: 100%;
     border-radius: 4px;
     transition: background-color 0.3s ease;
-    font-family: 'Merriweather', serif; /* Применяем шрифт */
+    font-family: 'Oswald', sans-serif; /* Применяем Oswald */
+    text-transform: uppercase; /* Делаем текст заглавными буквами */
 }
 
 /* Стили для списка транзакций */
@@ -188,7 +193,7 @@ button {
     border: 1px solid #ccc;
     border-radius: 4px;
     margin-top: 20px;
-    font-family: 'Merriweather', serif; /* Применяем шрифт */
+    font-family: 'Merriweather', serif; /* Применяем Merriweather */
 }
 
 #transactionList li {
