@@ -28,10 +28,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Привязка обработчиков событий
-    loginBtn.addEventListener('click', () => loginModal.classList.remove('hidden'));
-    registerBtn.addEventListener('click', () => registerModal.classList.remove('hidden'));
+    loginBtn.addEventListener('click', () => {
+        closeModals(); // Закрываем все модальные окна
+        loginModal.classList.remove('hidden'); // Открываем окно входа
+    });
+
+    registerBtn.addEventListener('click', () => {
+        closeModals(); // Закрываем все модальные окна
+        registerModal.classList.remove('hidden'); // Открываем окно регистрации
+    });
+
     logoutBtn.addEventListener('click', logout);
-    transferBtn.addEventListener('click', () => transferModal.classList.remove('hidden'));
+    transferBtn.addEventListener('click', () => {
+        closeModals(); // Закрываем все модальные окна
+        transferModal.classList.remove('hidden'); // Открываем окно перевода
+    });
 
     // Клик по кнопке MINE
     mineBtn.addEventListener('click', async () => {
