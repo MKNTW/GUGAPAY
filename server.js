@@ -36,11 +36,11 @@ app.post('/register', async (req, res) => {
         const { username, password } = req.body;
 
         if (!username || !password) {
-            return res.status(400).json({ success: false, error: 'Логин и пароль обязательны' });
+            return res.status(400).json({ success: false, error: 'логин и пароль обязательны' });
         }
 
         if (password.length < 6) {
-            return res.status(400).json({ success: false, error: 'Пароль должен содержать минимум 6 символов' });
+            return res.status(400).json({ success: false, error: 'пароль должен содержать минимум 6 символов' });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -54,16 +54,16 @@ app.post('/register', async (req, res) => {
         if (error) {
             console.error('[Register] Supabase Error:', error.message);
             if (error.message.includes('unique_violation')) {
-                return res.status(409).json({ success: false, error: 'Такой логин уже существует' });
+                return res.status(409).json({ success: false, error: 'такой логин уже существует' });
             }
-            return res.status(500).json({ success: false, error: 'Регистрация не удалась' });
+            return res.status(500).json({ success: false, error: 'регистрация не удалась' });
         }
 
-        console.log(`[Регистрация] Создан новый пользователь: ${username}`);
+        console.log(`[Регистрация] создан новый пользователь: ${username}`);
         res.json({ success: true, userId });
     } catch (error) {
         console.error('[Регистрация] Ошибка:', error.stack);
-        res.status(500).json({ success: false, error: 'Регистрация не удалась' });
+        res.status(500).json({ success: false, error: 'регистрация не удалась' });
     }
 });
 
@@ -79,19 +79,19 @@ app.post('/login', async (req, res) => {
             .single();
 
         if (error || !data) {
-            return res.status(401).json({ success: false, error: 'Неверные учетные данные' });
+            return res.status(401).json({ success: false, error: 'неверные учетные данные' });
         }
 
         const isPasswordValid = await bcrypt.compare(password, data.password);
         if (!isPasswordValid) {
-            return res.status(401).json({ success: false, error: 'Неверные учетные данные' });
+            return res.status(401).json({ success: false, error: 'неверные учетные данные' });
         }
 
         console.log(`[Login] User logged in: ${username}`);
         res.json({ success: true, userId: data.user_id });
     } catch (error) {
         console.error('[Login] Error:', error.stack);
-        res.status(500).json({ success: false, error: 'Авторизация не удалась' });
+        res.status(500).json({ success: false, error: 'авторизация не удалась' });
     }
 });
 
@@ -107,7 +107,7 @@ app.post('/update', async (req, res) => {
             .single();
 
         if (fetchError || !userData) {
-            return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+            return res.status(404).json({ success: false, error: 'пользователь не найден' });
         }
 
         const newBalance = (userData.balance || 0) + 1;
@@ -121,7 +121,7 @@ app.post('/update', async (req, res) => {
         res.json({ success: true, balance: newBalance });
     } catch (error) {
         console.error('[Update] Error:', error.stack);
-        res.status(500).json({ success: false, error: 'Обновление не удалось' });
+        res.status(500).json({ success: false, error: 'обновление не удалось' });
     }
 });
 
@@ -141,7 +141,7 @@ app.get('/user', async (req, res) => {
             .single();
 
         if (error || !data) {
-            return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+            return res.status(404).json({ success: false, error: 'пользователь не найден' });
         }
 
         const user = {
@@ -154,7 +154,7 @@ app.get('/user', async (req, res) => {
         res.json({ success: true, user });
     } catch (error) {
         console.error('[User] Error:', error.stack);
-        res.status(500).json({ success: false, error: 'Не удалось получить данные пользователя' });
+        res.status(500).json({ success: false, error: 'не удалось получить данные пользователя' });
     }
 });
 
@@ -165,12 +165,12 @@ app.post('/transfer', async (req, res) => {
 
         // Проверяем, что данные переданы корректно
         if (typeof amount !== 'number' || amount <= 0) {
-            return res.status(400).json({ success: false, error: 'Неверная сумма' });
+            return res.status(400).json({ success: false, error: 'неверная сумма' });
         }
 
         // Запрещаем перевод самому себе
         if (fromUserId === toUserId) {
-            return res.status(400).json({ success: false, error: 'Вы не можете перевести монеты самому себе' });
+            return res.status(400).json({ success: false, error: 'вы не можете перевести монеты самому себе' });
         }
 
         // Проверяем отправителя
@@ -181,12 +181,12 @@ app.post('/transfer', async (req, res) => {
             .single();
 
         if (fromError || !fromUser) {
-            return res.status(404).json({ success: false, error: 'Отправитель не найден' });
+            return res.status(404).json({ success: false, error: 'отправитель не найден' });
         }
 
         // Проверяем баланс отправителя
         if ((fromUser.balance || 0) < amount) {
-            return res.status(400).json({ success: false, error: 'Недостаточно средств' });
+            return res.status(400).json({ success: false, error: 'недостаточно средств' });
         }
 
         // Проверяем получателя
@@ -197,7 +197,7 @@ app.post('/transfer', async (req, res) => {
             .single();
 
         if (toError || !toUser) {
-            return res.status(404).json({ success: false, error: 'Получатель не найден' });
+            return res.status(404).json({ success: false, error: 'получатель не найден' });
         }
 
         // Обновляем балансы
@@ -229,7 +229,7 @@ app.post('/transfer', async (req, res) => {
         res.json({ success: true, fromBalance: newFromBalance, toBalance: newToBalance });
     } catch (error) {
         console.error('[Transfer] Error:', error.stack);
-        res.status(500).json({ success: false, error: 'Перевод не удался' });
+        res.status(500).json({ success: false, error: 'перевод не удался' });
     }
 });
 
@@ -256,7 +256,7 @@ app.get('/transactions', async (req, res) => {
             .order('created_at', { ascending: false });
 
         if (sentError || receivedError) {
-            return res.status(500).json({ success: false, error: 'Не удалось получить транзакции' });
+            return res.status(500).json({ success: false, error: 'не удалось получить транзакции' });
         }
 
         // Объединяем отправленные и полученные транзакции
@@ -268,7 +268,7 @@ app.get('/transactions', async (req, res) => {
         res.json({ success: true, transactions });
     } catch (error) {
         console.error('[Transactions] Error:', error.stack);
-        res.status(500).json({ success: false, error: 'Не удалось получить транзакции' });
+        res.status(500).json({ success: false, error: 'не удалось получить транзакции' });
     }
 });
 
