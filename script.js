@@ -34,23 +34,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Привязка обработчиков событий
-    loginBtn.addEventListener('click', () => {
-        closeModals(); // Закрываем все модальные окна
-        loginModal.classList.remove('hidden'); // Открываем окно входа
-    });
-    registerBtn.addEventListener('click', () => {
-        closeModals(); // Закрываем все модальные окна
-        registerModal.classList.remove('hidden'); // Открываем окно регистрации
-    });
-    logoutBtn.addEventListener('click', logout);
-    transferBtn.addEventListener('click', openTransferModal); // Открываем окно перевода
-    historyBtn.addEventListener('click', openHistoryModal); // Открываем окно истории операций
-    closeHistoryBtn.addEventListener('click', closeHistoryModal); // Закрываем окно истории
-    closeTransferBtn.addEventListener('click', closeTransferModal); // Закрываем окно перевода
-    sendTransferBtn.addEventListener('click', sendTransfer); // Отправляем перевод
+    if (loginBtn) loginBtn.addEventListener('click', openLoginModal);
+    if (registerBtn) registerBtn.addEventListener('click', openRegisterModal);
+    if (logoutBtn) logoutBtn.addEventListener('click', logout);
+    if (transferBtn) transferBtn.addEventListener('click', openTransferModal); // Открываем окно перевода
+    if (historyBtn) historyBtn.addEventListener('click', openHistoryModal); // Открываем окно истории операций
+    if (closeHistoryBtn) closeHistoryBtn.addEventListener('click', closeHistoryModal); // Закрываем окно истории
+    if (closeTransferBtn) closeTransferBtn.addEventListener('click', closeTransferModal); // Закрываем окно перевода
+    if (sendTransferBtn) sendTransferBtn.addEventListener('click', sendTransfer); // Отправляем перевод
 
     // Клик по кнопке MINE
-    mineBtn.addEventListener('click', async () => {
+    if (mineBtn) mineBtn.addEventListener('click', async () => {
         if (!currentUserId) return;
 
         try {
@@ -76,21 +70,21 @@ document.addEventListener('DOMContentLoaded', () => {
 // Обновление интерфейса
 function updateUI() {
     if (currentUserId) {
-        loginBtn.classList.add('hidden');
-        registerBtn.classList.add('hidden');
-        logoutBtn.classList.remove('hidden');
-        userInfo.classList.remove('hidden');
-        transferBtn.classList.remove('hidden');
-        mineBtn.classList.remove('hidden'); // Показываем кнопку MINE
-        historyBtn.classList.remove('hidden'); // Показываем кнопку Операции
+        if (loginBtn) loginBtn.classList.add('hidden');
+        if (registerBtn) registerBtn.classList.add('hidden');
+        if (logoutBtn) logoutBtn.classList.remove('hidden');
+        if (userInfo) userInfo.classList.remove('hidden');
+        if (transferBtn) transferBtn.classList.remove('hidden');
+        if (mineBtn) mineBtn.classList.remove('hidden'); // Показываем кнопку MINE
+        if (historyBtn) historyBtn.classList.remove('hidden'); // Показываем кнопку Операции
     } else {
-        loginBtn.classList.remove('hidden');
-        registerBtn.classList.remove('hidden');
-        logoutBtn.classList.add('hidden');
-        userInfo.classList.add('hidden');
-        transferBtn.classList.add('hidden');
-        mineBtn.classList.add('hidden'); // Скрываем кнопку MINE
-        historyBtn.classList.add('hidden'); // Скрываем кнопку Операции
+        if (loginBtn) loginBtn.classList.remove('hidden');
+        if (registerBtn) registerBtn.classList.remove('hidden');
+        if (logoutBtn) logoutBtn.classList.add('hidden');
+        if (userInfo) userInfo.classList.add('hidden');
+        if (transferBtn) transferBtn.classList.add('hidden');
+        if (mineBtn) mineBtn.classList.add('hidden'); // Скрываем кнопку MINE
+        if (historyBtn) historyBtn.classList.add('hidden'); // Скрываем кнопку Операции
     }
 }
 
@@ -162,6 +156,18 @@ function logout() {
     closeModals();
 }
 
+// Открытие модального окна входа
+function openLoginModal() {
+    closeModals(); // Закрываем все модальные окна
+    loginModal.classList.remove('hidden'); // Открываем окно входа
+}
+
+// Открытие модального окна регистрации
+function openRegisterModal() {
+    closeModals(); // Закрываем все модальные окна
+    registerModal.classList.remove('hidden'); // Открываем окно регистрации
+}
+
 // Открытие модального окна перевода
 function openTransferModal() {
     if (!currentUserId) return;
@@ -213,6 +219,20 @@ async function sendTransfer() {
     }
 }
 
+// Открытие модального окна истории
+function openHistoryModal() {
+    if (!currentUserId) return;
+
+    fetchTransactionHistory();
+    historyModal.classList.remove('hidden');
+}
+
+// Закрытие модального окна истории
+function closeHistoryModal() {
+    historyModal.classList.add('hidden');
+    transactionList.innerHTML = ''; // Очищаем список транзакций
+}
+
 // Получение данных пользователя
 async function fetchUserData() {
     try {
@@ -242,20 +262,6 @@ async function fetchUserData() {
         console.error('[Fetch User Data] Error:', error.message);
         balanceSpan.textContent = '0'; // Устанавливаем значение по умолчанию
     }
-}
-
-// Открытие модального окна истории
-function openHistoryModal() {
-    if (!currentUserId) return;
-
-    fetchTransactionHistory();
-    historyModal.classList.remove('hidden');
-}
-
-// Закрытие модального окна истории
-function closeHistoryModal() {
-    historyModal.classList.add('hidden');
-    transactionList.innerHTML = ''; // Очищаем список транзакций
 }
 
 // Получение истории операций
@@ -302,10 +308,10 @@ function displayTransactionHistory(transactions) {
     });
 }
 
-// Закрытие модальных окон
+// Закрытие всех модальных окон
 function closeModals() {
-    registerModal.classList.add('hidden');
-    loginModal.classList.add('hidden');
-    transferModal.classList.add('hidden');
-    historyModal.classList.add('hidden');
+    if (registerModal) registerModal.classList.add('hidden');
+    if (loginModal) loginModal.classList.add('hidden');
+    if (transferModal) transferModal.classList.add('hidden');
+    if (historyModal) historyModal.classList.add('hidden');
 }
