@@ -3,25 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GUGACOIN</title>
+    <title>Авторизация</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Информация о пользователе (в левом верхнем углу) -->
-    <div id="userInfo" class="hidden">
-        <p>User ID: <span id="userId"></span></p>
-        <p>Balance: <span id="balance"></span></p>
-    </div>
-
     <!-- Кнопки в правом верхнем углу -->
-    <div id="topButtons" class="hidden">
-        <button id="logoutBtn">Logout</button>
-        <button id="transferBtn">Transfer</button>
-        <button id="historyBtn">Операции</button>
+    <div id="topButtons">
+        <button id="loginBtn">Login</button>
+        <button id="registerBtn">Register</button>
+        <button id="logoutBtn" class="hidden">Logout</button>
     </div>
 
-    <!-- Кнопка MINE -->
+    <!-- Информация о пользователе -->
+    <div id="userInfo" class="hidden">
+        <p>ID: <span id="userId"></span></p>
+        <p>Баланс: <span id="balance">0</span></p>
+    </div>
+
+    <!-- Кнопки действий -->
+    <button id="transferBtn" class="hidden">Transfer</button>
     <button id="mineBtn" class="hidden">MINE</button>
+    <button id="historyBtn" class="hidden">Операции</button>
 
     <script src="script.js"></script>
 </body>
