@@ -27,14 +27,6 @@ app.get('/', (req, res) => {
     res.send(`
         <h1>Welcome to GUGACOIN!</h1>
         <p>This is the backend server for GUGACOIN.</p>
-        <p>Available endpoints:</p>
-        <ul>
-            <li><strong>POST /register</strong> - Register a new user</li>
-            <li><strong>POST /login</strong> - Log in a user</li>
-            <li><strong>POST /update</strong> - Update user balance</li>
-            <li><strong>GET /user</strong> - Fetch user data</li>
-            <li><strong>POST /transfer</strong> - Transfer coins between users</li>
-        </ul>
     `);
 });
 
