@@ -44,7 +44,7 @@ function updateUI() {
         if (transferBtn) transferBtn.classList.remove('hidden');
         if (mineBtn) mineBtn.classList.remove('hidden'); // Показываем кнопку MINE
         if (historyBtn) historyBtn.classList.remove('hidden'); // Показываем кнопку Операции
-        closeModal('authModal'); // Закрываем окно авторизации
+        removeAuthModal(); // Удаляем окно авторизации из DOM
     } else {
         // Пользователь не вошёл в систему
         if (loginBtn) loginBtn.classList.remove('hidden');
@@ -91,6 +91,12 @@ function openModal(modalId) {
 function closeModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) modal.classList.add('hidden');
+}
+
+// Удаление модального окна из DOM
+function removeAuthModal() {
+    const authModal = document.getElementById('authModal');
+    if (authModal) authModal.remove(); // Удаляем окно из DOM
 }
 
 // Открытие модального окна авторизации
