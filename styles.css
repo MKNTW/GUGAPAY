@@ -1,6 +1,6 @@
 /* Общие стили */
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Archivo Black', sans-serif; /* Применяем шрифт Archivo Black */
     margin: 0;
     padding: 0;
     display: flex;
@@ -25,6 +25,7 @@ button {
     font-size: 16px;
     color: white;
     transition: background-color 0.3s ease;
+    font-family: 'Archivo Black', sans-serif; /* Применяем шрифт к кнопкам */
 }
 
 /* Кнопка Войти (зелёная) */
@@ -72,6 +73,7 @@ button {
     left: 20px;
     text-align: left;
     color: #333;
+    font-family: 'Archivo Black', sans-serif; /* Применяем шрифт */
 }
 
 #userInfo p {
@@ -89,6 +91,7 @@ button {
     background-color: #28a745;
     color: white;
     transition: background-color 0.3s ease;
+    font-family: 'Archivo Black', sans-serif; /* Применяем шрифт */
 }
 
 #mineBtn:hover {
@@ -116,6 +119,7 @@ button {
     width: 300px;
     position: relative;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    font-family: 'Archivo Black', sans-serif; /* Применяем шрифт */
 }
 
 .close-btn {
@@ -130,6 +134,7 @@ button {
     border-radius: 50%;
     transition: background-color 0.3s ease;
     font-size: 14px;
+    font-family: 'Archivo Black', sans-serif; /* Применяем шрифт */
 }
 
 .close-btn:hover {
@@ -141,6 +146,7 @@ button {
     font-size: 18px;
     color: #333;
     text-align: center;
+    font-family: 'Archivo Black', sans-serif; /* Применяем шрифт */
 }
 
 .modal-content label {
@@ -148,6 +154,7 @@ button {
     margin-top: 10px;
     font-size: 16px;
     color: #555;
+    font-family: 'Archivo Black', sans-serif; /* Применяем шрифт */
 }
 
 .modal-content input {
@@ -157,6 +164,7 @@ button {
     box-sizing: border-box;
     border: 1px solid #ccc;
     border-radius: 4px;
+    font-family: 'Archivo Black', sans-serif; /* Применяем шрифт */
 }
 
 .modal-content button {
@@ -167,6 +175,7 @@ button {
     width: 100%;
     border-radius: 4px;
     transition: background-color 0.3s ease;
+    font-family: 'Archivo Black', sans-serif; /* Применяем шрифт */
 }
 
 /* Стили для списка транзакций */
@@ -179,6 +188,7 @@ button {
     border: 1px solid #ccc;
     border-radius: 4px;
     margin-top: 20px;
+    font-family: 'Archivo Black', sans-serif; /* Применяем шрифт */
 }
 
 #transactionList li {
