@@ -54,17 +54,21 @@ function createUI() {
 
 // Обновление интерфейса
 function updateUI() {
+    const userInfo = document.getElementById('userInfo');
+    const mineBtn = document.getElementById('mineBtn');
+    const bottomBar = document.getElementById('bottomBar');
+
     if (currentUserId) {
         // Пользователь вошёл в систему
-        document.getElementById('userInfo').classList.remove('hidden');
-        document.getElementById('mineBtn').classList.remove('hidden');
-        document.getElementById('bottomBar').classList.remove('hidden');
+        if (userInfo) userInfo.classList.remove('hidden');
+        if (mineBtn) mineBtn.classList.remove('hidden');
+        if (bottomBar) bottomBar.classList.remove('hidden');
         removeAuthModal(); // Удаляем окно авторизации из DOM
     } else {
         // Пользователь не вошёл в систему
-        document.getElementById('userInfo')?.classList.add('hidden');
-        document.getElementById('mineBtn')?.classList.add('hidden');
-        document.getElementById('bottomBar')?.classList.add('hidden');
+        if (userInfo) userInfo.classList.add('hidden');
+        if (mineBtn) mineBtn.classList.add('hidden');
+        if (bottomBar) bottomBar.classList.add('hidden');
         openAuthModal(); // Открываем окно авторизации
     }
 }
@@ -348,8 +352,14 @@ function openRegisterSection() {
 
 // Регистрация
 async function register() {
-    const login = document.getElementById('regLogin').value;
-    const password = document.getElementById('regPassword').value;
+    const login = document.getElementById('regLogin')?.value;
+    const password = document.getElementById('regPassword')?.value;
+
+    // Проверяем, что данные введены
+    if (!login || !password) {
+        alert('❌ Введите логин и пароль');
+        return;
+    }
 
     try {
         const response = await fetch(`${API_URL}/register`, {
@@ -377,8 +387,14 @@ async function register() {
 
 // Авторизация
 async function login() {
-    const login = document.getElementById('loginInput').value;
-    const password = document.getElementById('passwordInput').value;
+    const login = document.getElementById('loginInput')?.value;
+    const password = document.getElementById('passwordInput')?.value;
+
+    // Проверяем, что данные введены
+    if (!login || !password) {
+        alert('❌ Введите логин и пароль');
+        return;
+    }
 
     try {
         const response = await fetch(`${API_URL}/login`, {
