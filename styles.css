@@ -89,6 +89,92 @@ body {
     background-color: black;
 }
 
+/* Модальное окно авторизации */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5); /* Полупрозрачный фон */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 300px;
+    position: relative;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+}
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: red;
+    color: white;
+    border: none;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 50%;
+    transition: background-color 0.3s ease;
+    font-size: 14px;
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+}
+
+.close-btn:hover {
+    background: darkred;
+}
+
+.modal-content h3, .modal-content h4 {
+    margin-top: 0;
+    font-size: 18px;
+    color: #333;
+    text-align: center;
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+}
+
+.modal-content label {
+    display: block;
+    margin-top: 10px;
+    font-size: 16px;
+    color: #555;
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+}
+
+.modal-content input {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+}
+
+.modal-content button {
+    margin-top: 20px;
+    padding: 10px;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+}
+
 /* Адаптивность */
 @media (max-width: 600px) {
     #userInfo {
