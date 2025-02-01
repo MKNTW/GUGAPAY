@@ -1,6 +1,6 @@
 /* Общие стили */
 body {
-    font-family: 'Merriweather', serif; /* Применяем Merriweather для основного текста */
+    font-family: 'Oswald', sans-serif; /* Применяем Oswald для всего текста */
     margin: 0;
     padding: 0;
     display: flex;
@@ -25,7 +25,7 @@ button {
     font-size: 16px;
     color: white;
     transition: background-color 0.3s ease;
-    font-family: 'Oswald', sans-serif; /* Применяем Oswald для кнопок */
+    font-family: 'Oswald', sans-serif; /* Применяем Oswald */
     text-transform: uppercase; /* Делаем текст заглавными буквами */
 }
 
@@ -74,7 +74,8 @@ button {
     left: 20px;
     text-align: left;
     color: #333;
-    font-family: 'Merriweather', serif; /* Применяем Merriweather */
+    font-family: 'Oswald', sans-serif; /* Применяем Oswald */
+    text-transform: uppercase; /* Делаем текст заглавными буквами */
 }
 
 #userInfo p {
@@ -121,7 +122,8 @@ button {
     width: 300px;
     position: relative;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    font-family: 'Merriweather', serif; /* Применяем Merriweather */
+    font-family: 'Oswald', sans-serif; /* Применяем Oswald */
+    text-transform: uppercase; /* Делаем текст заглавными буквами */
 }
 
 .close-btn {
@@ -158,7 +160,8 @@ button {
     margin-top: 10px;
     font-size: 16px;
     color: #555;
-    font-family: 'Merriweather', serif; /* Применяем Merriweather */
+    font-family: 'Oswald', sans-serif; /* Применяем Oswald */
+    text-transform: uppercase; /* Делаем текст заглавными буквами */
 }
 
 .modal-content input {
@@ -168,7 +171,8 @@ button {
     box-sizing: border-box;
     border: 1px solid #ccc;
     border-radius: 4px;
-    font-family: 'Merriweather', serif; /* Применяем Merriweather */
+    font-family: 'Oswald', sans-serif; /* Применяем Oswald */
+    text-transform: uppercase; /* Делаем текст заглавными буквами */
 }
 
 .modal-content button {
@@ -193,7 +197,8 @@ button {
     border: 1px solid #ccc;
     border-radius: 4px;
     margin-top: 20px;
-    font-family: 'Merriweather', serif; /* Применяем Merriweather */
+    font-family: 'Oswald', sans-serif; /* Применяем Oswald */
+    text-transform: uppercase; /* Делаем текст заглавными буквами */
 }
 
 #transactionList li {
