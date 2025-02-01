@@ -23,6 +23,35 @@ document.addEventListener('DOMContentLoaded', () => {
         updateUI();
         fetchUserData();
     }
+
+    // Привязка обработчиков событий
+    loginBtn.addEventListener('click', () => loginModal.classList.remove('hidden'));
+    registerBtn.addEventListener('click', () => registerModal.classList.remove('hidden'));
+    logoutBtn.addEventListener('click', logout);
+    transferBtn.addEventListener('click', () => transferModal.classList.remove('hidden'));
+
+    // Клик по кнопке MINE
+    document.getElementById('tapArea').addEventListener('click', async () => {
+        if (!currentUserId) return;
+
+        try {
+            const response = await fetch(`${API_URL}/update`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: currentUserId })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Server responded with status ${response.status}`);
+            }
+
+            // Обновляем данные пользователя
+            fetchUserData();
+        } catch (error) {
+            console.error(error);
+            alert('🚫 Ошибка при попытке добыть монеты');
+        }
+    });
 });
 
 // Обновление интерфейса
@@ -172,29 +201,6 @@ async function fetchUserData() {
         balanceSpan.textContent = '0'; // Устанавливаем значение по умолчанию
     }
 }
-
-// Клик по кнопке MINE
-document.getElementById('tapArea').addEventListener('click', async () => {
-    if (!currentUserId) return;
-
-    try {
-        const response = await fetch(`${API_URL}/update`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: currentUserId })
-        });
-
-        if (!response.ok) {
-            throw new Error(`Server responded with status ${response.status}`);
-        }
-
-        // Обновляем данные пользователя
-        fetchUserData();
-    } catch (error) {
-        console.error(error);
-        alert('🚫 Ошибка при попытке добыть монеты');
-    }
-});
 
 // Закрытие модальных окон
 function closeModals() {
