@@ -192,6 +192,7 @@ async function login() {
             localStorage.setItem('userId', currentUserId); // Сохраняем ID в localStorage
             updateUI();
             fetchUserData(); // Загружаем данные пользователя
+            closeModal('authModal'); // Закрываем окно авторизации
         } else {
             alert(`❌ Ошибка входа: ${data.error}`);
         }
@@ -356,48 +357,4 @@ async function mineCoins() {
         console.error(error);
         alert('🚫 Ошибка при попытке добыть монеты');
     }
-}
-
-// Получение истории операций
-async function fetchTransactionHistory() {
-    try {
-        const response = await fetch(`${API_URL}/transactions?userId=${currentUserId}`);
-        if (!response.ok) {
-            throw new Error(`Server responded with status ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (data.success && data.transactions) {
-            displayTransactionHistory(data.transactions);
-        } else {
-            console.error('[Fetch Transactions] Error: Invalid response from server');
-        }
-    } catch (error) {
-        console.error('[Fetch Transactions] Error:', error.message);
-    }
-}
-
-function displayTransactionHistory(transactions) {
-    const transactionList = document.getElementById('transactionList');
-    if (transactionList) transactionList.innerHTML = ''; // Очищаем список
-
-    if (transactions.length === 0) {
-        if (transactionList) transactionList.innerHTML = '<li>Нет операций</li>';
-        return;
-    }
-
-    transactions.forEach(tx => {
-        const li = document.createElement('li');
-        const date = new Date(tx.created_at).toLocaleString(); // Форматируем дату
-        const amount = formatBalance(tx.amount);
-
-        if (tx.type === 'sent') {
-            li.textContent = `Переведено: ${amount} монет пользователю ${tx.to_user_id} (${date})`;
-        } else {
-            li.textContent = `Получено: ${amount} монет от пользователя ${tx.from_user_id} (${date})`;
-        }
-
-        if (transactionList) transactionList.appendChild(li);
-    });
 }
