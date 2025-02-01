@@ -5,10 +5,9 @@ let currentUserId = null;
 const loginBtn = document.getElementById('loginBtn');
 const registerBtn = document.getElementById('registerBtn');
 const logoutBtn = document.getElementById('logoutBtn');
-const userInfo = document.getElementById('userInfo');
-const userIdSpan = document.getElementById('userId');
-const balanceSpan = document.getElementById('balance');
 const transferBtn = document.getElementById('transferBtn');
+const tapArea = document.getElementById('tapArea');
+const coinsSpan = document.getElementById('coins');
 
 // Модальные окна
 const registerModal = document.getElementById('registerModal');
@@ -22,6 +21,9 @@ document.addEventListener('DOMContentLoaded', () => {
         currentUserId = savedUserId;
         updateUI();
         fetchUserData();
+    } else {
+        // Скрываем кнопку MINE, если пользователь не авторизован
+        tapArea.classList.add('hidden');
     }
 
     // Привязка обработчиков событий
@@ -31,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
     transferBtn.addEventListener('click', () => transferModal.classList.remove('hidden'));
 
     // Клик по кнопке MINE
-    document.getElementById('tapArea').addEventListener('click', async () => {
+    tapArea.addEventListener('click', async () => {
         if (!currentUserId) return;
 
         try {
@@ -60,14 +62,14 @@ function updateUI() {
         loginBtn.classList.add('hidden');
         registerBtn.classList.add('hidden');
         logoutBtn.classList.remove('hidden');
-        userInfo.classList.remove('hidden');
         transferBtn.classList.remove('hidden');
+        tapArea.classList.remove('hidden'); // Показываем кнопку MINE
     } else {
         loginBtn.classList.remove('hidden');
         registerBtn.classList.remove('hidden');
         logoutBtn.classList.add('hidden');
-        userInfo.classList.add('hidden');
         transferBtn.classList.add('hidden');
+        tapArea.classList.add('hidden'); // Скрываем кнопку MINE
     }
 }
 
@@ -181,24 +183,23 @@ async function fetchUserData() {
 
         const data = await response.json();
 
-        if (data.success && data.user) {
-            const balance = data.user.balance || 0; // Баланс в минимальных единицах
+        if (data.success && data.balance !== undefined) {
+            const balance = data.balance || 0; // Баланс в минимальных единицах
 
             // Проверка, что balance является числом
             if (typeof balance === 'number') {
-                userIdSpan.textContent = currentUserId;
-                balanceSpan.textContent = formatBalance(balance); // Отображаем баланс в удобном формате
+                coinsSpan.textContent = formatBalance(balance); // Отображаем баланс в удобном формате
             } else {
                 console.error('[Fetch User Data] Error: Balance is not a number');
-                balanceSpan.textContent = '0'; // Устанавливаем значение по умолчанию
+                coinsSpan.textContent = '0'; // Устанавливаем значение по умолчанию
             }
         } else {
             console.error('[Fetch User Data] Error: Invalid response from server');
-            balanceSpan.textContent = '0'; // Устанавливаем значение по умолчанию
+            coinsSpan.textContent = '0'; // Устанавливаем значение по умолчанию
         }
     } catch (error) {
         console.error('[Fetch User Data] Error:', error.message);
-        balanceSpan.textContent = '0'; // Устанавливаем значение по умолчанию
+        coinsSpan.textContent = '0'; // Устанавливаем значение по умолчанию
     }
 }
 
