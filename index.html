@@ -14,33 +14,29 @@
     </div>
 
     <!-- Кнопки в левом верхнем углу -->
-    <div id="topButtons">
-        <button id="loginBtn">Login</button>
-        <button id="registerBtn">Register</button>
-        <button id="logoutBtn" class="hidden">Logout</button>
-        <button id="transferBtn" class="hidden">Transfer</button>
-        <button id="historyBtn" class="hidden">Операции</button>
+    <div id="topButtons" class="hidden">
+        <button id="logoutBtn">Logout</button>
+        <button id="transferBtn">Transfer</button>
+        <button id="historyBtn">Операции</button>
     </div>
 
-    <!-- Модальное окно регистрации -->
-    <div id="registerModal" class="hidden">
-        <div>
-            <button id="closeRegisterBtn">X</button>
-            <h3>Регистрация</h3>
-            <input type="text" id="regLogin" placeholder="Username">
-            <input type="password" id="regPassword" placeholder="Password">
-            <button id="registerSubmitBtn">Register</button>
-        </div>
-    </div>
-
-    <!-- Модальное окно входа -->
-    <div id="loginModal" class="hidden">
-        <div>
-            <button id="closeLoginBtn">X</button>
-            <h3>Вход</h3>
-            <input type="text" id="loginInput" placeholder="Username">
-            <input type="password" id="passwordInput" placeholder="Password">
-            <button id="loginSubmitBtn">Login</button>
+    <!-- Модальное окно регистрации и входа -->
+    <div id="authModal">
+        <div id="authContent">
+            <button id="closeAuthBtn">X</button>
+            <h3>Авторизация</h3>
+            <div id="loginSection">
+                <h4>Login</h4>
+                <input type="text" id="loginInput" placeholder="Username">
+                <input type="password" id="passwordInput" placeholder="Password">
+                <button id="loginSubmitBtn">Login</button>
+            </div>
+            <div id="registerSection">
+                <h4>Register</h4>
+                <input type="text" id="regLogin" placeholder="Username">
+                <input type="password" id="regPassword" placeholder="Password">
+                <button id="registerSubmitBtn">Register</button>
+            </div>
         </div>
     </div>
 
