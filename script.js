@@ -9,6 +9,7 @@ const userInfo = document.getElementById('userInfo');
 const userIdSpan = document.getElementById('userId');
 const balanceSpan = document.getElementById('balance');
 const transferBtn = document.getElementById('transferBtn');
+const mineBtn = document.getElementById('mineBtn'); // Кнопка MINE
 
 // Модальные окна
 const registerModal = document.getElementById('registerModal');
@@ -22,36 +23,9 @@ document.addEventListener('DOMContentLoaded', () => {
         currentUserId = savedUserId;
         updateUI();
         fetchUserData();
+    } else {
+        updateUI(); // Обновляем интерфейс при загрузке страницы
     }
-
-    // Привязка обработчиков событий
-    loginBtn.addEventListener('click', () => loginModal.classList.remove('hidden'));
-    registerBtn.addEventListener('click', () => registerModal.classList.remove('hidden'));
-    logoutBtn.addEventListener('click', logout);
-    transferBtn.addEventListener('click', () => transferModal.classList.remove('hidden'));
-
-    // Клик по кнопке MINE
-    document.getElementById('tapArea').addEventListener('click', async () => {
-        if (!currentUserId) return;
-
-        try {
-            const response = await fetch(`${API_URL}/update`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: currentUserId })
-            });
-
-            if (!response.ok) {
-                throw new Error(`Server responded with status ${response.status}`);
-            }
-
-            // Обновляем данные пользователя
-            fetchUserData();
-        } catch (error) {
-            console.error(error);
-            alert('🚫 Ошибка при попытке добыть монеты');
-        }
-    });
 });
 
 // Обновление интерфейса
@@ -62,12 +36,14 @@ function updateUI() {
         logoutBtn.classList.remove('hidden');
         userInfo.classList.remove('hidden');
         transferBtn.classList.remove('hidden');
+        mineBtn.classList.remove('hidden'); // Показываем кнопку MINE
     } else {
         loginBtn.classList.remove('hidden');
         registerBtn.classList.remove('hidden');
         logoutBtn.classList.add('hidden');
         userInfo.classList.add('hidden');
         transferBtn.classList.add('hidden');
+        mineBtn.classList.add('hidden'); // Скрываем кнопку MINE
     }
 }
 
@@ -201,6 +177,29 @@ async function fetchUserData() {
         balanceSpan.textContent = '0'; // Устанавливаем значение по умолчанию
     }
 }
+
+// Клик по кнопке MINE
+mineBtn.addEventListener('click', async () => {
+    if (!currentUserId) return;
+
+    try {
+        const response = await fetch(`${API_URL}/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: currentUserId })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Server responded with status ${response.status}`);
+        }
+
+        // Обновляем данные пользователя
+        fetchUserData();
+    } catch (error) {
+        console.error(error);
+        alert('🚫 Ошибка при попытке добыть монеты');
+    }
+});
 
 // Закрытие модальных окон
 function closeModals() {
