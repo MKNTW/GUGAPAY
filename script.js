@@ -266,37 +266,6 @@ function openTransferModal() {
     openModal('transferModal');
 }
 
-// Закрытие модального окна перевода
-function closeTransferModal() {
-    closeModal('transferModal');
-}
-
-// Открытие модального окна истории операций
-function openHistoryModal() {
-    if (!currentUserId) return;
-
-    let historyModal = document.getElementById('historyModal');
-    if (!historyModal) {
-        historyModal = createModal('historyModal', `
-            <h3>История операций</h3>
-            <ul id="transactionList"></ul>
-            <button class="close-btn">X</button>
-        `);
-
-        const closeHistoryBtn = historyModal.querySelector('.close-btn');
-
-        if (closeHistoryBtn) closeHistoryBtn.addEventListener('click', () => closeModal('historyModal'));
-    }
-
-    fetchTransactionHistory();
-    openModal('historyModal');
-}
-
-// Закрытие модального окна истории операций
-function closeHistoryModal() {
-    closeModal('historyModal');
-}
-
 // Перевод монет
 async function sendTransfer() {
     const toUserId = document.getElementById('toUserIdInput').value;
@@ -334,6 +303,72 @@ async function sendTransfer() {
         console.error(error);
         alert('🚫 Ошибка сети');
     }
+}
+
+// Открытие модального окна истории операций
+function openHistoryModal() {
+    if (!currentUserId) return;
+
+    let historyModal = document.getElementById('historyModal');
+    if (!historyModal) {
+        historyModal = createModal('historyModal', `
+            <h3>История операций</h3>
+            <ul id="transactionList"></ul>
+            <button class="close-btn">X</button>
+        `);
+
+        const closeHistoryBtn = historyModal.querySelector('.close-btn');
+
+        if (closeHistoryBtn) closeHistoryBtn.addEventListener('click', () => closeModal('historyModal'));
+    }
+
+    fetchTransactionHistory();
+    openModal('historyModal');
+}
+
+// Получение истории операций
+async function fetchTransactionHistory() {
+    try {
+        const response = await fetch(`${API_URL}/transactions?userId=${currentUserId}`);
+        if (!response.ok) {
+            throw new Error(`Server responded with status ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success && data.transactions) {
+            displayTransactionHistory(data.transactions);
+        } else {
+            console.error('[Fetch Transactions] Error: Invalid response from server');
+        }
+    } catch (error) {
+        console.error('[Fetch Transactions] Error:', error.message);
+    }
+}
+
+// Отображение истории операций
+function displayTransactionHistory(transactions) {
+    const transactionList = document.getElementById('transactionList');
+    if (transactionList) transactionList.innerHTML = ''; // Очищаем список
+
+    if (transactions.length === 0) {
+        if (transactionList) transactionList.innerHTML = '<li>Нет операций</li>';
+        return;
+    }
+
+    transactions.forEach(tx => {
+        const li = document.createElement('li');
+        const date = new Date(tx.created_at).toLocaleString(); // Форматируем дату
+        const amount = formatBalance(tx.amount);
+
+        if (tx.type === 'sent') {
+            li.textContent = `Переведено: ${amount} монет пользователю ${tx.to_user_id} (${date})`;
+        } else {
+            li.textContent = `Получено: ${amount} монет от пользователя ${tx.from_user_id} (${date})`;
+        }
+
+        if (transactionList) transactionList.appendChild(li);
+    });
 }
 
 // Обработка клика по кнопке MINE
