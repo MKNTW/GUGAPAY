@@ -95,6 +95,121 @@ function closeModals() {
     closeModal('historyModal');
 }
 
+// Открытие модального окна авторизации
+function openAuthModal() {
+    let authModal = document.getElementById('authModal');
+    if (!authModal) {
+        authModal = createModal('authModal', `
+            <h3>Авторизация</h3>
+            <div id="loginSection">
+                <h4>Login</h4>
+                <input type="text" id="loginInput" placeholder="Username">
+                <input type="password" id="passwordInput" placeholder="Password">
+                <button id="loginSubmitBtn">Login</button>
+                <button id="switchToRegisterBtn">Register</button>
+            </div>
+            <div id="registerSection" style="display: none;">
+                <h4>Register</h4>
+                <input type="text" id="regLogin" placeholder="Username">
+                <input type="password" id="regPassword" placeholder="Password">
+                <button id="registerSubmitBtn">Register</button>
+                <button id="switchToLoginBtn">Login</button>
+            </div>
+        `);
+
+        const closeAuthBtn = authModal.querySelector('.close-btn');
+        const loginSubmitBtn = authModal.querySelector('#loginSubmitBtn');
+        const registerSubmitBtn = authModal.querySelector('#registerSubmitBtn');
+        const switchToRegisterBtn = authModal.querySelector('#switchToRegisterBtn');
+        const switchToLoginBtn = authModal.querySelector('#switchToLoginBtn');
+
+        if (closeAuthBtn) closeAuthBtn.addEventListener('click', () => closeModal('authModal'));
+        if (loginSubmitBtn) loginSubmitBtn.addEventListener('click', login);
+        if (registerSubmitBtn) registerSubmitBtn.addEventListener('click', register);
+        if (switchToRegisterBtn) switchToRegisterBtn.addEventListener('click', openRegisterSection);
+        if (switchToLoginBtn) switchToLoginBtn.addEventListener('click', openLoginSection);
+    }
+
+    openLoginSection(); // По умолчанию открываем секцию входа
+    openModal('authModal');
+}
+
+// Закрытие модального окна авторизации
+function closeAuthModal() {
+    closeModal('authModal');
+}
+
+// Открытие секции входа
+function openLoginSection() {
+    const loginSection = document.getElementById('loginSection');
+    const registerSection = document.getElementById('registerSection');
+    if (loginSection) loginSection.style.display = 'block';
+    if (registerSection) registerSection.style.display = 'none';
+}
+
+// Открытие секции регистрации
+function openRegisterSection() {
+    const loginSection = document.getElementById('loginSection');
+    const registerSection = document.getElementById('registerSection');
+    if (loginSection) loginSection.style.display = 'none';
+    if (registerSection) registerSection.style.display = 'block';
+}
+
+// Открытие модального окна перевода
+function openTransferModal() {
+    if (!currentUserId) return;
+
+    let transferModal = document.getElementById('transferModal');
+    if (!transferModal) {
+        transferModal = createModal('transferModal', `
+            <h3>Перевод монет</h3>
+            <label for="toUserIdInput">Кому (ID пользователя):</label>
+            <input type="text" id="toUserIdInput" placeholder="Введите ID получателя">
+            <label for="transferAmountInput">Количество:</label>
+            <input type="number" id="transferAmountInput" placeholder="Введите сумму">
+            <button id="sendTransferBtn">Отправить</button>
+        `);
+
+        const closeTransferBtn = transferModal.querySelector('.close-btn');
+        const sendTransferBtn = transferModal.querySelector('#sendTransferBtn');
+
+        if (closeTransferBtn) closeTransferBtn.addEventListener('click', () => closeModal('transferModal'));
+        if (sendTransferBtn) sendTransferBtn.addEventListener('click', sendTransfer);
+    }
+
+    openModal('transferModal');
+}
+
+// Закрытие модального окна перевода
+function closeTransferModal() {
+    closeModal('transferModal');
+}
+
+// Открытие модального окна истории операций
+function openHistoryModal() {
+    if (!currentUserId) return;
+
+    let historyModal = document.getElementById('historyModal');
+    if (!historyModal) {
+        historyModal = createModal('historyModal', `
+            <h3>История операций</h3>
+            <ul id="transactionList"></ul>
+        `);
+
+        const closeHistoryBtn = historyModal.querySelector('.close-btn');
+
+        if (closeHistoryBtn) closeHistoryBtn.addEventListener('click', () => closeModal('historyModal'));
+    }
+
+    fetchTransactionHistory();
+    openModal('historyModal');
+}
+
+// Закрытие модального окна истории операций
+function closeHistoryModal() {
+    closeModal('historyModal');
+}
+
 // Регистрация
 async function register() {
     const login = document.getElementById('regLogin').value;
@@ -294,147 +409,4 @@ function displayTransactionHistory(transactions) {
 
         if (transactionList) transactionList.appendChild(li);
     });
-}
-
-// Открытие модального окна авторизации
-function openAuthModal() {
-    let authModal = document.getElementById('authModal');
-    if (!authModal) {
-        authModal = createModal('authModal', `
-            <h3>Авторизация</h3>
-            <div id="loginSection">
-                <h4>Login</h4>
-                <input type="text" id="loginInput" placeholder="Username">
-                <input type="password" id="passwordInput" placeholder="Password">
-                <button id="loginSubmitBtn">Login</button>
-            </div>
-            <div id="registerSection" style="display: none;">
-                <h4>Register</h4>
-                <input type="text" id="regLogin" placeholder="Username">
-                <input type="password" id="regPassword" placeholder="Password">
-                <button id="registerSubmitBtn">Register</button>
-            </div>
-        `);
-
-        const closeAuthBtn = authModal.querySelector('.close-btn');
-        const loginSubmitBtn = authModal.querySelector('#loginSubmitBtn');
-        const registerSubmitBtn = authModal.querySelector('#registerSubmitBtn');
-
-        if (closeAuthBtn) closeAuthBtn.addEventListener('click', () => closeModal('authModal'));
-        if (loginSubmitBtn) loginSubmitBtn.addEventListener('click', login);
-        if (registerSubmitBtn) registerSubmitBtn.addEventListener('click', register);
-    }
-
-    openLoginSection(); // По умолчанию открываем секцию входа
-    openModal('authModal');
-}
-
-// Закрытие модального окна авторизации
-function closeAuthModal() {
-    closeModal('authModal');
-}
-
-// Открытие секции входа
-function openLoginSection() {
-    const loginSection = document.getElementById('loginSection');
-    const registerSection = document.getElementById('registerSection');
-    if (loginSection) loginSection.style.display = 'block';
-    if (registerSection) registerSection.style.display = 'none';
-}
-
-// Открытие секции регистрации
-function openRegisterSection() {
-    const loginSection = document.getElementById('loginSection');
-    const registerSection = document.getElementById('registerSection');
-    if (loginSection) loginSection.style.display = 'none';
-    if (registerSection) registerSection.style.display = 'block';
-}
-
-// Открытие модального окна перевода
-function openTransferModal() {
-    if (!currentUserId) return;
-
-    let transferModal = document.getElementById('transferModal');
-    if (!transferModal) {
-        transferModal = createModal('transferModal', `
-            <h3>Перевод монет</h3>
-            <label for="toUserIdInput">Кому (ID пользователя):</label>
-            <input type="text" id="toUserIdInput" placeholder="Введите ID получателя">
-            <label for="transferAmountInput">Количество:</label>
-            <input type="number" id="transferAmountInput" placeholder="Введите сумму">
-            <button id="sendTransferBtn">Отправить</button>
-        `);
-
-        const closeTransferBtn = transferModal.querySelector('.close-btn');
-        const sendTransferBtn = transferModal.querySelector('#sendTransferBtn');
-
-        if (closeTransferBtn) closeTransferBtn.addEventListener('click', () => closeModal('transferModal'));
-        if (sendTransferBtn) sendTransferBtn.addEventListener('click', sendTransfer);
-    }
-
-    openModal('transferModal');
-}
-
-// Закрытие модального окна перевода
-function closeTransferModal() {
-    closeModal('transferModal');
-}
-
-// Открытие модального окна истории операций
-function openHistoryModal() {
-    if (!currentUserId) return;
-
-    let historyModal = document.getElementById('historyModal');
-    if (!historyModal) {
-        historyModal = createModal('historyModal', `
-            <h3>История операций</h3>
-            <ul id="transactionList"></ul>
-        `);
-
-        const closeHistoryBtn = historyModal.querySelector('.close-btn');
-
-        if (closeHistoryBtn) closeHistoryBtn.addEventListener('click', () => closeModal('historyModal'));
-    }
-
-    fetchTransactionHistory();
-    openModal('historyModal');
-}
-
-// Закрытие модального окна истории операций
-function closeHistoryModal() {
-    closeModal('historyModal');
-}
-
-// Создание модального окна
-function createModal(id, content) {
-    const modal = document.createElement('div');
-    modal.id = id;
-    modal.className = 'modal hidden';
-    modal.innerHTML = `
-        <div class="modal-content">
-            <button class="close-btn">X</button>
-            ${content}
-        </div>
-    `;
-    document.body.appendChild(modal);
-    return modal;
-}
-
-// Открытие модального окна
-function openModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) modal.classList.remove('hidden');
-}
-
-// Закрытие модального окна
-function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) modal.classList.add('hidden');
-}
-
-// Закрытие всех модальных окон
-function closeModals() {
-    closeModal('authModal');
-    closeModal('transferModal');
-    closeModal('historyModal');
 }
