@@ -163,8 +163,14 @@ app.post('/transfer', async (req, res) => {
     try {
         const { fromUserId, toUserId, amount } = req.body;
 
+        // Проверяем, что данные переданы корректно
         if (typeof amount !== 'number' || amount <= 0) {
             return res.status(400).json({ success: false, error: 'Invalid amount' });
+        }
+
+        // Запрещаем перевод самому себе
+        if (fromUserId === toUserId) {
+            return res.status(400).json({ success: false, error: 'You cannot transfer coins to yourself' });
         }
 
         // Проверяем отправителя
@@ -178,6 +184,7 @@ app.post('/transfer', async (req, res) => {
             return res.status(404).json({ success: false, error: 'Sender not found' });
         }
 
+        // Проверяем баланс отправителя
         if ((fromUser.balance || 0) < amount) {
             return res.status(400).json({ success: false, error: 'Insufficient balance' });
         }
