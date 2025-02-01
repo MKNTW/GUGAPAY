@@ -107,13 +107,16 @@ body {
     background: white;
     padding: 20px;
     border-radius: 8px;
-    width: 300px;
-    position: relative;
+    width: 300px; /* Фиксированный размер окна */
+    max-height: 80vh; /* Ограничение высоты */
+    overflow-y: auto; /* Прокрутка содержимого */
+    position: relative; /* Для позиционирования кнопки закрытия */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     font-family: 'Oswald', sans-serif;
     text-transform: uppercase;
 }
 
+/* Кнопка закрытия */
 .close-btn {
     position: absolute;
     top: 10px;
@@ -123,11 +126,11 @@ body {
     border: none;
     cursor: pointer;
     padding: 5px 10px;
-    border-radius: 50%;
-    transition: background-color 0.3s ease;
+    border-radius: 50%; /* Делаем кнопку круглой */
     font-size: 14px;
     font-family: 'Oswald', sans-serif;
     text-transform: uppercase;
+    transition: background-color 0.3s ease;
 }
 
 .close-btn:hover {
@@ -173,6 +176,13 @@ body {
     transition: background-color 0.3s ease;
     font-family: 'Oswald', sans-serif;
     text-transform: uppercase;
+}
+
+/* Прокручиваемое содержимое */
+.scrollable-content {
+    max-height: 400px; /* Максимальная высота содержимого */
+    overflow-y: auto; /* Включаем прокрутку */
+    margin-bottom: 20px; /* Отступ от кнопки закрытия */
 }
 
 /* Адаптивность */
