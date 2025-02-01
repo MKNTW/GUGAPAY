@@ -21,11 +21,12 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchUserData();
     } else {
         updateUI(); // Обновляем интерфейс при загрузке страницы
+        openAuthModal(); // Открываем окно авторизации
     }
 
     // Привязка обработчиков событий
-    if (loginBtn) loginBtn.addEventListener('click', openLoginModal);
-    if (registerBtn) registerBtn.addEventListener('click', openRegisterModal);
+    if (loginBtn) loginBtn.addEventListener('click', openAuthModal);
+    if (registerBtn) registerBtn.addEventListener('click', openAuthModal);
     if (logoutBtn) logoutBtn.addEventListener('click', logout);
     if (transferBtn) transferBtn.addEventListener('click', openTransferModal); // Открываем окно перевода при нажатии на кнопку "Transfer"
     if (historyBtn) historyBtn.addEventListener('click', openHistoryModal); // Открываем окно истории операций при нажатии на кнопку "Операции"
