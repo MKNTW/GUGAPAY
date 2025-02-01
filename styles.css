@@ -1,6 +1,6 @@
 /* Общие стили */
 body {
-    font-family: 'Oswald', sans-serif; /* Применяем Oswald для всего текста */
+    font-family: 'Oswald', sans-serif;
     margin: 0;
     padding: 0;
     display: flex;
@@ -16,199 +16,90 @@ body {
     display: none; /* Скрывает элемент */
 }
 
-button {
-    padding: 10px 20px;
-    margin: 5px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-    color: white;
-    transition: background-color 0.3s ease;
-    font-family: 'Oswald', sans-serif; /* Применяем Oswald */
-    text-transform: uppercase; /* Делаем текст заглавными буквами */
-}
-
-/* Кнопка Войти (зелёная) */
-#loginSubmitBtn,
-#switchToLoginBtn {
-    background-color: #28a745;
-}
-
-#loginSubmitBtn:hover,
-#switchToLoginBtn:hover {
-    background-color: #218838;
-}
-
-/* Кнопка Зарегистрироваться (серая) */
-#switchToRegisterBtn {
-    background-color: #6c757d;
-}
-
-#switchToRegisterBtn:hover {
-    background-color: #5a6268;
-}
-
-/* Кнопка Зарегистрироваться (зелёная) в окне регистрации */
-#registerSubmitBtn {
-    background-color: #28a745;
-}
-
-#registerSubmitBtn:hover {
-    background-color: #218838;
-}
-
-/* Кнопка Войти (серая) в окне регистрации */
-#switchToLoginBtn {
-    background-color: #6c757d;
-}
-
-#switchToLoginBtn:hover {
-    background-color: #5a6268;
-}
-
-/* Информация о пользователе (в левом верхнем углу) */
+/* Информация о пользователе */
 #userInfo {
     position: absolute;
     top: 20px;
-    left: 20px;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 20px;
+    box-sizing: border-box;
+    font-size: 24px; /* Увеличиваем размер шрифта */
+    font-weight: bold; /* Делаем шрифт жирным */
+}
+
+#balanceInfo {
     text-align: left;
-    color: #333;
-    font-family: 'Oswald', sans-serif; /* Применяем Oswald */
-    text-transform: uppercase; /* Делаем текст заглавными буквами */
 }
 
-#userInfo p {
-    margin: 5px 0;
+#userIdInfo {
+    text-align: right;
 }
 
-/* Кнопка Добыть */
-#mineBtn {
+/* Кнопка майнить (изображение) */
+#mineBtnContainer {
     position: absolute;
-    bottom: 20px;
+    bottom: 80px; /* Располагаем над нижней панелью */
     left: 50%;
     transform: translateX(-50%);
-    padding: 15px 30px;
-    font-size: 20px;
-    background-color: #28a745;
-    color: white;
-    transition: background-color 0.3s ease;
-    font-family: 'Oswald', sans-serif; /* Применяем Oswald */
-    text-transform: uppercase; /* Делаем текст заглавными буквами */
+    width: 60px;
+    height: 60px;
+    cursor: pointer;
 }
 
-#mineBtn:hover {
-    background-color: #218838;
-}
-
-/* Стили для модальных окон */
-.modal {
-    position: fixed;
-    top: 0;
-    left: 0;
+#mineBtn {
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5); /* Полупрозрачный фон */
+    object-fit: cover;
+    border-radius: 50%; /* Делаем изображение круглым */
+    border: 2px solid #ccc;
+}
+
+/* Нижняя панель кнопок */
+#bottomBar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #fff;
     display: flex;
-    justify-content: center;
+    justify-content: space-around;
     align-items: center;
+    padding: 10px 0;
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
     z-index: 1000;
 }
 
-.modal-content {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    width: 300px;
-    position: relative;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    font-family: 'Oswald', sans-serif; /* Применяем Oswald */
-    text-transform: uppercase; /* Делаем текст заглавными буквами */
-}
-
-.close-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: red;
-    color: white;
+#bottomBar button {
+    padding: 10px 20px;
     border: none;
-    cursor: pointer;
-    padding: 5px 10px;
-    border-radius: 50%;
-    transition: background-color 0.3s ease;
-    font-size: 14px;
-    font-family: 'Oswald', sans-serif; /* Применяем Oswald */
-    text-transform: uppercase; /* Делаем текст заглавными буквами */
-}
-
-.close-btn:hover {
-    background: darkred;
-}
-
-.modal-content h3, .modal-content h4 {
-    margin-top: 0;
-    font-size: 18px;
-    color: #333;
-    text-align: center;
-    font-family: 'Oswald', sans-serif; /* Применяем Oswald */
-    text-transform: uppercase; /* Делаем текст заглавными буквами */
-}
-
-.modal-content label {
-    display: block;
-    margin-top: 10px;
-    font-size: 16px;
-    color: #555;
-    font-family: 'Oswald', sans-serif; /* Применяем Oswald */
-    text-transform: uppercase; /* Делаем текст заглавными буквами */
-}
-
-.modal-content input {
-    width: 100%;
-    padding: 8px;
-    margin-top: 5px;
-    box-sizing: border-box;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-family: 'Oswald', sans-serif; /* Применяем Oswald */
-    text-transform: uppercase; /* Делаем текст заглавными буквами */
-}
-
-.modal-content button {
-    margin-top: 20px;
-    padding: 10px;
-    border: none;
-    cursor: pointer;
-    width: 100%;
-    border-radius: 4px;
-    transition: background-color 0.3s ease;
-    font-family: 'Oswald', sans-serif; /* Применяем Oswald */
-    text-transform: uppercase; /* Делаем текст заглавными буквами */
-}
-
-/* Стили для списка транзакций */
-#transactionList {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-    max-height: 250px;
-    overflow-y: auto;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    margin-top: 20px;
-    font-family: 'Oswald', sans-serif; /* Применяем Oswald */
-    text-transform: uppercase; /* Делаем текст заглавными буквами */
-}
-
-#transactionList li {
-    margin-bottom: 10px;
-    padding: 10px;
-    border: 1px solid #ccc;
     border-radius: 5px;
-    background: #f9f9f9;
+    background-color: #28a745;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
 }
 
-#transactionList li:last-child {
-    margin-bottom: 0;
+#bottomBar button:hover {
+    background-color: #218838;
+}
+
+/* Адаптивность */
+@media (max-width: 600px) {
+    #userInfo {
+        font-size: 18px; /* Уменьшаем шрифт на маленьких экранах */
+    }
+
+    #mineBtnContainer {
+        bottom: 70px; /* Корректируем положение кнопки майнить */
+    }
+
+    #bottomBar button {
+        font-size: 14px; /* Уменьшаем шрифт кнопок */
+        padding: 8px 16px;
+    }
 }
