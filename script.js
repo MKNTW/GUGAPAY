@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchUserData();
     } else {
         updateUI(); // Обновляем интерфейс при загрузке страницы
+        openAuthModal(); // Открываем окно авторизации
     }
 
     // Привязка обработчиков событий
@@ -52,8 +53,9 @@ function updateUI() {
         if (historyBtn) historyBtn.classList.add('hidden'); // Скрываем кнопку Операции
     }
 
-    // Закрываем все модальные окна при загрузке страницы
-    closeModals();
+    // Закрываем все модальные окна, кроме authModal, при загрузке страницы
+    closeModal('transferModal');
+    closeModal('historyModal');
 }
 
 // Функция для форматирования чисел
@@ -65,34 +67,14 @@ function formatBalance(balance) {
 function createModal(id, content) {
     const modal = document.createElement('div');
     modal.id = id;
-    modal.className = 'modal hidden';
+    modal.className = 'modal';
     modal.innerHTML = `
         <div class="modal-content">
-            <button class="close-btn">X</button>
             ${content}
         </div>
     `;
     document.body.appendChild(modal);
     return modal;
-}
-
-// Открытие модального окна
-function openModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) modal.classList.remove('hidden');
-}
-
-// Закрытие модального окна
-function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) modal.classList.add('hidden');
-}
-
-// Закрытие всех модальных окон
-function closeModals() {
-    closeModal('authModal');
-    closeModal('transferModal');
-    closeModal('historyModal');
 }
 
 // Открытие модального окна авторизации
@@ -117,13 +99,11 @@ function openAuthModal() {
             </div>
         `);
 
-        const closeAuthBtn = authModal.querySelector('.close-btn');
         const loginSubmitBtn = authModal.querySelector('#loginSubmitBtn');
         const registerSubmitBtn = authModal.querySelector('#registerSubmitBtn');
         const switchToRegisterBtn = authModal.querySelector('#switchToRegisterBtn');
         const switchToLoginBtn = authModal.querySelector('#switchToLoginBtn');
 
-        if (closeAuthBtn) closeAuthBtn.addEventListener('click', () => closeModal('authModal'));
         if (loginSubmitBtn) loginSubmitBtn.addEventListener('click', login);
         if (registerSubmitBtn) registerSubmitBtn.addEventListener('click', register);
         if (switchToRegisterBtn) switchToRegisterBtn.addEventListener('click', openRegisterSection);
@@ -132,11 +112,6 @@ function openAuthModal() {
 
     openLoginSection(); // По умолчанию открываем секцию входа
     openModal('authModal');
-}
-
-// Закрытие модального окна авторизации
-function closeAuthModal() {
-    closeModal('authModal');
 }
 
 // Открытие секции входа
@@ -155,61 +130,6 @@ function openRegisterSection() {
     if (registerSection) registerSection.style.display = 'block';
 }
 
-// Открытие модального окна перевода
-function openTransferModal() {
-    if (!currentUserId) return;
-
-    let transferModal = document.getElementById('transferModal');
-    if (!transferModal) {
-        transferModal = createModal('transferModal', `
-            <h3>Перевод монет</h3>
-            <label for="toUserIdInput">Кому (ID пользователя):</label>
-            <input type="text" id="toUserIdInput" placeholder="Введите ID получателя">
-            <label for="transferAmountInput">Количество:</label>
-            <input type="number" id="transferAmountInput" placeholder="Введите сумму">
-            <button id="sendTransferBtn">Отправить</button>
-        `);
-
-        const closeTransferBtn = transferModal.querySelector('.close-btn');
-        const sendTransferBtn = transferModal.querySelector('#sendTransferBtn');
-
-        if (closeTransferBtn) closeTransferBtn.addEventListener('click', () => closeModal('transferModal'));
-        if (sendTransferBtn) sendTransferBtn.addEventListener('click', sendTransfer);
-    }
-
-    openModal('transferModal');
-}
-
-// Закрытие модального окна перевода
-function closeTransferModal() {
-    closeModal('transferModal');
-}
-
-// Открытие модального окна истории операций
-function openHistoryModal() {
-    if (!currentUserId) return;
-
-    let historyModal = document.getElementById('historyModal');
-    if (!historyModal) {
-        historyModal = createModal('historyModal', `
-            <h3>История операций</h3>
-            <ul id="transactionList"></ul>
-        `);
-
-        const closeHistoryBtn = historyModal.querySelector('.close-btn');
-
-        if (closeHistoryBtn) closeHistoryBtn.addEventListener('click', () => closeModal('historyModal'));
-    }
-
-    fetchTransactionHistory();
-    openModal('historyModal');
-}
-
-// Закрытие модального окна истории операций
-function closeHistoryModal() {
-    closeModal('historyModal');
-}
-
 // Регистрация
 async function register() {
     const login = document.getElementById('regLogin').value;
@@ -226,7 +146,10 @@ async function register() {
 
         if (data.success) {
             alert(`✅ Аккаунт создан! Ваш ID: ${data.userId}`);
-            closeModal('authModal');
+            currentUserId = data.userId;
+            localStorage.setItem('userId', currentUserId); // Сохраняем ID в localStorage
+            updateUI();
+            fetchUserData(); // Загружаем данные пользователя
         } else {
             alert(`❌ Ошибка регистрации: ${data.error}`);
         }
@@ -254,7 +177,6 @@ async function login() {
             currentUserId = data.userId;
             localStorage.setItem('userId', currentUserId); // Сохраняем ID в localStorage
             updateUI();
-            closeModal('authModal');
             fetchUserData(); // Загружаем данные пользователя
         } else {
             alert(`❌ Ошибка входа: ${data.error}`);
@@ -270,7 +192,7 @@ function logout() {
     localStorage.removeItem('userId');
     currentUserId = null;
     updateUI();
-    closeModals();
+    openAuthModal(); // Открываем окно авторизации снова
 }
 
 // Получение данных пользователя
@@ -304,66 +226,73 @@ async function fetchUserData() {
     }
 }
 
-// Перевод монет
-async function sendTransfer() {
-    const toUserId = document.getElementById('toUserIdInput').value;
-    const amount = parseInt(document.getElementById('transferAmountInput').value, 10);
-
-    // Проверяем, что данные введены корректно
-    if (!toUserId || !amount || amount <= 0) {
-        alert('❌ Введите корректные данные');
-        return;
-    }
-
-    // Запрещаем перевод самому себе
-    if (toUserId === currentUserId) {
-        alert('❌ Вы не можете перевести монеты самому себе');
-        return;
-    }
-
-    try {
-        const response = await fetch(`${API_URL}/transfer`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fromUserId: currentUserId, toUserId, amount })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            alert(`✅ Перевод успешен! Новый баланс: ${formatBalance(data.fromBalance)}`);
-            closeModal('transferModal');
-            fetchUserData();
-        } else {
-            alert(`❌ Ошибка перевода: ${data.error}`);
-        }
-    } catch (error) {
-        console.error(error);
-        alert('🚫 Ошибка сети');
-    }
-}
-
-// Обработка клика по кнопке MINE
-async function mineCoins() {
+// Открытие модального окна перевода
+function openTransferModal() {
     if (!currentUserId) return;
 
-    try {
-        const response = await fetch(`${API_URL}/update`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: currentUserId })
-        });
+    let transferModal = document.getElementById('transferModal');
+    if (!transferModal) {
+        transferModal = createModal('transferModal', `
+            <h3>Перевод монет</h3>
+            <label for="toUserIdInput">Кому (ID пользователя):</label>
+            <input type="text" id="toUserIdInput" placeholder="Введите ID получателя">
+            <label for="transferAmountInput">Количество:</label>
+            <input type="number" id="transferAmountInput" placeholder="Введите сумму">
+            <button id="sendTransferBtn">Отправить</button>
+            <button class="close-btn">X</button>
+        `);
 
-        if (!response.ok) {
-            throw new Error(`Server responded with status ${response.status}`);
-        }
+        const closeTransferBtn = transferModal.querySelector('.close-btn');
+        const sendTransferBtn = transferModal.querySelector('#sendTransferBtn');
 
-        // Обновляем данные пользователя
-        fetchUserData();
-    } catch (error) {
-        console.error(error);
-        alert('🚫 Ошибка при попытке добыть монеты');
+        if (closeTransferBtn) closeTransferBtn.addEventListener('click', () => closeModal('transferModal'));
+        if (sendTransferBtn) sendTransferBtn.addEventListener('click', sendTransfer);
     }
+
+    openModal('transferModal');
+}
+
+// Закрытие модального окна перевода
+function closeTransferModal() {
+    closeModal('transferModal');
+}
+
+// Открытие модального окна истории операций
+function openHistoryModal() {
+    if (!currentUserId) return;
+
+    let historyModal = document.getElementById('historyModal');
+    if (!historyModal) {
+        historyModal = createModal('historyModal', `
+            <h3>История операций</h3>
+            <ul id="transactionList"></ul>
+            <button class="close-btn">X</button>
+        `);
+
+        const closeHistoryBtn = historyModal.querySelector('.close-btn');
+
+        if (closeHistoryBtn) closeHistoryBtn.addEventListener('click', () => closeModal('historyModal'));
+    }
+
+    fetchTransactionHistory();
+    openModal('historyModal');
+}
+
+// Закрытие модального окна истории операций
+function closeHistoryModal() {
+    closeModal('historyModal');
+}
+
+// Открытие модального окна
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) modal.classList.remove('hidden');
+}
+
+// Закрытие модального окна
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) modal.classList.add('hidden');
 }
 
 // Получение истории операций
@@ -409,4 +338,27 @@ function displayTransactionHistory(transactions) {
 
         if (transactionList) transactionList.appendChild(li);
     });
+}
+
+// Обработка клика по кнопке MINE
+async function mineCoins() {
+    if (!currentUserId) return;
+
+    try {
+        const response = await fetch(`${API_URL}/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: currentUserId })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Server responded with status ${response.status}`);
+        }
+
+        // Обновляем данные пользователя
+        fetchUserData();
+    } catch (error) {
+        console.error(error);
+        alert('🚫 Ошибка при попытке добыть монеты');
+    }
 }
