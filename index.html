@@ -11,21 +11,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Информация о пользователе -->
-    <div id="userInfo">
-        <div id="balanceInfo">Баланс: <span id="balance">0</span></div>
-        <div id="userIdInfo">ID: <span id="userId"></span></div>
+    <!-- Информация о пользователе (ID и Баланс) -->
+    <div id="userInfo" class="hidden">
+        <p id="userIdLabel"><strong>ID:</strong> <span id="userId">0</span></p>
+        <p id="balanceLabel"><strong>Баланс:</strong> <span id="balance">0</span></p>
     </div>
 
-    <!-- Кнопка майнить (изображение) -->
-    <div id="mineBtnContainer">
-        <img src="11.jpg" alt="Майнить" id="mineBtn">
-    </div>
+    <!-- Кнопка "Майнить" (заменена на изображение) -->
+    <img id="mineBtn" src="11.jpg" alt="Майнить" class="hidden">
 
     <!-- Нижняя панель кнопок -->
-    <div id="bottomBar">
+    <div id="bottomBar" class="hidden">
         <button id="transferBtn">Перевод</button>
+        <div class="divider"></div>
         <button id="historyBtn">История</button>
+        <div class="divider"></div>
         <button id="logoutBtn">Выход</button>
     </div>
 
