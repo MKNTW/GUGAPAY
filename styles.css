@@ -174,3 +174,39 @@ button:hover {
 #transactionList li:last-child {
     margin-bottom: 0;
 }
+
+/* Секции в модальном окне авторизации */
+#loginSection, #registerSection {
+    text-align: center;
+}
+
+#loginSection h4, #registerSection h4 {
+    margin-top: 20px;
+    font-size: 16px;
+    color: #333;
+}
+
+#loginSection input, #registerSection input {
+    width: 100%;
+    padding: 8px;
+    margin-top: 10px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+#loginSection button, #registerSection button {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+#loginSection button:hover, #registerSection button:hover {
+    background-color: #218838;
+}
