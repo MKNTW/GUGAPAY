@@ -193,6 +193,7 @@ async function login() {
             updateUI();
             fetchUserData(); // Загружаем данные пользователя
             closeModal('authModal'); // Закрываем окно авторизации
+            alert(`✅ Вы успешно зашли в аккаунт! Ваш ID: ${currentUserId}`); // Уведомление о входе
         } else {
             alert(`❌ Ошибка входа: ${data.error}`);
         }
