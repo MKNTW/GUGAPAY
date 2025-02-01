@@ -225,6 +225,45 @@ app.post('/transfer', async (req, res) => {
     }
 });
 
+// Получение истории операций
+app.get('/transactions', async (req, res) => {
+    try {
+        const { userId } = req.query;
+
+        if (!userId) {
+            return res.status(400).json({ success: false, error: 'User ID is required' });
+        }
+
+        // Получаем все транзакции, где пользователь является отправителем или получателем
+        const { data: sentTransactions, error: sentError } = await supabase
+            .from('transactions')
+            .select('*')
+            .eq('from_user_id', userId)
+            .order('created_at', { ascending: false });
+
+        const { data: receivedTransactions, error: receivedError } = await supabase
+            .from('transactions')
+            .select('*')
+            .eq('to_user_id', userId)
+            .order('created_at', { ascending: false });
+
+        if (sentError || receivedError) {
+            return res.status(500).json({ success: false, error: 'Failed to fetch transactions' });
+        }
+
+        // Объединяем отправленные и полученные транзакции
+        const transactions = [
+            ...(sentTransactions || []).map(tx => ({ ...tx, type: 'sent' })),
+            ...(receivedTransactions || []).map(tx => ({ ...tx, type: 'received' }))
+        ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Сортируем по времени
+
+        res.json({ success: true, transactions });
+    } catch (error) {
+        console.error('[Transactions] Error:', error.stack);
+        res.status(500).json({ success: false, error: 'Failed to fetch transactions' });
+    }
+});
+
 // Запуск сервера
 app.listen(port, '0.0.0.0', () => {
     console.log(`[Server] Running on http://localhost:${port}`);
