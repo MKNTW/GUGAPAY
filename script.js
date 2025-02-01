@@ -123,7 +123,7 @@ async function mineCoins() {
         const response = await fetch(`${API_URL}/update`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: currentUserId })
+            body: JSON.stringify({ userId: currentUserId, amount: 0.00001 }) // Увеличиваем баланс на 0.00001
         });
 
         if (!response.ok) {
@@ -147,9 +147,12 @@ function logout() {
     const mineBtn = document.getElementById('mineBtn');
     const bottomBar = document.getElementById('bottomBar');
 
-    if (userInfo) userInfo.classList.add('hidden');
-    if (mineBtn) mineBtn.classList.add('hidden');
-    if (bottomBar) bottomBar.classList.add('hidden');
+    if (userInfo) userInfo.classList.add('hidden'); // Скрываем информацию о пользователе
+    if (mineBtn) mineBtn.classList.add('hidden'); // Скрываем кнопку "Майнить"
+    if (bottomBar) {
+        bottomBar.classList.add('hidden'); // Скрываем нижнюю панель
+        bottomBar.style.display = 'none'; // Принудительно устанавливаем display: none
+    }
 
     // Обновляем интерфейс
     updateUI();
