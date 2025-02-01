@@ -226,16 +226,43 @@ async function sendTransfer() {
     }
 }
 
+// Открытие модального окна перевода
+function openTransferModal() {
+    const modal = createModal('transferModal', `
+        <h3>Перевод монет</h3>
+        <label for="toUserIdInput">Кому (ID пользователя):</label>
+        <input type="text" id="toUserIdInput" placeholder="Введите ID получателя">
+        <label for="transferAmountInput">Количество:</label>
+        <input type="number" id="transferAmountInput" placeholder="Введите сумму">
+        <button id="sendTransferBtn">Отправить</button>
+        <button class="close-btn">X</button>
+    `);
+
+    // Находим кнопку закрытия внутри модального окна
+    const closeTransferBtn = modal.querySelector('.close-btn');
+    const sendTransferBtn = modal.querySelector('#sendTransferBtn');
+
+    // Привязываем обработчики событий
+    if (closeTransferBtn) closeTransferBtn.addEventListener('click', () => closeModal('transferModal'));
+    if (sendTransferBtn) sendTransferBtn.addEventListener('click', sendTransfer);
+
+    openModal('transferModal');
+}
+
 // Открытие модального окна истории операций
 function openHistoryModal() {
     const modal = createModal('historyModal', `
         <h3>История операций</h3>
-        <ul id="transactionList"></ul>
+        <div class="scrollable-content">
+            <ul id="transactionList"></ul>
+        </div>
         <button class="close-btn">X</button>
     `);
 
+    // Находим кнопку закрытия внутри модального окна
     const closeHistoryBtn = modal.querySelector('.close-btn');
 
+    // Привязываем обработчик события для кнопки закрытия
     if (closeHistoryBtn) closeHistoryBtn.addEventListener('click', () => closeModal('historyModal'));
 
     fetchTransactionHistory();
