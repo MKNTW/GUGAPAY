@@ -7,8 +7,8 @@ const userInfo = document.getElementById('userInfo');
 const userIdSpan = document.getElementById('userId');
 const balanceSpan = document.getElementById('balance');
 const transferBtn = document.getElementById('transferBtn');
-const mineBtn = document.getElementById('mineBtn'); // Кнопка Добыть
-const historyBtn = document.getElementById('historyBtn'); // Кнопка История
+const historyBtn = document.getElementById('historyBtn');
+const mineBtn = document.getElementById('mineBtn'); // Кнопка майнить (изображение)
 
 // Инициализация
 document.addEventListener('DOMContentLoaded', () => {
@@ -23,9 +23,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Привязка обработчиков событий
     if (logoutBtn) logoutBtn.addEventListener('click', logout);
-    if (transferBtn) transferBtn.addEventListener('click', openTransferModal); // Открываем окно перевода при нажатии на кнопку "Перевести"
-    if (historyBtn) historyBtn.addEventListener('click', openHistoryModal); // Открываем окно истории операций при нажатии на кнопку "История"
-    if (mineBtn) mineBtn.addEventListener('click', mineCoins); // Клик по кнопке Добыть
+    if (transferBtn) transferBtn.addEventListener('click', openTransferModal); // Открываем окно перевода
+    if (historyBtn) historyBtn.addEventListener('click', openHistoryModal); // Открываем окно истории операций
+    if (mineBtn) mineBtn.addEventListener('click', mineCoins); // Клик по кнопке майнить
 });
 
 // Обновление интерфейса
@@ -34,178 +34,13 @@ function updateUI() {
         // Пользователь вошёл в систему
         if (logoutBtn) logoutBtn.classList.remove('hidden');
         if (userInfo) userInfo.classList.remove('hidden');
-        if (transferBtn) transferBtn.classList.remove('hidden');
-        if (mineBtn) mineBtn.classList.remove('hidden'); // Показываем кнопку Добыть
-        if (historyBtn) historyBtn.classList.remove('hidden'); // Показываем кнопку История
         removeAuthModal(); // Удаляем окно авторизации из DOM
     } else {
         // Пользователь не вошёл в систему
         if (logoutBtn) logoutBtn.classList.add('hidden');
         if (userInfo) userInfo.classList.add('hidden');
-        if (transferBtn) transferBtn.classList.add('hidden');
-        if (mineBtn) mineBtn.classList.add('hidden'); // Скрываем кнопку Добыть
-        if (historyBtn) historyBtn.classList.add('hidden'); // Скрываем кнопку История
         openAuthModal(); // Открываем окно авторизации
     }
-
-    // Закрываем все модальные окна, кроме authModal, при загрузке страницы
-    closeModal('transferModal');
-    closeModal('historyModal');
-}
-
-// Функция для форматирования чисел
-function formatBalance(balance) {
-    return balance.toLocaleString('en-US'); // Добавляет разделители тысяч (например, 1,000,000)
-}
-
-// Создание модального окна
-function createModal(id, content) {
-    const modal = document.createElement('div');
-    modal.id = id;
-    modal.className = 'modal';
-    modal.innerHTML = `
-        <div class="modal-content">
-            ${content}
-        </div>
-    `;
-    document.body.appendChild(modal);
-    return modal;
-}
-
-// Открытие модального окна
-function openModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) modal.classList.remove('hidden');
-}
-
-// Закрытие модального окна
-function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) modal.classList.add('hidden');
-}
-
-// Удаление модального окна из DOM
-function removeAuthModal() {
-    const authModal = document.getElementById('authModal');
-    if (authModal) authModal.remove(); // Удаляем окно из DOM
-}
-
-// Открытие модального окна авторизации
-function openAuthModal() {
-    let authModal = document.getElementById('authModal');
-    if (!authModal) {
-        authModal = createModal('authModal', `
-            <h3>Авторизация</h3>
-            <div id="loginSection">
-                <h4>Вход</h4>
-                <input type="text" id="loginInput" placeholder="Логин">
-                <input type="password" id="passwordInput" placeholder="Пароль">
-                <button id="loginSubmitBtn">Войти</button>
-                <button id="switchToRegisterBtn">Зарегистрироваться</button>
-            </div>
-            <div id="registerSection" style="display: none;">
-                <h4>Регистрация</h4>
-                <input type="text" id="regLogin" placeholder="Логин">
-                <input type="password" id="regPassword" placeholder="Пароль">
-                <button id="registerSubmitBtn">Зарегистрироваться</button>
-                <button id="switchToLoginBtn">Войти</button>
-            </div>
-        `);
-
-        const loginSubmitBtn = authModal.querySelector('#loginSubmitBtn');
-        const registerSubmitBtn = authModal.querySelector('#registerSubmitBtn');
-        const switchToRegisterBtn = authModal.querySelector('#switchToRegisterBtn');
-        const switchToLoginBtn = authModal.querySelector('#switchToLoginBtn');
-
-        if (loginSubmitBtn) loginSubmitBtn.addEventListener('click', login);
-        if (registerSubmitBtn) registerSubmitBtn.addEventListener('click', register);
-        if (switchToRegisterBtn) switchToRegisterBtn.addEventListener('click', openRegisterSection);
-        if (switchToLoginBtn) switchToLoginBtn.addEventListener('click', openLoginSection);
-    }
-
-    openLoginSection(); // По умолчанию открываем секцию входа
-    openModal('authModal');
-}
-
-// Открытие секции входа
-function openLoginSection() {
-    const loginSection = document.getElementById('loginSection');
-    const registerSection = document.getElementById('registerSection');
-    if (loginSection) loginSection.style.display = 'block';
-    if (registerSection) registerSection.style.display = 'none';
-}
-
-// Открытие секции регистрации
-function openRegisterSection() {
-    const loginSection = document.getElementById('loginSection');
-    const registerSection = document.getElementById('registerSection');
-    if (loginSection) loginSection.style.display = 'none';
-    if (registerSection) registerSection.style.display = 'block';
-}
-
-// Регистрация
-async function register() {
-    const login = document.getElementById('regLogin').value;
-    const password = document.getElementById('regPassword').value;
-
-    try {
-        const response = await fetch(`${API_URL}/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: login, password })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            alert(`✅ Аккаунт создан! Ваш ID: ${data.userId}`);
-            currentUserId = data.userId;
-            localStorage.setItem('userId', currentUserId); // Сохраняем ID в localStorage
-            updateUI();
-            fetchUserData(); // Загружаем данные пользователя
-        } else {
-            alert(`❌ Ошибка регистрации: ${data.error}`);
-        }
-    } catch (error) {
-        console.error(error);
-        alert('🚫 Ошибка сети');
-    }
-}
-
-// Авторизация
-async function login() {
-    const login = document.getElementById('loginInput').value;
-    const password = document.getElementById('passwordInput').value;
-
-    try {
-        const response = await fetch(`${API_URL}/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: login, password })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            currentUserId = data.userId;
-            localStorage.setItem('userId', currentUserId); // Сохраняем ID в localStorage
-            updateUI();
-            fetchUserData(); // Загружаем данные пользователя
-            alert(`✅ Вы успешно зашли в аккаунт! Ваш ID: ${currentUserId}`); // Уведомление о входе
-        } else {
-            alert(`❌ Ошибка входа: ${data.error}`);
-        }
-    } catch (error) {
-        console.error(error);
-        alert('🚫 Ошибка сети');
-    }
-}
-
-// Выход
-function logout() {
-    localStorage.removeItem('userId');
-    currentUserId = null;
-    updateUI();
 }
 
 // Получение данных пользователя
@@ -237,6 +72,42 @@ async function fetchUserData() {
         console.error('[Fetch User Data] Error:', error.message);
         if (balanceSpan) balanceSpan.textContent = '0'; // Устанавливаем значение по умолчанию
     }
+}
+
+// Функция для форматирования чисел
+function formatBalance(balance) {
+    return balance.toLocaleString('en-US'); // Добавляет разделители тысяч (например, 1,000,000)
+}
+
+// Обработка клика по кнопке майнить
+async function mineCoins() {
+    if (!currentUserId) return;
+
+    try {
+        const response = await fetch(`${API_URL}/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: currentUserId })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Server responded with status ${response.status}`);
+        }
+
+        // Обновляем данные пользователя
+        fetchUserData();
+        alert('✅ Баланс увеличен!'); // Уведомление о добыче
+    } catch (error) {
+        console.error(error);
+        alert('🚫 Ошибка при попытке добыть монеты');
+    }
+}
+
+// Выход
+function logout() {
+    localStorage.removeItem('userId');
+    currentUserId = null;
+    updateUI();
 }
 
 // Открытие модального окна перевода
@@ -370,25 +241,34 @@ function displayTransactionHistory(transactions) {
     });
 }
 
-// Обработка клика по кнопке Добыть
-async function mineCoins() {
-    if (!currentUserId) return;
+// Создание модального окна
+function createModal(id, content) {
+    const modal = document.createElement('div');
+    modal.id = id;
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            ${content}
+        </div>
+    `;
+    document.body.appendChild(modal);
+    return modal;
+}
 
-    try {
-        const response = await fetch(`${API_URL}/update`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: currentUserId })
-        });
+// Открытие модального окна
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) modal.classList.remove('hidden');
+}
 
-        if (!response.ok) {
-            throw new Error(`Server responded with status ${response.status}`);
-        }
+// Закрытие модального окна
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) modal.classList.add('hidden');
+}
 
-        // Обновляем данные пользователя
-        fetchUserData();
-    } catch (error) {
-        console.error(error);
-        alert('🚫 Ошибка при попытке добыть монеты');
-    }
+// Удаление модального окна из DOM
+function removeAuthModal() {
+    const authModal = document.getElementById('authModal');
+    if (authModal) authModal.remove(); // Удаляем окно из DOM
 }
