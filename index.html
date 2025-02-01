@@ -3,60 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
-    <title>ZCOIN GAME</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>GUGACOIN</title>
+    <style>
+        .hidden {
+            display: none;
+        }
+    </style>
 </head>
 <body>
-    <div class="auth-container">
-        <button id="loginBtn" class="auth-button">Войти</button>
-        <button id="registerBtn" class="auth-button">Регистрация</button>
-        <button id="logoutBtn" class="auth-button hidden">Выйти</button>
-        <div id="userInfo" class="hidden">
-            <span>ID: <span id="userId">000000</span></span>
-            <span>Баланс: <span id="balance">0.00000</span></span>
-        </div>
+    <!-- Кнопки -->
+    <button id="loginBtn">Login</button>
+    <button id="registerBtn">Register</button>
+    <button id="logoutBtn" class="hidden">Logout</button>
+    <button id="transferBtn" class="hidden">Transfer</button>
+
+    <!-- Информация о пользователе -->
+    <div id="userInfo" class="hidden">
+        <p>User ID: <span id="userId"></span></p>
+        <p>Balance: <span id="balance"></span></p>
     </div>
 
     <!-- Модальное окно регистрации -->
-    <div id="registerModal" class="modal hidden">
-        <div class="modal-content">
-            <h2>Регистрация</h2>
-            <input type="text" id="regLogin" placeholder="Логин" required>
-            <input type="password" id="regPassword" placeholder="Пароль" required>
-            <button onclick="register()">Создать аккаунт</button>
-            <button onclick="closeModals()">Отмена</button>
-        </div>
+    <div id="registerModal" class="hidden">
+        <input type="text" id="regLogin" placeholder="Username">
+        <input type="password" id="regPassword" placeholder="Password">
+        <button onclick="register()">Register</button>
     </div>
 
     <!-- Модальное окно входа -->
-    <div id="loginModal" class="modal hidden">
-        <div class="modal-content">
-            <h2>Вход</h2>
-            <input type="text" id="loginInput" placeholder="Логин" required>
-            <input type="password" id="passwordInput" placeholder="Пароль" required>
-            <button onclick="login()">Войти</button>
-            <button onclick="closeModals()">Отмена</button>
-        </div>
+    <div id="loginModal" class="hidden">
+        <input type="text" id="loginInput" placeholder="Username">
+        <input type="password" id="passwordInput" placeholder="Password">
+        <button onclick="login()">Login</button>
     </div>
 
     <!-- Модальное окно перевода -->
-    <div id="transferModal" class="modal hidden">
-        <div class="modal-content">
-            <h2>Перевод монет</h2>
-            <input type="text" id="toUserId" placeholder="ID получателя" required>
-            <input type="number" id="transferAmount" placeholder="Количество монет" required>
-            <button onclick="transferCoins()">Перевести</button>
-            <button onclick="closeModals()">Отмена</button>
-        </div>
+    <div id="transferModal" class="hidden">
+        <input type="text" id="toUserId" placeholder="Recipient ID">
+        <input type="number" id="transferAmount" placeholder="Amount">
+        <button onclick="transferCoins()">Transfer</button>
     </div>
 
-    <main>
-        <div id="game">
-            <div id="tapArea">MINE</div>
-            <button id="transferBtn" class="hidden">Перевести монеты</button>
-        </div>
-    </main>
+    <!-- Кнопка MINE -->
+    <div id="tapArea">
+        <button>MINE</button>
+    </div>
 
     <script src="script.js"></script>
 </body>
