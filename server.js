@@ -22,22 +22,6 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Маршрут для корневого пути "/"
-app.get('/', (req, res) => {
-    res.send(`
-        <h1>Welcome to GUGACOIN!</h1>
-        <p>This is the backend server for GUGACOIN.</p>
-        <p>Available endpoints:</p>
-        <ul>
-            <li><strong>POST /register</strong> - Register a new user</li>
-            <li><strong>POST /login</strong> - Log in a user</li>
-            <li><strong>POST /update</strong> - Update user balance</li>
-            <li><strong>GET /user</strong> - Fetch user data</li>
-            <li><strong>POST /transfer</strong> - Transfer coins between users</li>
-        </ul>
-    `);
-});
-
 // Регистрация пользователя
 app.post('/register', async (req, res) => {
     try {
