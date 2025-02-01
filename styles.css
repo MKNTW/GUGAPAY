@@ -39,13 +39,29 @@ button {
 }
 
 /* Кнопка Зарегистрироваться (серая) */
-#switchToRegisterBtn,
-#registerSubmitBtn {
+#switchToRegisterBtn {
     background-color: #6c757d;
 }
 
-#switchToRegisterBtn:hover,
+#switchToRegisterBtn:hover {
+    background-color: #5a6268;
+}
+
+/* Кнопка Зарегистрироваться (зелёная) в окне регистрации */
+#registerSubmitBtn {
+    background-color: #28a745;
+}
+
 #registerSubmitBtn:hover {
+    background-color: #218838;
+}
+
+/* Кнопка Войти (серая) в окне регистрации */
+#switchToLoginBtn {
+    background-color: #6c757d;
+}
+
+#switchToLoginBtn:hover {
     background-color: #5a6268;
 }
 
