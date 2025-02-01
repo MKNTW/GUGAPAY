@@ -23,20 +23,28 @@ button {
     border-radius: 5px;
     cursor: pointer;
     font-size: 16px;
-    background-color: #007bff;
     color: white;
     transition: background-color 0.3s ease;
 }
 
-button:hover {
-    background-color: #0056b3;
+/* Кнопка Войти (зелёная) */
+#loginSubmitBtn,
+#switchToLoginBtn {
+    background-color: #28a745;
 }
 
-/* Кнопка регистрации (серая) */
+#loginSubmitBtn:hover,
+#switchToLoginBtn:hover {
+    background-color: #218838;
+}
+
+/* Кнопка Зарегистрироваться (серая) */
+#switchToRegisterBtn,
 #registerSubmitBtn {
     background-color: #6c757d;
 }
 
+#switchToRegisterBtn:hover,
 #registerSubmitBtn:hover {
     background-color: #5a6268;
 }
@@ -138,17 +146,11 @@ button:hover {
 .modal-content button {
     margin-top: 20px;
     padding: 10px;
-    background-color: #28a745;
-    color: white;
     border: none;
     cursor: pointer;
     width: 100%;
     border-radius: 4px;
     transition: background-color 0.3s ease;
-}
-
-.modal-content button:hover {
-    background-color: #218838;
 }
 
 /* Стили для списка транзакций */
