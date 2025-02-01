@@ -43,6 +43,7 @@ function updateUI() {
         if (transferBtn) transferBtn.classList.remove('hidden');
         if (mineBtn) mineBtn.classList.remove('hidden'); // Показываем кнопку MINE
         if (historyBtn) historyBtn.classList.remove('hidden'); // Показываем кнопку Операции
+        closeModal('authModal'); // Закрываем окно авторизации
     } else {
         if (loginBtn) loginBtn.classList.remove('hidden');
         if (registerBtn) registerBtn.classList.remove('hidden');
@@ -51,6 +52,7 @@ function updateUI() {
         if (transferBtn) transferBtn.classList.add('hidden');
         if (mineBtn) mineBtn.classList.add('hidden'); // Скрываем кнопку MINE
         if (historyBtn) historyBtn.classList.add('hidden'); // Скрываем кнопку Операции
+        openAuthModal(); // Открываем окно авторизации
     }
 
     // Закрываем все модальные окна, кроме authModal, при загрузке страницы
@@ -192,7 +194,6 @@ function logout() {
     localStorage.removeItem('userId');
     currentUserId = null;
     updateUI();
-    openAuthModal(); // Открываем окно авторизации снова
 }
 
 // Получение данных пользователя
@@ -338,6 +339,45 @@ function displayTransactionHistory(transactions) {
 
         if (transactionList) transactionList.appendChild(li);
     });
+}
+
+// Перевод монет
+async function sendTransfer() {
+    const toUserId = document.getElementById('toUserIdInput').value;
+    const amount = parseInt(document.getElementById('transferAmountInput').value, 10);
+
+    // Проверяем, что данные введены корректно
+    if (!toUserId || !amount || amount <= 0) {
+        alert('❌ Введите корректные данные');
+        return;
+    }
+
+    // Запрещаем перевод самому себе
+    if (toUserId === currentUserId) {
+        alert('❌ Вы не можете перевести монеты самому себе');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/transfer`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fromUserId: currentUserId, toUserId, amount })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            alert(`✅ Перевод успешен! Новый баланс: ${formatBalance(data.fromBalance)}`);
+            closeModal('transferModal');
+            fetchUserData();
+        } else {
+            alert(`❌ Ошибка перевода: ${data.error}`);
+        }
+    } catch (error) {
+        console.error(error);
+        alert('🚫 Ошибка сети');
+    }
 }
 
 // Обработка клика по кнопке MINE
