@@ -68,6 +68,7 @@ async function register() {
             alert(`❌ Ошибка регистрации: ${data.error}`);
         }
     } catch (error) {
+        console.error(error);
         alert('🚫 Ошибка сети');
     }
 }
@@ -96,6 +97,7 @@ async function login() {
             alert(`❌ Ошибка входа: ${data.error}`);
         }
     } catch (error) {
+        console.error(error);
         alert('🚫 Ошибка сети');
     }
 }
@@ -135,6 +137,7 @@ async function transferCoins() {
             alert(`❌ Ошибка перевода: ${data.error}`);
         }
     } catch (error) {
+        console.error(error);
         alert('🚫 Ошибка сети');
     }
 }
