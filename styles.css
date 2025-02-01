@@ -69,7 +69,7 @@ button:hover {
 }
 
 /* Стили для модальных окон */
-#registerModal, #loginModal, #transferModal, #historyModal {
+#authModal, #transferModal, #historyModal {
     position: fixed;
     top: 0;
     left: 0;
@@ -82,7 +82,7 @@ button:hover {
     z-index: 1000;
 }
 
-#registerModal div, #loginModal div, #transferContent, #historyContent {
+#authContent, #transferContent, #historyContent {
     background: white;
     padding: 20px;
     border-radius: 8px;
@@ -90,7 +90,7 @@ button:hover {
     position: relative;
 }
 
-#closeRegisterBtn, #closeLoginBtn, #closeTransferBtn, #closeHistoryBtn {
+#closeAuthBtn, #closeTransferBtn, #closeHistoryBtn {
     position: absolute;
     top: 10px;
     right: 10px;
@@ -102,24 +102,32 @@ button:hover {
     border-radius: 50%;
 }
 
-#closeRegisterBtn:hover, #closeLoginBtn:hover, #closeTransferBtn:hover, #closeHistoryBtn:hover {
+#closeAuthBtn:hover, #closeTransferBtn:hover, #closeHistoryBtn:hover {
     background: darkred;
 }
 
-#registerModal h3, #loginModal h3, #transferContent h3, #historyContent h3 {
+#authContent h3 {
     margin-top: 0;
     font-size: 18px;
     color: #333;
+    text-align: center;
 }
 
-#registerModal label, #loginModal label, #transferContent label, #historyContent label {
+#authContent h4 {
+    margin-top: 20px;
+    font-size: 16px;
+    color: #333;
+    text-align: center;
+}
+
+#authContent label {
     display: block;
     margin-top: 10px;
     font-size: 16px;
     color: #555;
 }
 
-#registerModal input, #loginModal input, #transferContent input, #historyContent input {
+#authContent input {
     width: 100%;
     padding: 8px;
     margin-top: 5px;
@@ -128,7 +136,7 @@ button:hover {
     border-radius: 4px;
 }
 
-#registerSubmitBtn, #loginSubmitBtn, #sendTransferBtn {
+#authContent button {
     margin-top: 20px;
     padding: 10px;
     background: green;
@@ -139,8 +147,115 @@ button:hover {
     border-radius: 4px;
 }
 
-#registerSubmitBtn:hover, #loginSubmitBtn:hover, #sendTransferBtn:hover {
+#authContent button:hover {
     background: darkgreen;
+}
+
+#authContent #registerSection {
+    margin-top: 20px;
+}
+
+/* Стили для модального окна перевода */
+#transferModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5); /* Полупрозрачный фон */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+#transferContent {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 300px;
+    position: relative;
+}
+
+#transferContent h3 {
+    margin-top: 0;
+    font-size: 18px;
+    color: #333;
+}
+
+#transferContent label {
+    display: block;
+    margin-top: 10px;
+    font-size: 16px;
+    color: #555;
+}
+
+#transferContent input {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+#sendTransferBtn {
+    margin-top: 20px;
+    padding: 10px;
+    background: green;
+    color: white;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    border-radius: 4px;
+}
+
+#sendTransferBtn:hover {
+    background: darkgreen;
+}
+
+/* Стили для модального окна истории операций */
+#historyModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5); /* Полупрозрачный фон */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+#historyContent {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 300px;
+    position: relative;
+}
+
+#historyContent h3 {
+    margin-top: 0;
+    font-size: 18px;
+    color: #333;
+}
+
+#historyContent label {
+    display: block;
+    margin-top: 10px;
+    font-size: 16px;
+    color: #555;
+}
+
+#historyContent input {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
 }
 
 /* Стили для списка транзакций */
