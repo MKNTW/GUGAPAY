@@ -73,13 +73,19 @@ function updateUI() {
         // Пользователь вошёл в систему
         if (userInfo) userInfo.classList.remove('hidden');
         if (mineBtn) mineBtn.classList.remove('hidden');
-        if (bottomBar) bottomBar.classList.remove('hidden');
+        if (bottomBar) {
+            bottomBar.classList.remove('hidden');
+            bottomBar.style.display = 'flex'; // Убедимся, что панель видима
+        }
         removeAuthModal(); // Удаляем окно авторизации из DOM
     } else {
         // Пользователь не вошёл в систему
         if (userInfo) userInfo.classList.add('hidden');
         if (mineBtn) mineBtn.classList.add('hidden');
-        if (bottomBar) bottomBar.classList.add('hidden');
+        if (bottomBar) {
+            bottomBar.classList.add('hidden');
+            bottomBar.style.display = 'none'; // Принудительно скрываем панель
+        }
         openAuthModal(); // Открываем окно авторизации
     }
 }
