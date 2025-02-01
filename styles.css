@@ -17,16 +17,19 @@ body {
 }
 
 button {
-    padding: 10px;
+    padding: 10px 20px;
     margin: 5px;
     border: none;
     border-radius: 5px;
     cursor: pointer;
     font-size: 16px;
+    background-color: #007bff;
+    color: white;
+    transition: background-color 0.3s ease;
 }
 
 button:hover {
-    opacity: 0.9;
+    background-color: #0056b3;
 }
 
 /* Информация о пользователе (в правом верхнем углу) */
@@ -60,12 +63,13 @@ button:hover {
     transform: translateX(-50%);
     padding: 15px 30px;
     font-size: 20px;
-    background: green;
+    background-color: #28a745;
     color: white;
+    transition: background-color 0.3s ease;
 }
 
 #mineBtn:hover {
-    background: darkgreen;
+    background-color: #218838;
 }
 
 /* Стили для модальных окон */
@@ -88,6 +92,7 @@ button:hover {
     border-radius: 8px;
     width: 300px;
     position: relative;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 #closeAuthBtn, #closeTransferBtn, #closeHistoryBtn {
@@ -100,34 +105,35 @@ button:hover {
     cursor: pointer;
     padding: 5px 10px;
     border-radius: 50%;
+    transition: background-color 0.3s ease;
 }
 
 #closeAuthBtn:hover, #closeTransferBtn:hover, #closeHistoryBtn:hover {
     background: darkred;
 }
 
-#authContent h3 {
+#authContent h3, #transferContent h3, #historyContent h3 {
     margin-top: 0;
     font-size: 18px;
     color: #333;
     text-align: center;
 }
 
-#authContent h4 {
+#authContent h4, #transferContent h4, #historyContent h4 {
     margin-top: 20px;
     font-size: 16px;
     color: #333;
     text-align: center;
 }
 
-#authContent label {
+#authContent label, #transferContent label, #historyContent label {
     display: block;
     margin-top: 10px;
     font-size: 16px;
     color: #555;
 }
 
-#authContent input {
+#authContent input, #transferContent input, #historyContent input {
     width: 100%;
     padding: 8px;
     margin-top: 5px;
@@ -136,126 +142,24 @@ button:hover {
     border-radius: 4px;
 }
 
-#authContent button {
+#authContent button, #transferContent button, #historyContent button {
     margin-top: 20px;
     padding: 10px;
-    background: green;
+    background-color: #28a745;
     color: white;
     border: none;
     cursor: pointer;
     width: 100%;
     border-radius: 4px;
+    transition: background-color 0.3s ease;
 }
 
-#authContent button:hover {
-    background: darkgreen;
+#authContent button:hover, #transferContent button:hover, #historyContent button:hover {
+    background-color: #218838;
 }
 
 #authContent #registerSection {
     margin-top: 20px;
-}
-
-/* Стили для модального окна перевода */
-#transferModal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5); /* Полупрозрачный фон */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-#transferContent {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    width: 300px;
-    position: relative;
-}
-
-#transferContent h3 {
-    margin-top: 0;
-    font-size: 18px;
-    color: #333;
-}
-
-#transferContent label {
-    display: block;
-    margin-top: 10px;
-    font-size: 16px;
-    color: #555;
-}
-
-#transferContent input {
-    width: 100%;
-    padding: 8px;
-    margin-top: 5px;
-    box-sizing: border-box;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-#sendTransferBtn {
-    margin-top: 20px;
-    padding: 10px;
-    background: green;
-    color: white;
-    border: none;
-    cursor: pointer;
-    width: 100%;
-    border-radius: 4px;
-}
-
-#sendTransferBtn:hover {
-    background: darkgreen;
-}
-
-/* Стили для модального окна истории операций */
-#historyModal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5); /* Полупрозрачный фон */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-#historyContent {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    width: 300px;
-    position: relative;
-}
-
-#historyContent h3 {
-    margin-top: 0;
-    font-size: 18px;
-    color: #333;
-}
-
-#historyContent label {
-    display: block;
-    margin-top: 10px;
-    font-size: 16px;
-    color: #555;
-}
-
-#historyContent input {
-    width: 100%;
-    padding: 8px;
-    margin-top: 5px;
-    box-sizing: border-box;
-    border: 1px solid #ccc;
-    border-radius: 4px;
 }
 
 /* Стили для списка транзакций */
@@ -265,6 +169,9 @@ button:hover {
     margin: 0;
     max-height: 250px;
     overflow-y: auto;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-top: 20px;
 }
 
 #transactionList li {
@@ -277,4 +184,40 @@ button:hover {
 
 #transactionList li:last-child {
     margin-bottom: 0;
+}
+
+/* Секции в модальном окне авторизации */
+#loginSection, #registerSection {
+    text-align: center;
+}
+
+#loginSection h4, #registerSection h4 {
+    margin-top: 0;
+    font-size: 16px;
+    color: #333;
+}
+
+#loginSection input, #registerSection input {
+    width: 100%;
+    padding: 8px;
+    margin-top: 10px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+#loginSection button, #registerSection button {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+#loginSection button:hover, #registerSection button:hover {
+    background-color: #218838;
 }
