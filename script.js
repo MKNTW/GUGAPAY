@@ -12,22 +12,6 @@ const transferBtn = document.getElementById('transferBtn');
 const mineBtn = document.getElementById('mineBtn'); // Кнопка MINE
 const historyBtn = document.getElementById('historyBtn'); // Кнопка Операции
 
-// Модальные окна
-const authModal = document.getElementById('authModal');
-const transferModal = document.getElementById('transferModal');
-const historyModal = document.getElementById('historyModal'); // Модальное окно истории
-const transactionList = document.getElementById('transactionList'); // Список транзакций
-
-// Кнопки закрытия модальных окон
-const closeAuthBtn = document.getElementById('closeAuthBtn');
-const closeTransferBtn = document.getElementById('closeTransferBtn'); // Кнопка закрытия перевода
-const closeHistoryBtn = document.getElementById('closeHistoryBtn'); // Кнопка закрытия истории
-
-// Кнопки отправки модальных окон
-const registerSubmitBtn = document.getElementById('registerSubmitBtn'); // Кнопка отправки регистрации
-const loginSubmitBtn = document.getElementById('loginSubmitBtn'); // Кнопка отправки входа
-const sendTransferBtn = document.getElementById('sendTransferBtn'); // Кнопка отправки перевода
-
 // Инициализация
 document.addEventListener('DOMContentLoaded', () => {
     const savedUserId = localStorage.getItem('userId');
@@ -37,25 +21,15 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchUserData();
     } else {
         updateUI(); // Обновляем интерфейс при загрузке страницы
-        openAuthModal(); // Открываем окно авторизации
     }
 
     // Привязка обработчиков событий
-    if (loginBtn) loginBtn.addEventListener('click', openLoginSection);
-    if (registerBtn) registerBtn.addEventListener('click', openRegisterSection);
+    if (loginBtn) loginBtn.addEventListener('click', openLoginModal);
+    if (registerBtn) registerBtn.addEventListener('click', openRegisterModal);
     if (logoutBtn) logoutBtn.addEventListener('click', logout);
     if (transferBtn) transferBtn.addEventListener('click', openTransferModal); // Открываем окно перевода при нажатии на кнопку "Transfer"
     if (historyBtn) historyBtn.addEventListener('click', openHistoryModal); // Открываем окно истории операций при нажатии на кнопку "Операции"
-    if (closeAuthBtn) closeAuthBtn.addEventListener('click', closeAuthModal);
-    if (closeTransferBtn) closeTransferBtn.addEventListener('click', closeTransferModal); // Закрываем окно перевода
-    if (closeHistoryBtn) closeHistoryBtn.addEventListener('click', closeHistoryModal); // Закрываем окно истории
-    if (registerSubmitBtn) registerSubmitBtn.addEventListener('click', register); // Отправляем регистрацию
-    if (loginSubmitBtn) loginSubmitBtn.addEventListener('click', login); // Отправляем вход
-    if (sendTransferBtn) sendTransferBtn.addEventListener('click', sendTransfer); // Отправляем перевод
     if (mineBtn) mineBtn.addEventListener('click', mineCoins); // Клик по кнопке MINE
-
-    // Закрываем все модальные окна при загрузке страницы
-    closeModals();
 });
 
 // Обновление интерфейса
@@ -68,7 +42,6 @@ function updateUI() {
         if (transferBtn) transferBtn.classList.remove('hidden');
         if (mineBtn) mineBtn.classList.remove('hidden'); // Показываем кнопку MINE
         if (historyBtn) historyBtn.classList.remove('hidden'); // Показываем кнопку Операции
-        if (authModal) authModal.classList.add('hidden'); // Скрываем окно авторизации
     } else {
         if (loginBtn) loginBtn.classList.remove('hidden');
         if (registerBtn) registerBtn.classList.remove('hidden');
@@ -77,16 +50,49 @@ function updateUI() {
         if (transferBtn) transferBtn.classList.add('hidden');
         if (mineBtn) mineBtn.classList.add('hidden'); // Скрываем кнопку MINE
         if (historyBtn) historyBtn.classList.add('hidden'); // Скрываем кнопку Операции
-        if (authModal) authModal.classList.remove('hidden'); // Открываем окно авторизации
     }
 
-    // Закрываем все модальные окна при обновлении интерфейса
+    // Закрываем все модальные окна при загрузке страницы
     closeModals();
 }
 
 // Функция для форматирования чисел
 function formatBalance(balance) {
     return balance.toLocaleString('en-US'); // Добавляет разделители тысяч (например, 1,000,000)
+}
+
+// Создание модального окна
+function createModal(id, content) {
+    const modal = document.createElement('div');
+    modal.id = id;
+    modal.className = 'modal hidden';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <button class="close-btn">X</button>
+            ${content}
+        </div>
+    `;
+    document.body.appendChild(modal);
+    return modal;
+}
+
+// Открытие модального окна
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) modal.classList.remove('hidden');
+}
+
+// Закрытие модального окна
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) modal.classList.add('hidden');
+}
+
+// Закрытие всех модальных окон
+function closeModals() {
+    closeModal('authModal');
+    closeModal('transferModal');
+    closeModal('historyModal');
 }
 
 // Регистрация
@@ -105,7 +111,7 @@ async function register() {
 
         if (data.success) {
             alert(`✅ Аккаунт создан! Ваш ID: ${data.userId}`);
-            closeAuthModal();
+            closeModal('authModal');
         } else {
             alert(`❌ Ошибка регистрации: ${data.error}`);
         }
@@ -133,7 +139,7 @@ async function login() {
             currentUserId = data.userId;
             localStorage.setItem('userId', currentUserId); // Сохраняем ID в localStorage
             updateUI();
-            closeAuthModal();
+            closeModal('authModal');
             fetchUserData(); // Загружаем данные пользователя
         } else {
             alert(`❌ Ошибка входа: ${data.error}`);
@@ -150,65 +156,6 @@ function logout() {
     currentUserId = null;
     updateUI();
     closeModals();
-}
-
-// Открытие модального окна авторизации
-function openAuthModal() {
-    if (authModal) authModal.classList.remove('hidden'); // Открываем окно авторизации
-    openLoginSection(); // По умолчанию открываем секцию входа
-}
-
-// Закрытие модального окна авторизации
-function closeAuthModal() {
-    if (authModal) authModal.classList.add('hidden');
-}
-
-// Открытие секции входа
-function openLoginSection() {
-    if (authModal) {
-        const loginSection = authModal.querySelector('#loginSection');
-        const registerSection = authModal.querySelector('#registerSection');
-        if (loginSection) loginSection.style.display = 'block';
-        if (registerSection) registerSection.style.display = 'none';
-    }
-}
-
-// Открытие секции регистрации
-function openRegisterSection() {
-    if (authModal) {
-        const loginSection = authModal.querySelector('#loginSection');
-        const registerSection = authModal.querySelector('#registerSection');
-        if (loginSection) loginSection.style.display = 'none';
-        if (registerSection) registerSection.style.display = 'block';
-    }
-}
-
-// Открытие модального окна перевода
-function openTransferModal() {
-    if (!currentUserId) return;
-
-    closeModals(); // Закрываем все модальные окна
-    if (transferModal) transferModal.classList.remove('hidden'); // Открываем окно перевода
-}
-
-// Закрытие модального окна перевода
-function closeTransferModal() {
-    if (transferModal) transferModal.classList.add('hidden');
-}
-
-// Открытие модального окна истории операций
-function openHistoryModal() {
-    if (!currentUserId) return;
-
-    fetchTransactionHistory();
-    closeModals(); // Закрываем все модальные окна
-    if (historyModal) historyModal.classList.remove('hidden'); // Открываем окно истории
-}
-
-// Закрытие модального окна истории операций
-function closeHistoryModal() {
-    if (historyModal) historyModal.classList.add('hidden');
-    if (transactionList) transactionList.innerHTML = ''; // Очищаем список транзакций
 }
 
 // Получение данных пользователя
@@ -270,7 +217,7 @@ async function sendTransfer() {
 
         if (data.success) {
             alert(`✅ Перевод успешен! Новый баланс: ${formatBalance(data.fromBalance)}`);
-            closeTransferModal();
+            closeModal('transferModal');
             fetchUserData();
         } else {
             alert(`❌ Ошибка перевода: ${data.error}`);
@@ -326,6 +273,7 @@ async function fetchTransactionHistory() {
 
 // Отображение истории операций
 function displayTransactionHistory(transactions) {
+    const transactionList = document.getElementById('transactionList');
     if (transactionList) transactionList.innerHTML = ''; // Очищаем список
 
     if (transactions.length === 0) {
@@ -348,9 +296,145 @@ function displayTransactionHistory(transactions) {
     });
 }
 
+// Открытие модального окна авторизации
+function openAuthModal() {
+    let authModal = document.getElementById('authModal');
+    if (!authModal) {
+        authModal = createModal('authModal', `
+            <h3>Авторизация</h3>
+            <div id="loginSection">
+                <h4>Login</h4>
+                <input type="text" id="loginInput" placeholder="Username">
+                <input type="password" id="passwordInput" placeholder="Password">
+                <button id="loginSubmitBtn">Login</button>
+            </div>
+            <div id="registerSection" style="display: none;">
+                <h4>Register</h4>
+                <input type="text" id="regLogin" placeholder="Username">
+                <input type="password" id="regPassword" placeholder="Password">
+                <button id="registerSubmitBtn">Register</button>
+            </div>
+        `);
+
+        const closeAuthBtn = authModal.querySelector('.close-btn');
+        const loginSubmitBtn = authModal.querySelector('#loginSubmitBtn');
+        const registerSubmitBtn = authModal.querySelector('#registerSubmitBtn');
+
+        if (closeAuthBtn) closeAuthBtn.addEventListener('click', () => closeModal('authModal'));
+        if (loginSubmitBtn) loginSubmitBtn.addEventListener('click', login);
+        if (registerSubmitBtn) registerSubmitBtn.addEventListener('click', register);
+    }
+
+    openLoginSection(); // По умолчанию открываем секцию входа
+    openModal('authModal');
+}
+
+// Закрытие модального окна авторизации
+function closeAuthModal() {
+    closeModal('authModal');
+}
+
+// Открытие секции входа
+function openLoginSection() {
+    const loginSection = document.getElementById('loginSection');
+    const registerSection = document.getElementById('registerSection');
+    if (loginSection) loginSection.style.display = 'block';
+    if (registerSection) registerSection.style.display = 'none';
+}
+
+// Открытие секции регистрации
+function openRegisterSection() {
+    const loginSection = document.getElementById('loginSection');
+    const registerSection = document.getElementById('registerSection');
+    if (loginSection) loginSection.style.display = 'none';
+    if (registerSection) registerSection.style.display = 'block';
+}
+
+// Открытие модального окна перевода
+function openTransferModal() {
+    if (!currentUserId) return;
+
+    let transferModal = document.getElementById('transferModal');
+    if (!transferModal) {
+        transferModal = createModal('transferModal', `
+            <h3>Перевод монет</h3>
+            <label for="toUserIdInput">Кому (ID пользователя):</label>
+            <input type="text" id="toUserIdInput" placeholder="Введите ID получателя">
+            <label for="transferAmountInput">Количество:</label>
+            <input type="number" id="transferAmountInput" placeholder="Введите сумму">
+            <button id="sendTransferBtn">Отправить</button>
+        `);
+
+        const closeTransferBtn = transferModal.querySelector('.close-btn');
+        const sendTransferBtn = transferModal.querySelector('#sendTransferBtn');
+
+        if (closeTransferBtn) closeTransferBtn.addEventListener('click', () => closeModal('transferModal'));
+        if (sendTransferBtn) sendTransferBtn.addEventListener('click', sendTransfer);
+    }
+
+    openModal('transferModal');
+}
+
+// Закрытие модального окна перевода
+function closeTransferModal() {
+    closeModal('transferModal');
+}
+
+// Открытие модального окна истории операций
+function openHistoryModal() {
+    if (!currentUserId) return;
+
+    let historyModal = document.getElementById('historyModal');
+    if (!historyModal) {
+        historyModal = createModal('historyModal', `
+            <h3>История операций</h3>
+            <ul id="transactionList"></ul>
+        `);
+
+        const closeHistoryBtn = historyModal.querySelector('.close-btn');
+
+        if (closeHistoryBtn) closeHistoryBtn.addEventListener('click', () => closeModal('historyModal'));
+    }
+
+    fetchTransactionHistory();
+    openModal('historyModal');
+}
+
+// Закрытие модального окна истории операций
+function closeHistoryModal() {
+    closeModal('historyModal');
+}
+
+// Создание модального окна
+function createModal(id, content) {
+    const modal = document.createElement('div');
+    modal.id = id;
+    modal.className = 'modal hidden';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <button class="close-btn">X</button>
+            ${content}
+        </div>
+    `;
+    document.body.appendChild(modal);
+    return modal;
+}
+
+// Открытие модального окна
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) modal.classList.remove('hidden');
+}
+
+// Закрытие модального окна
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) modal.classList.add('hidden');
+}
+
 // Закрытие всех модальных окон
 function closeModals() {
-    if (authModal) authModal.classList.add('hidden');
-    if (transferModal) transferModal.classList.add('hidden');
-    if (historyModal) historyModal.classList.add('hidden');
+    closeModal('authModal');
+    closeModal('transferModal');
+    closeModal('historyModal');
 }
