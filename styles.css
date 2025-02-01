@@ -106,6 +106,7 @@ button:hover {
     padding: 5px 10px;
     border-radius: 50%;
     transition: background-color 0.3s ease;
+    font-size: 14px;
 }
 
 .close-btn:hover {
@@ -151,30 +152,6 @@ button:hover {
     background-color: #218838;
 }
 
-/* Стили для списка транзакций */
-#transactionList {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-    max-height: 250px;
-    overflow-y: auto;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    margin-top: 20px;
-}
-
-#transactionList li {
-    margin-bottom: 10px;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    background: #f9f9f9;
-}
-
-#transactionList li:last-child {
-    margin-bottom: 0;
-}
-
 /* Секции в модальном окне авторизации */
 #loginSection, #registerSection {
     text-align: center;
@@ -209,4 +186,28 @@ button:hover {
 
 #loginSection button:hover, #registerSection button:hover {
     background-color: #218838;
+}
+
+/* Стили для списка транзакций */
+#transactionList {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    max-height: 250px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-top: 20px;
+}
+
+#transactionList li {
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background: #f9f9f9;
+}
+
+#transactionList li:last-child {
+    margin-bottom: 0;
 }
