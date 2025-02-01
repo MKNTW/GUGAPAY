@@ -15,13 +15,15 @@
 
     <!-- Кнопки в левом верхнем углу -->
     <div id="topButtons" class="hidden">
+        <button id="loginBtn">Login</button>
+        <button id="registerBtn">Register</button>
         <button id="logoutBtn">Logout</button>
         <button id="transferBtn">Transfer</button>
         <button id="historyBtn">Операции</button>
     </div>
 
-    <!-- Модальное окно регистрации и входа -->
-    <div id="authModal">
+    <!-- Модальное окно авторизации -->
+    <div id="authModal" class="hidden">
         <div id="authContent">
             <button id="closeAuthBtn">X</button>
             <h3>Авторизация</h3>
@@ -31,7 +33,7 @@
                 <input type="password" id="passwordInput" placeholder="Password">
                 <button id="loginSubmitBtn">Login</button>
             </div>
-            <div id="registerSection">
+            <div id="registerSection" style="display: none;">
                 <h4>Register</h4>
                 <input type="text" id="regLogin" placeholder="Username">
                 <input type="password" id="regPassword" placeholder="Password">
