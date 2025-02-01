@@ -73,7 +73,7 @@ button:hover {
 }
 
 /* Стили для модальных окон */
-#authModal, #transferModal, #historyModal {
+.modal {
     position: fixed;
     top: 0;
     left: 0;
@@ -86,7 +86,7 @@ button:hover {
     z-index: 1000;
 }
 
-#authContent, #transferContent, #historyContent {
+.modal-content {
     background: white;
     padding: 20px;
     border-radius: 8px;
@@ -95,7 +95,7 @@ button:hover {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-#closeAuthBtn, #closeTransferBtn, #closeHistoryBtn {
+.close-btn {
     position: absolute;
     top: 10px;
     right: 10px;
@@ -108,32 +108,25 @@ button:hover {
     transition: background-color 0.3s ease;
 }
 
-#closeAuthBtn:hover, #closeTransferBtn:hover, #closeHistoryBtn:hover {
+.close-btn:hover {
     background: darkred;
 }
 
-#authContent h3, #transferContent h3, #historyContent h3 {
+.modal-content h3, .modal-content h4 {
     margin-top: 0;
     font-size: 18px;
     color: #333;
     text-align: center;
 }
 
-#authContent h4, #transferContent h4, #historyContent h4 {
-    margin-top: 20px;
-    font-size: 16px;
-    color: #333;
-    text-align: center;
-}
-
-#authContent label, #transferContent label, #historyContent label {
+.modal-content label {
     display: block;
     margin-top: 10px;
     font-size: 16px;
     color: #555;
 }
 
-#authContent input, #transferContent input, #historyContent input {
+.modal-content input {
     width: 100%;
     padding: 8px;
     margin-top: 5px;
@@ -142,7 +135,7 @@ button:hover {
     border-radius: 4px;
 }
 
-#authContent button, #transferContent button, #historyContent button {
+.modal-content button {
     margin-top: 20px;
     padding: 10px;
     background-color: #28a745;
@@ -154,12 +147,8 @@ button:hover {
     transition: background-color 0.3s ease;
 }
 
-#authContent button:hover, #transferContent button:hover, #historyContent button:hover {
+.modal-content button:hover {
     background-color: #218838;
-}
-
-#authContent #registerSection {
-    margin-top: 20px;
 }
 
 /* Стили для списка транзакций */
@@ -184,40 +173,4 @@ button:hover {
 
 #transactionList li:last-child {
     margin-bottom: 0;
-}
-
-/* Секции в модальном окне авторизации */
-#loginSection, #registerSection {
-    text-align: center;
-}
-
-#loginSection h4, #registerSection h4 {
-    margin-top: 0;
-    font-size: 16px;
-    color: #333;
-}
-
-#loginSection input, #registerSection input {
-    width: 100%;
-    padding: 8px;
-    margin-top: 10px;
-    box-sizing: border-box;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-#loginSection button, #registerSection button {
-    margin-top: 20px;
-    padding: 10px;
-    background-color: #28a745;
-    color: white;
-    border: none;
-    cursor: pointer;
-    width: 100%;
-    border-radius: 4px;
-    transition: background-color 0.3s ease;
-}
-
-#loginSection button:hover, #registerSection button:hover {
-    background-color: #218838;
 }
