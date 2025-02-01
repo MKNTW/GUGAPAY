@@ -34,23 +34,18 @@ app.get('/', (req, res) => {
 app.post('/register', async (req, res) => {
     try {
         const { username, password } = req.body;
-
         if (!username || !password) {
             return res.status(400).json({ success: false, error: 'логин и пароль обязательны' });
         }
-
         if (password.length < 6) {
             return res.status(400).json({ success: false, error: 'пароль должен содержать минимум 6 символов' });
         }
-
         const hashedPassword = await bcrypt.hash(password, 10);
         const userId = Math.floor(100000 + Math.random() * 900000).toString();
-
         const { data, error } = await supabase
             .from('users')
             .insert([{ username, password: hashedPassword, user_id: userId, balance: 0 }])
             .select();
-
         if (error) {
             console.error('[Register] Supabase Error:', error.message);
             if (error.message.includes('unique_violation')) {
@@ -58,7 +53,6 @@ app.post('/register', async (req, res) => {
             }
             return res.status(500).json({ success: false, error: 'регистрация не удалась' });
         }
-
         console.log(`[Регистрация] создан новый пользователь: ${username}`);
         res.json({ success: true, userId });
     } catch (error) {
@@ -71,22 +65,18 @@ app.post('/register', async (req, res) => {
 app.post('/login', async (req, res) => {
     try {
         const { username, password } = req.body;
-
         const { data, error } = await supabase
             .from('users')
             .select('*')
             .eq('username', username)
             .single();
-
         if (error || !data) {
             return res.status(401).json({ success: false, error: 'неверные учетные данные' });
         }
-
         const isPasswordValid = await bcrypt.compare(password, data.password);
         if (!isPasswordValid) {
             return res.status(401).json({ success: false, error: 'неверные учетные данные' });
         }
-
         console.log(`[Login] User logged in: ${username}`);
         res.json({ success: true, userId: data.user_id });
     } catch (error) {
@@ -98,8 +88,15 @@ app.post('/login', async (req, res) => {
 // Обновление баланса
 app.post('/update', async (req, res) => {
     try {
-        const { userId } = req.body;
+        const { userId, amount = 0.00001 } = req.body; // По умолчанию увеличиваем на 0.00001
+        if (!userId) {
+            return res.status(400).json({ success: false, error: 'ID пользователя обязателен' });
+        }
+        if (typeof amount !== 'number' || amount <= 0) {
+            return res.status(400).json({ success: false, error: 'Неверная сумма' });
+        }
 
+        // Получаем текущий баланс пользователя
         const { data: userData, error: fetchError } = await supabase
             .from('users')
             .select('balance')
@@ -107,11 +104,13 @@ app.post('/update', async (req, res) => {
             .single();
 
         if (fetchError || !userData) {
-            return res.status(404).json({ success: false, error: 'пользователь не найден' });
+            return res.status(404).json({ success: false, error: 'Пользователь не найден' });
         }
 
-        const newBalance = (userData.balance || 0) + 1;
+        // Вычисляем новый баланс с точностью до 5 знаков после запятой
+        const newBalance = parseFloat((userData.balance || 0) + amount).toFixed(5);
 
+        // Обновляем баланс пользователя
         await supabase
             .from('users')
             .update({ balance: newBalance })
@@ -121,7 +120,7 @@ app.post('/update', async (req, res) => {
         res.json({ success: true, balance: newBalance });
     } catch (error) {
         console.error('[Update] Error:', error.stack);
-        res.status(500).json({ success: false, error: 'обновление не удалось' });
+        res.status(500).json({ success: false, error: 'Обновление не удалось' });
     }
 });
 
@@ -129,27 +128,22 @@ app.post('/update', async (req, res) => {
 app.get('/user', async (req, res) => {
     try {
         const { userId } = req.query;
-
         if (!userId) {
             return res.status(400).json({ success: false, error: 'ID пользователя обязателен' });
         }
-
         const { data, error } = await supabase
             .from('users')
             .select('*')
             .eq('user_id', userId)
             .single();
-
         if (error || !data) {
             return res.status(404).json({ success: false, error: 'пользователь не найден' });
         }
-
         const user = {
             user_id: data.user_id,
             username: data.username,
             balance: data.balance || 0
         };
-
         console.log(`[User] Data fetched for user: ${userId}`);
         res.json({ success: true, user });
     } catch (error) {
@@ -162,58 +156,47 @@ app.get('/user', async (req, res) => {
 app.post('/transfer', async (req, res) => {
     try {
         const { fromUserId, toUserId, amount } = req.body;
-
         // Проверяем, что данные переданы корректно
         if (typeof amount !== 'number' || amount <= 0) {
             return res.status(400).json({ success: false, error: 'неверная сумма' });
         }
-
         // Запрещаем перевод самому себе
         if (fromUserId === toUserId) {
             return res.status(400).json({ success: false, error: 'вы не можете перевести монеты самому себе' });
         }
-
         // Проверяем отправителя
         const { data: fromUser, error: fromError } = await supabase
             .from('users')
             .select('*')
             .eq('user_id', fromUserId)
             .single();
-
         if (fromError || !fromUser) {
             return res.status(404).json({ success: false, error: 'отправитель не найден' });
         }
-
         // Проверяем баланс отправителя
         if ((fromUser.balance || 0) < amount) {
             return res.status(400).json({ success: false, error: 'недостаточно средств' });
         }
-
         // Проверяем получателя
         const { data: toUser, error: toError } = await supabase
             .from('users')
             .select('*')
             .eq('user_id', toUserId)
             .single();
-
         if (toError || !toUser) {
             return res.status(404).json({ success: false, error: 'получатель не найден' });
         }
-
         // Обновляем балансы
-        const newFromBalance = (fromUser.balance || 0) - amount;
-        const newToBalance = (toUser.balance || 0) + amount;
-
+        const newFromBalance = parseFloat((fromUser.balance || 0) - amount).toFixed(5);
+        const newToBalance = parseFloat((toUser.balance || 0) + amount).toFixed(5);
         await supabase
             .from('users')
             .update({ balance: newFromBalance })
             .eq('user_id', fromUserId);
-
         await supabase
             .from('users')
             .update({ balance: newToBalance })
             .eq('user_id', toUserId);
-
         // Записываем транзакцию
         await supabase
             .from('transactions')
@@ -224,7 +207,6 @@ app.post('/transfer', async (req, res) => {
                     amount: amount
                 }
             ]);
-
         console.log(`[Transfer] Success: ${amount} coins transferred from ${fromUserId} to ${toUserId}`);
         res.json({ success: true, fromBalance: newFromBalance, toBalance: newToBalance });
     } catch (error) {
@@ -237,34 +219,28 @@ app.post('/transfer', async (req, res) => {
 app.get('/transactions', async (req, res) => {
     try {
         const { userId } = req.query;
-
         if (!userId) {
             return res.status(400).json({ success: false, error: 'ID пользователя обязателен' });
         }
-
         // Получаем все транзакции, где пользователь является отправителем или получателем
         const { data: sentTransactions, error: sentError } = await supabase
             .from('transactions')
             .select('*')
             .eq('from_user_id', userId)
             .order('created_at', { ascending: false });
-
         const { data: receivedTransactions, error: receivedError } = await supabase
             .from('transactions')
             .select('*')
             .eq('to_user_id', userId)
             .order('created_at', { ascending: false });
-
         if (sentError || receivedError) {
             return res.status(500).json({ success: false, error: 'не удалось получить транзакции' });
         }
-
         // Объединяем отправленные и полученные транзакции
         const transactions = [
             ...(sentTransactions || []).map(tx => ({ ...tx, type: 'sent' })),
             ...(receivedTransactions || []).map(tx => ({ ...tx, type: 'received' }))
         ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Сортируем по времени
-
         res.json({ success: true, transactions });
     } catch (error) {
         console.error('[Transactions] Error:', error.stack);
