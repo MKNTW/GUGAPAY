@@ -24,16 +24,24 @@
 
     <!-- Модальное окно регистрации -->
     <div id="registerModal" class="hidden">
-        <input type="text" id="regLogin" placeholder="Username">
-        <input type="password" id="regPassword" placeholder="Password">
-        <button onclick="register()">Register</button>
+        <div>
+            <button id="closeRegisterBtn">X</button>
+            <h3>Регистрация</h3>
+            <input type="text" id="regLogin" placeholder="Username">
+            <input type="password" id="regPassword" placeholder="Password">
+            <button id="registerSubmitBtn">Register</button>
+        </div>
     </div>
 
     <!-- Модальное окно входа -->
     <div id="loginModal" class="hidden">
-        <input type="text" id="loginInput" placeholder="Username">
-        <input type="password" id="passwordInput" placeholder="Password">
-        <button onclick="login()">Login</button>
+        <div>
+            <button id="closeLoginBtn">X</button>
+            <h3>Вход</h3>
+            <input type="text" id="loginInput" placeholder="Username">
+            <input type="password" id="passwordInput" placeholder="Password">
+            <button id="loginSubmitBtn">Login</button>
+        </div>
     </div>
 
     <!-- Модальное окно перевода -->
@@ -52,10 +60,10 @@
     <!-- Модальное окно истории операций -->
     <div id="historyModal" class="hidden">
         <div id="historyContent">
+            <button id="closeHistoryBtn">X</button>
             <h3>История операций</h3>
             <ul id="transactionList"></ul>
         </div>
-        <button id="closeHistoryBtn">X</button>
     </div>
 
     <!-- Кнопка MINE -->
