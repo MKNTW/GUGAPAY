@@ -146,8 +146,18 @@ async function mineCoins() {
 function logout() {
     localStorage.removeItem('userId');
     currentUserId = null;
-    createUI(); // Пересоздаем интерфейс
-    updateUI(); // Обновляем интерфейс после выхода
+
+    // Принудительно скрываем все элементы интерфейса
+    const userInfo = document.getElementById('userInfo');
+    const mineBtn = document.getElementById('mineBtn');
+    const bottomBar = document.getElementById('bottomBar');
+
+    if (userInfo) userInfo.classList.add('hidden');
+    if (mineBtn) mineBtn.classList.add('hidden');
+    if (bottomBar) bottomBar.classList.add('hidden');
+
+    // Обновляем интерфейс
+    updateUI();
 }
 
 // Открытие модального окна перевода
@@ -341,7 +351,6 @@ function openAuthModal() {
         if (switchToRegisterBtn) switchToRegisterBtn.addEventListener('click', openRegisterSection);
         if (switchToLoginBtn) switchToLoginBtn.addEventListener('click', openLoginSection);
     }
-
     openLoginSection(); // По умолчанию открываем секцию входа
     openModal('authModal');
 }
