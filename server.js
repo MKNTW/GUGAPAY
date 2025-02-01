@@ -166,6 +166,7 @@ app.post('/transfer', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Invalid amount' });
         }
 
+        // Проверяем отправителя
         const { data: fromUser, error: fromError } = await supabase
             .from('users')
             .select('*')
@@ -180,6 +181,7 @@ app.post('/transfer', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Insufficient balance' });
         }
 
+        // Проверяем получателя
         const { data: toUser, error: toError } = await supabase
             .from('users')
             .select('*')
@@ -190,6 +192,7 @@ app.post('/transfer', async (req, res) => {
             return res.status(404).json({ success: false, error: 'Recipient not found' });
         }
 
+        // Обновляем балансы
         const newFromBalance = (fromUser.balance || 0) - amount;
         const newToBalance = (toUser.balance || 0) + amount;
 
@@ -202,6 +205,17 @@ app.post('/transfer', async (req, res) => {
             .from('users')
             .update({ balance: newToBalance })
             .eq('user_id', toUserId);
+
+        // Записываем транзакцию
+        await supabase
+            .from('transactions')
+            .insert([
+                {
+                    from_user_id: fromUserId,
+                    to_user_id: toUserId,
+                    amount: amount
+                }
+            ]);
 
         console.log(`[Transfer] Success: ${amount} coins transferred from ${fromUserId} to ${toUserId}`);
         res.json({ success: true, fromBalance: newFromBalance, toBalance: newToBalance });
