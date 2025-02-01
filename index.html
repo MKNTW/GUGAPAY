@@ -7,17 +7,17 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Кнопки -->
-    <button id="loginBtn">Login</button>
-    <button id="registerBtn">Register</button>
-    <button id="logoutBtn" class="hidden">Logout</button>
-    <button id="transferBtn" class="hidden">Transfer</button>
-    <button id="historyBtn" class="hidden">Операции</button>
-
-    <!-- Информация о пользователе -->
+    <!-- Информация о пользователе (в правом верхнем углу) -->
     <div id="userInfo" class="hidden">
         <p>User ID: <span id="userId"></span></p>
         <p>Balance: <span id="balance"></span></p>
+    </div>
+
+    <!-- Кнопки в левом верхнем углу -->
+    <div id="topButtons">
+        <button id="logoutBtn" class="hidden">Logout</button>
+        <button id="transferBtn" class="hidden">Transfer</button>
+        <button id="historyBtn" class="hidden">Операции</button>
     </div>
 
     <!-- Модальное окно регистрации -->
@@ -47,11 +47,6 @@
         </div>
     </div>
 
-    <!-- Кнопка MINE -->
-    <div id="tapArea">
-        <button id="mineBtn" class="hidden">MINE</button>
-    </div>
-
     <!-- Модальное окно истории операций -->
     <div id="historyModal" class="hidden">
         <div id="historyContent">
@@ -60,6 +55,9 @@
         </div>
         <button id="closeHistoryBtn">X</button>
     </div>
+
+    <!-- Кнопка MINE -->
+    <button id="mineBtn" class="hidden">MINE</button>
 
     <script src="script.js"></script>
 </body>
