@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GUGACOIN</title>
-    <!-- Подключение внешнего CSS -->
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -37,9 +36,15 @@
 
     <!-- Модальное окно перевода -->
     <div id="transferModal" class="hidden">
-        <input type="text" id="toUserId" placeholder="Recipient ID">
-        <input type="number" id="transferAmount" placeholder="Amount">
-        <button onclick="transferCoins()">Transfer</button>
+        <div id="transferContent">
+            <button id="closeTransferBtn">X</button>
+            <h3>Перевод монет</h3>
+            <label for="toUserIdInput">Кому (ID пользователя):</label>
+            <input type="text" id="toUserIdInput" placeholder="Введите ID получателя">
+            <label for="transferAmountInput">Количество:</label>
+            <input type="number" id="transferAmountInput" placeholder="Введите сумму">
+            <button id="sendTransferBtn">Отправить</button>
+        </div>
     </div>
 
     <!-- Кнопка MINE -->
