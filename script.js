@@ -53,6 +53,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loginSubmitBtn) loginSubmitBtn.addEventListener('click', login); // Отправляем вход
     if (sendTransferBtn) sendTransferBtn.addEventListener('click', sendTransfer); // Отправляем перевод
     if (mineBtn) mineBtn.addEventListener('click', mineCoins); // Клик по кнопке MINE
+
+    // Закрываем все модальные окна при загрузке страницы
+    closeModals();
 });
 
 // Обновление интерфейса
@@ -77,7 +80,7 @@ function updateUI() {
         if (authModal) authModal.classList.remove('hidden'); // Открываем окно авторизации
     }
 
-    // Закрываем все модальные окна при загрузке страницы
+    // Закрываем все модальные окна при обновлении интерфейса
     closeModals();
 }
 
