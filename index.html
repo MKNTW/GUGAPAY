@@ -4,51 +4,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GUGACOIN</title>
-    <style>
-        .hidden {
-            display: none;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css"> <!-- Подключаем CSS -->
 </head>
 <body>
-    <!-- Кнопки -->
-    <button id="loginBtn">Login</button>
-    <button id="registerBtn">Register</button>
-    <button id="logoutBtn" class="hidden">Logout</button>
-    <button id="transferBtn" class="hidden">Transfer</button>
-
-    <!-- Информация о пользователе -->
-    <div id="userInfo" class="hidden">
-        <p>User ID: <span id="userId"></span></p>
-        <p>Balance: <span id="balance"></span></p>
+    <!-- Кнопки в правом верхнем углу -->
+    <div class="connect-button-container">
+        <button id="loginBtn" class="connect-button">Войти</button>
+        <button id="registerBtn" class="connect-button">Регистрация</button>
+        <button id="logoutBtn" class="connect-button hidden">Выход</button>
+        <button id="transferBtn" class="connect-button hidden">Перевод</button>
     </div>
 
-    <!-- Модальное окно регистрации -->
-    <div id="registerModal" class="hidden">
-        <input type="text" id="regLogin" placeholder="Username">
-        <input type="password" id="regPassword" placeholder="Password">
-        <button onclick="register()">Register</button>
-    </div>
+    <!-- Основной контент -->
+    <main>
+        <div id="game">
+            <!-- Отображение баланса -->
+            <div id="coins-container">
+                <img id="coin-icon" src="coin-icon.png" alt="Coin Icon">
+                <span id="coins">0</span>
+            </div>
 
-    <!-- Модальное окно входа -->
-    <div id="loginModal" class="hidden">
-        <input type="text" id="loginInput" placeholder="Username">
-        <input type="password" id="passwordInput" placeholder="Password">
-        <button onclick="login()">Login</button>
-    </div>
+            <!-- Кнопка MINE -->
+            <div id="tapArea">
+                <button>MINE</button>
+            </div>
+        </div>
 
-    <!-- Модальное окно перевода -->
-    <div id="transferModal" class="hidden">
-        <input type="text" id="toUserId" placeholder="Recipient ID">
-        <input type="number" id="transferAmount" placeholder="Amount">
-        <button onclick="transferCoins()">Transfer</button>
-    </div>
+        <!-- Модальное окно регистрации -->
+        <div id="registerModal" class="hidden section">
+            <input type="text" id="regLogin" placeholder="Username">
+            <input type="password" id="regPassword" placeholder="Password">
+            <button onclick="register()">Register</button>
+        </div>
 
-    <!-- Кнопка MINE -->
-    <div id="tapArea">
-        <button>MINE</button>
-    </div>
+        <!-- Модальное окно входа -->
+        <div id="loginModal" class="hidden section">
+            <input type="text" id="loginInput" placeholder="Username">
+            <input type="password" id="passwordInput" placeholder="Password">
+            <button onclick="login()">Login</button>
+        </div>
 
-    <script src="script.js"></script>
+        <!-- Модальное окно перевода -->
+        <div id="transferModal" class="hidden section">
+            <input type="text" id="toUserId" placeholder="Recipient ID">
+            <input type="number" id="transferAmount" placeholder="Amount">
+            <button onclick="transferCoins()">Transfer</button>
+        </div>
+    </main>
+
+    <script src="script.js"></script> <!-- Подключаем JavaScript -->
 </body>
 </html>
