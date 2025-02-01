@@ -32,6 +32,15 @@ button:hover {
     background-color: #0056b3;
 }
 
+/* Кнопка регистрации (серая) */
+#registerSubmitBtn {
+    background-color: #6c757d;
+}
+
+#registerSubmitBtn:hover {
+    background-color: #5a6268;
+}
+
 /* Информация о пользователе (в левом верхнем углу) */
 #userInfo {
     position: absolute;
@@ -43,16 +52,6 @@ button:hover {
 
 #userInfo p {
     margin: 5px 0;
-}
-
-/* Кнопки в правом верхнем углу */
-#topButtons {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
 }
 
 /* Кнопка MINE */
