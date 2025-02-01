@@ -1,48 +1,70 @@
 const API_URL = "https://mkntw-github-io.onrender.com"; // Убедитесь, что URL указан корректно
 let currentUserId = null;
 
-// Элементы интерфейса
-const logoutBtn = document.getElementById('logoutBtn');
-const userInfo = document.getElementById('userInfo');
-const userIdSpan = document.getElementById('userId');
-const balanceSpan = document.getElementById('balance');
-const transferBtn = document.getElementById('transferBtn');
-const historyBtn = document.getElementById('historyBtn');
-const mineBtn = document.getElementById('mineBtn'); // Кнопка "Майнить" (теперь изображение)
-
 // Инициализация
 document.addEventListener('DOMContentLoaded', () => {
     const savedUserId = localStorage.getItem('userId');
     if (savedUserId) {
         currentUserId = savedUserId;
-        updateUI();
+        createUI();
         fetchUserData();
     } else {
         openAuthModal(); // Открываем окно авторизации
     }
+});
+
+// Создание интерфейса
+function createUI() {
+    // Информация о пользователе
+    const userInfo = document.createElement('div');
+    userInfo.id = 'userInfo';
+    userInfo.innerHTML = `
+        <p id="userIdLabel"><strong>ID:</strong> <span id="userId">0</span></p>
+        <p id="balanceLabel"><strong>Баланс:</strong> <span id="balance">0</span></p>
+    `;
+    document.body.appendChild(userInfo);
+
+    // Кнопка "Майнить"
+    const mineBtn = document.createElement('img');
+    mineBtn.id = 'mineBtn';
+    mineBtn.src = '11.jpg';
+    mineBtn.alt = 'Майнить';
+    document.body.appendChild(mineBtn);
+    mineBtn.addEventListener('click', mineCoins);
+
+    // Нижняя панель кнопок
+    const bottomBar = document.createElement('div');
+    bottomBar.id = 'bottomBar';
+    bottomBar.innerHTML = `
+        <button id="transferBtn">Перевод</button>
+        <div class="divider"></div>
+        <button id="historyBtn">История</button>
+        <div class="divider"></div>
+        <button id="logoutBtn">Выход</button>
+    `;
+    document.body.appendChild(bottomBar);
 
     // Привязка обработчиков событий
-    if (logoutBtn) logoutBtn.addEventListener('click', logout);
-    if (transferBtn) transferBtn.addEventListener('click', openTransferModal); // Открываем окно перевода
-    if (historyBtn) historyBtn.addEventListener('click', openHistoryModal); // Открываем окно истории операций
-    if (mineBtn) mineBtn.addEventListener('click', mineCoins); // Прибавляем баланс при нажатии на изображение
-});
+    document.getElementById('logoutBtn').addEventListener('click', logout);
+    document.getElementById('transferBtn').addEventListener('click', openTransferModal);
+    document.getElementById('historyBtn').addEventListener('click', openHistoryModal);
+
+    updateUI();
+}
 
 // Обновление интерфейса
 function updateUI() {
     if (currentUserId) {
         // Пользователь вошёл в систему
-        if (logoutBtn) logoutBtn.classList.remove('hidden');
-        if (userInfo) userInfo.classList.remove('hidden');
-        if (mineBtn) mineBtn.classList.remove('hidden');
-        if (document.getElementById('bottomBar')) document.getElementById('bottomBar').classList.remove('hidden');
+        document.getElementById('userInfo').classList.remove('hidden');
+        document.getElementById('mineBtn').classList.remove('hidden');
+        document.getElementById('bottomBar').classList.remove('hidden');
         removeAuthModal(); // Удаляем окно авторизации из DOM
     } else {
         // Пользователь не вошёл в систему
-        if (logoutBtn) logoutBtn.classList.add('hidden');
-        if (userInfo) userInfo.classList.add('hidden');
-        if (mineBtn) mineBtn.classList.add('hidden');
-        if (document.getElementById('bottomBar')) document.getElementById('bottomBar').classList.add('hidden');
+        document.getElementById('userInfo')?.classList.add('hidden');
+        document.getElementById('mineBtn')?.classList.add('hidden');
+        document.getElementById('bottomBar')?.classList.add('hidden');
         openAuthModal(); // Открываем окно авторизации
     }
 }
@@ -62,19 +84,19 @@ async function fetchUserData() {
 
             // Проверка, что balance является числом
             if (typeof balance === 'number') {
-                if (userIdSpan) userIdSpan.textContent = currentUserId;
-                if (balanceSpan) balanceSpan.textContent = formatBalance(balance); // Отображаем баланс в удобном формате
+                document.getElementById('userId').textContent = currentUserId;
+                document.getElementById('balance').textContent = formatBalance(balance); // Отображаем баланс в удобном формате
             } else {
                 console.error('[Fetch User Data] Error: Balance is not a number');
-                if (balanceSpan) balanceSpan.textContent = '0'; // Устанавливаем значение по умолчанию
+                document.getElementById('balance').textContent = '0'; // Устанавливаем значение по умолчанию
             }
         } else {
             console.error('[Fetch User Data] Error: Invalid response from server');
-            if (balanceSpan) balanceSpan.textContent = '0'; // Устанавливаем значение по умолчанию
+            document.getElementById('balance').textContent = '0'; // Устанавливаем значение по умолчанию
         }
     } catch (error) {
         console.error('[Fetch User Data] Error:', error.message);
-        if (balanceSpan) balanceSpan.textContent = '0'; // Устанавливаем значение по умолчанию
+        document.getElementById('balance').textContent = '0'; // Устанавливаем значение по умолчанию
     }
 }
 
@@ -114,26 +136,21 @@ function logout() {
 
 // Открытие модального окна перевода
 function openTransferModal() {
-    if (!currentUserId) return;
+    const modal = createModal('transferModal', `
+        <h3>Перевод монет</h3>
+        <label for="toUserIdInput">Кому (ID пользователя):</label>
+        <input type="text" id="toUserIdInput" placeholder="Введите ID получателя">
+        <label for="transferAmountInput">Количество:</label>
+        <input type="number" id="transferAmountInput" placeholder="Введите сумму">
+        <button id="sendTransferBtn">Отправить</button>
+        <button class="close-btn">X</button>
+    `);
 
-    let transferModal = document.getElementById('transferModal');
-    if (!transferModal) {
-        transferModal = createModal('transferModal', `
-            <h3>Перевод монет</h3>
-            <label for="toUserIdInput">Кому (ID пользователя):</label>
-            <input type="text" id="toUserIdInput" placeholder="Введите ID получателя">
-            <label for="transferAmountInput">Количество:</label>
-            <input type="number" id="transferAmountInput" placeholder="Введите сумму">
-            <button id="sendTransferBtn">Отправить</button>
-            <button class="close-btn">X</button>
-        `);
+    const closeTransferBtn = modal.querySelector('.close-btn');
+    const sendTransferBtn = modal.querySelector('#sendTransferBtn');
 
-        const closeTransferBtn = transferModal.querySelector('.close-btn');
-        const sendTransferBtn = transferModal.querySelector('#sendTransferBtn');
-
-        if (closeTransferBtn) closeTransferBtn.addEventListener('click', () => closeModal('transferModal'));
-        if (sendTransferBtn) sendTransferBtn.addEventListener('click', sendTransfer);
-    }
+    if (closeTransferBtn) closeTransferBtn.addEventListener('click', () => closeModal('transferModal'));
+    if (sendTransferBtn) sendTransferBtn.addEventListener('click', sendTransfer);
 
     openModal('transferModal');
 }
@@ -179,20 +196,15 @@ async function sendTransfer() {
 
 // Открытие модального окна истории операций
 function openHistoryModal() {
-    if (!currentUserId) return;
+    const modal = createModal('historyModal', `
+        <h3>История операций</h3>
+        <ul id="transactionList"></ul>
+        <button class="close-btn">X</button>
+    `);
 
-    let historyModal = document.getElementById('historyModal');
-    if (!historyModal) {
-        historyModal = createModal('historyModal', `
-            <h3>История операций</h3>
-            <ul id="transactionList"></ul>
-            <button class="close-btn">X</button>
-        `);
+    const closeHistoryBtn = modal.querySelector('.close-btn');
 
-        const closeHistoryBtn = historyModal.querySelector('.close-btn');
-
-        if (closeHistoryBtn) closeHistoryBtn.addEventListener('click', () => closeModal('historyModal'));
-    }
+    if (closeHistoryBtn) closeHistoryBtn.addEventListener('click', () => closeModal('historyModal'));
 
     fetchTransactionHistory();
     openModal('historyModal');
@@ -254,6 +266,12 @@ function createModal(id, content) {
         </div>
     `;
     document.body.appendChild(modal);
+
+    // Закрытие модального окна при клике на пустую область
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) closeModal(id);
+    });
+
     return modal;
 }
 
