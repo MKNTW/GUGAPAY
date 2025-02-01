@@ -2,15 +2,13 @@ const API_URL = "https://mkntw-github-io.onrender.com"; // Убедитесь, �
 let currentUserId = null;
 
 // Элементы интерфейса
-const loginBtn = document.getElementById('loginBtn');
-const registerBtn = document.getElementById('registerBtn');
 const logoutBtn = document.getElementById('logoutBtn');
 const userInfo = document.getElementById('userInfo');
 const userIdSpan = document.getElementById('userId');
 const balanceSpan = document.getElementById('balance');
 const transferBtn = document.getElementById('transferBtn');
-const mineBtn = document.getElementById('mineBtn'); // Кнопка MINE
-const historyBtn = document.getElementById('historyBtn'); // Кнопка Операции
+const mineBtn = document.getElementById('mineBtn'); // Кнопка Добыть
+const historyBtn = document.getElementById('historyBtn'); // Кнопка История
 
 // Инициализация
 document.addEventListener('DOMContentLoaded', () => {
@@ -20,40 +18,33 @@ document.addEventListener('DOMContentLoaded', () => {
         updateUI();
         fetchUserData();
     } else {
-        updateUI(); // Обновляем интерфейс при загрузке страницы
         openAuthModal(); // Открываем окно авторизации
     }
 
     // Привязка обработчиков событий
-    if (loginBtn) loginBtn.addEventListener('click', openAuthModal);
-    if (registerBtn) registerBtn.addEventListener('click', openAuthModal);
     if (logoutBtn) logoutBtn.addEventListener('click', logout);
-    if (transferBtn) transferBtn.addEventListener('click', openTransferModal); // Открываем окно перевода при нажатии на кнопку "Transfer"
-    if (historyBtn) historyBtn.addEventListener('click', openHistoryModal); // Открываем окно истории операций при нажатии на кнопку "Операции"
-    if (mineBtn) mineBtn.addEventListener('click', mineCoins); // Клик по кнопке MINE
+    if (transferBtn) transferBtn.addEventListener('click', openTransferModal); // Открываем окно перевода при нажатии на кнопку "Перевести"
+    if (historyBtn) historyBtn.addEventListener('click', openHistoryModal); // Открываем окно истории операций при нажатии на кнопку "История"
+    if (mineBtn) mineBtn.addEventListener('click', mineCoins); // Клик по кнопке Добыть
 });
 
 // Обновление интерфейса
 function updateUI() {
     if (currentUserId) {
         // Пользователь вошёл в систему
-        if (loginBtn) loginBtn.classList.add('hidden');
-        if (registerBtn) registerBtn.classList.add('hidden');
         if (logoutBtn) logoutBtn.classList.remove('hidden');
         if (userInfo) userInfo.classList.remove('hidden');
         if (transferBtn) transferBtn.classList.remove('hidden');
-        if (mineBtn) mineBtn.classList.remove('hidden'); // Показываем кнопку MINE
-        if (historyBtn) historyBtn.classList.remove('hidden'); // Показываем кнопку Операции
+        if (mineBtn) mineBtn.classList.remove('hidden'); // Показываем кнопку Добыть
+        if (historyBtn) historyBtn.classList.remove('hidden'); // Показываем кнопку История
         removeAuthModal(); // Удаляем окно авторизации из DOM
     } else {
         // Пользователь не вошёл в систему
-        if (loginBtn) loginBtn.classList.remove('hidden');
-        if (registerBtn) registerBtn.classList.remove('hidden');
         if (logoutBtn) logoutBtn.classList.add('hidden');
         if (userInfo) userInfo.classList.add('hidden');
         if (transferBtn) transferBtn.classList.add('hidden');
-        if (mineBtn) mineBtn.classList.add('hidden'); // Скрываем кнопку MINE
-        if (historyBtn) historyBtn.classList.add('hidden'); // Скрываем кнопку Операции
+        if (mineBtn) mineBtn.classList.add('hidden'); // Скрываем кнопку Добыть
+        if (historyBtn) historyBtn.classList.add('hidden'); // Скрываем кнопку История
         openAuthModal(); // Открываем окно авторизации
     }
 
@@ -106,18 +97,18 @@ function openAuthModal() {
         authModal = createModal('authModal', `
             <h3>Авторизация</h3>
             <div id="loginSection">
-                <h4>Login</h4>
-                <input type="text" id="loginInput" placeholder="Username">
-                <input type="password" id="passwordInput" placeholder="Password">
-                <button id="loginSubmitBtn">Login</button>
-                <button id="switchToRegisterBtn">Register</button>
+                <h4>Вход</h4>
+                <input type="text" id="loginInput" placeholder="Имя пользователя">
+                <input type="password" id="passwordInput" placeholder="Пароль">
+                <button id="loginSubmitBtn">Войти</button>
+                <button id="switchToRegisterBtn">Зарегистрироваться</button>
             </div>
             <div id="registerSection" style="display: none;">
-                <h4>Register</h4>
-                <input type="text" id="regLogin" placeholder="Username">
-                <input type="password" id="regPassword" placeholder="Password">
-                <button id="registerSubmitBtn">Register</button>
-                <button id="switchToLoginBtn">Login</button>
+                <h4>Регистрация</h4>
+                <input type="text" id="regLogin" placeholder="Имя пользователя">
+                <input type="password" id="regPassword" placeholder="Пароль">
+                <button id="registerSubmitBtn">Зарегистрироваться</button>
+                <button id="switchToLoginBtn">Войти</button>
             </div>
         `);
 
@@ -379,7 +370,7 @@ function displayTransactionHistory(transactions) {
     });
 }
 
-// Обработка клика по кнопке MINE
+// Обработка клика по кнопке Добыть
 async function mineCoins() {
     if (!currentUserId) return;
 
