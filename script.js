@@ -17,41 +17,50 @@ document.addEventListener('DOMContentLoaded', () => {
 // Создание интерфейса
 function createUI() {
     // Информация о пользователе
-    const userInfo = document.createElement('div');
-    userInfo.id = 'userInfo';
-    userInfo.classList.add('hidden'); // Скрываем по умолчанию
-    userInfo.innerHTML = `
-        <p id="userIdLabel"><strong>ID:</strong> <span id="userId">0</span></p>
-        <p id="balanceLabel"><strong>Баланс:</strong> <span id="balance">0</span></p>
-    `;
-    document.body.appendChild(userInfo);
+    let userInfo = document.getElementById('userInfo');
+    if (!userInfo) {
+        userInfo = document.createElement('div');
+        userInfo.id = 'userInfo';
+        userInfo.classList.add('hidden'); // Скрываем по умолчанию
+        userInfo.innerHTML = `
+            <p id="userIdLabel"><strong>ID:</strong> <span id="userId">0</span></p>
+            <p id="balanceLabel"><strong>Баланс:</strong> <span id="balance">0</span></p>
+        `;
+        document.body.appendChild(userInfo);
+    }
 
     // Кнопка "Майнить"
-    const mineBtn = document.createElement('img');
-    mineBtn.id = 'mineBtn';
-    mineBtn.src = '11.jpg';
-    mineBtn.alt = 'Майнить';
-    mineBtn.classList.add('hidden'); // Скрываем по умолчанию
-    document.body.appendChild(mineBtn);
-    mineBtn.addEventListener('click', mineCoins);
+    let mineBtn = document.getElementById('mineBtn');
+    if (!mineBtn) {
+        mineBtn = document.createElement('img');
+        mineBtn.id = 'mineBtn';
+        mineBtn.src = '11.jpg';
+        mineBtn.alt = 'Майнить';
+        mineBtn.classList.add('hidden'); // Скрываем по умолчанию
+        document.body.appendChild(mineBtn);
+        mineBtn.addEventListener('click', mineCoins);
+    }
 
     // Нижняя панель кнопок
-    const bottomBar = document.createElement('div');
-    bottomBar.id = 'bottomBar';
-    bottomBar.classList.add('hidden'); // Скрываем по умолчанию
-    bottomBar.innerHTML = `
-        <button id="transferBtn">Перевод</button>
-        <div class="divider"></div>
-        <button id="historyBtn">История</button>
-        <div class="divider"></div>
-        <button id="logoutBtn">Выход</button>
-    `;
-    document.body.appendChild(bottomBar);
+    let bottomBar = document.getElementById('bottomBar');
+    if (!bottomBar) {
+        bottomBar = document.createElement('div');
+        bottomBar.id = 'bottomBar';
+        bottomBar.classList.add('hidden'); // Скрываем по умолчанию
+        bottomBar.innerHTML = `
+            <button id="transferBtn">Перевод</button>
+            <div class="divider"></div>
+            <button id="historyBtn">История</button>
+            <div class="divider"></div>
+            <button id="logoutBtn">Выход</button>
+        `;
+        document.body.appendChild(bottomBar);
 
-    // Привязка обработчиков событий
-    document.getElementById('logoutBtn')?.addEventListener('click', logout);
-    document.getElementById('transferBtn')?.addEventListener('click', openTransferModal);
-    document.getElementById('historyBtn')?.addEventListener('click', openHistoryModal);
+        // Привязка обработчиков событий
+        document.getElementById('logoutBtn')?.addEventListener('click', logout);
+        document.getElementById('transferBtn')?.addEventListener('click', openTransferModal);
+        document.getElementById('historyBtn')?.addEventListener('click', openHistoryModal);
+    }
 }
 
 // Обновление интерфейса
@@ -137,6 +146,7 @@ async function mineCoins() {
 function logout() {
     localStorage.removeItem('userId');
     currentUserId = null;
+    createUI(); // Пересоздаем интерфейс
     updateUI(); // Обновляем интерфейс после выхода
 }
 
@@ -376,6 +386,7 @@ async function register() {
             alert(`✅ Аккаунт создан! Ваш ID: ${data.userId}`);
             currentUserId = data.userId;
             localStorage.setItem('userId', currentUserId); // Сохраняем ID в localStorage
+            createUI(); // Пересоздаем интерфейс
             updateUI(); // Обновляем интерфейс после регистрации
             fetchUserData(); // Загружаем данные пользователя
         } else {
@@ -410,6 +421,7 @@ async function login() {
         if (data.success) {
             currentUserId = data.userId;
             localStorage.setItem('userId', currentUserId); // Сохраняем ID в localStorage
+            createUI(); // Пересоздаем интерфейс
             updateUI(); // Обновляем интерфейс после входа
             fetchUserData(); // Загружаем данные пользователя
             alert(`✅ Вы успешно зашли в аккаунт! Ваш ID: ${currentUserId}`); // Уведомление о входе
