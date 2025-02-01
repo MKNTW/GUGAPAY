@@ -12,16 +12,22 @@
 </head>
 <body>
     <!-- Информация о пользователе -->
-    <div id="userInfo" class="hidden">
-        <p>ID: <span id="userId"></span></p>
-        <p>Баланс: <span id="balance">0</span></p>
+    <div id="userInfo">
+        <div id="balanceInfo">Баланс: <span id="balance">0</span></div>
+        <div id="userIdInfo">ID: <span id="userId"></span></div>
     </div>
 
-    <!-- Кнопки действий -->
-    <button id="transferBtn" class="hidden">Перевести</button>
-    <button id="mineBtn" class="hidden">Добыть</button>
-    <button id="historyBtn" class="hidden">История</button>
-    <button id="logoutBtn" class="hidden">Выйти</button>
+    <!-- Кнопка майнить (изображение) -->
+    <div id="mineBtnContainer">
+        <img src="11.jpg" alt="Майнить" id="mineBtn">
+    </div>
+
+    <!-- Нижняя панель кнопок -->
+    <div id="bottomBar">
+        <button id="transferBtn">Перевод</button>
+        <button id="historyBtn">История</button>
+        <button id="logoutBtn">Выход</button>
+    </div>
 
     <script src="script.js"></script>
 </body>
