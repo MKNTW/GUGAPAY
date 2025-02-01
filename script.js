@@ -21,7 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchUserData();
     } else {
         updateUI(); // Обновляем интерфейс при загрузке страницы
-        openAuthModal(); // Открываем окно авторизации
     }
 
     // Привязка обработчиков событий
