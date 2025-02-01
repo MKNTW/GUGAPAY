@@ -192,3 +192,10 @@ document.getElementById('tapArea').addEventListener('click', async () => {
         alert('🚫 Ошибка при попытке добыть монеты');
     }
 });
+
+// Закрытие модальных окон
+function closeModals() {
+    registerModal.classList.add('hidden');
+    loginModal.classList.add('hidden');
+    transferModal.classList.add('hidden');
+}
