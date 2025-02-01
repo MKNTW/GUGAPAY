@@ -37,34 +37,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loginBtn) loginBtn.addEventListener('click', openLoginModal);
     if (registerBtn) registerBtn.addEventListener('click', openRegisterModal);
     if (logoutBtn) logoutBtn.addEventListener('click', logout);
-    if (transferBtn) transferBtn.addEventListener('click', openTransferModal); // Открываем окно перевода
-    if (historyBtn) historyBtn.addEventListener('click', openHistoryModal); // Открываем окно истории операций
+    if (transferBtn) transferBtn.addEventListener('click', openTransferModal); // Открываем окно перевода при нажатии на кнопку "Transfer"
+    if (historyBtn) historyBtn.addEventListener('click', openHistoryModal); // Открываем окно истории операций при нажатии на кнопку "Операции"
     if (closeHistoryBtn) closeHistoryBtn.addEventListener('click', closeHistoryModal); // Закрываем окно истории
     if (closeTransferBtn) closeTransferBtn.addEventListener('click', closeTransferModal); // Закрываем окно перевода
     if (sendTransferBtn) sendTransferBtn.addEventListener('click', sendTransfer); // Отправляем перевод
-
-    // Клик по кнопке MINE
-    if (mineBtn) mineBtn.addEventListener('click', async () => {
-        if (!currentUserId) return;
-
-        try {
-            const response = await fetch(`${API_URL}/update`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: currentUserId })
-            });
-
-            if (!response.ok) {
-                throw new Error(`Server responded with status ${response.status}`);
-            }
-
-            // Обновляем данные пользователя
-            fetchUserData();
-        } catch (error) {
-            console.error(error);
-            alert('🚫 Ошибка при попытке добыть монеты');
-        }
-    });
+    if (mineBtn) mineBtn.addEventListener('click', mineCoins); // Клик по кнопке MINE
 });
 
 // Обновление интерфейса
@@ -159,28 +137,75 @@ function logout() {
 // Открытие модального окна входа
 function openLoginModal() {
     closeModals(); // Закрываем все модальные окна
-    loginModal.classList.remove('hidden'); // Открываем окно входа
+    if (loginModal) loginModal.classList.remove('hidden'); // Открываем окно входа
 }
 
 // Открытие модального окна регистрации
 function openRegisterModal() {
     closeModals(); // Закрываем все модальные окна
-    registerModal.classList.remove('hidden'); // Открываем окно регистрации
+    if (registerModal) registerModal.classList.remove('hidden'); // Открываем окно регистрации
 }
 
 // Открытие модального окна перевода
 function openTransferModal() {
     if (!currentUserId) return;
 
-    transferModal.classList.remove('hidden');
+    closeModals(); // Закрываем все модальные окна
+    if (transferModal) transferModal.classList.remove('hidden'); // Открываем окно перевода
 }
 
 // Закрытие модального окна перевода
 function closeTransferModal() {
-    transferModal.classList.add('hidden');
+    if (transferModal) transferModal.classList.add('hidden');
 }
 
-// Отправка перевода
+// Открытие модального окна истории операций
+function openHistoryModal() {
+    if (!currentUserId) return;
+
+    fetchTransactionHistory();
+    closeModals(); // Закрываем все модальные окна
+    if (historyModal) historyModal.classList.remove('hidden'); // Открываем окно истории
+}
+
+// Закрытие модального окна истории операций
+function closeHistoryModal() {
+    if (historyModal) historyModal.classList.add('hidden');
+    if (transactionList) transactionList.innerHTML = ''; // Очищаем список транзакций
+}
+
+// Получение данных пользователя
+async function fetchUserData() {
+    try {
+        const response = await fetch(`${API_URL}/user?userId=${currentUserId}`);
+        if (!response.ok) {
+            throw new Error(`Server responded with status ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success && data.user) {
+            const balance = data.user.balance || 0; // Баланс в минимальных единицах
+
+            // Проверка, что balance является числом
+            if (typeof balance === 'number') {
+                if (userIdSpan) userIdSpan.textContent = currentUserId;
+                if (balanceSpan) balanceSpan.textContent = formatBalance(balance); // Отображаем баланс в удобном формате
+            } else {
+                console.error('[Fetch User Data] Error: Balance is not a number');
+                if (balanceSpan) balanceSpan.textContent = '0'; // Устанавливаем значение по умолчанию
+            }
+        } else {
+            console.error('[Fetch User Data] Error: Invalid response from server');
+            if (balanceSpan) balanceSpan.textContent = '0'; // Устанавливаем значение по умолчанию
+        }
+    } catch (error) {
+        console.error('[Fetch User Data] Error:', error.message);
+        if (balanceSpan) balanceSpan.textContent = '0'; // Устанавливаем значение по умолчанию
+    }
+}
+
+// Перевод монет
 async function sendTransfer() {
     const toUserId = document.getElementById('toUserIdInput').value;
     const amount = parseInt(document.getElementById('transferAmountInput').value, 10);
@@ -209,7 +234,7 @@ async function sendTransfer() {
         if (data.success) {
             alert(`✅ Перевод успешен! Новый баланс: ${formatBalance(data.fromBalance)}`);
             closeTransferModal();
-            fetchUserData();
+            fetchUserData(); // Обновляем данные пользователя
         } else {
             alert(`❌ Ошибка перевода: ${data.error}`);
         }
@@ -219,48 +244,26 @@ async function sendTransfer() {
     }
 }
 
-// Открытие модального окна истории
-function openHistoryModal() {
+// Обработка клика по кнопке MINE
+async function mineCoins() {
     if (!currentUserId) return;
 
-    fetchTransactionHistory();
-    historyModal.classList.remove('hidden');
-}
-
-// Закрытие модального окна истории
-function closeHistoryModal() {
-    historyModal.classList.add('hidden');
-    transactionList.innerHTML = ''; // Очищаем список транзакций
-}
-
-// Получение данных пользователя
-async function fetchUserData() {
     try {
-        const response = await fetch(`${API_URL}/user?userId=${currentUserId}`);
+        const response = await fetch(`${API_URL}/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: currentUserId })
+        });
+
         if (!response.ok) {
             throw new Error(`Server responded with status ${response.status}`);
         }
 
-        const data = await response.json();
-
-        if (data.success && data.user) {
-            const balance = data.user.balance || 0; // Баланс в минимальных единицах
-
-            // Проверка, что balance является числом
-            if (typeof balance === 'number') {
-                userIdSpan.textContent = currentUserId;
-                balanceSpan.textContent = formatBalance(balance); // Отображаем баланс в удобном формате
-            } else {
-                console.error('[Fetch User Data] Error: Balance is not a number');
-                balanceSpan.textContent = '0'; // Устанавливаем значение по умолчанию
-            }
-        } else {
-            console.error('[Fetch User Data] Error: Invalid response from server');
-            balanceSpan.textContent = '0'; // Устанавливаем значение по умолчанию
-        }
+        // Обновляем данные пользователя
+        fetchUserData();
     } catch (error) {
-        console.error('[Fetch User Data] Error:', error.message);
-        balanceSpan.textContent = '0'; // Устанавливаем значение по умолчанию
+        console.error(error);
+        alert('🚫 Ошибка при попытке добыть монеты');
     }
 }
 
@@ -286,10 +289,10 @@ async function fetchTransactionHistory() {
 
 // Отображение истории операций
 function displayTransactionHistory(transactions) {
-    transactionList.innerHTML = ''; // Очищаем список
+    if (transactionList) transactionList.innerHTML = ''; // Очищаем список
 
     if (transactions.length === 0) {
-        transactionList.innerHTML = '<li>Нет операций</li>';
+        if (transactionList) transactionList.innerHTML = '<li>Нет операций</li>';
         return;
     }
 
@@ -304,7 +307,7 @@ function displayTransactionHistory(transactions) {
             li.textContent = `Получено: ${amount} монет от пользователя ${tx.from_user_id} (${date})`;
         }
 
-        transactionList.appendChild(li);
+        if (transactionList) transactionList.appendChild(li);
     });
 }
 
