@@ -34,11 +34,15 @@ function updateUI() {
         // Пользователь вошёл в систему
         if (logoutBtn) logoutBtn.classList.remove('hidden');
         if (userInfo) userInfo.classList.remove('hidden');
+        if (mineBtn) mineBtn.classList.remove('hidden');
+        if (document.getElementById('bottomBar')) document.getElementById('bottomBar').classList.remove('hidden');
         removeAuthModal(); // Удаляем окно авторизации из DOM
     } else {
         // Пользователь не вошёл в систему
         if (logoutBtn) logoutBtn.classList.add('hidden');
         if (userInfo) userInfo.classList.add('hidden');
+        if (mineBtn) mineBtn.classList.add('hidden');
+        if (document.getElementById('bottomBar')) document.getElementById('bottomBar').classList.add('hidden');
         openAuthModal(); // Открываем окно авторизации
     }
 }
