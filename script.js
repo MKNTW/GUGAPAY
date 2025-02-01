@@ -19,6 +19,8 @@ const transferModal = document.getElementById('transferModal');
 const historyModal = document.getElementById('historyModal'); // Модальное окно истории
 const transactionList = document.getElementById('transactionList'); // Список транзакций
 const closeHistoryBtn = document.getElementById('closeHistoryBtn'); // Кнопка закрытия истории
+const closeTransferBtn = document.getElementById('closeTransferBtn'); // Кнопка закрытия перевода
+const sendTransferBtn = document.getElementById('sendTransferBtn'); // Кнопка отправки перевода
 
 // Инициализация
 document.addEventListener('DOMContentLoaded', () => {
@@ -41,12 +43,11 @@ document.addEventListener('DOMContentLoaded', () => {
         registerModal.classList.remove('hidden'); // Открываем окно регистрации
     });
     logoutBtn.addEventListener('click', logout);
-    transferBtn.addEventListener('click', () => {
-        closeModals(); // Закрываем все модальные окна
-        transferModal.classList.remove('hidden'); // Открываем окно перевода
-    });
+    transferBtn.addEventListener('click', openTransferModal); // Открываем окно перевода
     historyBtn.addEventListener('click', openHistoryModal); // Открываем окно истории операций
     closeHistoryBtn.addEventListener('click', closeHistoryModal); // Закрываем окно истории
+    closeTransferBtn.addEventListener('click', closeTransferModal); // Закрываем окно перевода
+    sendTransferBtn.addEventListener('click', sendTransfer); // Отправляем перевод
 
     // Клик по кнопке MINE
     mineBtn.addEventListener('click', async () => {
@@ -161,10 +162,22 @@ function logout() {
     closeModals();
 }
 
-// Перевод монет
-async function transferCoins() {
-    const toUserId = document.getElementById('toUserId').value;
-    const amount = parseInt(document.getElementById('transferAmount').value, 10);
+// Открытие модального окна перевода
+function openTransferModal() {
+    if (!currentUserId) return;
+
+    transferModal.classList.remove('hidden');
+}
+
+// Закрытие модального окна перевода
+function closeTransferModal() {
+    transferModal.classList.add('hidden');
+}
+
+// Отправка перевода
+async function sendTransfer() {
+    const toUserId = document.getElementById('toUserIdInput').value;
+    const amount = parseInt(document.getElementById('transferAmountInput').value, 10);
 
     // Проверяем, что данные введены корректно
     if (!toUserId || !amount || amount <= 0) {
@@ -189,7 +202,7 @@ async function transferCoins() {
 
         if (data.success) {
             alert(`✅ Перевод успешен! Новый баланс: ${formatBalance(data.fromBalance)}`);
-            closeModals();
+            closeTransferModal();
             fetchUserData();
         } else {
             alert(`❌ Ошибка перевода: ${data.error}`);
