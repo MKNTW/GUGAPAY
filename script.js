@@ -87,31 +87,6 @@ function updateUI() {
 // Получение данных пользователя
 async function fetchUserData() {
     try {
-        console.log('[Fetch User Data] Sending request for user:', currentUserId); // Отладочное сообщение
-        const response = await fetch(`${API_URL}/user?userId=${currentUserId}`);
-        if (!response.ok) {
-            throw new Error(`Server responded with status ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('[Fetch User Data] Response:', data); // Логируем ответ сервера
-
-        if (data.success && data.user) {
-            const balance = data.user.balance || 0; // Баланс в минимальных единицах
-            document.getElementById('userId').textContent = currentUserId; // Отображаем ID
-            document.getElementById('balance').textContent = formatBalance(balance); // Отображаем баланс
-        } else {
-            console.error('[Fetch User Data] Error: Invalid response from server');
-            document.getElementById('balance').textContent = '0.00000'; // Устанавливаем значение по умолчанию
-        }
-    } catch (error) {
-        console.error('[Fetch User Data] Error:', error.message);
-        document.getElementById('balance').textContent = '0.00000'; // Устанавливаем значение по умолчанию
-    }
-}
-
-async function fetchUserData() {
-    try {
         const response = await fetch(`${API_URL}/user?userId=${currentUserId}`);
         if (!response.ok) {
             throw new Error(`Server responded with status ${response.status}`);
@@ -123,6 +98,7 @@ async function fetchUserData() {
             const balance = data.user.balance || 0; // Баланс в минимальных единицах
 
             // Форматируем баланс с точностью до 0.00001
+            document.getElementById('userId').textContent = currentUserId;
             document.getElementById('balance').textContent = formatBalance(balance); // Отображаем баланс
         } else {
             console.error('[Fetch User Data] Error: Invalid response from server');
@@ -144,7 +120,6 @@ async function mineCoins() {
     if (!currentUserId) return;
 
     try {
-        console.log('[Mine Coins] Sending request to server...'); // Отладочное сообщение
         const response = await fetch(`${API_URL}/update`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -155,12 +130,10 @@ async function mineCoins() {
             throw new Error(`Server responded with status ${response.status}`);
         }
 
-        console.log('[Mine Coins] Request successful! Fetching user data...'); // Отладочное сообщение
-        // Обновляем данные пользователя
+        // Обновляем данные пользователя без оповещений
         fetchUserData();
     } catch (error) {
-        console.error('[Mine Coins] Error:', error.message); // Логируем ошибку
-        alert('🚫 Ошибка сети');
+        console.error(error);
     }
 }
 
