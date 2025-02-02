@@ -89,14 +89,16 @@ app.post('/login', async (req, res) => {
 app.post('/update', async (req, res) => {
     try {
         const { userId, amount = 0.00001 } = req.body; // По умолчанию увеличиваем на 0.00001
+        console.log('[Update] Request received:', { userId, amount }); // Логируем входные данные
+
         if (!userId) {
+            console.error('[Update] Missing userId');
             return res.status(400).json({ success: false, error: 'ID пользователя обязателен' });
         }
         if (typeof amount !== 'number' || amount <= 0) {
-            return res.status(400).json({ success: false, error: 'неверная сумма' });
+            console.error('[Update] Invalid amount:', amount);
+            return res.status(400).json({ success: false, error: 'Неверная сумма' });
         }
-
-        console.log(`[Update] Received request for user: ${userId}, amount: ${amount}`); // Отладочное сообщение
 
         // Получаем текущий баланс пользователя
         const { data: userData, error: fetchError } = await supabase
@@ -107,8 +109,10 @@ app.post('/update', async (req, res) => {
 
         if (fetchError || !userData) {
             console.error('[Update] User not found:', fetchError?.message);
-            return res.status(404).json({ success: false, error: 'пользователь не найден' });
+            return res.status(404).json({ success: false, error: 'Пользователь не найден' });
         }
+
+        console.log('[Update] Current balance:', userData.balance);
 
         // Вычисляем новый баланс с точностью до 5 знаков после запятой
         const newBalance = parseFloat((userData.balance || 0) + amount).toFixed(5);
@@ -121,14 +125,14 @@ app.post('/update', async (req, res) => {
 
         if (updateError) {
             console.error('[Update] Error updating balance:', updateError.message);
-            return res.status(500).json({ success: false, error: 'обновление баланса не удалось' });
+            return res.status(500).json({ success: false, error: 'Обновление баланса не удалось' });
         }
 
-        console.log(`[Update] Balance updated for user: ${userId}, new balance: ${newBalance}`);
+        console.log('[Update] Balance updated successfully:', newBalance);
         res.json({ success: true, balance: newBalance });
     } catch (error) {
-        console.error('[Update] Error:', error.stack);
-        res.status(500).json({ success: false, error: 'обновление не удалось' });
+        console.error('[Update] Unexpected error:', error.stack);
+        res.status(500).json({ success: false, error: 'Внутренняя ошибка сервера' });
     }
 });
 
