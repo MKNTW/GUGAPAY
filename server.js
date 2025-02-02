@@ -97,6 +97,8 @@ app.post('/login', async (req, res) => {
 });
 
 // Обновление баланса (добыча монет)
+// Здесь дополнительно обновляется глобальная статистика добычи в таблице halving,
+// где обновляются поля total_mined и halving_step
 app.post('/update', async (req, res) => {
   try {
     const { userId, amount = 0.00001 } = req.body;
@@ -132,23 +134,34 @@ app.post('/update', async (req, res) => {
       return res.status(500).json({ success: false, error: 'Обновление баланса не удалось' });
     }
 
-    // Если используется таблица mined_coins, получаем общее количество добытых монет
-    const { data: minedData, error: minedError } = await supabase
-      .from('mined_coins')
-      .select('amount');
+    // Теперь обновляем глобальные данные по добыче в таблице halving
+    // Предполагается, что таблица halving имеет поля: total_mined (numeric) и halving_step (integer)
+    // Сначала получаем существующую запись (если она есть)
+    const { data: halvingData, error: halvingError } = await supabase
+      .from('halving')
+      .select('*')
+      .limit(1);
 
-    let halvingStep = 0;
-    if (!minedError && minedData) {
-      const totalMined = minedData.reduce((sum, tx) => sum + tx.amount, 0);
-      halvingStep = Math.floor(totalMined);
-      // Обновляем (или вставляем) запись уровня халвинга
-      await supabase
-        .from('halving')
-        .upsert([{ step: halvingStep }]);
+    let newTotalMined = amount;
+    if (!halvingError && halvingData && halvingData.length > 0) {
+      // Если запись существует, прибавляем к текущему значению
+      newTotalMined = parseFloat(halvingData[0].total_mined || 0) + amount;
+    }
+    // Вычисляем новый уровень халвинга (например, как целая часть от общего количества добытых монет)
+    const newHalvingStep = Math.floor(newTotalMined);
+
+    // Обновляем (или вставляем) запись в таблице halving:
+    const { error: upsertError } = await supabase
+      .from('halving')
+      .upsert([{ total_mined: newTotalMined, halving_step: newHalvingStep }]);
+
+    if (upsertError) {
+      console.error('[Update] Ошибка обновления данных по халвингу:', upsertError.message);
+      // Можно не прерывать выполнение, если ошибка в статистике
     }
 
-    console.log('[Update] Баланс обновлён успешно:', newBalance, 'Халвинг:', halvingStep);
-    res.json({ success: true, balance: newBalance, halvingStep });
+    console.log('[Update] Баланс обновлён успешно:', newBalance, 'Общий добытый:', newTotalMined, 'Халвинг:', newHalvingStep);
+    res.json({ success: true, balance: newBalance, halvingStep: newHalvingStep });
   } catch (error) {
     console.error('[Update] Ошибка:', error.stack);
     res.status(500).json({ success: false, error: 'Внутренняя ошибка сервера' });
@@ -156,6 +169,8 @@ app.post('/update', async (req, res) => {
 });
 
 // Получение данных пользователя (включая уровень халвинга)
+// Обратите внимание: здесь возвращается только информация о пользователе, а данные по халвингу
+// из таблицы halving используются на серверной стороне для анализа общего количества добытых монет.
 app.get('/user', async (req, res) => {
   try {
     const { userId } = req.query;
@@ -173,14 +188,14 @@ app.get('/user', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
 
-    // Получаем данные по халвингу (если есть)
+    // Получаем данные по халвингу (если есть) для передачи на клиент
     let halvingStep = 0;
     const { data: halvingData, error: halvingError } = await supabase
       .from('halving')
-      .select('step')
+      .select('halving_step')
       .limit(1);
     if (!halvingError && halvingData && halvingData.length > 0) {
-      halvingStep = halvingData[0].step;
+      halvingStep = halvingData[0].halving_step;
     }
 
     console.log(`[User] Данные получены для пользователя: ${userId}`);
