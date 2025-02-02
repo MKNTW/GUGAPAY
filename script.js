@@ -98,7 +98,6 @@ async function fetchUserData() {
             const balance = data.user.balance || 0; // Баланс в минимальных единицах
 
             // Форматируем баланс с точностью до 0.00001
-            document.getElementById('userId').textContent = currentUserId;
             document.getElementById('balance').textContent = formatBalance(balance); // Отображаем баланс
         } else {
             console.error('[Fetch User Data] Error: Invalid response from server');
@@ -120,6 +119,7 @@ async function mineCoins() {
     if (!currentUserId) return;
 
     try {
+        console.log('[Mine Coins] Sending request to server...'); // Отладочное сообщение
         const response = await fetch(`${API_URL}/update`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -130,10 +130,12 @@ async function mineCoins() {
             throw new Error(`Server responded with status ${response.status}`);
         }
 
-        // Обновляем данные пользователя без оповещений
+        console.log('[Mine Coins] Request successful! Fetching user data...'); // Отладочное сообщение
+        // Обновляем данные пользователя
         fetchUserData();
     } catch (error) {
-        console.error(error);
+        console.error('[Mine Coins] Error:', error.message); // Логируем ошибку
+        alert('🚫 Ошибка сети');
     }
 }
 
