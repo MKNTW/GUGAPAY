@@ -161,9 +161,10 @@ function mineCoins() {
   if (mineTimer) {
     clearTimeout(mineTimer);
   }
+  // Изменили задержку на 1.5 секунды (1500 мс)
   mineTimer = setTimeout(() => {
     flushMinedCoins();
-  }, 3000);
+  }, 1500);
 }
 
 /**
@@ -172,12 +173,9 @@ function mineCoins() {
 function updateBalanceUI() {
   const balanceElem = document.getElementById('balance');
   const rubBalanceElem = document.getElementById('rubBalance');
-  // Получаем текущий уровень халвинга из UI (или можно хранить его в глобальной переменной)
-  // Здесь предполагается, что после fetchUserData, элемент rubBalance уже содержит актуальное значение.
-  // Для простоты используем значение halvingStep, полученное с сервера (оно обновляется при fetchUserData)
-  const halvingStep = parseFloat(document.getElementById('rubBalance').getAttribute('data-halving')) || 0;
+  // Получаем уровень халвинга из data-атрибута элемента rubBalanceLabel
+  const halvingStep = parseFloat(document.getElementById('rubBalanceLabel').getAttribute('data-halving')) || 0;
   balanceElem.textContent = formatBalance(localBalance);
-  // Расчет рублевого баланса
   const rubMultiplier = 1 + halvingStep * 0.02;
   rubBalanceElem.textContent = (localBalance * rubMultiplier).toFixed(5);
 }
@@ -362,7 +360,7 @@ function openTransferModal() {
   `);
   const closeTransferBtn = modal.querySelector('.close-btn');
   const sendTransferBtn = modal.querySelector('#sendTransferBtn');
-  if (closeTransferBtn) closeTransferBtn.addEventListener('click', () => closeModal('transferModal'));
+  if (closeTransferBtn) closeModal('transferModal');
   if (sendTransferBtn) sendTransferBtn.addEventListener('click', sendTransfer);
   openModal('transferModal');
 }
