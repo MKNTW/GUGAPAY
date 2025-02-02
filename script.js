@@ -24,7 +24,7 @@ function createUI() {
         userInfo.classList.add('hidden'); // Скрываем по умолчанию
         userInfo.innerHTML = `
             <p id="userIdLabel"><strong>ID:</strong> <span id="userId"></span></p>
-            <p id="balanceLabel"><strong>Баланс (монеты):</strong> <span id="balance"></span></p>
+            <p id="balanceLabel"><strong>Баланс (₲):</strong> <span id="balance"></span></p>
             <p id="rubBalanceLabel"><strong>Баланс (₽):</strong> <span id="rubBalance"></span></p>
         `;
         document.body.appendChild(userInfo);
