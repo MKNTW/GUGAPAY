@@ -1,10 +1,10 @@
 const API_URL = "https://mkntw-github-io.onrender.com"; // Убедитесь, что URL указан корректно
 let currentUserId = null;
 
-// Глобальные переменные для накопления добытых монет
+// Глобальные переменные для накопления добытых монет и локального баланса
 let pendingMinedCoins = parseFloat(localStorage.getItem('pendingMinedCoins')) || 0;
 let mineTimer = null;
-
+let localBalance = 0; // локальный баланс, полученный с сервера и увеличиваемый при кликах
 
 /* ================================
    ФУНКЦИИ, КОТОРЫЕ ИСПОЛЬЗУЮТСЯ В UI
@@ -143,7 +143,8 @@ function formatBalance(balance) {
 
 /**
  * Функция mineCoins вызывается при клике на изображение «Майнить».
- * Вместо мгновенной отправки каждого клика, сумма добычи накапливается локально.
+ * Вместо мгновенной отправки каждого клика, сумма добычи накапливается локально,
+ * а отображаемый баланс сразу увеличивается.
  */
 function mineCoins() {
   if (!currentUserId) return;
@@ -151,6 +152,10 @@ function mineCoins() {
   // Увеличиваем локальный счетчик добытых монет (0.00001 за клик)
   pendingMinedCoins = parseFloat((pendingMinedCoins + 0.00001).toFixed(5));
   localStorage.setItem('pendingMinedCoins', pendingMinedCoins);
+  
+  // Мгновенно увеличиваем локальный баланс и обновляем UI
+  localBalance = parseFloat((localBalance + 0.00001).toFixed(5));
+  updateBalanceUI();
 
   // Если уже запущен таймер, сбрасываем его и запускаем заново
   if (mineTimer) {
@@ -159,6 +164,22 @@ function mineCoins() {
   mineTimer = setTimeout(() => {
     flushMinedCoins();
   }, 3000);
+}
+
+/**
+ * Обновляет отображение баланса и рублевого эквивалента на экране.
+ */
+function updateBalanceUI() {
+  const balanceElem = document.getElementById('balance');
+  const rubBalanceElem = document.getElementById('rubBalance');
+  // Получаем текущий уровень халвинга из UI (или можно хранить его в глобальной переменной)
+  // Здесь предполагается, что после fetchUserData, элемент rubBalance уже содержит актуальное значение.
+  // Для простоты используем значение halvingStep, полученное с сервера (оно обновляется при fetchUserData)
+  const halvingStep = parseFloat(document.getElementById('rubBalance').getAttribute('data-halving')) || 0;
+  balanceElem.textContent = formatBalance(localBalance);
+  // Расчет рублевого баланса
+  const rubMultiplier = 1 + halvingStep * 0.02;
+  rubBalanceElem.textContent = (localBalance * rubMultiplier).toFixed(5);
 }
 
 /**
@@ -179,6 +200,7 @@ async function flushMinedCoins() {
     // После успешной отправки сбрасываем накопленные монеты
     pendingMinedCoins = 0;
     localStorage.removeItem('pendingMinedCoins');
+    // Обновляем данные пользователя с сервера и синхронизируем локальный баланс
     fetchUserData();
   } catch (error) {
     console.error('[FlushMinedCoins] Ошибка:', error);
@@ -222,7 +244,7 @@ function createUI() {
     userInfo.innerHTML = `
       <p id="userIdLabel"><strong>ID:</strong> <span id="userId"></span></p>
       <p id="balanceLabel"><strong>Баланс (₲):</strong> <span id="balance"></span></p>
-      <p id="rubBalanceLabel"><strong>Баланс (₽):</strong> <span id="rubBalance"></span></p>
+      <p id="rubBalanceLabel" data-halving="0"><strong>Баланс (₽):</strong> <span id="rubBalance"></span></p>
     `;
     document.body.appendChild(userInfo);
   }
@@ -253,7 +275,6 @@ function createUI() {
       <button id="logoutBtn">Выход</button>
     `;
     document.body.appendChild(bottomBar);
-    // Привязываем обработчики – теперь функция logout уже определена
     document.getElementById('logoutBtn')?.addEventListener('click', logout);
     document.getElementById('transferBtn')?.addEventListener('click', openTransferModal);
     document.getElementById('historyBtn')?.addEventListener('click', openHistoryModal);
@@ -289,6 +310,7 @@ function updateUI() {
 
 /**
  * Запрашивает данные пользователя с сервера и отображает их.
+ * После получения баланса, обновляет глобальную переменную localBalance.
  */
 async function fetchUserData() {
   try {
@@ -299,12 +321,15 @@ async function fetchUserData() {
     const data = await response.json();
     if (data.success && data.user) {
       const balance = parseFloat(data.user.balance || 0);
+      localBalance = balance; // синхронизируем локальный баланс с серверным
       const halvingStep = data.user.halvingStep || 0;
+      // Обновляем data-атрибут для рублевого баланса
+      const rubBalanceElem = document.getElementById('rubBalanceLabel');
+      if (rubBalanceElem) rubBalanceElem.setAttribute('data-halving', halvingStep);
       const rubMultiplier = 1 + halvingStep * 0.02;
-      const rubBalance = (balance * rubMultiplier).toFixed(5);
       document.getElementById('userId').textContent = currentUserId;
       document.getElementById('balance').textContent = formatBalance(balance);
-      document.getElementById('rubBalance').textContent = rubBalance;
+      document.getElementById('rubBalance').textContent = (balance * rubMultiplier).toFixed(5);
     } else {
       console.error('[Fetch User Data] Error: Invalid response from server');
       document.getElementById('balance').textContent = '0.00000';
