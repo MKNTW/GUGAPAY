@@ -96,6 +96,8 @@ app.post('/update', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Неверная сумма' });
         }
 
+        console.log(`[Update] Received request for user: ${userId}, amount: ${amount}`); // Отладочное сообщение
+
         // Получаем текущий баланс пользователя
         const { data: userData, error: fetchError } = await supabase
             .from('users')
@@ -104,6 +106,7 @@ app.post('/update', async (req, res) => {
             .single();
 
         if (fetchError || !userData) {
+            console.error('[Update] User not found:', fetchError?.message);
             return res.status(404).json({ success: false, error: 'Пользователь не найден' });
         }
 
@@ -111,10 +114,15 @@ app.post('/update', async (req, res) => {
         const newBalance = parseFloat((userData.balance || 0) + amount).toFixed(5);
 
         // Обновляем баланс пользователя
-        await supabase
+        const { error: updateError } = await supabase
             .from('users')
             .update({ balance: newBalance })
             .eq('user_id', userId);
+
+        if (updateError) {
+            console.error('[Update] Error updating balance:', updateError.message);
+            return res.status(500).json({ success: false, error: 'Обновление баланса не удалось' });
+        }
 
         console.log(`[Update] Balance updated for user: ${userId}, new balance: ${newBalance}`);
         res.json({ success: true, balance: newBalance });
