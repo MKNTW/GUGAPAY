@@ -138,7 +138,7 @@ async function mineCoins() {
         const response = await fetch(`${API_URL}/update`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: currentUserId, amount: 1 }) // Добываем 1 монету
+            body: JSON.stringify({ userId: currentUserId, amount: 0.00001 }) // Добываем 1 монету
         });
 
         if (!response.ok) {
