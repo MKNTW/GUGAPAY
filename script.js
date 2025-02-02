@@ -23,8 +23,8 @@ function createUI() {
         userInfo.id = 'userInfo';
         userInfo.classList.add('hidden'); // Скрываем по умолчанию
         userInfo.innerHTML = `
-            <p id="userIdLabel"><strong>ID:</strong> <span id="userId">0</span></p>
-            <p id="balanceLabel"><strong>Баланс:</strong> <span id="balance">0.00000</span></p>
+            <p id="userIdLabel"><strong>ID:</strong> <span id="userId"></span></p>
+            <p id="balanceLabel"><strong>Баланс:</strong> <span id="balance"></span></p>
         `;
         document.body.appendChild(userInfo);
     }
@@ -73,13 +73,19 @@ function updateUI() {
         // Пользователь вошёл в систему
         if (userInfo) userInfo.classList.remove('hidden');
         if (mineBtn) mineBtn.classList.remove('hidden');
-        if (bottomBar) bottomBar.classList.remove('hidden');
+        if (bottomBar) {
+            bottomBar.classList.remove('hidden'); // Показываем нижнюю панель
+            bottomBar.style.display = 'flex'; // Добавляем стиль для отображения
+        }
         removeAuthModal(); // Удаляем окно GugaCoin из DOM
     } else {
         // Пользователь не вошёл в систему
         if (userInfo) userInfo.classList.add('hidden');
         if (mineBtn) mineBtn.classList.add('hidden');
-        if (bottomBar) bottomBar.classList.add('hidden');
+        if (bottomBar) {
+            bottomBar.classList.add('hidden'); // Скрываем нижнюю панель
+            bottomBar.style.display = 'none'; // Убираем стиль отображения
+        }
         openAuthModal(); // Открываем окно GugaCoin
     }
 }
