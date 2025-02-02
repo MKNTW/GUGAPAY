@@ -113,7 +113,32 @@ app.post('/update', async (req, res) => {
         }
 
         console.log('[Update] Current balance:', userData.balance);
+        
+        // Получаем общее количество добытых монет всеми игроками
+        const { data: totalMinedData, error: totalMinedError } = await supabase
+            .from('mined_coins')
+            .select('amount');
 
+        const totalMined = totalMinedData.reduce((sum, tx) => sum + tx.amount, 0);
+
+        // Халвинг происходит каждую целую добытую монету (1, 2, 3...)
+        const halvingStep = Math.floor(totalMined);
+
+        // Сохраняем уровень халвинга
+        await supabase
+            .from('halving')
+            .upsert([{ step: halvingStep }]);
+
+        res.json({ 
+            success: true, 
+            balance: newBalance,
+            halvingStep 
+        });
+        } catch (error) {
+        console.error('[Update] Error:', error.stack);
+        res.status(500).json({ success: false, error: 'Ошибка добычи' });
+        }
+        
         // Вычисляем новый баланс с точностью до 5 знаков после запятой
         const newBalance = parseFloat((userData.balance || 0) + amount).toFixed(5);
 
