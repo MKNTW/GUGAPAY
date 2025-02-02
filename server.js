@@ -209,8 +209,12 @@ app.post('/transfer', async (req, res) => {
             .from('users')
             .update({ balance: newToBalance })
             .eq('user_id', toUserId);
+
+        // Логируем данные перед вставкой транзакции
+        console.log('[Transfer] Inserting transaction:', { fromUserId, toUserId, amount });
+
         // Записываем транзакцию
-        await supabase
+        const { error: transactionError } = await supabase
             .from('transactions')
             .insert([
                 {
@@ -219,6 +223,12 @@ app.post('/transfer', async (req, res) => {
                     amount: amount
                 }
             ]);
+
+        if (transactionError) {
+            console.error('[Transfer] Error inserting transaction:', transactionError.message);
+            return res.status(500).json({ success: false, error: 'не удалось записать транзакцию' });
+        }
+
         console.log(`[Transfer] Success: ${amount} coins transferred from ${fromUserId} to ${toUserId}`);
         res.json({ success: true, fromBalance: newFromBalance, toBalance: newToBalance });
     } catch (error) {
