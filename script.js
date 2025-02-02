@@ -24,7 +24,8 @@ function createUI() {
         userInfo.classList.add('hidden'); // Скрываем по умолчанию
         userInfo.innerHTML = `
             <p id="userIdLabel"><strong>ID:</strong> <span id="userId"></span></p>
-            <p id="balanceLabel"><strong>Баланс:</strong> <span id="balance"></span></p>
+            <p id="balanceLabel"><strong>Баланс (монеты):</strong> <span id="balance"></span></p>
+            <p id="rubBalanceLabel"><strong>Баланс (₽):</strong> <span id="rubBalance"></span></p>
         `;
         document.body.appendChild(userInfo);
     }
@@ -101,18 +102,26 @@ async function fetchUserData() {
         const data = await response.json();
 
         if (data.success && data.user) {
-            const balance = data.user.balance || 0; // Баланс в минимальных единицах
+            const balance = data.user.balance || 0; // Баланс в монетах
+            const halvingStep = data.halvingStep || 0; // Уровень халвинга
 
-            // Форматируем баланс с точностью до 0.00001
+            // Конвертация в рубли: balance * (1 + 2% * halvingStep)
+            const rubMultiplier = (1 + halvingStep * 0.02).toFixed(5);
+            const rubBalance = (balance * rubMultiplier).toFixed(5);
+
+            // Отображаем баланс
             document.getElementById('userId').textContent = currentUserId;
-            document.getElementById('balance').textContent = formatBalance(balance); // Отображаем баланс
+            document.getElementById('balance').textContent = formatBalance(balance); // Баланс в монетах
+            document.getElementById('rubBalance').textContent = rubBalance; // Баланс в рублях
         } else {
             console.error('[Fetch User Data] Error: Invalid response from server');
             document.getElementById('balance').textContent = '0.00000'; // Устанавливаем значение по умолчанию
+            document.getElementById('rubBalance').textContent = '0.00000'; // Устанавливаем значение по умолчанию
         }
     } catch (error) {
         console.error('[Fetch User Data] Error:', error.message);
         document.getElementById('balance').textContent = '0.00000'; // Устанавливаем значение по умолчанию
+        document.getElementById('rubBalance').textContent = '0.00000'; // Устанавливаем значение по умолчанию
     }
 }
 
@@ -129,14 +138,14 @@ async function mineCoins() {
         const response = await fetch(`${API_URL}/update`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: currentUserId, amount: 0.00001 }) // Увеличиваем баланс на 0.00001
+            body: JSON.stringify({ userId: currentUserId, amount: 1 }) // Добываем 1 монету
         });
 
         if (!response.ok) {
             throw new Error(`Server responded with status ${response.status}`);
         }
 
-        // Обновляем данные пользователя без оповещений
+        // Обновляем данные пользователя
         fetchUserData();
     } catch (error) {
         console.error(error);
