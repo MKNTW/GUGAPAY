@@ -85,6 +85,33 @@ function updateUI() {
 }
 
 // Получение данных пользователя
+app.get('/user', async (req, res) => {
+    try {
+        const { userId } = req.query;
+        if (!userId) {
+            return res.status(400).json({ success: false, error: 'ID пользователя обязателен' });
+        }
+        const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('user_id', userId)
+            .single();
+        if (error || !data) {
+            return res.status(404).json({ success: false, error: 'пользователь не найден' });
+        }
+        const user = {
+            user_id: data.user_id,
+            username: data.username,
+            balance: data.balance || 0
+        };
+        console.log(`[User] Data fetched for user: ${userId}`);
+        res.json({ success: true, user });
+    } catch (error) {
+        console.error('[User] Error:', error.stack);
+        res.status(500).json({ success: false, error: 'не удалось получить данные пользователя' });
+    }
+});
+
 async function fetchUserData() {
     try {
         const response = await fetch(`${API_URL}/user?userId=${currentUserId}`);
