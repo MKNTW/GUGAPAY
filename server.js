@@ -93,7 +93,7 @@ app.post('/update', async (req, res) => {
             return res.status(400).json({ success: false, error: 'ID пользователя обязателен' });
         }
         if (typeof amount !== 'number' || amount <= 0) {
-            return res.status(400).json({ success: false, error: 'Неверная сумма' });
+            return res.status(400).json({ success: false, error: 'неверная сумма' });
         }
 
         console.log(`[Update] Received request for user: ${userId}, amount: ${amount}`); // Отладочное сообщение
@@ -107,7 +107,7 @@ app.post('/update', async (req, res) => {
 
         if (fetchError || !userData) {
             console.error('[Update] User not found:', fetchError?.message);
-            return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+            return res.status(404).json({ success: false, error: 'пользователь не найден' });
         }
 
         // Вычисляем новый баланс с точностью до 5 знаков после запятой
@@ -121,14 +121,14 @@ app.post('/update', async (req, res) => {
 
         if (updateError) {
             console.error('[Update] Error updating balance:', updateError.message);
-            return res.status(500).json({ success: false, error: 'Обновление баланса не удалось' });
+            return res.status(500).json({ success: false, error: 'обновление баланса не удалось' });
         }
 
         console.log(`[Update] Balance updated for user: ${userId}, new balance: ${newBalance}`);
         res.json({ success: true, balance: newBalance });
     } catch (error) {
         console.error('[Update] Error:', error.stack);
-        res.status(500).json({ success: false, error: 'Обновление не удалось' });
+        res.status(500).json({ success: false, error: 'обновление не удалось' });
     }
 });
 
