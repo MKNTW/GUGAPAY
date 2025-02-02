@@ -85,32 +85,30 @@ function updateUI() {
 }
 
 // Получение данных пользователя
-app.get('/user', async (req, res) => {
+async function fetchUserData() {
     try {
-        const { userId } = req.query;
-        if (!userId) {
-            return res.status(400).json({ success: false, error: 'ID пользователя обязателен' });
+        console.log('[Fetch User Data] Sending request for user:', currentUserId); // Отладочное сообщение
+        const response = await fetch(`${API_URL}/user?userId=${currentUserId}`);
+        if (!response.ok) {
+            throw new Error(`Server responded with status ${response.status}`);
         }
-        const { data, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('user_id', userId)
-            .single();
-        if (error || !data) {
-            return res.status(404).json({ success: false, error: 'пользователь не найден' });
+
+        const data = await response.json();
+        console.log('[Fetch User Data] Response:', data); // Логируем ответ сервера
+
+        if (data.success && data.user) {
+            const balance = data.user.balance || 0; // Баланс в минимальных единицах
+            document.getElementById('userId').textContent = currentUserId; // Отображаем ID
+            document.getElementById('balance').textContent = formatBalance(balance); // Отображаем баланс
+        } else {
+            console.error('[Fetch User Data] Error: Invalid response from server');
+            document.getElementById('balance').textContent = '0.00000'; // Устанавливаем значение по умолчанию
         }
-        const user = {
-            user_id: data.user_id,
-            username: data.username,
-            balance: data.balance || 0
-        };
-        console.log(`[User] Data fetched for user: ${userId}`);
-        res.json({ success: true, user });
     } catch (error) {
-        console.error('[User] Error:', error.stack);
-        res.status(500).json({ success: false, error: 'не удалось получить данные пользователя' });
+        console.error('[Fetch User Data] Error:', error.message);
+        document.getElementById('balance').textContent = '0.00000'; // Устанавливаем значение по умолчанию
     }
-});
+}
 
 async function fetchUserData() {
     try {
