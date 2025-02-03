@@ -3,6 +3,7 @@ let currentUserId = null;
 let pendingMinedCoins = parseFloat(localStorage.getItem('pendingMinedCoins')) || 0;
 let mineTimer = null;
 let localBalance = 0;
+let updateInterval = null;
 
 /* ================================
    ФУНКЦИИ РАБОТЫ С UI
@@ -13,6 +14,10 @@ function logout() {
   currentUserId = null;
   hideMainUI();
   closeAllModals();
+  // Очищаем отображение ID
+  document.getElementById('userIdDisplay').textContent = '';
+  // Останавливаем автообновление баланса
+  clearInterval(updateInterval);
   openAuthModal();
 }
 
@@ -26,6 +31,8 @@ function showMainUI() {
   document.getElementById('balanceDisplay').classList.remove('hidden');
   document.getElementById('mineBtn').classList.remove('hidden');
   document.getElementById('bottomBar').classList.remove('hidden');
+  // Запускаем автообновление баланса каждые 2 секунды
+  updateInterval = setInterval(fetchUserData, 2000);
 }
 
 function hideMainUI() {
@@ -33,6 +40,7 @@ function hideMainUI() {
   document.getElementById('balanceDisplay').classList.add('hidden');
   document.getElementById('mineBtn').classList.add('hidden');
   document.getElementById('bottomBar').classList.add('hidden');
+  clearInterval(updateInterval);
 }
 
 function closeAllModals() {
@@ -41,8 +49,8 @@ function closeAllModals() {
 }
 
 /**
- * Создаёт модальное окно и устанавливает обработчик закрытия по событию "click".
- * Если клик происходит по оверлею (то есть по контейнеру, вне блока с классом "modal-content"),
+ * Создаёт модальное окно и добавляет обработчик закрытия.
+ * Если клик (или касание) происходит по оверлею (т.е. если e.target === контейнеру модального окна),
  * окно закрывается.
  */
 function createModal(id, content) {
@@ -56,6 +64,13 @@ function createModal(id, content) {
   modal.addEventListener('click', (e) => {
     if (e.target === modal) {
       closeModal(id);
+      fetchUserData();
+    }
+  });
+  modal.addEventListener('touchend', (e) => {
+    if (e.target === modal) {
+      closeModal(id);
+      fetchUserData();
     }
   });
   return modal;
@@ -63,12 +78,16 @@ function createModal(id, content) {
 
 function openModal(modalId) {
   const modal = document.getElementById(modalId);
-  if (modal) modal.classList.remove('hidden');
+  if (modal) {
+    modal.classList.remove('hidden');
+    fetchUserData();
+  }
 }
 
 function closeModal(modalId) {
   const modal = document.getElementById(modalId);
   if (modal) modal.classList.add('hidden');
+  fetchUserData();
 }
 
 /* ------------------------------
@@ -97,8 +116,8 @@ function openAuthModal() {
   hideMainUI();
   let authModal = document.getElementById('authModal');
   if (!authModal) {
+    // В окне авторизации убираем надпись "GugaCoin"
     authModal = createModal('authModal', `
-      <h3></h3>
       <div id="loginSection">
         <h4>Вход</h4>
         <input type="text" id="loginInput" placeholder="Логин">
@@ -137,14 +156,20 @@ function formatBalance(balance) {
 
 function mineCoins() {
   if (!currentUserId) return;
+  // При нажатии на кнопку "Майнить" останавливаем автообновление баланса
+  clearInterval(updateInterval);
+  
   pendingMinedCoins = parseFloat((pendingMinedCoins + 0.00001).toFixed(5));
   localStorage.setItem('pendingMinedCoins', pendingMinedCoins);
   localBalance = parseFloat((localBalance + 0.00001).toFixed(5));
   updateBalanceUI();
+  
   if (mineTimer) clearTimeout(mineTimer);
   mineTimer = setTimeout(() => {
     flushMinedCoins();
-  }, 1500);
+    // Возобновляем автообновление баланса через 1 секунду после остановки кликов
+    updateInterval = setInterval(fetchUserData, 2000);
+  }, 1000);
 }
 
 function updateBalanceUI() {
@@ -244,7 +269,9 @@ function openTransferModal() {
   `);
   const sendTransferBtn = modal.querySelector('#sendTransferBtn');
   if (sendTransferBtn) {
-    sendTransferBtn.addEventListener('click', sendTransfer);
+    sendTransferBtn.addEventListener('click', async () => {
+      await sendTransfer();
+    });
   }
   openModal('transferModal');
 }
@@ -333,6 +360,8 @@ function openExchangeModal() {
     <p id="rubBalanceInfo"></p>
     <p id="halvingLevel"></p>
   `);
+  // При открытии окна "Обменять" обновляем данные автоматически
+  fetchUserData();
   openModal('exchangeModal');
 }
 
@@ -415,6 +444,7 @@ async function login() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Автообновление баланса запускается только после успешного входа (showMainUI())
   if (pendingMinedCoins > 0) {
     flushMinedCoins();
   }
