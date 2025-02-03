@@ -1,202 +1,261 @@
 /* Общие стили */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 body {
-    font-family: 'Oswald', sans-serif; /* Применяем Oswald для всего текста */
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    background-color: #f4f4f9;
-    position: relative;
+  font-family: 'Oswald', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f9;
+  position: relative;
+  overflow-x: hidden;
 }
 
+/* Скрытый элемент */
 .hidden {
-    display: none; /* Скрывает элемент */
+  display: none;
 }
 
-/* Информация о пользователе (ID и Баланс) */
-#userInfo {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    text-align: left;
-    color: #333;
-    font-family: 'Oswald', sans-serif;
-    font-weight: bold; /* Жирный шрифт */
+/* Верхняя панель */
+#topBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  z-index: 1000;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-#userInfo p {
-    margin: 5px 0;
-    font-size: 18px; /* Увеличиваем размер шрифта */
+/* Левый блок – расположение в колонку: сначала надпись, затем ID */
+#topBarLeft {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
 }
 
-#userInfo strong {
-    font-weight: 900; /* Делаем жирнее в 2 раза */
+/* Правый блок – прижат к правому краю с минимальным отступом */
+#topBarRight {
+  display: flex;
+  align-items: center;
+  padding-right: 0; /* минимальный отступ */
 }
 
-/* Кнопка "Майнить" (заменена на изображение) */
+#appTitle {
+  font-weight: bold;
+  font-size: 28px; /* немного меньше */
+  text-transform: uppercase;
+  color: #333;
+}
+
+#userIdDisplay {
+  font-size: 16px; /* увеличенный и жирнее */
+  font-weight: 700;
+  color: #555;
+}
+
+/* Кнопка "Выход" – расположена максимально вправо */
+#logoutBtn {
+  background-color: transparent;
+  border: none;
+  color: #333;
+  font-size: 16px;
+  font-weight: bold;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 10px 15px;
+  transition: background-color 0.3s ease;
+}
+
+#logoutBtn:hover {
+  background-color: #f0f0f0;
+}
+
+/* Блок отображения баланса – фиксированный, отступ сверху 150px */
+#balanceDisplay {
+  position: fixed;
+  top: 150px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  z-index: 1000;
+}
+
+#balanceLabel {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+
+#balanceValue {
+  font-size: 36px;
+  font-weight: bold;
+  color: #333;
+}
+
+/* Кнопка "Майнить" – увеличена до 250x250px, расположена ближе к нижней части (отступ снизу 100px) */
 #mineBtn {
-    position: absolute;
-    bottom: 60px; /* Над нижней панелью */
-    left: 50%;
-    transform: translateX(-50%);
-    width: 50px;
-    height: 50px;
-    cursor: pointer;
-    border-radius: 50%; /* Делаем круглой */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Добавляем тень */
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 250px;
+  height: 250px;
+  cursor: pointer;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  z-index: 1000;
 }
 
-/* Нижняя панель кнопок */
+/* Нижняя панель – фиксированная */
 #bottomBar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    background-color: white;
-    padding: 10px 0;
-    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1); /* Добавляем тень сверху */
-    z-index: 1000;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background-color: #fff;
+  padding: 10px 0;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+  z-index: 1000;
 }
 
 #bottomBar button {
-    flex: 1;
-    padding: 10px;
-    border: none;
-    background-color: transparent;
-    color: #333;
-    font-family: 'Oswald', sans-serif;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    text-transform: uppercase;
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background-color: transparent;
+  color: #333;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  text-transform: uppercase;
 }
 
 #bottomBar button:hover {
-    background-color: #f0f0f0;
+  background-color: #f0f0f0;
 }
 
-/* Вертикальные разделители между кнопками */
 .divider {
-    width: 1px;
-    height: 30px;
-    background-color: black;
+  width: 1px;
+  height: 30px;
+  background-color: #333;
 }
 
-/* Модальное окно */
+/* Оформление информации в окне "Обменять" */
+.modal-content p {
+  font-size: 18px;
+  margin: 15px 0;
+  text-align: center;
+}
+
+/* Блок для отображения уровня халвинга */
+#halvingLevel {
+  font-size: 16px;
+  margin-top: 10px;
+  text-align: center;
+  color: #555;
+}
+
+/* Модальные окна */
 .modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5); /* Полупрозрачный фон */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  /* Центрирование содержимого */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1500;
 }
 
+/* Содержимое модального окна */
 .modal-content {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    width: 300px; /* Фиксированный размер окна */
-    max-height: 80vh; /* Ограничение высоты */
-    overflow-y: auto; /* Прокрутка содержимого */
-    position: relative; /* Для позиционирования кнопки закрытия */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    font-family: 'Oswald', sans-serif;
-    text-transform: uppercase;
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  width: 300px;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  text-transform: uppercase;
+  font-family: 'Oswald', sans-serif;
 }
 
-/* Кнопка закрытия */
-.close-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: red;
-    color: white;
-    border: none;
-    cursor: pointer;
-    padding: 5px 10px;
-    border-radius: 50%; /* Делаем кнопку круглой */
-    font-size: 14px;
-    font-family: 'Oswald', sans-serif;
-    text-transform: uppercase;
-    transition: background-color 0.3s ease;
-}
-
-.close-btn:hover {
-    background: darkred;
-}
-
-.modal-content h3, .modal-content h4 {
-    margin-top: 0;
-    font-size: 18px;
-    color: #333;
-    text-align: center;
-    font-family: 'Oswald', sans-serif;
-    text-transform: uppercase;
+/* Заголовки и поля модального окна */
+.modal-content h3,
+.modal-content h4 {
+  margin-top: 0;
+  font-size: 18px;
+  color: #333;
+  text-align: center;
 }
 
 .modal-content label {
-    display: block;
-    margin-top: 10px;
-    font-size: 16px;
-    color: #555;
-    font-family: 'Oswald', sans-serif;
-    text-transform: uppercase;
+  display: block;
+  margin-top: 10px;
+  font-size: 16px;
+  color: #555;
 }
 
 .modal-content input {
-    width: 100%;
-    padding: 8px;
-    margin-top: 5px;
-    box-sizing: border-box;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-family: 'Oswald', sans-serif;
-    text-transform: uppercase;
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
 .modal-content button {
-    margin-top: 20px;
-    padding: 10px;
-    border: none;
-    cursor: pointer;
-    width: 100%;
-    border-radius: 4px;
-    transition: background-color 0.3s ease;
-    font-family: 'Oswald', sans-serif;
-    text-transform: uppercase;
+  margin-top: 20px;
+  padding: 10px;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
 }
 
 /* Прокручиваемое содержимое */
 .scrollable-content {
-    max-height: 400px; /* Максимальная высота содержимого */
-    overflow-y: auto; /* Включаем прокрутку */
-    margin-bottom: 20px; /* Отступ от кнопки закрытия */
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 20px;
 }
 
 /* Адаптивность */
 @media (max-width: 600px) {
-    #userInfo {
-        font-size: 14px; /* Уменьшаем шрифт на мобильных устройствах */
-    }
-
-    #mineBtn {
-        width: 40px;
-        height: 40px;
-    }
-
-    #bottomBar button {
-        font-size: 14px;
-    }
+  #appTitle {
+    font-size: 32px;
+  }
+  #userIdDisplay {
+    font-size: 14px;
+  }
+  #balanceValue {
+    font-size: 28px;
+  }
+  #mineBtn {
+    width: 220px;
+    height: 220px;
+  }
+  #bottomBar button,
+  #logoutBtn {
+    font-size: 14px;
+  }
 }
