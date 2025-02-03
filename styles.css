@@ -12,6 +12,9 @@ body {
   background-color: #f4f4f9;
   position: relative;
   overflow-x: hidden;
+  /* Увеличим базовый размер шрифта */
+  font-size: 18px;
+  font-weight: 600;
 }
 
 /* Скрытый элемент */
@@ -34,7 +37,7 @@ body {
   align-items: center;
 }
 
-/* Левый блок – расположение в колонку: сначала надпись, затем ID */
+/* Левый блок – колонка: сначала надпись, затем ID */
 #topBarLeft {
   display: flex;
   flex-direction: column;
@@ -51,23 +54,23 @@ body {
 
 #appTitle {
   font-weight: bold;
-  font-size: 28px; /* немного меньше */
+  font-size: 30px; /* немного больше */
   text-transform: uppercase;
   color: #333;
 }
 
 #userIdDisplay {
-  font-size: 16px; /* увеличенный и жирнее */
+  font-size: 18px; /* немного больше и жирнее */
   font-weight: 700;
   color: #555;
 }
 
-/* Кнопка "Выход" – расположена максимально вправо */
+/* Кнопка "Выход" */
 #logoutBtn {
   background-color: transparent;
   border: none;
   color: #333;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: bold;
   text-transform: uppercase;
   cursor: pointer;
@@ -79,7 +82,7 @@ body {
   background-color: #f0f0f0;
 }
 
-/* Блок отображения баланса – фиксированный, отступ сверху 150px */
+/* Блок отображения баланса */
 #balanceDisplay {
   position: fixed;
   top: 150px;
@@ -90,18 +93,18 @@ body {
 }
 
 #balanceLabel {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: bold;
   color: #333;
 }
 
 #balanceValue {
-  font-size: 36px;
+  font-size: 38px;
   font-weight: bold;
   color: #333;
 }
 
-/* Кнопка "Майнить" – увеличена до 250x250px, расположена ближе к нижней части (отступ снизу 100px) */
+/* Кнопка "Майнить" */
 #mineBtn {
   position: fixed;
   bottom: 100px;
@@ -115,7 +118,11 @@ body {
   z-index: 1000;
 }
 
-/* Нижняя панель – фиксированная */
+#mineBtn:active {
+  transform: translateX(-50%) scale(0.95);
+}
+
+/* Нижняя панель */
 #bottomBar {
   position: fixed;
   bottom: 0;
@@ -136,7 +143,7 @@ body {
   border: none;
   background-color: transparent;
   color: #333;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: bold;
   cursor: pointer;
   transition: background-color 0.3s ease;
@@ -153,21 +160,6 @@ body {
   background-color: #333;
 }
 
-/* Оформление информации в окне "Обменять" */
-.modal-content p {
-  font-size: 18px;
-  margin: 15px 0;
-  text-align: center;
-}
-
-/* Блок для отображения уровня халвинга */
-#halvingLevel {
-  font-size: 16px;
-  margin-top: 10px;
-  text-align: center;
-  color: #555;
-}
-
 /* Модальные окна */
 .modal {
   position: fixed;
@@ -176,7 +168,6 @@ body {
   width: 100%;
   height: 100%;
   background: rgba(0,0,0,0.5);
-  /* Центрирование содержимого */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -197,11 +188,12 @@ body {
   font-family: 'Oswald', sans-serif;
 }
 
-/* Заголовки и поля модального окна */
+/* Заголовки и элементы модального окна */
 .modal-content h3,
 .modal-content h4 {
   margin-top: 0;
-  font-size: 18px;
+  font-size: 20px;
+  font-weight: bold;
   color: #333;
   text-align: center;
 }
@@ -209,17 +201,17 @@ body {
 .modal-content label {
   display: block;
   margin-top: 10px;
-  font-size: 16px;
+  font-size: 18px;
   color: #555;
 }
 
 .modal-content input {
   width: 100%;
-  padding: 8px;
+  padding: 10px;
   margin-top: 5px;
-  box-sizing: border-box;
   border: 1px solid #ccc;
   border-radius: 4px;
+  font-size: 16px;
 }
 
 .modal-content button {
@@ -230,6 +222,8 @@ body {
   width: 100%;
   border-radius: 4px;
   transition: background-color 0.3s ease;
+  font-size: 18px;
+  font-weight: bold;
 }
 
 /* Прокручиваемое содержимое */
@@ -239,16 +233,26 @@ body {
   margin-bottom: 20px;
 }
 
+/* Оформление информации в разделе "Обменять" */
+.modal-content p,
+#halvingLevel {
+  font-size: 18px;
+  margin: 15px 0;
+  text-align: center;
+  color: #333;
+  font-family: 'Oswald', sans-serif;
+}
+
 /* Адаптивность */
 @media (max-width: 600px) {
   #appTitle {
     font-size: 32px;
   }
   #userIdDisplay {
-    font-size: 14px;
+    font-size: 18px;
   }
   #balanceValue {
-    font-size: 28px;
+    font-size: 32px;
   }
   #mineBtn {
     width: 220px;
@@ -256,6 +260,6 @@ body {
   }
   #bottomBar button,
   #logoutBtn {
-    font-size: 14px;
+    font-size: 16px;
   }
 }
