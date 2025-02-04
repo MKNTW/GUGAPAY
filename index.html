@@ -4,44 +4,20 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GugaCoin</title>
-  <!-- Фавикон (файл 11.jpg) -->
-  <link rel="icon" href="11.jpg" type="image/jpeg">
+  <link rel="icon" href="11.png" type="image/jpeg">
   <link rel="stylesheet" href="styles.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <!-- Подключаем шрифт Oswald (400 и 700) -->
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap" rel="stylesheet" />
 </head>
 <body>
-  <!-- Верхняя панель (отображается после входа) -->
-  <div id="topBar" class="hidden">
-    <div id="topBarLeft">
-      <div id="appTitle">GugaCoin</div>
-      <div id="userIdDisplay"></div>
-    </div>
-    <div id="topBarRight">
-      <button id="logoutBtn">Выход</button>
-    </div>
-  </div>
-
-  <!-- Блок отображения баланса (отображается после входа) -->
   <div id="balanceDisplay" class="hidden">
     <span id="balanceLabel">₲</span>
     <span id="balanceValue">0.00000</span>
   </div>
-
-  <!-- Кнопка "Майнить" (отображается после входа) -->
-  <img id="mineBtn" class="hidden" src="11.jpg" alt="Майнить" />
-
-  <!-- Нижняя панель с разделами (отображается после входа) -->
-  <div id="bottomBar" class="hidden">
-    <button id="transferBtn">Перевести</button>
-    <div class="divider"></div>
-    <button id="historyBtn">История</button>
-    <div class="divider"></div>
-    <button id="exchangeBtn">Обменять</button>
+  <div id="mineContainer" class="hidden">
+    <img id="mineBtn" src="11.png" alt="Майнить">
   </div>
-
   <script src="script.js"></script>
 </body>
 </html>
