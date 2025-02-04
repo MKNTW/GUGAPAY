@@ -383,7 +383,7 @@ function displayTransactionHistory(transactions) {
     groups[dateStr].forEach(tx => {
       const opContainer = document.createElement("div");
       opContainer.className = "history-item";
-      const opType = tx.type === "sent" ? "Исходящая операция" : "Входящая операция";
+      const opType = tx.type === "sent" ? "Исходящая операция ⤴" : "Входящая операция ⤵";
       const counterpart = tx.type === "sent" ? `Кому: ${tx.to_user_id}` : `От кого: ${tx.from_user_id}`;
       const amountStr = `Количество: ₲ ${formatBalance(tx.amount)}`;
       const timeStr = `Время: ${new Date(tx.created_at).toLocaleTimeString("ru-RU")}`;
