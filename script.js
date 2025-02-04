@@ -8,13 +8,40 @@ let updateInterval = null;
 /* ================================
    ФУНКЦИИ РАБОТЫ С UI
    ================================ */
+
+// Изменённая функция logout: удаляются панели и останавливается автообновление
 function logout() {
   localStorage.removeItem("userId");
   currentUserId = null;
-  hideMainUI();
+  
+  // Удаляем верхнюю панель, если она существует
+  const topBar = document.getElementById("topBar");
+  if (topBar) {
+    topBar.remove();
+  }
+  // Удаляем нижнюю панель, если она существует
+  const bottomBar = document.getElementById("bottomBar");
+  if (bottomBar) {
+    bottomBar.remove();
+  }
+  
+  // Скрываем элементы баланса и контейнер для кнопки "Майнить"
+  const balanceDisplay = document.getElementById("balanceDisplay");
+  if (balanceDisplay) balanceDisplay.classList.add("hidden");
+  const mineContainer = document.getElementById("mineContainer");
+  if (mineContainer) mineContainer.classList.add("hidden");
+
+  // Закрываем все модальные окна
   closeAllModals();
-  document.getElementById("userIdDisplay").textContent = "";
+  
+  // Останавливаем автоматическое обновление данных
   clearInterval(updateInterval);
+  
+  // Очищаем отображение ID пользователя
+  const userIdDisplay = document.getElementById("userIdDisplay");
+  if (userIdDisplay) userIdDisplay.textContent = "";
+
+  // Открываем окно авторизации
   openAuthModal();
 }
 
@@ -92,25 +119,42 @@ function createModal(id, content) {
   modal = document.createElement("div");
   modal.id = id;
   modal.className = "modal hidden";
-  modal.innerHTML = `<div class="modal-content">${content}</div>`;
+  
+  // Структура с оверлеем, без дополнительного контейнера
+  modal.innerHTML = `
+    <div class="modal-overlay"></div>
+    <div class="modal-content">${content}</div>
+  `;
+  
   document.body.appendChild(modal);
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) {
+
+  // Добавляем обработчик для всего документа, который проверяет клики на оверлее
+  document.addEventListener("click", (e) => {
+    const overlay = modal.querySelector(".modal-overlay");
+    const contentEl = modal.querySelector(".modal-content");
+
+    // Если клик был по оверлею, а не по содержимому окна
+    if (overlay && !contentEl.contains(e.target) && overlay.contains(e.target)) {
       closeModal(id);
       fetchUserData();
     }
   });
-  modal.addEventListener("touchend", (e) => {
+
+  // Для мобильных устройств можно добавить touchend событие
+  document.addEventListener("touchend", (e) => {
+    const overlay = modal.querySelector(".modal-overlay");
+    const contentEl = modal.querySelector(".modal-content");
     setTimeout(() => {
-      if (e.target === modal) {
+      if (overlay && !contentEl.contains(e.target) && overlay.contains(e.target)) {
         closeModal(id);
         fetchUserData();
       }
     }, 100);
   });
+  
   return modal;
 }
-  
+
 
 function openModal(modalId) {
   const modal = document.getElementById(modalId);
@@ -506,7 +550,7 @@ async function sendTransfer() {
     });
     const data = await response.json();
     if (data.success) {
-      alert(`✅ Перевод успешен! Новый баланс: ${formatBalance(data.fromBalance)}`);
+      // Успешный перевод – можно обновить данные и закрыть окно, без alert
       closeModal("paymentModal");
       fetchUserData();
     } else {
@@ -568,7 +612,7 @@ async function login() {
       createUI();
       updateUI();
       fetchUserData();
-      alert(`✅ Успешный вход! Ваш ID: ${currentUserId}`);
+      // alert при успешном входе удалён
     } else {
       alert(`❌ Ошибка входа: ${data.error}`);
     }
