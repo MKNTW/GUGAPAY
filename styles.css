@@ -77,7 +77,7 @@ body {
 /* Кнопка "Выход" */
 #logoutBtn {
   background-color: transparent;
-  #border: 1px solid #000;
+  border: 1px solid #000;
   color: #000;
   font-size: 14px;
   font-weight: 600;
@@ -275,10 +275,10 @@ body {
 .modal-content button {
   margin-top: 15px;
   padding: 8px;
-  #border: 1px solid #000;
+  border: 1px solid #000;
   cursor: pointer;
   width: 100%;
-  #border-radius: 0;
+  border-radius: 0;
   transition: background-color 0.3s ease;
   font-size: 16px;
   font-weight: 600;
