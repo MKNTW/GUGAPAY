@@ -150,7 +150,7 @@ body {
 /* Контейнер кнопки "Майнить" — центрирован, без окантовки */
 #mineContainer {
   position: fixed;
-  bottom: 150px;
+  bottom: 120px;
   left: 51%;
   transform: translateX(-50%);
   width: 250px;
