@@ -4,6 +4,7 @@ let pendingMinedCoins = parseFloat(localStorage.getItem("pendingMinedCoins")) ||
 let mineTimer = null;
 let localBalance = 0;
 let updateInterval = null;
+let isMining = false; // Флаг, указывающий, что процесс майнинга запущен
 
 /* ================================
    ФУНКЦИИ РАБОТЫ С UI
@@ -78,6 +79,7 @@ function showMainUI() {
   document.getElementById("balanceDisplay").classList.remove("hidden");
   document.getElementById("mineContainer").classList.remove("hidden");
 
+  // Интервал обновления информации о пользователе – каждые 2000 мс (2 секунды)
   updateInterval = setInterval(fetchUserData, 2000);
 }
 
@@ -100,8 +102,6 @@ function closeAllModals() {
 
 /**
  * Создаёт модальное окно и добавляет обработчики для закрытия по клику по оверлею.
- * Для модальных окон "paymentModal", "historyModal" и "exchangeModal" при клике по оверлею
- * окно удаляется из DOM.
  */
 function createModal(id, content) {
   let modal = document.getElementById(id);
@@ -117,11 +117,10 @@ function createModal(id, content) {
   
   document.body.appendChild(modal);
 
-  // Для нужных модальных окон применяем удаление по клику по оверлею
+  // Для модальных окон, таких как paymentModal, historyModal и exchangeModal, закрытие по оверлею
   const modalsWithOverlayClickClose = ["paymentModal", "historyModal", "exchangeModal"];
   if (modalsWithOverlayClickClose.includes(id)) {
     const overlay = modal.querySelector(".modal-overlay");
-    const contentEl = modal.querySelector(".modal-content");
     if (overlay) {
       overlay.addEventListener("click", (e) => {
         if (e.target === overlay) {
@@ -238,21 +237,35 @@ function formatBalance(balance) {
    ФУНКЦИИ ДОБЫЧИ МОНЕТ
    ================================ */
 /*
-  При нажатии на кнопку "Майнить" автообновление баланса
-  останавливается сразу, а затем через 1.5 секунды после последнего клика
-  восстанавливается.
+  При нажатии на кнопку "Майнить":
+  - Сразу прекращается автоматическое обновление информации о пользователе
+  - Устанавливается флаг isMining = true
+  - Увеличивается локальный баланс и накопленная сумма добытых монет
+  - Автообновление возобновляется через 1.5 секунды после последнего нажатия
 */
 function mineCoins() {
   if (!currentUserId) return;
-  // Останавливаем автообновление сразу при клике
+  // Останавливаем автообновление информации о пользователе
   clearInterval(updateInterval);
+  
+  // Устанавливаем флаг майнинга
+  isMining = true;
+  
+  // Увеличиваем накопленные монеты
   pendingMinedCoins = parseFloat((pendingMinedCoins + 0.00001).toFixed(5));
   localStorage.setItem("pendingMinedCoins", pendingMinedCoins);
   localBalance = parseFloat((localBalance + 0.00001).toFixed(5));
   updateBalanceUI();
+  
+  // Если уже запущен таймер, сбрасываем его
   if (mineTimer) clearTimeout(mineTimer);
-  // Запускаем автообновление через 1.5 секунды после последнего клика
+  
+  // Через 1.5 сек. после последнего нажатия:
+  // - Сбрасываем флаг майнинга
+  // - Отправляем накопленные монеты на сервер
+  // - Возобновляем автообновление данных (каждые 2000 мс)
   mineTimer = setTimeout(() => {
+    isMining = false;
     flushMinedCoins();
     updateInterval = setInterval(fetchUserData, 2000);
   }, 1500);
@@ -350,12 +363,15 @@ function updateUI() {
 }
 
 async function fetchUserData() {
+  // Если идёт процесс майнинга, не выполняем запрос
+  if (isMining) return;
+  
   try {
     const response = await fetch(`${API_URL}/user?userId=${currentUserId}`);
     if (!response.ok) throw new Error(`Server responded with status ${response.status}`);
     const data = await response.json();
     if (data.success && data.user) {
-      // Если аккаунт заблокирован — выводим уведомление и завершаем сессию
+      // Если аккаунт заблокирован – уведомляем и выходим из сессии
       if (data.user.blocked === 1) {
         alert("Ваш аккаунт заблокирован");
         logout();
