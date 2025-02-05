@@ -273,6 +273,31 @@ body {
   text-align: center;
 }
 
+#authModal h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #000;
+  text-align: center;
+  #display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin: 0 0 20px 0;
+}
+
+#authModal h3::after {
+  content: "";
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-bottom: -0.1em;
+  background-image: url('1.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
 /* Для окна авторизации */
 #authModal h4 {
   text-align: left;
