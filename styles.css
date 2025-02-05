@@ -65,7 +65,7 @@ body {
   text-transform: uppercase;
   color: #333;
   text-align: center;
-  display: flex;
+  #display: flex;
   align-items: center;
   gap: 8px;
 }
