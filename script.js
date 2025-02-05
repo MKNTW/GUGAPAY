@@ -1,4 +1,4 @@
-const API_URL = "https://mkntw-github-io.onrender.com"; // Проверьте корректность URL
+const API_URL = "https://mkntw-github-io.onrender.com"; // Убедитесь, что URL корректный и сервер доступен
 let currentUserId = null;
 let pendingMinedCoins = parseFloat(localStorage.getItem("pendingMinedCoins")) || 0;
 let mineTimer = null;
@@ -9,49 +9,36 @@ let updateInterval = null;
    ФУНКЦИИ РАБОТЫ С UI
    ================================ */
 
-// Изменённая функция logout: удаляются панели и останавливается автообновление
 function logout() {
   localStorage.removeItem("userId");
   currentUserId = null;
-  
-  // Удаляем верхнюю панель, если она существует
-  const topBar = document.getElementById("topBar");
-  if (topBar) {
-    topBar.remove();
-  }
-  // Удаляем нижнюю панель, если она существует
-  const bottomBar = document.getElementById("bottomBar");
-  if (bottomBar) {
-    bottomBar.remove();
-  }
-  
-  // Скрываем элементы баланса и контейнер для кнопки "Майнить"
-  const balanceDisplay = document.getElementById("balanceDisplay");
-  if (balanceDisplay) balanceDisplay.classList.add("hidden");
-  const mineContainer = document.getElementById("mineContainer");
-  if (mineContainer) mineContainer.classList.add("hidden");
 
-  // Закрываем все модальные окна
+  const topBar = document.getElementById("topBar");
+  if (topBar) topBar.remove();
+  const bottomBar = document.getElementById("bottomBar");
+  if (bottomBar) bottomBar.remove();
+
+  document.getElementById("balanceDisplay")?.classList.add("hidden");
+  document.getElementById("mineContainer")?.classList.add("hidden");
+
   closeAllModals();
-  
-  // Останавливаем автоматическое обновление данных
   clearInterval(updateInterval);
-  
-  // Очищаем отображение ID пользователя
+
   const userIdDisplay = document.getElementById("userIdDisplay");
   if (userIdDisplay) userIdDisplay.textContent = "";
 
-  // Открываем окно авторизации
   openAuthModal();
 }
 
 function updateTopBar() {
   const userIdDisplay = document.getElementById("userIdDisplay");
-  userIdDisplay.textContent = currentUserId ? `ID: ${currentUserId}` : "";
+  if (userIdDisplay) {
+    userIdDisplay.textContent = currentUserId ? `ID: ${currentUserId}` : "";
+  }
 }
 
 function showMainUI() {
-  // Создаем динамически верхнюю панель, если её нет
+  // Создаём верхнюю панель, если её нет
   if (!document.getElementById("topBar")) {
     const topBar = document.createElement("div");
     topBar.id = "topBar";
@@ -66,10 +53,11 @@ function showMainUI() {
     `;
     document.body.appendChild(topBar);
     document.getElementById("logoutBtn").addEventListener("click", logout);
+  } else {
+    document.getElementById("topBar").classList.remove("hidden");
   }
-  document.getElementById("topBar").classList.remove("hidden");
 
-  // Создаем динамически нижнюю панель, если её нет
+  // Создаём нижнюю панель, если её нет
   if (!document.getElementById("bottomBar")) {
     const bottomBar = document.createElement("div");
     bottomBar.id = "bottomBar";
@@ -82,79 +70,57 @@ function showMainUI() {
     document.getElementById("paymentBtn").addEventListener("click", openPaymentModal);
     document.getElementById("historyBtn").addEventListener("click", openHistoryModal);
     document.getElementById("exchangeBtn").addEventListener("click", openExchangeModal);
+  } else {
+    document.getElementById("bottomBar").classList.remove("hidden");
   }
-  document.getElementById("bottomBar").classList.remove("hidden");
 
-  // Показываем баланс и контейнер кнопки "Майнить"
-  document.getElementById("balanceDisplay").classList.remove("hidden");
-  document.getElementById("mineContainer").classList.remove("hidden");
+  document.getElementById("balanceDisplay")?.classList.remove("hidden");
+  document.getElementById("mineContainer")?.classList.remove("hidden");
 
   updateInterval = setInterval(fetchUserData, 2000);
+  updateTopBar();
 }
 
 function hideMainUI() {
-  if (document.getElementById("topBar")) {
-    document.getElementById("topBar").classList.add("hidden");
-  }
-  if (document.getElementById("bottomBar")) {
-    document.getElementById("bottomBar").classList.add("hidden");
-  }
-  document.getElementById("balanceDisplay").classList.add("hidden");
-  document.getElementById("mineContainer").classList.add("hidden");
+  document.getElementById("topBar")?.classList.add("hidden");
+  document.getElementById("bottomBar")?.classList.add("hidden");
+  document.getElementById("balanceDisplay")?.classList.add("hidden");
+  document.getElementById("mineContainer")?.classList.add("hidden");
   clearInterval(updateInterval);
 }
 
 function closeAllModals() {
-  const modals = document.querySelectorAll(".modal");
-  modals.forEach((modal) => modal.classList.add("hidden"));
+  document.querySelectorAll(".modal").forEach(modal => modal.classList.add("hidden"));
 }
 
 /**
- * Создает модальное окно и добавляет обработчики закрытия.
- * Если клик (или touch) происходит по оверлею (e.target === modal), окно закрывается.
+ * Создаёт модальное окно, если его ещё нет, и добавляет обработчик закрытия по клику вне окна.
  */
 function createModal(id, content) {
   let modal = document.getElementById(id);
   if (modal) return modal;
+
   modal = document.createElement("div");
   modal.id = id;
   modal.className = "modal hidden";
-  
-  // Структура с оверлеем, без дополнительного контейнера
   modal.innerHTML = `
     <div class="modal-overlay"></div>
     <div class="modal-content">${content}</div>
   `;
-  
   document.body.appendChild(modal);
 
-  // Добавляем обработчик для всего документа, который проверяет клики на оверлее
-  document.addEventListener("click", (e) => {
+  // Обработчик закрытия при клике по оверлею
+  modal.addEventListener("click", (e) => {
     const overlay = modal.querySelector(".modal-overlay");
     const contentEl = modal.querySelector(".modal-content");
-
-    // Если клик был по оверлею, а не по содержимому окна
-    if (overlay && !contentEl.contains(e.target) && overlay.contains(e.target)) {
+    if (overlay && overlay.contains(e.target) && !contentEl.contains(e.target)) {
       closeModal(id);
       fetchUserData();
     }
   });
 
-  // Для мобильных устройств можно добавить touchend событие
-  document.addEventListener("touchend", (e) => {
-    const overlay = modal.querySelector(".modal-overlay");
-    const contentEl = modal.querySelector(".modal-content");
-    setTimeout(() => {
-      if (overlay && !contentEl.contains(e.target) && overlay.contains(e.target)) {
-        closeModal(id);
-        fetchUserData();
-      }
-    }, 100);
-  });
-  
   return modal;
 }
-
 
 function openModal(modalId) {
   const modal = document.getElementById(modalId);
@@ -173,6 +139,7 @@ function closeModal(modalId) {
 /* ------------------------------
    МОДАЛЬНОЕ ОКНО АВТОРИЗАЦИИ
 ------------------------------ */
+
 function removeAuthModal() {
   const authModal = document.getElementById("authModal");
   if (authModal) authModal.remove();
@@ -204,41 +171,35 @@ function openAuthModal() {
         <h3>GugaCoin</h3>
         <div id="authForm">
           <div id="loginSection">
-            <h4 style="text-align: left;">Вход</h4>
+            <h4>Вход</h4>
             <input type="text" id="loginInput" placeholder="Логин">
             <input type="password" id="passwordInput" placeholder="Пароль">
             <button id="loginSubmitBtn">Войти</button>
           </div>
           <div id="registerSection" style="display: none;">
-            <h4 style="text-align: left;">Регистрация</h4>
+            <h4>Регистрация</h4>
             <input type="text" id="regLogin" placeholder="Логин">
             <input type="password" id="regPassword" placeholder="Пароль">
             <button id="registerSubmitBtn">Зарегистрироваться</button>
           </div>
         </div>
-        <!-- Кнопка переключения вынесена в самый низ окна авторизации -->
-        <button id="toggleAuthBtn" style="margin-top:20px;">Войти/Зарегестрироваться</button>
+        <button id="toggleAuthBtn" style="margin-top:20px;">Войти/Зарегистрироваться</button>
       </div>
     `;
     document.body.appendChild(authModal);
-    const loginSubmitBtn = authModal.querySelector("#loginSubmitBtn");
-    const registerSubmitBtn = authModal.querySelector("#registerSubmitBtn");
-    const toggleAuthBtn = authModal.querySelector("#toggleAuthBtn");
-    if (loginSubmitBtn) loginSubmitBtn.addEventListener("click", login);
-    if (registerSubmitBtn) registerSubmitBtn.addEventListener("click", register);
-    if (toggleAuthBtn) {
-      toggleAuthBtn.addEventListener("click", () => {
-        const loginSection = authModal.querySelector("#loginSection");
-        const registerSection = authModal.querySelector("#registerSection");
-        if (loginSection.style.display === "block") {
-          loginSection.style.display = "none";
-          registerSection.style.display = "block";
-        } else {
-          loginSection.style.display = "block";
-          registerSection.style.display = "none";
-        }
-      });
-    }
+
+    // Назначаем обработчики кнопок входа и регистрации
+    document.getElementById("loginSubmitBtn")?.addEventListener("click", login);
+    document.getElementById("registerSubmitBtn")?.addEventListener("click", register);
+    document.getElementById("toggleAuthBtn")?.addEventListener("click", () => {
+      const loginSection = document.getElementById("loginSection");
+      const registerSection = document.getElementById("registerSection");
+      if (loginSection.style.display === "block") {
+        openRegisterSection();
+      } else {
+        openLoginSection();
+      }
+    });
   }
   openLoginSection();
   openModal("authModal");
@@ -251,6 +212,7 @@ function formatBalance(balance) {
 /* ================================
    ФУНКЦИИ ДОБЫЧИ МОНЕТ
    ================================ */
+
 function mineCoins() {
   if (!currentUserId) return;
   clearInterval(updateInterval);
@@ -306,51 +268,9 @@ function flushMinedCoinsSync() {
 /* ================================
    ФУНКЦИИ РАБОТЫ С ПОЛЬЗОВАТЕЛЕМ И UI
    ================================ */
-function createUI() {
-  // Создаем динамически верхнюю панель, если её нет
-  if (!document.getElementById("topBar")) {
-    const topBar = document.createElement("div");
-    topBar.id = "topBar";
-    topBar.innerHTML = `
-      <div id="topBarLeft">
-        <div id="appTitle">GugaCoin</div>
-        <div id="userIdDisplay"></div>
-      </div>
-      <div id="topBarRight">
-        <button id="logoutBtn">Выход</button>
-      </div>
-    `;
-    document.body.appendChild(topBar);
-    document.getElementById("logoutBtn").addEventListener("click", logout);
-  }
-  document.getElementById("topBar").classList.remove("hidden");
-
-  // Создаем динамически нижнюю панель, если её нет
-  if (!document.getElementById("bottomBar")) {
-    const bottomBar = document.createElement("div");
-    bottomBar.id = "bottomBar";
-    bottomBar.innerHTML = `
-      <button id="paymentBtn">Перевести</button>
-      <button id="historyBtn">История</button>
-      <button id="exchangeBtn">Обменять</button>
-    `;
-    document.body.appendChild(bottomBar);
-    document.getElementById("paymentBtn").addEventListener("click", openPaymentModal);
-    document.getElementById("historyBtn").addEventListener("click", openHistoryModal);
-    document.getElementById("exchangeBtn").addEventListener("click", openExchangeModal);
-  }
-  document.getElementById("bottomBar").classList.remove("hidden");
-
-  // Показываем баланс и контейнер кнопки "Майнить"
-  document.getElementById("balanceDisplay").classList.remove("hidden");
-  document.getElementById("mineContainer").classList.remove("hidden");
-
-  updateInterval = setInterval(fetchUserData, 2000);
-}
 
 function updateUI() {
   if (currentUserId) {
-    updateTopBar();
     showMainUI();
     removeAuthModal();
   } else {
@@ -360,6 +280,7 @@ function updateUI() {
 }
 
 async function fetchUserData() {
+  if (!currentUserId) return;
   try {
     const response = await fetch(`${API_URL}/user?userId=${currentUserId}`);
     if (!response.ok) throw new Error(`Server responded with status ${response.status}`);
@@ -385,7 +306,6 @@ async function fetchUserData() {
    МОДАЛЬНЫЕ ОКНА
    ================================ */
 
-/* Форматирование дат */
 function getDateLabel(dateObj) {
   const today = new Date();
   const yesterday = new Date();
@@ -438,8 +358,7 @@ function displayTransactionHistory(transactions) {
       groupContainer.appendChild(opContainer);
     });
     groupContainer.style.width = "100%";
-    groupContainer.style.marginLeft = "auto";
-    groupContainer.style.marginRight = "auto";
+    groupContainer.style.margin = "0 auto";
     transactionList.appendChild(groupContainer);
   });
 }
@@ -447,25 +366,16 @@ function displayTransactionHistory(transactions) {
 function openPaymentModal() {
   const modalContent = `
     <h3>Перевести</h3>
-    <div id="transferContent" style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; max-width: 400px; margin: 0 auto;">
-      <div style="width: 100%; text-align: center;">
-        <label for="toUserIdInput">Кому (ID):</label>
-        <input type="text" id="toUserIdInput" placeholder="Введите ID получателя">
-      </div>
-      <div style="width: 100%; text-align: center; margin: 15px 0;">
-        <label for="transferAmountInput">Количество:</label>
-        <input type="number" id="transferAmountInput" step="0.00001" placeholder="Введите сумму">
-      </div>
-      <button id="sendTransferBtn" style="max-width: 200px; margin: 15px auto;">Отправить</button>
+    <div id="transferContent" style="display: flex; flex-direction: column; align-items: center; max-width: 400px; margin: 0 auto;">
+      <label for="toUserIdInput">Кому (ID):</label>
+      <input type="text" id="toUserIdInput" placeholder="Введите ID получателя">
+      <label for="transferAmountInput">Количество:</label>
+      <input type="number" id="transferAmountInput" step="0.00001" placeholder="Введите сумму">
+      <button id="sendTransferBtn" style="margin-top:15px;">Отправить</button>
     </div>
   `;
   const modal = createModal("paymentModal", modalContent);
-  const sendTransferBtn = modal.querySelector("#sendTransferBtn");
-  if (sendTransferBtn) {
-    sendTransferBtn.addEventListener("click", async () => {
-      await sendTransfer();
-    });
-  }
+  modal.querySelector("#sendTransferBtn")?.addEventListener("click", sendTransfer);
   openModal("paymentModal");
 }
 
@@ -498,13 +408,14 @@ async function fetchTransactionHistory() {
 function openExchangeModal() {
   const modalContent = `
     <h3>Обменять</h3>
-    <div id="exchangeContent" style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%;">
+    <div id="exchangeContent" style="display: flex; flex-direction: column; align-items: center;">
       <p id="exchangeRateInfo"></p>
       <p id="rubBalanceInfo"></p>
       <p id="halvingLevel"></p>
     </div>
   `;
   const modal = createModal("exchangeModal", modalContent);
+  // Обновляем информацию об обмене после получения данных пользователя
   fetchUserData();
   openModal("exchangeModal");
 }
@@ -526,6 +437,10 @@ function updateExchangeModalInfo(user) {
     halvingLevel.textContent = `Уровень халвинга: ${halvingStep}`;
   }
 }
+
+/* ================================
+   ФУНКЦИИ ПЕРЕВОДА СРЕДСТВ
+   ================================ */
 
 async function sendTransfer() {
   const toUserId = document.getElementById("toUserIdInput")?.value;
@@ -550,7 +465,6 @@ async function sendTransfer() {
     });
     const data = await response.json();
     if (data.success) {
-      // Успешный перевод – можно обновить данные и закрыть окно, без alert
       closeModal("paymentModal");
       fetchUserData();
     } else {
@@ -562,9 +476,13 @@ async function sendTransfer() {
   }
 }
 
+/* ================================
+   РЕГИСТРАЦИЯ И ВХОД
+   ================================ */
+
 async function register() {
-  const loginVal = document.getElementById("regLogin")?.value;
-  const password = document.getElementById("regPassword")?.value;
+  const loginVal = document.getElementById("regLogin").value.trim();
+  const password = document.getElementById("regPassword").value.trim();
   if (!loginVal || !password) {
     alert("❌ Введите логин и пароль");
     return;
@@ -573,28 +491,28 @@ async function register() {
     const response = await fetch(`${API_URL}/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: loginVal, password })
+      body: JSON.stringify({ username: loginVal, password: password })
     });
     const data = await response.json();
     if (data.success) {
       alert(`✅ Аккаунт создан! Ваш ID: ${data.userId}`);
       currentUserId = data.userId;
       localStorage.setItem("userId", currentUserId);
-      createUI();
-      updateUI();
+      showMainUI();
+      removeAuthModal();
       fetchUserData();
     } else {
       alert(`❌ Ошибка регистрации: ${data.error}`);
     }
   } catch (error) {
-    console.error(error);
+    console.error("[Register] Ошибка:", error);
     alert("🚫 Ошибка сети");
   }
 }
 
 async function login() {
-  const loginVal = document.getElementById("loginInput")?.value;
-  const password = document.getElementById("passwordInput")?.value;
+  const loginVal = document.getElementById("loginInput").value.trim();
+  const password = document.getElementById("passwordInput").value.trim();
   if (!loginVal || !password) {
     alert("❌ Введите логин и пароль");
     return;
@@ -603,24 +521,27 @@ async function login() {
     const response = await fetch(`${API_URL}/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: loginVal, password })
+      body: JSON.stringify({ username: loginVal, password: password })
     });
     const data = await response.json();
     if (data.success) {
       currentUserId = data.userId;
       localStorage.setItem("userId", currentUserId);
-      createUI();
-      updateUI();
+      showMainUI();
+      removeAuthModal();
       fetchUserData();
-      // alert при успешном входе удалён
     } else {
       alert(`❌ Ошибка входа: ${data.error}`);
     }
   } catch (error) {
-    console.error(error);
+    console.error("[Login] Ошибка:", error);
     alert("🚫 Ошибка сети");
   }
 }
+
+/* ================================
+   ИНИЦИАЛИЗАЦИЯ
+   ================================ */
 
 document.addEventListener("DOMContentLoaded", () => {
   if (pendingMinedCoins > 0) {
@@ -629,9 +550,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const savedUserId = localStorage.getItem("userId");
   if (savedUserId) {
     currentUserId = savedUserId;
-    createUI();
+    showMainUI();
     fetchUserData();
-    updateUI();
   } else {
     openAuthModal();
   }
@@ -645,5 +565,5 @@ window.addEventListener("beforeunload", () => {
 
 document.getElementById("mineBtn")?.addEventListener("click", mineCoins);
 
-// Глобальная доступность функции sendTransfer
+// Глобально делаем доступной функцию перевода
 window.sendTransfer = sendTransfer;
