@@ -203,7 +203,7 @@ function openAuthModal() {
             <button id="registerSubmitBtn">Зарегистрироваться</button>
           </div>
         </div>
-        <button id="toggleAuthBtn" style="margin-top:20px;">Войти/Зарегестрироваться</button>
+        <button id="toggleAuthBtn" style="margin-top:20px;">Войти/Зарегистрироваться</button>
       </div>
     `;
     document.body.appendChild(authModal);
@@ -355,6 +355,12 @@ async function fetchUserData() {
     if (!response.ok) throw new Error(`Server responded with status ${response.status}`);
     const data = await response.json();
     if (data.success && data.user) {
+      // Если аккаунт заблокирован — выводим уведомление и завершаем сессию
+      if (data.user.blocked === 1) {
+        alert("Ваш аккаунт заблокирован");
+        logout();
+        return;
+      }
       const balance = parseFloat(data.user.balance || 0);
       localBalance = balance;
       updateBalanceUI();
@@ -539,7 +545,6 @@ async function sendTransfer() {
     });
     const data = await response.json();
     if (data.success) {
-      // После успешного перевода: закрываем окно (удаляем из DOM) и показываем alert
       alert("✅ Перевод выполнен успешно!");
       const modal = document.getElementById("paymentModal");
       if (modal) modal.remove();
