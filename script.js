@@ -9,39 +9,31 @@ let updateInterval = null;
    ФУНКЦИИ РАБОТЫ С UI
    ================================ */
 
-// Изменённая функция logout: удаляются панели и останавливается автообновление
 function logout() {
   localStorage.removeItem("userId");
   currentUserId = null;
   
-  // Удаляем верхнюю панель, если она существует
   const topBar = document.getElementById("topBar");
   if (topBar) {
     topBar.remove();
   }
-  // Удаляем нижнюю панель, если она существует
   const bottomBar = document.getElementById("bottomBar");
   if (bottomBar) {
     bottomBar.remove();
   }
   
-  // Скрываем элементы баланса и контейнер для кнопки "Майнить"
   const balanceDisplay = document.getElementById("balanceDisplay");
   if (balanceDisplay) balanceDisplay.classList.add("hidden");
   const mineContainer = document.getElementById("mineContainer");
   if (mineContainer) mineContainer.classList.add("hidden");
 
-  // Закрываем все модальные окна
   closeAllModals();
   
-  // Останавливаем автоматическое обновление данных
   clearInterval(updateInterval);
   
-  // Очищаем отображение ID пользователя
   const userIdDisplay = document.getElementById("userIdDisplay");
   if (userIdDisplay) userIdDisplay.textContent = "";
 
-  // Открываем окно авторизации
   openAuthModal();
 }
 
@@ -51,7 +43,6 @@ function updateTopBar() {
 }
 
 function showMainUI() {
-  // Создаем динамически верхнюю панель, если её нет
   if (!document.getElementById("topBar")) {
     const topBar = document.createElement("div");
     topBar.id = "topBar";
@@ -69,7 +60,6 @@ function showMainUI() {
   }
   document.getElementById("topBar").classList.remove("hidden");
 
-  // Создаем динамически нижнюю панель, если её нет
   if (!document.getElementById("bottomBar")) {
     const bottomBar = document.createElement("div");
     bottomBar.id = "bottomBar";
@@ -85,7 +75,6 @@ function showMainUI() {
   }
   document.getElementById("bottomBar").classList.remove("hidden");
 
-  // Показываем баланс и контейнер кнопки "Майнить"
   document.getElementById("balanceDisplay").classList.remove("hidden");
   document.getElementById("mineContainer").classList.remove("hidden");
 
@@ -110,8 +99,9 @@ function closeAllModals() {
 }
 
 /**
- * Создает модальное окно и добавляет обработчики закрытия.
- * Если клик (или touch) происходит по оверлею (e.target === modal), окно закрывается.
+ * Создаёт модальное окно и добавляет обработчики для закрытия по клику по оверлею.
+ * Для модальных окон "paymentModal", "historyModal" и "exchangeModal" при клике по оверлею
+ * окно удаляется из DOM.
  */
 function createModal(id, content) {
   let modal = document.getElementById(id);
@@ -120,7 +110,6 @@ function createModal(id, content) {
   modal.id = id;
   modal.className = "modal hidden";
   
-  // Структура с оверлеем, без дополнительного контейнера
   modal.innerHTML = `
     <div class="modal-overlay"></div>
     <div class="modal-content">${content}</div>
@@ -128,33 +117,31 @@ function createModal(id, content) {
   
   document.body.appendChild(modal);
 
-  // Добавляем обработчик для всего документа, который проверяет клики на оверлее
-  document.addEventListener("click", (e) => {
+  // Для нужных модальных окон применяем удаление по клику по оверлею
+  const modalsWithOverlayClickClose = ["paymentModal", "historyModal", "exchangeModal"];
+  if (modalsWithOverlayClickClose.includes(id)) {
     const overlay = modal.querySelector(".modal-overlay");
     const contentEl = modal.querySelector(".modal-content");
-
-    // Если клик был по оверлею, а не по содержимому окна
-    if (overlay && !contentEl.contains(e.target) && overlay.contains(e.target)) {
-      closeModal(id);
-      fetchUserData();
+    if (overlay) {
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) {
+          modal.remove();
+          fetchUserData();
+        }
+      });
+      overlay.addEventListener("touchend", (e) => {
+        setTimeout(() => {
+          if (e.target === overlay) {
+            modal.remove();
+            fetchUserData();
+          }
+        }, 100);
+      });
     }
-  });
-
-  // Для мобильных устройств можно добавить touchend событие
-  document.addEventListener("touchend", (e) => {
-    const overlay = modal.querySelector(".modal-overlay");
-    const contentEl = modal.querySelector(".modal-content");
-    setTimeout(() => {
-      if (overlay && !contentEl.contains(e.target) && overlay.contains(e.target)) {
-        closeModal(id);
-        fetchUserData();
-      }
-    }, 100);
-  });
+  }
   
   return modal;
 }
-
 
 function openModal(modalId) {
   const modal = document.getElementById(modalId);
@@ -216,7 +203,6 @@ function openAuthModal() {
             <button id="registerSubmitBtn">Зарегистрироваться</button>
           </div>
         </div>
-        <!-- Кнопка переключения вынесена в самый низ окна авторизации -->
         <button id="toggleAuthBtn" style="margin-top:20px;">Войти/Зарегестрироваться</button>
       </div>
     `;
@@ -251,18 +237,25 @@ function formatBalance(balance) {
 /* ================================
    ФУНКЦИИ ДОБЫЧИ МОНЕТ
    ================================ */
+/*
+  При нажатии на кнопку "Майнить" автообновление баланса
+  останавливается сразу, а затем через 1.5 секунды после последнего клика
+  восстанавливается.
+*/
 function mineCoins() {
   if (!currentUserId) return;
+  // Останавливаем автообновление сразу при клике
   clearInterval(updateInterval);
   pendingMinedCoins = parseFloat((pendingMinedCoins + 0.00001).toFixed(5));
   localStorage.setItem("pendingMinedCoins", pendingMinedCoins);
   localBalance = parseFloat((localBalance + 0.00001).toFixed(5));
   updateBalanceUI();
   if (mineTimer) clearTimeout(mineTimer);
+  // Запускаем автообновление через 1.5 секунды после последнего клика
   mineTimer = setTimeout(() => {
     flushMinedCoins();
     updateInterval = setInterval(fetchUserData, 2000);
-  }, 1000);
+  }, 1500);
 }
 
 function updateBalanceUI() {
@@ -307,7 +300,6 @@ function flushMinedCoinsSync() {
    ФУНКЦИИ РАБОТЫ С ПОЛЬЗОВАТЕЛЕМ И UI
    ================================ */
 function createUI() {
-  // Создаем динамически верхнюю панель, если её нет
   if (!document.getElementById("topBar")) {
     const topBar = document.createElement("div");
     topBar.id = "topBar";
@@ -325,7 +317,6 @@ function createUI() {
   }
   document.getElementById("topBar").classList.remove("hidden");
 
-  // Создаем динамически нижнюю панель, если её нет
   if (!document.getElementById("bottomBar")) {
     const bottomBar = document.createElement("div");
     bottomBar.id = "bottomBar";
@@ -341,7 +332,6 @@ function createUI() {
   }
   document.getElementById("bottomBar").classList.remove("hidden");
 
-  // Показываем баланс и контейнер кнопки "Майнить"
   document.getElementById("balanceDisplay").classList.remove("hidden");
   document.getElementById("mineContainer").classList.remove("hidden");
 
@@ -385,7 +375,6 @@ async function fetchUserData() {
    МОДАЛЬНЫЕ ОКНА
    ================================ */
 
-/* Форматирование дат */
 function getDateLabel(dateObj) {
   const today = new Date();
   const yesterday = new Date();
@@ -550,8 +539,10 @@ async function sendTransfer() {
     });
     const data = await response.json();
     if (data.success) {
-      // Успешный перевод – можно обновить данные и закрыть окно, без alert
-      closeModal("paymentModal");
+      // После успешного перевода: закрываем окно (удаляем из DOM) и показываем alert
+      alert("✅ Перевод выполнен успешно!");
+      const modal = document.getElementById("paymentModal");
+      if (modal) modal.remove();
       fetchUserData();
     } else {
       alert(`❌ Ошибка перевода: ${data.error}`);
@@ -612,7 +603,6 @@ async function login() {
       createUI();
       updateUI();
       fetchUserData();
-      // alert при успешном входе удалён
     } else {
       alert(`❌ Ошибка входа: ${data.error}`);
     }
@@ -645,5 +635,4 @@ window.addEventListener("beforeunload", () => {
 
 document.getElementById("mineBtn")?.addEventListener("click", mineCoins);
 
-// Глобальная доступность функции sendTransfer
 window.sendTransfer = sendTransfer;
