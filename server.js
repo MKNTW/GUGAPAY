@@ -43,15 +43,6 @@ app.post('/register', async (req, res) => {
     if (!username || !password) {
       return res.status(400).json({ success: false, error: 'Логин и пароль обязательны' });
     }
-    const { error } = await supabase
-      .from('users')
-      .insert([{ 
-        username, 
-        password: hashedPassword, 
-        user_id: userId, 
-        balance: 0,
-        is_blocked: 0 // Добавляем статус блокировки
-    }
     if (password.length < 6) {
       return res.status(400).json({ success: false, error: 'Пароль должен содержать минимум 6 символов' });
     }
@@ -90,13 +81,6 @@ app.post('/login', async (req, res) => {
 
     if (error || !data) {
       return res.status(401).json({ success: false, error: 'Неверные учетные данные' });
-    }
-
-    if (data.is_blocked === 1) {
-      return res.status(403).json({ 
-        success: false, 
-        error: 'Аккаунт заблокирован' 
-      });
     }
 
     const isPasswordValid = await bcrypt.compare(password, data.password);
