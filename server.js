@@ -50,11 +50,13 @@ app.post('/register', async (req, res) => {
     // Генерируем 6-значный userId
     const userId = Math.floor(100000 + Math.random() * 900000).toString();
 
+    // Добавляем поле blocked со значением 0 (не заблокирован)
     const { error } = await supabase
       .from('users')
-      .insert([{ username, password: hashedPassword, user_id: userId, balance: 0 }]);
+      .insert([{ username, password: hashedPassword, user_id: userId, balance: 0, blocked: 0 }]);
 
     if (error) {
+      // Если ошибка связана с нарушением уникальности (логин уже существует)
       if (error.message.includes('unique_violation')) {
         return res.status(409).json({ success: false, error: 'Такой логин уже существует' });
       }
@@ -81,6 +83,11 @@ app.post('/login', async (req, res) => {
 
     if (error || !data) {
       return res.status(401).json({ success: false, error: 'Неверные учетные данные' });
+    }
+
+    // Если аккаунт заблокирован, возвращаем ошибку
+    if (data.blocked === 1) {
+      return res.status(403).json({ success: false, error: 'Аккаунт заблокирован' });
     }
 
     const isPasswordValid = await bcrypt.compare(password, data.password);
