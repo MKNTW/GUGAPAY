@@ -60,7 +60,7 @@ app.post('/register', async (req, res) => {
       if (error.message.includes('unique_violation')) {
         return res.status(409).json({ success: false, error: 'Такой логин уже существует' });
       }
-      return res.status(500).json({ success: false, error: 'Регистрация не удалась' });
+      return res.status(500).json({ success: false, error: 'Такой логин уже существует' });
     }
 
     console.log(`[Регистрация] Новый пользователь: ${username}`);
