@@ -300,48 +300,58 @@ app.post('/transfer', async (req, res) => {
 app.get('/transactions', async (req, res) => {
   try {
     const { userId, merchantId } = req.query;
+
+    // Проверка, что хотя бы один ID присутствует
     if (!userId && !merchantId) {
       return res.status(400).json({ success: false, error: 'userId или merchantId обязателен' });
     }
 
+    let allTransactions = [];
+
     // Получаем операции для пользователя
-    let userTransactions = [];
     if (userId) {
-      const { data: sentTx } = await supabase
+      const { data: sentTx, error: sentError } = await supabase
         .from('transactions')
         .select('*')
         .eq('from_user_id', userId)
         .order('created_at', { ascending: false });
-        
-      const { data: receivedTx } = await supabase
+
+      const { data: receivedTx, error: receivedError } = await supabase
         .from('transactions')
         .select('*')
         .eq('to_user_id', userId)
         .order('created_at', { ascending: false });
 
-      userTransactions = [
-        ...(sentTx || []).map(t => ({ ...t, type: 'sent' })),
-        ...(receivedTx || []).map(t => ({ ...t, type: 'received' }))
+      if (sentError || receivedError) {
+        return res.status(500).json({ success: false, error: 'Ошибка при получении транзакций пользователя' });
+      }
+
+      allTransactions = [
+        ...(sentTx || []).map(tx => ({ ...tx, type: 'sent' })),
+        ...(receivedTx || []).map(tx => ({ ...tx, type: 'received' }))
       ];
     }
 
     // Получаем операции для мерчанта
-    let merchantTransactions = [];
     if (merchantId) {
-      const { data: merchantPayments } = await supabase
+      const { data: merchantPayments, error: merchantError } = await supabase
         .from('merchant_payments')
         .select('*')
         .eq('merchant_id', merchantId)
         .order('created_at', { ascending: false });
 
-      merchantTransactions = merchantPayments.map(t => ({
-        ...t,
-        type: 'merchant_payment'
-      }));
-    }
+      if (merchantError) {
+        return res.status(500).json({ success: false, error: 'Ошибка при получении транзакций мерчанта' });
+      }
 
-    // Объединяем все транзакции
-    const allTransactions = [...userTransactions, ...merchantTransactions];
+      allTransactions = [
+        ...allTransactions,
+        ...(merchantPayments || []).map(tx => ({
+          ...tx,
+          type: 'merchant_payment'
+        }))
+      ];
+    }
 
     // Сортируем все транзакции по времени
     allTransactions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -352,37 +362,6 @@ app.get('/transactions', async (req, res) => {
     res.status(500).json({ success: false, error: 'Ошибка при получении истории' });
   }
 });
-
-/* ========================
-   8) GET /merchantBalance (новый эндпоинт)
-======================== */
-app.get('/merchantBalance', async (req, res) => {
-  try {
-    const { merchantId } = req.query;
-    if (!merchantId) {
-      return res.status(400).json({ success: false, error: 'merchantId обязателен' });
-    }
-    const { data: merchData } = await supabase
-      .from('merchants')
-      .select('*')
-      .eq('merchant_id', merchantId)
-      .single();
-
-    if (!merchData) {
-      return res.status(404).json({ success: false, error: 'мерчант не найден' });
-    }
-    if (merchData.blocked === 1) {
-      return res.status(403).json({ success: false, error: 'аккаунт заблокирован' });
-    }
-
-    const bal = parseFloat(merchData.balance || 0).toFixed(5);
-    res.json({ success: true, balance: bal });
-  } catch (err) {
-    console.error('[merchantBalance] Ошибка:', err);
-    res.status(500).json({ success: false, error: 'Ошибка сервера' });
-  }
-});
-
 /* ========================
    9) POST /merchantTransfer (мерчант → пользователь)
 ======================== */
