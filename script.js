@@ -1,10 +1,10 @@
 /* ================================
-   ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
+   ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ / НАСТРОЙКИ
 ================================ */
 const API_URL = "https://mkntw-github-io.onrender.com"; // Ваш backend-сервер
 
-let currentUserId = null;      // если вошли как пользователь
-let currentMerchantId = null;  // если вошли как мерчант
+let currentUserId = null;      // вошли как пользователь
+let currentMerchantId = null;  // вошли как мерчант
 
 // Майнинг (только для пользователя)
 let pendingMinedCoins = parseFloat(localStorage.getItem("pendingMinedCoins")) || 0;
@@ -12,15 +12,15 @@ let isMining = false;
 let mineTimer = null;
 let localBalance = 0; // баланс пользователя
 
-// Баланс мерчанта (отображается в его кабинете)
+// Баланс мерчанта (отображаем в его кабинете)
 let merchantBalance = 0; 
 
 // Интервал автообновления
 let updateInterval = null;
 
-/* ================================
-   1) АВТОРИЗАЦИЯ: ПОЛЬЗОВАТЕЛЬ + МЕРЧАНТ
-================================ */
+/* ======================================
+   1) АВТОРИЗАЦИЯ / РЕГИСТРАЦИЯ / ВЫХОД
+====================================== */
 async function login() {
   const loginVal = document.getElementById("loginInput")?.value;
   const passVal = document.getElementById("passwordInput")?.value;
@@ -30,7 +30,7 @@ async function login() {
   }
 
   try {
-    // Сначала пробуем как пользователь
+    // A) Пробуем логин как пользователь
     let response = await fetch(`${API_URL}/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -39,16 +39,19 @@ async function login() {
     let data = await response.json();
 
     if (response.ok && data.success) {
-      // Успешный вход: пользователь
+      // Успешно вошли как пользователь
       currentUserId = data.userId;
       localStorage.setItem("userId", currentUserId);
-      document.getElementById("authModal")?.remove(); // Удаляем окно авторизации
+      // Удаляем возможную сессию мерчанта (чтобы не было конфликта)
+      localStorage.removeItem("merchantId");
+      currentMerchantId = null;
 
+      document.getElementById("authModal")?.remove();
       createUI();
       updateUI();
       fetchUserData();
     } else {
-      // Не получилось как пользователь — пробуем мерчанта
+      // B) Если пользователь не вошёл -> пробуем мерчанта
       if (data.error?.includes("блокирован")) {
         alert("Ваш аккаунт заблокирован");
         return;
@@ -61,10 +64,14 @@ async function login() {
       const merchData = await merchResp.json();
 
       if (merchResp.ok && merchData.success) {
-        // Успешный вход: мерчант
+        // Успешно вошли как мерчант
         currentMerchantId = merchData.merchantId;
-        document.getElementById("authModal")?.remove();
+        localStorage.setItem("merchantId", currentMerchantId);
+        // Удаляем возможную сессию пользователя (чтобы не было конфликта)
+        localStorage.removeItem("userId");
+        currentUserId = null;
 
+        document.getElementById("authModal")?.remove();
         openMerchantUI();
       } else {
         if (merchData.error?.includes("блокирован")) {
@@ -76,8 +83,7 @@ async function login() {
     }
   } catch (err) {
     console.error("Сбой при логине:", err);
-    // Убрали alert("Ошибка сети при входе")
-    // При желании можно показать другое сообщение
+    // Убрали всплывающий alert
   }
 }
 
@@ -100,6 +106,10 @@ async function register() {
       currentUserId = data.userId;
       localStorage.setItem("userId", currentUserId);
 
+      // Если мерчант сохранялся - убираем
+      localStorage.removeItem("merchantId");
+      currentMerchantId = null;
+
       document.getElementById("authModal")?.remove();
       createUI();
       updateUI();
@@ -113,12 +123,13 @@ async function register() {
     }
   } catch (err) {
     console.error("Сбой при регистрации:", err);
-    // Убрали alert("Ошибка сети при регистрации")
+    // Убрали всплывающий alert
   }
 }
 
 function logout() {
   localStorage.removeItem("userId");
+  localStorage.removeItem("merchantId");
   currentUserId = null;
   currentMerchantId = null;
 
@@ -134,9 +145,9 @@ function logout() {
   openAuthModal();
 }
 
-/* ================================
+/* =======================================
    2) МОДАЛЬНОЕ ОКНО АВТОРИЗАЦИИ
-================================ */
+======================================= */
 function openAuthModal() {
   hideMainUI();
   document.getElementById("merchantInterface")?.remove();
@@ -187,15 +198,14 @@ function openAuthModal() {
   authModal.classList.remove("hidden");
 }
 
-/* ================================
-   3) UI ПОЛЬЗОВАТЕЛЯ
-================================ */
+/* ==================================
+   3) UI ПОЛЬЗОВАТЕЛЯ (ПЕРВОНАЧАЛЬНЫЙ)
+================================== */
 function createUI() {
   showMainUI();
 }
 
 function showMainUI() {
-  // Верхняя панель
   if (!document.getElementById("topBar")) {
     const topBar = document.createElement("div");
     topBar.id = "topBar";
@@ -213,7 +223,6 @@ function showMainUI() {
   }
   document.getElementById("topBar").classList.remove("hidden");
 
-  // Нижняя панель (перевести, история, обменять, оплатить)
   if (!document.getElementById("bottomBar")) {
     const bottomBar = document.createElement("div");
     bottomBar.id = "bottomBar";
@@ -232,7 +241,6 @@ function showMainUI() {
   }
   document.getElementById("bottomBar").classList.remove("hidden");
 
-  // Отображаем баланс и кнопку майнинга
   document.getElementById("balanceDisplay")?.classList.remove("hidden");
   document.getElementById("mineContainer")?.classList.remove("hidden");
 
@@ -242,7 +250,6 @@ function showMainUI() {
 function updateTopBar() {
   const userIdDisplay = document.getElementById("userIdDisplay");
   if (userIdDisplay) {
-    // Отображаем ID пользователя
     userIdDisplay.textContent = currentUserId ? `ID: ${currentUserId}` : "";
   }
 }
@@ -255,9 +262,9 @@ function hideMainUI() {
   clearInterval(updateInterval);
 }
 
-/* ================================
-   4) UI МЕРЧАНТА (без scanQR/refresh)
-================================ */
+/* ====================================
+   4) UI МЕРЧАНТА (убран Scan QR/Refresh)
+==================================== */
 function openMerchantUI() {
   hideMainUI();
   closeAllModals();
@@ -287,18 +294,21 @@ function openMerchantUI() {
   fetchMerchantBalance();
 }
 
-/** 
- * Модальное окно: ввести сумму/назначение -> создать одноразовый QR
+/**
+ * Модальное окно: 85% ширины экрана, 70% высоты,
+ * ввод суммы (в монетах) и назначение,
+ * автоматически считаем рубли
  */
 function openOneTimeQRModal() {
   createModal("createOneTimeQRModal", `
-    <h3>Создать запрос на оплату</h3>
-    <div style="display:flex;flex-direction:column;align-items:center;">
+    <div style="width:85vw; height:70vh; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+      <h3>Создать запрос на оплату</h3>
       <label>Сумма (₲):</label>
-      <input type="number" id="qrAmountInput" step="0.00001" placeholder="Введите сумму">
+      <input type="number" id="qrAmountInput" step="0.00001" placeholder="Введите сумму" style="max-width:200px;" oninput="calcRubEquivalent()">
+      <p id="qrRubEquivalent" style="margin:5px 0;"></p>
       <label>Назначение:</label>
-      <input type="text" id="qrPurposeInput" placeholder="Например, заказ #123">
-      <button id="createQRBtn">Создать</button>
+      <input type="text" id="qrPurposeInput" placeholder="Например, заказ #123" style="max-width:200px;">
+      <button id="createQRBtn" style="margin-top:15px;">Создать</button>
     </div>
   `);
   openModal("createOneTimeQRModal");
@@ -316,17 +326,27 @@ function openOneTimeQRModal() {
 }
 
 /**
- * Генерация реального QR (требуется qrcode.js)
+ * Автоматически считаем рубли по текущему курсу (допустим, 70₽ за 1 монету),
+ * либо можно брать halvingStep. Для примера берём const COIN_TO_RUB=70
+ */
+function calcRubEquivalent() {
+  const COIN_TO_RUB = 70; 
+  const coinVal = parseFloat(document.getElementById("qrAmountInput")?.value) || 0;
+  const rubVal = coinVal * COIN_TO_RUB;
+  document.getElementById("qrRubEquivalent").textContent = `~ ${rubVal.toFixed(2)} RUB`;
+}
+
+/**
+ * Генерация QR в #merchantQRContainer
  */
 function createMerchantQR(amount, purpose) {
   const container = document.getElementById("merchantQRContainer");
   container.innerHTML = "";
 
-  // Строка для QR
   const qrData = `guga://merchantId=${currentMerchantId}&amount=${amount}&purpose=${encodeURIComponent(purpose)}`;
 
+  // Если подключена библиотека qrcode.js
   if (typeof QRCode === "function") {
-    // Генерируем настоящий QR
     const qrElem = document.createElement("div");
     container.appendChild(qrElem);
     new QRCode(qrElem, {
@@ -335,7 +355,6 @@ function createMerchantQR(amount, purpose) {
       height: 128
     });
   } else {
-    // fallback
     container.innerHTML = `QR Data (нет qrcode.js): ${qrData}`;
   }
 }
@@ -360,7 +379,7 @@ async function fetchMerchantBalance() {
 }
 
 /**
- * Перевод мерчант->пользователь
+ * Модальное окно для перевода мерчант->пользователь
  */
 function openMerchantTransferModal() {
   createModal("merchantTransferModal", `
@@ -406,17 +425,11 @@ async function merchantTransfer(toUserId, amount) {
   }
 }
 
-/* ================================
-   5) УНИВЕРСАЛЬНОЕ СКАНИРОВАНИЕ (BarcodeDetector + jsQR fallback)
-================================ */
-/**
- * Универсальное сканирование QR с камеры:
- * 1) Пытается использовать BarcodeDetector, если доступен.
- * 2) Иначе fallback на canvas + jsQR.
- * 3) При первом обнаружении QR — останавливаем камеру и вызываем onSuccess.
- */
+/* ======================================
+   5) УНИВЕРСАЛЬНАЯ ФУНКЦИЯ СКАНИРОВАНИЯ
+   (BarcodeDetector + jsQR fallback)
+====================================== */
 function startUniversalQRScanner(videoEl, onSuccess) {
-  // videoEl — HTMLVideoElement, не просто id
   navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
     .then(stream => {
       videoEl.srcObject = stream;
@@ -436,14 +449,15 @@ function startUniversalQRScanner(videoEl, onSuccess) {
               requestAnimationFrame(scanFrame);
             }
           } catch (err) {
-            console.error('[BarcodeDetector] Ошибка detect:', err);
+            console.error('[BarcodeDetector] detect:', err);
             requestAnimationFrame(scanFrame);
           }
         };
         requestAnimationFrame(scanFrame);
+
       } else {
         // 2) jsQR fallback
-        console.log('BarcodeDetector не поддерживается, используем jsQR fallback.');
+        console.log('BarcodeDetector не поддерживается, fallback на jsQR.');
 
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -480,15 +494,14 @@ function stopVideoStream(videoEl) {
   videoEl.srcObject = null;
 }
 
-/* ================================
-   6) ПОЛЬЗОВАТЕЛЬ: ОПЛАТА MERCHANT QR
-================================ */
+/* ======================================
+   6) ОПЛАТА MERCHANT QR (ПОЛЬЗОВАТЕЛЬ)
+====================================== */
 function openMerchantPayModal() {
+  // Модальное окно на 85% ширины, 70% высоты, по центру, без рамок
   createModal("merchantPayModal", `
-    <h3>Сканировать QR</h3>
-    <div class="modal-overlay"></div>
-    <div class="modal-content">
-      <video id="merchantPayVideo" style="width:100%;max-width:400px;border:1px solid #000;" muted playsinline></video>
+    <div style="width:85vw; height:70vh; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+      <video id="merchantPayVideo" muted playsinline style="width:100%; max-width:400px; border:none;"></video>
       <p>Наведите камеру на QR</p>
     </div>
   `);
@@ -496,10 +509,8 @@ function openMerchantPayModal() {
 
   const videoEl = document.getElementById('merchantPayVideo');
   startUniversalQRScanner(videoEl, (rawValue) => {
-    // Закрываем окно со <video>
     document.getElementById("merchantPayModal")?.remove();
 
-    // Разбираем строку QR
     const parsed = parseMerchantQRData(rawValue);
     if (!parsed.merchantId) {
       alert("Не удалось извлечь merchantId");
@@ -509,7 +520,7 @@ function openMerchantPayModal() {
   });
 }
 
-// Парсим строку вида: guga://merchantId=xxxx&amount=yyy&purpose=zzz
+// Парсим строку вида "guga://merchantId=xxx&amount=yyy&purpose=zzz"
 function parseMerchantQRData(rawValue) {
   const merchantIdMatch = rawValue.match(/merchantId=(\d+)/);
   const amountMatch = rawValue.match(/amount=([\d\.]+)/);
@@ -537,8 +548,7 @@ function openConfirmMerchantPaymentModal({ merchantId, amount, purpose }) {
 }
 
 /**
- * Списание 100% у пользователя, зачисление 95% мерчанту.
- * Серверный эндпоинт: /payMerchantOneTime
+ * Списание 100% у пользователя, 95% мерчанту
  */
 async function payMerchantOneTime(merchantId, amount, purpose) {
   if (!currentUserId) return;
@@ -546,29 +556,27 @@ async function payMerchantOneTime(merchantId, amount, purpose) {
     const resp = await fetch(`${API_URL}/payMerchantOneTime`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        userId: currentUserId, 
-        merchantId, 
-        amount, 
-        purpose 
-      })
+      body: JSON.stringify({ userId: currentUserId, merchantId, amount, purpose })
     });
     const data = await resp.json();
     if (data.success) {
-      alert("Оплата успешна!");
+      alert(`Оплата прошла успешно на сумму ${amount}`);
       document.getElementById("confirmMerchantPaymentModal")?.remove();
       fetchUserData();
     } else {
       alert(`❌ Ошибка оплаты: ${data.error}`);
     }
   } catch (err) {
-    console.error("Сбой при payMerchantOneTime:", err);
+    console.error("Сбой payMerchantOneTime:", err);
   }
 }
 
-/* ================================
-   7) МАЙНИНГ (пользователь)
-================================ */
+/* ==========================================
+   7) МАЙНИНГ, ПЕРЕВОД, ИСТОРИЯ, ОБМЕН
+   (те же функции, что и в исходном коде)
+========================================== */
+
+// === Майнинг (пользователь) ===
 function mineCoins() {
   if (!currentUserId) return;
   clearInterval(updateInterval);
@@ -629,9 +637,7 @@ function formatBalance(bal) {
   return parseFloat(bal).toFixed(5);
 }
 
-/* ================================
-   8) ПОЛУЧЕНИЕ ДАННЫХ ПОЛЬЗОВАТЕЛЯ
-================================ */
+// === Получение данных пользователя ===
 async function fetchUserData() {
   if (isMining) return;
   if (!currentUserId) return;
@@ -648,16 +654,14 @@ async function fetchUserData() {
       localBalance = parseFloat(data.user.balance || 0);
       updateBalanceUI();
       updateExchangeModalInfo(data.user);
-      updateTopBar(); // Чтобы ID точно отображался
+      updateTopBar();
     }
   } catch (err) {
-    console.error("Сбой при fetchUserData:", err);
+    console.error("Сбой fetchUserData:", err);
   }
 }
 
-/* ================================
-   9) ПЕРЕВОД ПОЛЬЗОВАТЕЛЬ→ПОЛЬЗОВАТЕЛЬ
-================================ */
+// === Перевод user->user ===
 function openPaymentModal() {
   const modalContent = `
     <h3>Перевести</h3>
@@ -709,9 +713,7 @@ async function sendTransfer() {
   }
 }
 
-/* ================================
-   10) ИСТОРИЯ ОПЕРАЦИЙ
-================================ */
+// === История операций ===
 function openHistoryModal() {
   createModal("historyModal", `
     <h3>История операций</h3>
@@ -746,7 +748,6 @@ function displayTransactionHistory(transactions) {
     container.innerHTML = "<li>Нет операций</li>";
     return;
   }
-  // Группируем по датам
   const groups = {};
   transactions.forEach(tx => {
     const d = new Date(tx.created_at);
@@ -815,9 +816,7 @@ function getDateLabel(dateObj) {
   return dateObj.toLocaleDateString("ru-RU");
 }
 
-/* ================================
-   11) ОБМЕН (EXCHANGE)
-================================ */
+// === Обмен (Exchange) ===
 function openExchangeModal() {
   createModal("exchangeModal", `
     <h3>Обмен</h3>
@@ -828,7 +827,7 @@ function openExchangeModal() {
     </div>
   `);
   openModal("exchangeModal");
-  fetchUserData(); // обновим инфу
+  fetchUserData();
 }
 
 function updateExchangeModalInfo(user) {
@@ -838,19 +837,13 @@ function updateExchangeModalInfo(user) {
   const exchangeRateInfo = document.getElementById("exchangeRateInfo");
   const rubBalanceInfo = document.getElementById("rubBalanceInfo");
   const halvingLevel = document.getElementById("halvingLevel");
-  if (exchangeRateInfo) {
-    exchangeRateInfo.textContent = `Курс: 1 ₲ = ${rubMultiplier} ₽`;
-  }
-  if (rubBalanceInfo) {
-    rubBalanceInfo.textContent = `Баланс: ${rubBalance} ₽`;
-  }
-  if (halvingLevel) {
-    halvingLevel.textContent = `Уровень халвинга: ${halvingStep}`;
-  }
+  if (exchangeRateInfo) exchangeRateInfo.textContent = `Курс: 1 ₲ = ${rubMultiplier} ₽`;
+  if (rubBalanceInfo) rubBalanceInfo.textContent = `Баланс: ${rubBalance} ₽`;
+  if (halvingLevel) halvingLevel.textContent = `Уровень халвинга: ${halvingStep}`;
 }
 
 /* ================================
-   12) СЛУЖЕБНЫЕ ФУНКЦИИ
+   СЛУЖЕБНЫЕ ФУНКЦИИ
 ================================ */
 function closeAllModals() {
   document.querySelectorAll(".modal").forEach(m => m.classList.add("hidden"));
@@ -896,13 +889,23 @@ function closeModal(modalId) {
 }
 
 /* ================================
-   13) ЗАПУСК ПРИ ЗАГРУЗКЕ
+   СТАРТ ПРИ ЗАГРУЗКЕ
 ================================ */
 document.addEventListener("DOMContentLoaded", () => {
+  // Проверяем накопленные монеты
   if (pendingMinedCoins > 0) {
     flushMinedCoins();
   }
 
+  // Проверяем сессию мерчанта
+  const savedMerchantId = localStorage.getItem("merchantId");
+  if (savedMerchantId) {
+    currentMerchantId = savedMerchantId;
+    openMerchantUI();
+    return;
+  }
+
+  // Если не мерчант, смотрим пользователя
   const savedUserId = localStorage.getItem("userId");
   if (savedUserId) {
     currentUserId = savedUserId;
@@ -919,5 +922,5 @@ window.addEventListener("beforeunload", () => {
   }
 });
 
-// Кнопка майнинга (#mineBtn в HTML)
+// Если есть кнопка майнинга (#mineBtn), вешаем обработчик
 document.getElementById("mineBtn")?.addEventListener("click", mineCoins);
