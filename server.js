@@ -295,20 +295,20 @@ app.post('/transfer', async (req, res) => {
 });
 
 /* ========================
-   7) GET /transactions (история операций пользователя)
+   7) GET /transactions (история операций)
 ======================== */
 app.get('/transactions', async (req, res) => {
   try {
     const { userId, merchantId } = req.query;
 
-    // Проверка, что хотя бы один ID присутствует
+    // Требуется хотя бы один параметр
     if (!userId && !merchantId) {
       return res.status(400).json({ success: false, error: 'userId или merchantId обязателен' });
     }
 
     let allTransactions = [];
 
-    // Получаем операции для пользователя
+    // Если передан userId – получаем операции для пользователя
     if (userId) {
       const { data: sentTx, error: sentError } = await supabase
         .from('transactions')
@@ -332,7 +332,7 @@ app.get('/transactions', async (req, res) => {
       ];
     }
 
-    // Получаем операции для мерчанта
+    // Если передан merchantId – получаем операции мерчанта
     if (merchantId) {
       const { data: merchantPayments, error: merchantError } = await supabase
         .from('merchant_payments')
@@ -348,12 +348,12 @@ app.get('/transactions', async (req, res) => {
         ...allTransactions,
         ...(merchantPayments || []).map(tx => ({
           ...tx,
-          type: 'merchant_payment'
+          type: 'merchant_payment'  // используем единый тип для операций оплаты по QR
         }))
       ];
     }
 
-    // Сортируем все транзакции по времени
+    // Сортируем по времени (от новых к старым)
     allTransactions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
     res.json({ success: true, transactions: allTransactions });
