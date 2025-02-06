@@ -31,11 +31,11 @@ app.use(express.json());
 // Главная страница
 app.get('/', (req, res) => {
   res.send(`
-    <p>This is the backend server for GUGACOIN.</p>
+    <p>This is the backend server for GUGACOIN with merchant QR-payments.</p>
   `);
 });
 
-// Регистрация пользователя
+/* ============= РЕГИСТРАЦИЯ ПОЛЬЗОВАТЕЛЯ ============= */
 app.post('/register', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -59,7 +59,7 @@ app.post('/register', async (req, res) => {
       if (error.message.includes('unique_violation')) {
         return res.status(409).json({ success: false, error: 'такой логин уже существует' });
       }
-      return res.status(500).json({ success: false, error: 'такой логин уже существует' });
+      return res.status(500).json({ success: false, error: 'такой логин уже существует или другая ошибка' });
     }
 
     console.log(`[Регистрация] Новый пользователь: ${username}`);
@@ -70,7 +70,7 @@ app.post('/register', async (req, res) => {
   }
 });
 
-// Авторизация пользователя
+/* ============= ЛОГИН ============= */
 app.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -102,9 +102,7 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// Обновление баланса (добыча монет)
-// Здесь дополнительно обновляется глобальная статистика добычи в таблице halving,
-// где обновляются поля total_mined и halving_step
+/* ============= ОБНОВЛЕНИЕ БАЛАНСА (МАЙНИНГ) ============= */
 app.post('/update', async (req, res) => {
   try {
     const { userId, amount = 0.00001 } = req.body;
@@ -127,7 +125,7 @@ app.post('/update', async (req, res) => {
       return res.status(404).json({ success: false, error: 'пользователь не найден' });
     }
 
-    // Вычисляем новый баланс с точностью до 5 знаков после запятой
+    // Вычисляем новый баланс
     const newBalance = parseFloat((userData.balance || 0) + amount).toFixed(5);
 
     // Обновляем баланс пользователя
@@ -140,9 +138,7 @@ app.post('/update', async (req, res) => {
       return res.status(500).json({ success: false, error: 'обновление баланса не удалось' });
     }
 
-    // Теперь обновляем глобальные данные по добыче в таблице halving
-    // Предполагается, что таблица halving имеет поля: total_mined (numeric) и halving_step (integer)
-    // Сначала получаем существующую запись (если она есть)
+    // Обновляем глобальную статистику (halving)
     const { data: halvingData, error: halvingError } = await supabase
       .from('halving')
       .select('*')
@@ -150,20 +146,16 @@ app.post('/update', async (req, res) => {
 
     let newTotalMined = amount;
     if (!halvingError && halvingData && halvingData.length > 0) {
-      // Если запись существует, прибавляем к текущему значению
       newTotalMined = parseFloat(halvingData[0].total_mined || 0) + amount;
     }
-    // Вычисляем новый уровень халвинга (например, как целая часть от общего количества добытых монет)
     const newHalvingStep = Math.floor(newTotalMined);
 
-    // Обновляем (или вставляем) запись в таблице halving:
     const { error: upsertError } = await supabase
       .from('halving')
       .upsert([{ total_mined: newTotalMined, halving_step: newHalvingStep }]);
 
     if (upsertError) {
       console.error('[Update] Ошибка обновления данных по халвингу:', upsertError.message);
-      // Можно не прерывать выполнение, если ошибка в статистике
     }
 
     console.log('[Update] Баланс обновлён успешно:', newBalance, 'Общий добытый:', newTotalMined, 'Халвинг:', newHalvingStep);
@@ -174,9 +166,7 @@ app.post('/update', async (req, res) => {
   }
 });
 
-// Получение данных пользователя (включая уровень халвинга)
-// Обратите внимание: здесь возвращается только информация о пользователе, а данные по халвингу
-// из таблицы halving используются на серверной стороне для анализа общего количества добытых монет.
+/* ============= ПОЛУЧЕНИЕ ДАННЫХ ПОЛЬЗОВАТЕЛЯ ============= */
 app.get('/user', async (req, res) => {
   try {
     const { userId } = req.query;
@@ -194,7 +184,7 @@ app.get('/user', async (req, res) => {
       return res.status(404).json({ success: false, error: 'пользователь не найден' });
     }
 
-    // Получаем данные по халвингу (если есть) для передачи на клиент
+    // Получаем данные по халвингу
     let halvingStep = 0;
     const { data: halvingData, error: halvingError } = await supabase
       .from('halving')
@@ -212,7 +202,7 @@ app.get('/user', async (req, res) => {
   }
 });
 
-// Перевод монет
+/* ============= ПЕРЕВОД МЕЖДУ ПОЛЬЗОВАТЕЛЯМИ ============= */
 app.post('/transfer', async (req, res) => {
   try {
     const { fromUserId, toUserId, amount } = req.body;
@@ -220,7 +210,7 @@ app.post('/transfer', async (req, res) => {
       return res.status(400).json({ success: false, error: 'неверная сумма' });
     }
     if (fromUserId === toUserId) {
-      return res.status(400).json({ success: false, error: 'вы не можете перевести монеты самому себе' });
+      return res.status(400).json({ success: false, error: 'нельзя перевести самому себе' });
     }
 
     // Проверяем отправителя
@@ -290,7 +280,141 @@ app.post('/transfer', async (req, res) => {
   }
 });
 
-// Получение истории транзакций
+/* ============= НОВЫЕ ЭНДПОИНТЫ ДЛЯ МЕРЧАНТОВ ============= */
+
+/* 
+   (ОПЦИОНАЛЬНО) Создание мерчанта — 
+   на практике мерчант мог бы зарегистрироваться самостоятельно, 
+   но даём пример эндпоинта, который создаст мерчанта и сгенерирует merchant_id.
+*/
+app.post('/createMerchant', async (req, res) => {
+  try {
+    const { merchantName } = req.body;
+    if (!merchantName) {
+      return res.status(400).json({ success: false, error: 'Имя мерчанта обязательно' });
+    }
+    // Генерируем 6-значный ID мерчанта
+    const merchantId = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Создаём запись в таблице
+    const { error } = await supabase
+      .from('merchants')
+      .insert([{ merchant_id: merchantId, merchant_name: merchantName, qr_code: '' }]);
+
+    if (error) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
+    res.json({ success: true, merchantId });
+  } catch (error) {
+    console.error('[createMerchant] Ошибка:', error.stack);
+    res.status(500).json({ success: false, error: 'Ошибка сервера' });
+  }
+});
+
+/*
+   (ОПЦИОНАЛЬНО) Эндпоинт для сохранения готового QR-кода,
+   если мерчант генерирует его сам (например, qr_code = 'guga://merchantId=123456')
+*/
+app.post('/saveMerchantQR', async (req, res) => {
+  try {
+    const { merchantId, qrCode } = req.body;
+    if (!merchantId || !qrCode) {
+      return res.status(400).json({ success: false, error: 'merchantId и qrCode обязательны' });
+    }
+    const { error } = await supabase
+      .from('merchants')
+      .update({ qr_code: qrCode })
+      .eq('merchant_id', merchantId);
+
+    if (error) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error('[saveMerchantQR] Ошибка:', error.stack);
+    res.status(500).json({ success: false, error: 'Ошибка сервера' });
+  }
+});
+
+/* 
+   Оплата мерчанту по merchant_id.
+   Получаем userId, merchantId, amount, purpose. 
+   Снимаем у пользователя средства, прибавляем мерчанту (можно также хранить баланс мерчанта в таблице merchants).
+   Записываем операцию в merchant_payments, чтобы не смешивать с обычными транзакциями.
+*/
+app.post('/payMerchant', async (req, res) => {
+  try {
+    const { userId, merchantId, amount, purpose = '' } = req.body;
+    if (!userId || !merchantId || typeof amount !== 'number' || amount <= 0) {
+      return res.status(400).json({ success: false, error: 'Неверные данные для оплаты мерчанту' });
+    }
+
+    // Проверяем, что пользователь существует и у него хватает баланса
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (userError || !userData) {
+      return res.status(404).json({ success: false, error: 'пользователь не найден' });
+    }
+    if ((userData.balance || 0) < amount) {
+      return res.status(400).json({ success: false, error: 'недостаточно средств' });
+    }
+
+    // Проверяем мерчанта
+    const { data: merchantData, error: merchantError } = await supabase
+      .from('merchants')
+      .select('*')
+      .eq('merchant_id', merchantId)
+      .single();
+
+    if (merchantError || !merchantData) {
+      return res.status(404).json({ success: false, error: 'мерчант не найден' });
+    }
+    if (merchantData.blocked === 1) {
+      return res.status(403).json({ success: false, error: 'мерчант заблокирован' });
+    }
+
+    // Обновляем баланс пользователя
+    const newUserBalance = parseFloat((userData.balance || 0) - amount).toFixed(5);
+    const { error: updateUserErr } = await supabase
+      .from('users')
+      .update({ balance: newUserBalance })
+      .eq('user_id', userId);
+
+    if (updateUserErr) {
+      return res.status(500).json({ success: false, error: 'не удалось списать средства у пользователя' });
+    }
+
+    // (Опционально) Если хотите вести баланс самого мерчанта (как у пользователя):
+    // const newMerchantBalance = parseFloat((merchantData.balance || 0) + amount).toFixed(5);
+    // const { error: updateMerchantErr } = await supabase
+    //   .from('merchants')
+    //   .update({ balance: newMerchantBalance })
+    //   .eq('merchant_id', merchantId);
+    // if (updateMerchantErr) {
+    //   return res.status(500).json({ success: false, error: 'не удалось зачислить средства мерчанту' });
+    // }
+
+    // Записываем в merchant_payments
+    const { error: paymentError } = await supabase
+      .from('merchant_payments')
+      .insert([{ user_id: userId, merchant_id: merchantId, amount, purpose }]);
+    if (paymentError) {
+      return res.status(500).json({ success: false, error: 'не удалось записать оплату мерчанту' });
+    }
+
+    console.log(`[PayMerchant] Пользователь ${userId} оплатил мерчанту ${merchantId} сумму ${amount}`);
+    res.json({ success: true, balance: newUserBalance });
+  } catch (error) {
+    console.error('[PayMerchant] Ошибка:', error.stack);
+    res.status(500).json({ success: false, error: 'ошибка при оплате мерчанту' });
+  }
+});
+
+/* ============= ПОЛУЧЕНИЕ ИСТОРИИ ТРАНЗАКЦИЙ ============= */
 app.get('/transactions', async (req, res) => {
   try {
     const { userId } = req.query;
@@ -298,14 +422,13 @@ app.get('/transactions', async (req, res) => {
       return res.status(400).json({ success: false, error: 'ID пользователя обязателен' });
     }
 
-    // Получаем транзакции, где пользователь является отправителем
+    // Обычные транзакции (между пользователями)
     const { data: sentTransactions, error: sentError } = await supabase
       .from('transactions')
       .select('*')
       .eq('from_user_id', userId)
       .order('created_at', { ascending: false });
 
-    // Получаем транзакции, где пользователь является получателем
     const { data: receivedTransactions, error: receivedError } = await supabase
       .from('transactions')
       .select('*')
@@ -316,20 +439,39 @@ app.get('/transactions', async (req, res) => {
       return res.status(500).json({ success: false, error: 'не удалось получить транзакции' });
     }
 
-    // Объединяем транзакции и сортируем по дате (сначала самые свежие)
-    const transactions = [
+    // Мерчант-транзакции (где user_id совпадает)
+    const { data: merchantPayments, error: merchantError } = await supabase
+      .from('merchant_payments')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (merchantError) {
+      return res.status(500).json({ success: false, error: 'не удалось получить оплаты мерчантам' });
+    }
+
+    // Объединяем обычные + мерчант-операции в один список
+    const normalTx = [
       ...(sentTransactions || []).map(tx => ({ ...tx, type: 'sent' })),
       ...(receivedTransactions || []).map(tx => ({ ...tx, type: 'received' }))
-    ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    ];
 
-    res.json({ success: true, transactions });
+    const merchantTx = (merchantPayments || []).map(mp => ({
+      ...mp,
+      type: 'merchant' // Чтобы на клиенте отобразить, что это оплата мерчанту
+    }));
+
+    // Сливаем и сортируем всё вместе (по дате убывания)
+    const allTx = [...normalTx, ...merchantTx].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    res.json({ success: true, transactions: allTx });
   } catch (error) {
     console.error('[Transactions] Ошибка:', error.stack);
     res.status(500).json({ success: false, error: 'не удалось получить транзакции' });
   }
 });
 
-// Запуск сервера
+/* ============= ЗАПУСК СЕРВЕРА ============= */
 app.listen(port, '0.0.0.0', () => {
   console.log(`[Server] Запущен на http://localhost:${port}`);
 });
