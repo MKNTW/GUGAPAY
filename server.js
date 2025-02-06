@@ -524,6 +524,53 @@ app.post('/payMerchantOneTime', async (req, res) => {
 });
 
 /* ========================
+   НОВЫЕ ENDPOINT-ы
+======================== */
+
+/* 1. GET /merchantBalance – возвращает баланс мерчанта */
+app.get('/merchantBalance', async (req, res) => {
+  try {
+    const { merchantId } = req.query;
+    if (!merchantId) {
+      return res.status(400).json({ success: false, error: 'merchantId обязателен' });
+    }
+    const { data, error } = await supabase
+      .from('merchants')
+      .select('*')
+      .eq('merchant_id', merchantId)
+      .single();
+    if (error || !data) {
+      return res.status(404).json({ success: false, error: 'Мерчант не найден' });
+    }
+    res.json({ success: true, balance: data.balance });
+  } catch (err) {
+    console.error('[merchantBalance] Ошибка:', err);
+    res.status(500).json({ success: false, error: 'Ошибка сервера' });
+  }
+});
+
+/* 2. GET /halvingInfo – возвращает текущий уровень халвинга */
+app.get('/halvingInfo', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('halving')
+      .select('*')
+      .limit(1);
+    if (error) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
+    if (data && data.length > 0) {
+      res.json({ success: true, halvingStep: data[0].halving_step || 0 });
+    } else {
+      res.json({ success: true, halvingStep: 0 });
+    }
+  } catch (err) {
+    console.error('[halvingInfo] Ошибка:', err);
+    res.status(500).json({ success: false, error: 'Ошибка сервера' });
+  }
+});
+
+/* ========================
    ЗАПУСК СЕРВЕРА
 ======================== */
 app.listen(port, '0.0.0.0', () => {
