@@ -413,54 +413,72 @@ function openMerchantPayModal() {
   startQRScanner("merchantPayVideo");
 }
 
-async function startQRScanner(videoElId) {
+// Пример функции сканирования камеры при открытии окна оплаты мерчанту
+function startQRScanner(videoElId) {
   const video = document.getElementById(videoElId);
   if (!video) return;
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-    video.srcObject = stream;
-    video.play();
 
-    if (!('BarcodeDetector' in window)) {
-      console.log("BarcodeDetector не поддерживается.");
-      return;
-    }
-    const detector = new BarcodeDetector({ formats: ['qr_code'] });
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+    .then(stream => {
+      video.srcObject = stream;
+      video.play();
 
-    const scan = async () => {
-      try {
-        const barcodes = await detector.detect(video);
-        if (barcodes.length > 0) {
-          const rawValue = barcodes[0].rawValue;
-          console.log("QR detected:", rawValue);
-          stopVideoStream(video);
-          document.getElementById("merchantPayModal")?.remove();
-          const parsed = parseMerchantQRData(rawValue); // merchantId, amount, purpose
-          if (!parsed.merchantId) {
-            alert("Не удалось извлечь merchantId");
-            return;
+      if (!('BarcodeDetector' in window)) {
+        console.log("BarcodeDetector не поддерживается, используйте другую библиотеку (jsQR, zxing).");
+        return;
+      }
+      const detector = new BarcodeDetector({ formats: ['qr_code'] });
+
+      // Функция рекурсивного сканирования
+      const scan = async () => {
+        try {
+          const barcodes = await detector.detect(video);
+          if (barcodes.length > 0) {
+            // Как только QR найден, останавливаем стрим...
+            stopVideoStream(video);
+
+            // ...закрываем окно, где был <video> (merchantPayModal)...
+            document.getElementById("merchantPayModal")?.remove();
+
+            // ...и разбираем строку QR
+            const rawValue = barcodes[0].rawValue;
+            console.log("QR detected:", rawValue);
+
+            // Допустим, вы создаёте функцию parseMerchantQRData, 
+            // которая возвращает объект { merchantId, amount, purpose }
+            const parsed = parseMerchantQRData(rawValue);
+            if (!parsed.merchantId) {
+              alert("Не удалось извлечь merchantId");
+              return;
+            }
+
+            // Открываем окно подтверждения с суммой и назначением платежа
+            openConfirmMerchantPaymentModal(parsed);
+          } else {
+            // Если ничего не нашли — продолжаем сканировать
+            requestAnimationFrame(scan);
           }
-          openConfirmMerchantPaymentModal(parsed);
-        } else {
+        } catch (err) {
+          console.error("Ошибка при detect:", err);
           requestAnimationFrame(scan);
         }
-      } catch (err) {
-        console.error("Ошибка при detect:", err);
-        requestAnimationFrame(scan);
-      }
-    };
-    requestAnimationFrame(scan);
+      };
+      // Запускаем цикл
+      requestAnimationFrame(scan);
 
-  } catch (err) {
-    console.error("Ошибка доступа к камере:", err);
-    alert("Невозможно открыть камеру");
-  }
+    })
+    .catch(err => {
+      console.error("Ошибка доступа к камере:", err);
+      alert("Невозможно открыть камеру");
+    });
 }
 
+// Остановка стрима (полностью)
 function stopVideoStream(video) {
   const stream = video.srcObject;
-  if (!stream) return;
-  stream.getTracks().forEach(track => track.stop());
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop());
+  }
   video.srcObject = null;
 }
 
