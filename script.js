@@ -343,21 +343,26 @@ function createMerchantQR(amount, purpose) {
   const container = document.getElementById("merchantQRContainer");
   container.innerHTML = "";
 
+  // Здесь merchantId может быть чем угодно
+  // Так что при сканировании в parseMerchantQRData мы ищем merchantId=([^&]+)
   const qrData = `guga://merchantId=${currentMerchantId}&amount=${amount}&purpose=${encodeURIComponent(purpose)}`;
 
-  // Если подключена библиотека qrcode.js
   if (typeof QRCode === "function") {
     const qrElem = document.createElement("div");
     container.appendChild(qrElem);
+
     new QRCode(qrElem, {
       text: qrData,
       width: 128,
-      height: 128
+      height: 128,
+      correctLevel: QRCode.CorrectLevel.L, // МАКС. вместимость
+      version: 10 // если всё ещё мало, попробуйте 20 или 40
     });
   } else {
-    container.innerHTML = `QR Data (нет qrcode.js): ${qrData}`;
+    container.textContent = `QR Data (нет qrcode.js): ${qrData}`;
   }
 }
+
 
 /**
  * Запрос баланса мерчанта
@@ -522,7 +527,7 @@ function openMerchantPayModal() {
 
 // Парсим строку вида "guga://merchantId=xxx&amount=yyy&purpose=zzz"
 function parseMerchantQRData(rawValue) {
-  const merchantIdMatch = rawValue.match(/merchantId=(\d+)/);
+  const merchantIdMatch = rawValue.match(/merchantId=([^&]+)/);
   const amountMatch = rawValue.match(/amount=([\d\.]+)/);
   const purposeMatch = rawValue.match(/purpose=([^&]+)/);
 
@@ -532,6 +537,7 @@ function parseMerchantQRData(rawValue) {
 
   return { merchantId, amount, purpose };
 }
+
 
 function openConfirmMerchantPaymentModal({ merchantId, amount, purpose }) {
   createModal("confirmMerchantPaymentModal", `
