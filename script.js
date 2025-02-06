@@ -1,7 +1,7 @@
 /* ================================
    ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ / НАСТРОЙКИ
 ================================ */
-const API_URL = "http://localhost:3000"; // Укажите ваш backend-сервер
+const API_URL = "https://mkntw-github-io.onrender.com"; // Укажите ваш backend-сервер
 
 // Идентификаторы
 let currentUserId = null;      // если вошли как пользователь
