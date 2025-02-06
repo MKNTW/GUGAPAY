@@ -325,37 +325,57 @@ app.post('/transfer', async (req, res) => {
 ============================= */
 app.get('/transactions', async (req, res) => {
   try {
-    const { userId } = req.query;
-    if (!userId) {
-      return res.status(400).json({ success: false, error: 'ID пользователя обязателен' });
+    const { userId, merchantId } = req.query;
+    if (!userId && !merchantId) {
+      return res.status(400).json({ success: false, error: 'userId или merchantId обязателен' });
     }
 
-    // Получаем исходящие транзакции
-    const { data: sentTx } = await supabase
-      .from('transactions')
-      .select('*')
-      .eq('from_user_id', userId)
-      .order('created_at', { ascending: false });
+    // Получаем операции для пользователя
+    let userTransactions = [];
+    if (userId) {
+      const { data: sentTx } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('from_user_id', userId)
+        .order('created_at', { ascending: false });
+        
+      const { data: receivedTx } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('to_user_id', userId)
+        .order('created_at', { ascending: false });
 
-    // Получаем входящие транзакции
-    const { data: receivedTx } = await supabase
-      .from('transactions')
-      .select('*')
-      .eq('to_user_id', userId)
-      .order('created_at', { ascending: false });
+      userTransactions = [
+        ...(sentTx || []).map(t => ({ ...t, type: 'sent' })),
+        ...(receivedTx || []).map(t => ({ ...t, type: 'received' }))
+      ];
+    }
 
-    const allTransactions = [
-      ...(sentTx || []).map(tx => ({ ...tx, type: 'sent' })),
-      ...(receivedTx || []).map(tx => ({ ...tx, type: 'received' }))
-    ];
+    // Получаем операции для мерчанта
+    let merchantTransactions = [];
+    if (merchantId) {
+      const { data: merchantPayments } = await supabase
+        .from('merchant_payments')
+        .select('*')
+        .eq('merchant_id', merchantId)
+        .order('created_at', { ascending: false });
 
-    // Сортируем по дате (самые свежие сверху)
+      merchantTransactions = merchantPayments.map(t => ({
+        ...t,
+        type: 'merchant_payment'
+      }));
+    }
+
+    // Объединяем все транзакции
+    const allTransactions = [...userTransactions, ...merchantTransactions];
+
+    // Сортируем все транзакции по времени
     allTransactions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
     res.json({ success: true, transactions: allTransactions });
-  } catch (error) {
-    console.error('[Transactions] Ошибка:', error.stack);
-    res.status(500).json({ success: false, error: 'не удалось получить транзакции' });
+  } catch (err) {
+    console.error('[transactions] Ошибка:', err);
+    res.status(500).json({ success: false, error: 'Ошибка при получении истории' });
   }
 });
 
