@@ -1,5 +1,8 @@
 const API_URL = "https://mkntw-github-io.onrender.com"; // Проверьте корректность URL
-let currentUserId = null;
+
+let currentUserId = null;      // ID пользователя (если вошли как пользователь)
+let currentMerchantId = null;  // ID мерчанта (если вошли как мерчант)
+
 let pendingMinedCoins = parseFloat(localStorage.getItem("pendingMinedCoins")) || 0;
 let mineTimer = null;
 let localBalance = 0;
@@ -11,8 +14,10 @@ let isMining = false; // Флаг, указывающий, что процесс
    ================================ */
 
 function logout() {
+  // Сбросить всё, что связано с пользователем и мерчантом
   localStorage.removeItem("userId");
   currentUserId = null;
+  currentMerchantId = null;
   
   const topBar = document.getElementById("topBar");
   if (topBar) {
@@ -28,8 +33,13 @@ function logout() {
   const mineContainer = document.getElementById("mineContainer");
   if (mineContainer) mineContainer.classList.add("hidden");
 
+  // Если вдруг мерчант UI открыт — удалим его
+  const merchantInterface = document.getElementById("merchantInterface");
+  if (merchantInterface) {
+    merchantInterface.remove();
+  }
+
   closeAllModals();
-  
   clearInterval(updateInterval);
   
   const userIdDisplay = document.getElementById("userIdDisplay");
@@ -43,6 +53,9 @@ function updateTopBar() {
   userIdDisplay.textContent = currentUserId ? `ID: ${currentUserId}` : "";
 }
 
+/**
+ * Отображаем обычный пользовательский UI
+ */
 function showMainUI() {
   if (!document.getElementById("topBar")) {
     const topBar = document.createElement("div");
@@ -76,6 +89,7 @@ function showMainUI() {
   }
   document.getElementById("bottomBar").classList.remove("hidden");
 
+  // Показываем блоки баланса и майнинга
   document.getElementById("balanceDisplay").classList.remove("hidden");
   document.getElementById("mineContainer").classList.remove("hidden");
 
@@ -83,6 +97,9 @@ function showMainUI() {
   updateInterval = setInterval(fetchUserData, 2000);
 }
 
+/**
+ * Скрываем обычный пользовательский UI
+ */
 function hideMainUI() {
   if (document.getElementById("topBar")) {
     document.getElementById("topBar").classList.add("hidden");
@@ -117,7 +134,7 @@ function createModal(id, content) {
   
   document.body.appendChild(modal);
 
-  // Для модальных окон, таких как paymentModal, historyModal и exchangeModal, закрытие по оверлею
+  // Для paymentModal, historyModal, exchangeModal закрываем по оверлею
   const modalsWithOverlayClickClose = ["paymentModal", "historyModal", "exchangeModal"];
   if (modalsWithOverlayClickClose.includes(id)) {
     const overlay = modal.querySelector(".modal-overlay");
@@ -180,6 +197,10 @@ function openRegisterSection() {
 
 function openAuthModal() {
   hideMainUI();
+  // Если мерчант UI был — удалим
+  const merchantInterface = document.getElementById("merchantInterface");
+  if (merchantInterface) merchantInterface.remove();
+
   let authModal = document.getElementById("authModal");
   if (!authModal) {
     authModal = document.createElement("div");
@@ -206,6 +227,7 @@ function openAuthModal() {
       </div>
     `;
     document.body.appendChild(authModal);
+
     const loginSubmitBtn = authModal.querySelector("#loginSubmitBtn");
     const registerSubmitBtn = authModal.querySelector("#registerSubmitBtn");
     const toggleAuthBtn = authModal.querySelector("#toggleAuthBtn");
@@ -236,34 +258,18 @@ function formatBalance(balance) {
 /* ================================
    ФУНКЦИИ ДОБЫЧИ МОНЕТ
    ================================ */
-/*
-  При нажатии на кнопку "Майнить":
-  - Сразу прекращается автоматическое обновление информации о пользователе
-  - Устанавливается флаг isMining = true
-  - Увеличивается локальный баланс и накопленная сумма добытых монет
-  - Автообновление возобновляется через 1.5 секунды после последнего нажатия
-*/
 function mineCoins() {
   if (!currentUserId) return;
-  // Останавливаем автообновление информации о пользователе
   clearInterval(updateInterval);
-  
-  // Устанавливаем флаг майнинга
   isMining = true;
   
-  // Увеличиваем накопленные монеты
   pendingMinedCoins = parseFloat((pendingMinedCoins + 0.00001).toFixed(5));
   localStorage.setItem("pendingMinedCoins", pendingMinedCoins);
   localBalance = parseFloat((localBalance + 0.00001).toFixed(5));
   updateBalanceUI();
-  
-  // Если уже запущен таймер, сбрасываем его
+
   if (mineTimer) clearTimeout(mineTimer);
   
-  // Через 1.5 сек. после последнего нажатия:
-  // - Сбрасываем флаг майнинга
-  // - Отправляем накопленные монеты на сервер
-  // - Возобновляем автообновление данных (каждые 2000 мс)
   mineTimer = setTimeout(() => {
     isMining = false;
     flushMinedCoins();
@@ -313,6 +319,7 @@ function flushMinedCoinsSync() {
    ФУНКЦИИ РАБОТЫ С ПОЛЬЗОВАТЕЛЕМ И UI
    ================================ */
 function createUI() {
+  // Показываем пользовательский UI
   if (!document.getElementById("topBar")) {
     const topBar = document.createElement("div");
     topBar.id = "topBar";
@@ -352,26 +359,29 @@ function createUI() {
 }
 
 function updateUI() {
+  // Если мы вошли как пользователь — показываем пользовательский UI
   if (currentUserId) {
     updateTopBar();
     showMainUI();
     removeAuthModal();
-  } else {
+  } 
+  // Если нет userId, но, возможно, есть merchantId, 
+  // можно проверить currentMerchantId, но в нашем случае 
+  // openMerchantUI() вызывается напрямую, так что тут не нужно.
+  else {
     hideMainUI();
     openAuthModal();
   }
 }
 
 async function fetchUserData() {
-  // Если идёт процесс майнинга, не выполняем запрос
   if (isMining) return;
-  
+  if (!currentUserId) return; // Только для пользователей
   try {
     const response = await fetch(`${API_URL}/user?userId=${currentUserId}`);
     if (!response.ok) throw new Error(`Server responded with status ${response.status}`);
     const data = await response.json();
     if (data.success && data.user) {
-      // Если аккаунт заблокирован – уведомляем и выходим из сессии
       if (data.user.blocked === 1) {
         alert("Ваш аккаунт заблокирован");
         logout();
@@ -438,14 +448,31 @@ function displayTransactionHistory(transactions) {
     groups[dateStr].forEach(tx => {
       const opContainer = document.createElement("div");
       opContainer.className = "history-item";
-      const opType = tx.type === "sent" ? "Исходящая операция ⤴" : "Входящая операция ⤵";
-      const counterpart = tx.type === "sent" ? `Кому: ${tx.to_user_id}` : `От кого: ${tx.from_user_id}`;
+      let opType = "";
+      if (tx.type === "sent") {
+        opType = "Исходящая операция ⤴";
+      } else if (tx.type === "received") {
+        opType = "Входящая операция ⤵";
+      } else if (tx.type === "merchant") {
+        opType = "Оплата мерчанту 💳";
+      }
+      // counterpart:
+      let counterpart = "";
+      if (tx.type === "sent") {
+        counterpart = `Кому: ${tx.to_user_id}`;
+      } else if (tx.type === "received") {
+        counterpart = `От кого: ${tx.from_user_id}`;
+      } else if (tx.type === "merchant") {
+        counterpart = `Мерчант: ${tx.merchant_id || "???"}`;
+      }
       const amountStr = `Количество: ₲ ${formatBalance(tx.amount)}`;
       const timeStr = `Время: ${new Date(tx.created_at).toLocaleTimeString("ru-RU")}`;
-      opContainer.innerHTML = `<div>${opType}</div>
-                               <div>${counterpart}</div>
-                               <div>${amountStr}</div>
-                               <div>${timeStr}</div>`;
+      opContainer.innerHTML = `
+        <div>${opType}</div>
+        <div>${counterpart}</div>
+        <div>${amountStr}</div>
+        <div>${timeStr}</div>
+      `;
       groupContainer.appendChild(opContainer);
     });
     groupContainer.style.width = "100%";
@@ -493,6 +520,7 @@ function openHistoryModal() {
 
 async function fetchTransactionHistory() {
   try {
+    if (!currentUserId) return;
     const response = await fetch(`${API_URL}/transactions?userId=${currentUserId}`);
     if (!response.ok) throw new Error(`Server responded with status ${response.status}`);
     const data = await response.json();
@@ -574,6 +602,10 @@ async function sendTransfer() {
   }
 }
 
+/* ================================
+   РЕГИСТРАЦИЯ И ЛОГИН
+   ================================ */
+
 async function register() {
   const loginVal = document.getElementById("regLogin")?.value;
   const password = document.getElementById("regPassword")?.value;
@@ -604,6 +636,12 @@ async function register() {
   }
 }
 
+/**
+ * Логика входа (одна и та же форма для пользователя и мерчанта):
+ * 1) Пробуем /login (пользователь);
+ * 2) Если ошибка — пробуем /merchantLogin (мерчант);
+ * 3) Если и там ошибка — сообщаем.
+ */
 async function login() {
   const loginVal = document.getElementById("loginInput")?.value;
   const password = document.getElementById("passwordInput")?.value;
@@ -612,20 +650,43 @@ async function login() {
     return;
   }
   try {
-    const response = await fetch(`${API_URL}/login`, {
+    // 1) Сначала пробуем залогиниться как пользователь
+    let response = await fetch(`${API_URL}/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: loginVal, password })
     });
-    const data = await response.json();
-    if (data.success) {
+    let data = await response.json();
+    
+    if (response.ok && data.success) {
+      // Успех: это пользователь
       currentUserId = data.userId;
       localStorage.setItem("userId", currentUserId);
       createUI();
       updateUI();
       fetchUserData();
+      return;
     } else {
-      alert(`❌ Ошибка входа: ${data.error}`);
+      // 2) Пользователь не зашёл, попробуем мерчанта
+      console.log("Пользователь не подошёл, ошибка:", data.error);
+      
+      response = await fetch(`${API_URL}/merchantLogin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: loginVal, password })
+      });
+      data = await response.json();
+      if (response.ok && data.success) {
+        // Успех: это мерчант
+        currentMerchantId = data.merchantId;
+        alert("Вы вошли как мерчант! ID мерчанта: " + currentMerchantId);
+        closeModal("authModal");
+        openMerchantUI(); // показываем интерфейс мерчанта
+        return;
+      } else {
+        console.log("Мерчант тоже не подошёл:", data.error);
+        alert(`❌ Ошибка входа: ${data.error}`);
+      }
     }
   } catch (error) {
     console.error(error);
@@ -633,6 +694,40 @@ async function login() {
   }
 }
 
+/* ================================
+   ИНТЕРФЕЙС МЕРЧАНТА
+   ================================ */
+
+/**
+ * Пример простого интерфейса мерчанта:
+ * скрываем пользовательский UI и показываем что-то своё
+ */
+function openMerchantUI() {
+  // Скрываем пользовательские элементы
+  hideMainUI();
+  removeAuthModal(); // закрываем окно авторизации
+
+  // Если уже есть блок мерчанта — удалим на всякий случай
+  const oldInterface = document.getElementById("merchantInterface");
+  if (oldInterface) oldInterface.remove();
+
+  // Создаём простой интерфейс мерчанта
+  const merchantDiv = document.createElement("div");
+  merchantDiv.id = "merchantInterface";
+  merchantDiv.style.textAlign = "center";
+  merchantDiv.style.marginTop = "100px";
+  merchantDiv.innerHTML = `
+    <h1>Merchant Dashboard</h1>
+    <p>Merchant ID: <strong>${currentMerchantId}</strong></p>
+    <p>Здесь вы можете показывать функционал для мерчанта (генерация QR, просмотр платежей и т.д.).</p>
+    <button onclick="logout()">Выйти</button>
+  `;
+  document.body.appendChild(merchantDiv);
+}
+
+/* ================================
+   ЗАПУСК ПРИ ЗАГРУЗКЕ
+   ================================ */
 document.addEventListener("DOMContentLoaded", () => {
   if (pendingMinedCoins > 0) {
     flushMinedCoins();
@@ -654,6 +749,8 @@ window.addEventListener("beforeunload", () => {
   }
 });
 
+// Кнопка для майнинга (если HTML уже содержит #mineBtn)
 document.getElementById("mineBtn")?.addEventListener("click", mineCoins);
 
+// Экспорт отдельных функций, если нужно
 window.sendTransfer = sendTransfer;
