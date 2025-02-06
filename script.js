@@ -1,25 +1,25 @@
 /* ================================
-   ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ / НАСТРОЙКИ
+   ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
 ================================ */
-const API_URL = "https://mkntw-github-io.onrender.com"; // Укажите ваш backend-сервер
+const API_URL = "https://mkntw-github-io.onrender.com"; // Ваш backend-сервер
 
 let currentUserId = null;      // если вошли как пользователь
 let currentMerchantId = null;  // если вошли как мерчант
 
-// Майнинг (для пользователей)
+// Майнинг (только для пользователя)
 let pendingMinedCoins = parseFloat(localStorage.getItem("pendingMinedCoins")) || 0;
 let isMining = false;
 let mineTimer = null;
 let localBalance = 0; // баланс пользователя
 
-// Баланс мерчанта (если хотим отображать на мерчант-стороне)
+// Баланс мерчанта (отображается в его кабинете)
 let merchantBalance = 0; 
 
-// Интервалы для автообновления
+// Интервал автообновления
 let updateInterval = null;
 
 /* ================================
-   ВХОД / РЕГИСТРАЦИЯ / ВЫХОД
+   1) АВТОРИЗАЦИЯ: ПОЛЬЗОВАТЕЛЬ + МЕРЧАНТ
 ================================ */
 async function login() {
   const loginVal = document.getElementById("loginInput")?.value;
@@ -30,7 +30,7 @@ async function login() {
   }
 
   try {
-    // (A) Пробуем логин как пользователь
+    // Сначала пробуем как пользователь
     let response = await fetch(`${API_URL}/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -39,15 +39,16 @@ async function login() {
     let data = await response.json();
 
     if (response.ok && data.success) {
-      // Успешно вошли как пользователь
+      // Успешный вход: пользователь
       currentUserId = data.userId;
       localStorage.setItem("userId", currentUserId);
       document.getElementById("authModal")?.remove(); // Удаляем окно авторизации
+
       createUI();
       updateUI();
       fetchUserData();
     } else {
-      // (B) Неуспех для пользователя: пробуем мерчанта
+      // Не получилось как пользователь — пробуем мерчанта
       if (data.error?.includes("блокирован")) {
         alert("Ваш аккаунт заблокирован");
         return;
@@ -58,10 +59,12 @@ async function login() {
         body: JSON.stringify({ username: loginVal, password: passVal })
       });
       const merchData = await merchResp.json();
+
       if (merchResp.ok && merchData.success) {
-        // Успешный вход как мерчант
+        // Успешный вход: мерчант
         currentMerchantId = merchData.merchantId;
         document.getElementById("authModal")?.remove();
+
         openMerchantUI();
       } else {
         if (merchData.error?.includes("блокирован")) {
@@ -72,8 +75,9 @@ async function login() {
       }
     }
   } catch (err) {
-    console.error("Ошибка сети при логине:", err);
-    alert("Ошибка сети");
+    console.error("Сбой при логине:", err);
+    // Убрали alert("Ошибка сети при входе")
+    // При желании можно показать другое сообщение
   }
 }
 
@@ -108,8 +112,8 @@ async function register() {
       }
     }
   } catch (err) {
-    console.error("Ошибка сети при регистрации:", err);
-    alert("Ошибка сети при регистрации");
+    console.error("Сбой при регистрации:", err);
+    // Убрали alert("Ошибка сети при регистрации")
   }
 }
 
@@ -131,7 +135,7 @@ function logout() {
 }
 
 /* ================================
-   АВТОРИЗАЦИЯ (МОДАЛЬНОЕ ОКНО)
+   2) МОДАЛЬНОЕ ОКНО АВТОРИЗАЦИИ
 ================================ */
 function openAuthModal() {
   hideMainUI();
@@ -184,14 +188,14 @@ function openAuthModal() {
 }
 
 /* ================================
-   UI ПОЛЬЗОВАТЕЛЯ (ПЕРВОНАЧАЛЬНЫЙ)
+   3) UI ПОЛЬЗОВАТЕЛЯ
 ================================ */
 function createUI() {
   showMainUI();
 }
 
 function showMainUI() {
-  // topBar
+  // Верхняя панель
   if (!document.getElementById("topBar")) {
     const topBar = document.createElement("div");
     topBar.id = "topBar";
@@ -209,7 +213,7 @@ function showMainUI() {
   }
   document.getElementById("topBar").classList.remove("hidden");
 
-  // bottomBar
+  // Нижняя панель (перевести, история, обменять, оплатить)
   if (!document.getElementById("bottomBar")) {
     const bottomBar = document.createElement("div");
     bottomBar.id = "bottomBar";
@@ -228,6 +232,7 @@ function showMainUI() {
   }
   document.getElementById("bottomBar").classList.remove("hidden");
 
+  // Отображаем баланс и кнопку майнинга
   document.getElementById("balanceDisplay")?.classList.remove("hidden");
   document.getElementById("mineContainer")?.classList.remove("hidden");
 
@@ -237,6 +242,7 @@ function showMainUI() {
 function updateTopBar() {
   const userIdDisplay = document.getElementById("userIdDisplay");
   if (userIdDisplay) {
+    // Отображаем ID пользователя
     userIdDisplay.textContent = currentUserId ? `ID: ${currentUserId}` : "";
   }
 }
@@ -250,7 +256,7 @@ function hideMainUI() {
 }
 
 /* ================================
-   UI МЕРЧАНТА (БЕЗ SCAN QR / REFRESH)
+   4) UI МЕРЧАНТА (без scanQR/refresh)
 ================================ */
 function openMerchantUI() {
   hideMainUI();
@@ -281,7 +287,9 @@ function openMerchantUI() {
   fetchMerchantBalance();
 }
 
-// --- Модальное окно: ввести сумму/назначение, сгенерировать QR ---
+/** 
+ * Модальное окно: ввести сумму/назначение -> создать одноразовый QR
+ */
 function openOneTimeQRModal() {
   createModal("createOneTimeQRModal", `
     <h3>Создать запрос на оплату</h3>
@@ -307,15 +315,18 @@ function openOneTimeQRModal() {
   };
 }
 
-// --- Генерация реального QR через qrcodejs (если библиотека подключена) ---
+/**
+ * Генерация реального QR (требуется qrcode.js)
+ */
 function createMerchantQR(amount, purpose) {
   const container = document.getElementById("merchantQRContainer");
   container.innerHTML = "";
 
-  // Строка вида guga://merchantId=XXXX&amount=YYY&purpose=ZZZ
+  // Строка для QR
   const qrData = `guga://merchantId=${currentMerchantId}&amount=${amount}&purpose=${encodeURIComponent(purpose)}`;
 
   if (typeof QRCode === "function") {
+    // Генерируем настоящий QR
     const qrElem = document.createElement("div");
     container.appendChild(qrElem);
     new QRCode(qrElem, {
@@ -324,11 +335,14 @@ function createMerchantQR(amount, purpose) {
       height: 128
     });
   } else {
+    // fallback
     container.innerHTML = `QR Data (нет qrcode.js): ${qrData}`;
   }
 }
 
-// --- Запрос баланса мерчанта ---
+/**
+ * Запрос баланса мерчанта
+ */
 async function fetchMerchantBalance() {
   if (!currentMerchantId) return;
   try {
@@ -341,11 +355,13 @@ async function fetchMerchantBalance() {
       alert("Ошибка при получении баланса мерчанта: " + (data.error || "Неизвестная ошибка"));
     }
   } catch (err) {
-    console.error("Ошибка сети при получении баланса мерчанта:", err);
+    console.error("Сбой при fetchMerchantBalance:", err);
   }
 }
 
-// --- Модальное окно для перевода мерчант->пользователь ---
+/**
+ * Перевод мерчант->пользователь
+ */
 function openMerchantTransferModal() {
   createModal("merchantTransferModal", `
     <h3>Перевести на пользователя</h3>
@@ -370,19 +386,12 @@ function openMerchantTransferModal() {
   };
 }
 
-/**
- * Перевод мерчант->пользователь (эндпоинт /merchantTransfer).
- */
 async function merchantTransfer(toUserId, amount) {
   try {
     const resp = await fetch(`${API_URL}/merchantTransfer`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        merchantId: currentMerchantId,
-        toUserId,
-        amount
-      })
+      body: JSON.stringify({ merchantId: currentMerchantId, toUserId, amount })
     });
     const data = await resp.json();
     if (resp.ok && data.success) {
@@ -393,97 +402,115 @@ async function merchantTransfer(toUserId, amount) {
       alert("Ошибка перевода мерчант->пользователь: " + (data.error || "Неизвестная ошибка"));
     }
   } catch (err) {
-    console.error("Ошибка сети при merchantTransfer:", err);
+    console.error("Сбой при merchantTransfer:", err);
   }
 }
 
 /* ================================
-   ОПЛАТА MERCHANT QR (ПОЛЬЗОВАТЕЛЬ)
-   Сканирование
+   5) УНИВЕРСАЛЬНОЕ СКАНИРОВАНИЕ (BarcodeDetector + jsQR fallback)
+================================ */
+/**
+ * Универсальное сканирование QR с камеры:
+ * 1) Пытается использовать BarcodeDetector, если доступен.
+ * 2) Иначе fallback на canvas + jsQR.
+ * 3) При первом обнаружении QR — останавливаем камеру и вызываем onSuccess.
+ */
+function startUniversalQRScanner(videoEl, onSuccess) {
+  // videoEl — HTMLVideoElement, не просто id
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    .then(stream => {
+      videoEl.srcObject = stream;
+      videoEl.play();
+
+      if ('BarcodeDetector' in window) {
+        // 1) BarcodeDetector
+        const detector = new BarcodeDetector({ formats: ['qr_code'] });
+        
+        const scanFrame = async () => {
+          try {
+            const barcodes = await detector.detect(videoEl);
+            if (barcodes.length > 0) {
+              stopVideoStream(videoEl);
+              onSuccess(barcodes[0].rawValue);
+            } else {
+              requestAnimationFrame(scanFrame);
+            }
+          } catch (err) {
+            console.error('[BarcodeDetector] Ошибка detect:', err);
+            requestAnimationFrame(scanFrame);
+          }
+        };
+        requestAnimationFrame(scanFrame);
+      } else {
+        // 2) jsQR fallback
+        console.log('BarcodeDetector не поддерживается, используем jsQR fallback.');
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        const scanFrame = () => {
+          if (videoEl.readyState === videoEl.HAVE_ENOUGH_DATA) {
+            canvas.width = videoEl.videoWidth;
+            canvas.height = videoEl.videoHeight;
+            ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+            if (code) {
+              stopVideoStream(videoEl);
+              onSuccess(code.data);
+              return;
+            }
+          }
+          requestAnimationFrame(scanFrame);
+        };
+        requestAnimationFrame(scanFrame);
+      }
+    })
+    .catch(err => {
+      console.error('Ошибка доступа к камере:', err);
+    });
+}
+
+function stopVideoStream(videoEl) {
+  const stream = videoEl.srcObject;
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop());
+  }
+  videoEl.srcObject = null;
+}
+
+/* ================================
+   6) ПОЛЬЗОВАТЕЛЬ: ОПЛАТА MERCHANT QR
 ================================ */
 function openMerchantPayModal() {
   createModal("merchantPayModal", `
     <h3>Сканировать QR</h3>
-    <div style="display:flex;flex-direction:column;align-items:center;">
-      <video id="merchantPayVideo" style="width:100%;max-width:400px;border:1px solid #000;" autoplay muted playsinline></video>
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <video id="merchantPayVideo" style="width:100%;max-width:400px;border:1px solid #000;" muted playsinline></video>
       <p>Наведите камеру на QR</p>
     </div>
   `);
   openModal("merchantPayModal");
-  startQRScanner("merchantPayVideo");
+
+  const videoEl = document.getElementById('merchantPayVideo');
+  startUniversalQRScanner(videoEl, (rawValue) => {
+    // Закрываем окно со <video>
+    document.getElementById("merchantPayModal")?.remove();
+
+    // Разбираем строку QR
+    const parsed = parseMerchantQRData(rawValue);
+    if (!parsed.merchantId) {
+      alert("Не удалось извлечь merchantId");
+      return;
+    }
+    openConfirmMerchantPaymentModal(parsed);
+  });
 }
 
-// Пример функции сканирования камеры при открытии окна оплаты мерчанту
-function startQRScanner(videoElId) {
-  const video = document.getElementById(videoElId);
-  if (!video) return;
-
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-    .then(stream => {
-      video.srcObject = stream;
-      video.play();
-
-      if (!('BarcodeDetector' in window)) {
-        console.log("BarcodeDetector не поддерживается, используйте другую библиотеку (jsQR, zxing).");
-        return;
-      }
-      const detector = new BarcodeDetector({ formats: ['qr_code'] });
-
-      // Функция рекурсивного сканирования
-      const scan = async () => {
-        try {
-          const barcodes = await detector.detect(video);
-          if (barcodes.length > 0) {
-            // Как только QR найден, останавливаем стрим...
-            stopVideoStream(video);
-
-            // ...закрываем окно, где был <video> (merchantPayModal)...
-            document.getElementById("merchantPayModal")?.remove();
-
-            // ...и разбираем строку QR
-            const rawValue = barcodes[0].rawValue;
-            console.log("QR detected:", rawValue);
-
-            // Допустим, вы создаёте функцию parseMerchantQRData, 
-            // которая возвращает объект { merchantId, amount, purpose }
-            const parsed = parseMerchantQRData(rawValue);
-            if (!parsed.merchantId) {
-              alert("Не удалось извлечь merchantId");
-              return;
-            }
-
-            // Открываем окно подтверждения с суммой и назначением платежа
-            openConfirmMerchantPaymentModal(parsed);
-          } else {
-            // Если ничего не нашли — продолжаем сканировать
-            requestAnimationFrame(scan);
-          }
-        } catch (err) {
-          console.error("Ошибка при detect:", err);
-          requestAnimationFrame(scan);
-        }
-      };
-      // Запускаем цикл
-      requestAnimationFrame(scan);
-
-    })
-    .catch(err => {
-      console.error("Ошибка доступа к камере:", err);
-      alert("Невозможно открыть камеру");
-    });
-}
-
-// Остановка стрима (полностью)
-function stopVideoStream(video) {
-  const stream = video.srcObject;
-  if (stream) {
-    stream.getTracks().forEach(track => track.stop());
-  }
-  video.srcObject = null;
-}
-
+// Парсим строку вида: guga://merchantId=xxxx&amount=yyy&purpose=zzz
 function parseMerchantQRData(rawValue) {
-  // guga://merchantId=XXXX&amount=YYY&purpose=ZZZ
   const merchantIdMatch = rawValue.match(/merchantId=(\d+)/);
   const amountMatch = rawValue.match(/amount=([\d\.]+)/);
   const purposeMatch = rawValue.match(/purpose=([^&]+)/);
@@ -510,8 +537,8 @@ function openConfirmMerchantPaymentModal({ merchantId, amount, purpose }) {
 }
 
 /**
- * Вычитаем 100% у пользователя, 95% зачисляем мерчанту.
- * Новый эндпоинт: /payMerchantOneTime
+ * Списание 100% у пользователя, зачисление 95% мерчанту.
+ * Серверный эндпоинт: /payMerchantOneTime
  */
 async function payMerchantOneTime(merchantId, amount, purpose) {
   if (!currentUserId) return;
@@ -535,13 +562,12 @@ async function payMerchantOneTime(merchantId, amount, purpose) {
       alert(`❌ Ошибка оплаты: ${data.error}`);
     }
   } catch (err) {
-    console.error("Ошибка при оплате мерчанту:", err);
-    alert("Ошибка при оплате");
+    console.error("Сбой при payMerchantOneTime:", err);
   }
 }
 
 /* ================================
-   МАЙНИНГ ДЛЯ ПОЛЬЗОВАТЕЛЯ
+   7) МАЙНИНГ (пользователь)
 ================================ */
 function mineCoins() {
   if (!currentUserId) return;
@@ -574,7 +600,7 @@ async function flushMinedCoins() {
     localStorage.removeItem("pendingMinedCoins");
     fetchUserData();
   } catch (err) {
-    console.error("Ошибка при отправке намайненных монет:", err);
+    console.error("Ошибка flushMinedCoins:", err);
   }
 }
 
@@ -588,21 +614,23 @@ function flushMinedCoinsSync() {
     pendingMinedCoins = 0;
     localStorage.removeItem("pendingMinedCoins");
   } catch (err) {
-    console.error("Ошибка при sync отправке:", err);
+    console.error("Ошибка flushMinedCoinsSync:", err);
   }
 }
 
 function updateBalanceUI() {
   const balanceValue = document.getElementById("balanceValue");
-  if (balanceValue) balanceValue.textContent = formatBalance(localBalance);
+  if (balanceValue) {
+    balanceValue.textContent = formatBalance(localBalance);
+  }
 }
 
-function formatBalance(balance) {
-  return parseFloat(balance).toFixed(5);
+function formatBalance(bal) {
+  return parseFloat(bal).toFixed(5);
 }
 
 /* ================================
-   ПОЛУЧЕНИЕ ДАННЫХ ПОЛЬЗОВАТЕЛЯ
+   8) ПОЛУЧЕНИЕ ДАННЫХ ПОЛЬЗОВАТЕЛЯ
 ================================ */
 async function fetchUserData() {
   if (isMining) return;
@@ -620,23 +648,24 @@ async function fetchUserData() {
       localBalance = parseFloat(data.user.balance || 0);
       updateBalanceUI();
       updateExchangeModalInfo(data.user);
+      updateTopBar(); // Чтобы ID точно отображался
     }
   } catch (err) {
-    console.error("Ошибка fetchUserData:", err);
+    console.error("Сбой при fetchUserData:", err);
   }
 }
 
 /* ================================
-   ОПЕРАЦИЯ: ПЕРЕВОД ПОЛЬЗОВАТЕЛЯ
+   9) ПЕРЕВОД ПОЛЬЗОВАТЕЛЬ→ПОЛЬЗОВАТЕЛЬ
 ================================ */
 function openPaymentModal() {
   const modalContent = `
     <h3>Перевести</h3>
-    <div id="transferContent" style="display:flex;flex-direction:column;align-items:center;">
-      <label for="toUserIdInput">Кому (ID):</label>
+    <div style="display:flex;flex-direction:column;align-items:center;">
+      <label>Кому (ID):</label>
       <input type="text" id="toUserIdInput" placeholder="ID получателя">
 
-      <label for="transferAmountInput">Сумма:</label>
+      <label>Сумма (₲):</label>
       <input type="number" id="transferAmountInput" step="0.00001" placeholder="Введите сумму">
 
       <button id="sendTransferBtn">Отправить</button>
@@ -677,12 +706,11 @@ async function sendTransfer() {
     }
   } catch (error) {
     console.error("Ошибка при переводе:", error);
-    alert("🚫 Ошибка сети");
   }
 }
 
 /* ================================
-   ИСТОРИЯ ОПЕРАЦИЙ
+   10) ИСТОРИЯ ОПЕРАЦИЙ
 ================================ */
 function openHistoryModal() {
   createModal("historyModal", `
@@ -705,7 +733,7 @@ async function fetchTransactionHistory() {
       displayTransactionHistory(data.transactions);
     }
   } catch (err) {
-    console.error("Ошибка при получении истории:", err);
+    console.error("Ошибка fetchTransactionHistory:", err);
   }
 }
 
@@ -718,8 +746,7 @@ function displayTransactionHistory(transactions) {
     container.innerHTML = "<li>Нет операций</li>";
     return;
   }
-
-  // Группируем по дате
+  // Группируем по датам
   const groups = {};
   transactions.forEach(tx => {
     const d = new Date(tx.created_at);
@@ -789,7 +816,7 @@ function getDateLabel(dateObj) {
 }
 
 /* ================================
-   ОБМЕН
+   11) ОБМЕН (EXCHANGE)
 ================================ */
 function openExchangeModal() {
   createModal("exchangeModal", `
@@ -801,7 +828,7 @@ function openExchangeModal() {
     </div>
   `);
   openModal("exchangeModal");
-  fetchUserData();
+  fetchUserData(); // обновим инфу
 }
 
 function updateExchangeModalInfo(user) {
@@ -823,7 +850,7 @@ function updateExchangeModalInfo(user) {
 }
 
 /* ================================
-   МОДАЛЬНЫЕ/УТИЛИТЫ
+   12) СЛУЖЕБНЫЕ ФУНКЦИИ
 ================================ */
 function closeAllModals() {
   document.querySelectorAll(".modal").forEach(m => m.classList.add("hidden"));
@@ -842,7 +869,11 @@ function createModal(id, content) {
   `;
   document.body.appendChild(modal);
 
-  const closeOnOverlay = ["paymentModal","historyModal","exchangeModal","merchantPayModal","confirmMerchantPaymentModal","merchantTransferModal","createOneTimeQRModal"];
+  const closeOnOverlay = [
+    "paymentModal","historyModal","exchangeModal",
+    "merchantPayModal","confirmMerchantPaymentModal",
+    "merchantTransferModal","createOneTimeQRModal"
+  ];
   if (closeOnOverlay.includes(id)) {
     const overlay = modal.querySelector(".modal-overlay");
     if (overlay) {
@@ -865,7 +896,7 @@ function closeModal(modalId) {
 }
 
 /* ================================
-   DOMContentLoaded + beforeunload
+   13) ЗАПУСК ПРИ ЗАГРУЗКЕ
 ================================ */
 document.addEventListener("DOMContentLoaded", () => {
   if (pendingMinedCoins > 0) {
@@ -888,5 +919,5 @@ window.addEventListener("beforeunload", () => {
   }
 });
 
-// Если в HTML есть #mineBtn, вешаем обработчик
+// Кнопка майнинга (#mineBtn в HTML)
 document.getElementById("mineBtn")?.addEventListener("click", mineCoins);
