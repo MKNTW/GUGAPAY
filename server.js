@@ -1,3 +1,4 @@
+// server.js
 const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
 const bcrypt = require('bcryptjs');
@@ -22,7 +23,7 @@ app.use(express.json());
 
 // Тестовый endpoint (главная)
 app.get('/', (req, res) => {
-  res.send('GugaCoin backend server (users + merchants + QR payments).');
+  res.send('GugaCoin backend server (users + merchants + QR payments + rub_balance + Cloudtips).');
 });
 
 /* ========================
@@ -40,9 +41,17 @@ app.post('/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const userId = Math.floor(100000 + Math.random() * 900000).toString();
 
+    // При создании пользователя инициализируем rub_balance: 0
     const { error } = await supabase
       .from('users')
-      .insert([{ username, password: hashedPassword, user_id: userId, balance: 0, blocked: 0 }]);
+      .insert([{
+        username,
+        password: hashedPassword,
+        user_id: userId,
+        balance: 0,
+        rub_balance: 0,  // <-- добавлено
+        blocked: 0
+      }]);
 
     if (error) {
       if (error.message.includes('unique')) {
@@ -212,7 +221,14 @@ app.get('/user', async (req, res) => {
       halvingStep = halvingData[0].halving_step;
     }
 
-    res.json({ success: true, user: { ...userData, halvingStep } });
+    // Возвращаем и rub_balance
+    res.json({
+      success: true,
+      user: {
+        ...userData,
+        halvingStep
+      }
+    });
   } catch (err) {
     console.error('[get /user] Ошибка:', err);
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
@@ -272,7 +288,7 @@ app.post('/transfer', async (req, res) => {
       .eq('user_id', toUserId);
 
     // Запись операции в таблицу transactions
-    const { data: insertedData, error: insertError } = await supabase
+    const { error: insertError } = await supabase
       .from('transactions')
       .insert([
         { 
@@ -304,9 +320,10 @@ app.get('/transactions', async (req, res) => {
     if (!userId && !merchantId) {
       return res.status(400).json({ success: false, error: 'userId или merchantId обязателен' });
     }
+
     let allTransactions = [];
     if (userId) {
-      // Получаем операции пользователя из таблицы transactions
+      // Получаем операции из таблицы transactions (where from_user_id or to_user_id)
       const { data: sentTx, error: sentError } = await supabase
         .from('transactions')
         .select('*')
@@ -326,7 +343,7 @@ app.get('/transactions', async (req, res) => {
     }
   
     if (merchantId) {
-      // Если нужно объединить операции мерчанта (например, из merchant_payments)
+      // Если нужно объединить операции мерчанта (merchant_payments)
       const { data: merchantPayments, error: merchantError } = await supabase
         .from('merchant_payments')
         .select('*')
@@ -335,13 +352,11 @@ app.get('/transactions', async (req, res) => {
       if (merchantError) {
         return res.status(500).json({ success: false, error: 'Ошибка при получении транзакций мерчанта' });
       }
-      allTransactions = [
-        ...allTransactions,
-        ...(merchantPayments || []).map(tx => ({ ...tx, type: 'merchant_payment' }))
-      ];
+      const mappedMerchantTx = (merchantPayments || []).map(tx => ({ ...tx, type: 'merchant_payment' }));
+      allTransactions = [ ...allTransactions, ...mappedMerchantTx ];
     }
   
-    // Сортируем все транзакции по времени (от новых к старым)
+    // Сортируем все транзакции по времени (от новой к старой)
     allTransactions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   
     res.json({ success: true, transactions: allTransactions });
@@ -392,8 +407,9 @@ app.post('/merchantTransfer', async (req, res) => {
       .from('users')
       .update({ balance: newUserBal.toFixed(5) })
       .eq('user_id', toUserId);
-    // Запись в таблицу transactions для перевода мерчанта -> пользователь
-    const { data: insertedData, error: insertError } = await supabase
+
+    // Запись в таблицу transactions
+    const { error: insertError } = await supabase
       .from('transactions')
       .insert([
         {
@@ -407,6 +423,7 @@ app.post('/merchantTransfer', async (req, res) => {
       console.error('Ошибка вставки транзакции (merchantTransfer):', insertError);
       return res.status(500).json({ success: false, error: 'Ошибка записи транзакции' });
     }
+
     console.log(`[merchantTransfer] merchant=${merchantId} -> user=${toUserId} amount=${amount}`);
     res.json({ success: true });
   } catch (err) {
@@ -416,7 +433,7 @@ app.post('/merchantTransfer', async (req, res) => {
 });
 
 /* ========================
-   10) POST /payMerchantOneTime (Пользователь оплачивает QR, 5% комиссия)
+   10) POST /payMerchantOneTime (Пользователь оплачивает QR)
 ======================== */
 app.post('/payMerchantOneTime', async (req, res) => {
   try {
@@ -457,15 +474,15 @@ app.post('/payMerchantOneTime', async (req, res) => {
       .from('users')
       .update({ balance: newUserBalance.toFixed(5) })
       .eq('user_id', userId);
-    // 4) Зачисляем 95% мерчанту
+    // 4) Зачисляем 95% мерчанту (5% комиссия)
     const merchantAmount = amount * 0.95;
     const newMerchantBalance = parseFloat(merchData.balance) + merchantAmount;
     await supabase
       .from('merchants')
       .update({ balance: newMerchantBalance.toFixed(5) })
       .eq('merchant_id', merchantId);
-    // 5) Записываем транзакцию в таблицу transactions с типом "merchant_payment"
-    const { data: insertedData, error: insertError } = await supabase
+    // 5) Запись транзакции в transactions
+    const { error: insertError } = await supabase
       .from('transactions')
       .insert([
         {
@@ -479,7 +496,7 @@ app.post('/payMerchantOneTime', async (req, res) => {
       console.error('Ошибка вставки транзакции для мерчанта:', insertError);
       return res.status(500).json({ success: false, error: 'Ошибка записи транзакции' });
     }
-    // 6) Записываем в merchant_payments
+    // 6) Запись в merchant_payments
     await supabase
       .from('merchant_payments')
       .insert([
@@ -490,7 +507,8 @@ app.post('/payMerchantOneTime', async (req, res) => {
           purpose
         }
       ]);
-    console.log(`[payMerchantOneTime] user=${userId} => merchant=${merchantId}, amount=${amount} -> merchantAmount=${merchantAmount}`);
+
+    console.log(`[payMerchantOneTime] user=${userId} => merchant=${merchantId}, amount=${amount}, merchantGets=${merchantAmount}`);
     res.json({ success: true });
   } catch (err) {
     console.error('[payMerchantOneTime] Ошибка:', err);
@@ -499,10 +517,8 @@ app.post('/payMerchantOneTime', async (req, res) => {
 });
 
 /* ========================
-   НОВЫЕ ENDPOINT-ы
+   11) GET /merchantBalance
 ======================== */
-
-/* 1. GET /merchantBalance – возвращает баланс мерчанта */
 app.get('/merchantBalance', async (req, res) => {
   try {
     const { merchantId } = req.query;
@@ -524,7 +540,9 @@ app.get('/merchantBalance', async (req, res) => {
   }
 });
 
-/* 2. GET /halvingInfo – возвращает текущий уровень халвинга */
+/* ========================
+   12) GET /halvingInfo
+======================== */
 app.get('/halvingInfo', async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -541,6 +559,169 @@ app.get('/halvingInfo', async (req, res) => {
     }
   } catch (err) {
     console.error('[halvingInfo] Ошибка:', err);
+    res.status(500).json({ success: false, error: 'Ошибка сервера' });
+  }
+});
+
+/* ========================
+   13) POST /exchange (RUB ↔ COIN)
+======================== */
+app.post('/exchange', async (req, res) => {
+  try {
+    const { userId, direction, amount } = req.body;
+    if (!userId || !direction || typeof amount !== 'number' || amount <= 0) {
+      return res.status(400).json({ success: false, error: 'Неверные данные' });
+    }
+    // Получаем данные пользователя (rub_balance, balance и т.п.)
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    if (userError || !user) {
+      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+    }
+    if (user.blocked === 1) {
+      return res.status(403).json({ success: false, error: 'Пользователь заблокирован' });
+    }
+
+    // Получаем halvingStep
+    let halvingStep = 0;
+    const { data: halvingData } = await supabase
+      .from('halving')
+      .select('halving_step')
+      .limit(1);
+    if (halvingData && halvingData.length > 0) {
+      halvingStep = halvingData[0].halving_step;
+    }
+    // Курс: 1₲ = (1 + halvingStep * 0.02) ₽
+    const rubMultiplier = 1 + halvingStep * 0.02;
+
+    const currentRub = parseFloat(user.rub_balance || 0);
+    const currentCoin = parseFloat(user.balance || 0);
+
+    if (direction === 'rub_to_coin') {
+      // Проверяем, хватает ли рублей
+      if (currentRub < amount) {
+        return res.status(400).json({ success: false, error: 'Недостаточно рублей' });
+      }
+      // Сколько монет получим
+      const coinAmount = amount / rubMultiplier;
+      const newRubBalance = currentRub - amount;
+      const newCoinBalance = currentCoin + coinAmount;
+
+      const { error: updateErr } = await supabase
+        .from('users')
+        .update({
+          rub_balance: newRubBalance.toFixed(2),
+          balance: newCoinBalance.toFixed(5)
+        })
+        .eq('user_id', userId);
+      if (updateErr) {
+        return res.status(500).json({ success: false, error: 'Ошибка обновления баланса' });
+      }
+      return res.json({
+        success: true,
+        newRubBalance: newRubBalance.toFixed(2),
+        newCoinBalance: newCoinBalance.toFixed(5)
+      });
+    } else if (direction === 'coin_to_rub') {
+      // Проверяем, хватает ли монет
+      if (currentCoin < amount) {
+        return res.status(400).json({ success: false, error: 'Недостаточно монет' });
+      }
+      // Сколько рублей получим
+      const rubAmount = amount * rubMultiplier;
+      const newCoinBalance = currentCoin - amount;
+      const newRubBalance = currentRub + rubAmount;
+
+      const { error: updateErr } = await supabase
+        .from('users')
+        .update({
+          rub_balance: newRubBalance.toFixed(2),
+          balance: newCoinBalance.toFixed(5)
+        })
+        .eq('user_id', userId);
+      if (updateErr) {
+        return res.status(500).json({ success: false, error: 'Ошибка обновления баланса' });
+      }
+      return res.json({
+        success: true,
+        newRubBalance: newRubBalance.toFixed(2),
+        newCoinBalance: newCoinBalance.toFixed(5)
+      });
+    } else {
+      return res.status(400).json({ success: false, error: 'Неверное направление обмена' });
+    }
+  } catch (err) {
+    console.error('[exchange] Ошибка:', err);
+    res.status(500).json({ success: false, error: 'Ошибка сервера' });
+  }
+});
+
+/* ========================
+   14) POST /cloudtips/callback
+   - Принимает уведомление об успешной оплате
+   - В comment пользователь сам указал "123456" (userId)
+======================== */
+app.post('/cloudtips/callback', async (req, res) => {
+  try {
+    const { orderId, status, amount, comment } = req.body;
+    // Проверка статуса
+    if (status !== 'success') {
+      return res.status(400).json({ success: false, error: 'Платеж неуспешен' });
+    }
+    // Пытаемся извлечь userId из комментария
+    // Например, пользователь мог просто ввести "123456" или "Мой userId: 123456"
+    const userIdRegex = /(\d+)/; // Ищем любое число
+    const match = comment?.match(userIdRegex);
+    if (!match) {
+      return res.status(400).json({ success: false, error: 'userId не найден в комментарии' });
+    }
+    const userId = match[1];
+
+    // Ищем пользователя
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    if (userError || !user) {
+      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+    }
+    if (user.blocked === 1) {
+      return res.status(403).json({ success: false, error: 'Пользователь заблокирован' });
+    }
+
+    // Обновляем rub_balance
+    const currentRubBalance = parseFloat(user.rub_balance || 0);
+    const newRubBalance = (currentRubBalance + parseFloat(amount)).toFixed(2);
+
+    const { error: updateErr } = await supabase
+      .from('users')
+      .update({ rub_balance: newRubBalance })
+      .eq('user_id', userId);
+    if (updateErr) {
+      return res.status(500).json({ success: false, error: 'Не удалось обновить баланс' });
+    }
+
+    // Запись в cloudtips_transactions
+    const { error: insertErr } = await supabase
+      .from('cloudtips_transactions')
+      .insert([{
+        order_id: orderId,
+        user_id: userId,
+        rub_amount: amount
+      }]);
+    if (insertErr) {
+      console.error('Ошибка записи cloudtips_transactions:', insertErr);
+      return res.status(500).json({ success: false, error: 'Ошибка записи транзакции' });
+    }
+
+    console.log(`[CloudtipsCallback] user=${userId}, amount=${amount}, orderId=${orderId}`);
+    res.json({ success: true, newRubBalance });
+  } catch (err) {
+    console.error('[cloudtips/callback] Ошибка:', err);
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
   }
 });
