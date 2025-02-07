@@ -475,7 +475,7 @@ app.post('/payMerchantOneTime', async (req, res) => {
       .update({ balance: newUserBalance.toFixed(5) })
       .eq('user_id', userId);
     // 4) Зачисляем 95% мерчанту (5% комиссия)
-    const merchantAmount = amount * 0.95;
+    const merchantAmount = amount * 1;
     const newMerchantBalance = parseFloat(merchData.balance) + merchantAmount;
     await supabase
       .from('merchants')
