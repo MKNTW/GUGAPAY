@@ -23,7 +23,7 @@ async function login() {
   const loginVal = document.getElementById("loginInput")?.value;
   const passVal = document.getElementById("passwordInput")?.value;
   if (!loginVal || !passVal) {
-    alert("Введите логин и пароль");
+    alert("❌ Введите логин и пароль");
     return;
   }
   try {
@@ -48,7 +48,7 @@ async function login() {
     } else {
       // Иначе пробуем мерчанта
       if (userData.error?.includes("блокирован")) {
-        alert("Ваш аккаунт заблокирован");
+        alert("❌ Ваш аккаунт заблокирован");
         return;
       }
       const merchResp = await fetch(`${API_URL}/merchantLogin`, {
@@ -67,7 +67,7 @@ async function login() {
         openMerchantUI();
       } else {
         if (merchData.error?.includes("блокирован")) {
-          alert("Ваш аккаунт заблокирован");
+          alert("❌ Ваш аккаунт заблокирован");
         } else {
           alert(`❌ Ошибка входа: ${merchData.error}`);
         }
@@ -82,7 +82,7 @@ async function register() {
   const loginVal = document.getElementById("regLogin")?.value;
   const passVal = document.getElementById("regPassword")?.value;
   if (!loginVal || !passVal) {
-    alert("Введите логин и пароль");
+    alert("❌ Введите логин и пароль");
     return;
   }
   try {
@@ -105,7 +105,7 @@ async function register() {
       fetchUserData();
     } else {
       if (data.error?.includes("блокирован")) {
-        alert("Ваш аккаунт заблокирован");
+        alert("❌ Ваш аккаунт заблокирован");
       } else {
         alert(`❌ Ошибка входа: ${data.error}`);
       }
@@ -288,9 +288,8 @@ function openMerchantUI() {
 }
 
 /**
- * Подгружаем баланс мерчанта и показываем курс (halvingStep) как в обмене
+ * Подгружаем баланс мерчанта + halvingStep
  */
-
 async function fetchMerchantData() {
   await fetchMerchantBalance();
   try {
@@ -316,7 +315,7 @@ async function fetchMerchantBalance() {
       const mb = document.getElementById("merchantBalanceValue");
       if (mb) mb.textContent = merchantBalance.toFixed(5);
     } else {
-      alert("Ошибка при получении баланса мерчанта: " + (data.error || "Неизвестная ошибка"));
+      alert("❌ Ошибка при получении баланса мерчанта: " + (data.error || "Неизвестная ошибка"));
     }
   } catch (err) {
     console.error("Сбой fetchMerchantBalance:", err);
@@ -326,7 +325,6 @@ async function fetchMerchantBalance() {
 /**
  * Создать одноразовый QR
  */
-
 function openOneTimeQRModal() {
   createModal("createOneTimeQRModal", `
     <div style="width:85vw; height:70vh; display:flex; flex-direction:column; justify-content:center; align-items:center;">
@@ -345,7 +343,7 @@ function openOneTimeQRModal() {
     const amountVal = parseFloat(document.getElementById("qrAmountInput")?.value);
     const purposeVal = document.getElementById("qrPurposeInput")?.value || "";
     if (!amountVal || amountVal <= 0) {
-      alert("Введите корректную сумму");
+      alert("❌ Введите корректную сумму");
       return;
     }
     closeModal("createOneTimeQRModal");
@@ -372,7 +370,7 @@ function createMerchantQR(amount, purpose) {
       text: qrData,
       width: 128,
       height: 128,
-      correctLevel: QRCode.CorrectLevel.L  // снижаем уровень коррекции
+      correctLevel: QRCode.CorrectLevel.L
     });
   } else {
     container.innerHTML = `QR Data (нет qrcode.js): ${qrData}`;
@@ -399,7 +397,7 @@ function openMerchantTransferModal() {
     const toUser = document.getElementById("merchantToUserIdInput")?.value;
     const amt = parseFloat(document.getElementById("merchantTransferAmountInput")?.value);
     if (!toUser || !amt || amt <= 0) {
-      alert("Введите корректные данные");
+      alert("❌ Введите корректные данные");
       return;
     }
     await merchantTransfer(toUser, amt);
@@ -415,11 +413,11 @@ async function merchantTransfer(toUserId, amount) {
     });
     const data = await resp.json();
     if (resp.ok && data.success) {
-      alert("Перевод выполнен!");
+      alert("✅ Перевод выполнен!");
       document.getElementById("merchantTransferModal")?.remove();
       fetchMerchantBalance();
     } else {
-      alert("Ошибка перевода мерчант->пользователь: " + (data.error || "Неизвестная ошибка"));
+      alert("❌ Ошибка перевода мерчант->пользователь: " + (data.error || "Неизвестная ошибка"));
     }
   } catch (err) {
     console.error("Сбой merchantTransfer:", err);
@@ -492,8 +490,9 @@ function openOperationsModal() {
   }
 
   function showPayTab() {
+    // Центрируем блок камеры по середине модального окна
     operationsContent.innerHTML = `
-      <div style="width:85vw; height:70vh; margin:10px auto; display:flex;flex-direction:column;align-items:center;justify-content:flex-start;">
+      <div style="width:90vw; height:70vh; margin:auto; display:flex; flex-direction:column; align-items:center; justify-content:center;">
         <video id="opPayVideo" muted playsinline style="width:100%; max-width:600px; border:none;"></video>
         <p style="margin-top:10px;">Наведите камеру на QR</p>
       </div>
@@ -503,7 +502,7 @@ function openOperationsModal() {
       document.getElementById("operationsModal")?.remove();
       const parsed = parseMerchantQRData(rawValue);
       if (!parsed.merchantId) {
-        alert("Не удалось извлечь merchantId");
+        alert("❌ Не удалось извлечь merchantId");
         return;
       }
       confirmPayModal(parsed);
@@ -530,7 +529,8 @@ function openOperationsModal() {
         });
         const data = await resp.json();
         if (data.success) {
-          alert(`Оплата прошла успешно на сумму ${amount}`);
+          // Убираем упоминание суммы и добавляем зелёный смайлик успеха
+          alert("✅ Оплата прошла успешно!");
           document.getElementById("confirmMerchantPayModal")?.remove();
           fetchUserData();
         } else {
@@ -783,7 +783,7 @@ async function fetchUserData() {
     const data = await resp.json();
     if (data.success && data.user) {
       if (data.user.blocked === 1) {
-        alert("Ваш аккаунт заблокирован");
+        alert("❌ Ваш аккаунт заблокирован");
         logout();
         return;
       }
