@@ -268,8 +268,8 @@ function openMerchantUI() {
   merchDiv.style.alignItems = "center";
   merchDiv.style.marginTop = "70px";
   merchDiv.innerHTML = `
-    <h1>Merchant Dashboard</h1>
-    <p>Merchant ID: <strong>${currentMerchantId}</strong></p>
+    <h1>ЛИЧНЫЙ КАБИНЕТ МЕРЧАНТА</h1>
+    <p>Мерчант ID: <strong>${currentMerchantId}</strong></p>
     <p>Баланс мерчанта: <span id="merchantBalanceValue">0.00000</span> ₲</p>
     <div style="display:flex; gap:10px; margin-top:20px;">
       <button id="merchantCreateQRBtn">Создать QR</button>
@@ -368,7 +368,7 @@ function createMerchantQR(amount, purpose) {
     container.appendChild(qrElem);
     new QRCode(qrElem, {
       text: qrData,
-      width: 250,
+      width: 280,
       height: 250,
       correctLevel: QRCode.CorrectLevel.L
     });
