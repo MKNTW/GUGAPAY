@@ -268,9 +268,9 @@ function openMerchantUI() {
   merchDiv.style.alignItems = "center";
   merchDiv.style.marginTop = "70px";
   merchDiv.innerHTML = `
-    <h1>ЛИЧНЫЙ КАБИНЕТ МЕРЧАНТА</h1>
-    <p>Мерчант ID: <strong>${currentMerchantId}</strong></p>
-    <p>Баланс мерчанта: <span id="merchantBalanceValue">0.00000</span> ₲</p>
+    <h1>КАБИНЕТ МЕРЧАНТА</h1>
+    <p>Мерчант: <strong>${currentMerchantId}</strong></p>
+    <p>Баланс: <span id="merchantBalanceValue">0.00000</span> ₲</p>
     <div style="display:flex; gap:10px; margin-top:20px;">
       <button id="merchantCreateQRBtn">Создать QR</button>
       <button id="merchantTransferBtn">Перевести</button>
