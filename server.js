@@ -305,68 +305,57 @@ app.post('/transfer', async (req, res) => {
 app.get('/transactions', async (req, res) => {
   try {
     const { userId, merchantId } = req.query;
-
-    // Требуется хотя бы один параметр
     if (!userId && !merchantId) {
       return res.status(400).json({ success: false, error: 'userId или merchantId обязателен' });
     }
-
     let allTransactions = [];
-
-    // Если передан userId – получаем операции для пользователя
     if (userId) {
+      // Получаем операции пользователя из таблицы transactions
       const { data: sentTx, error: sentError } = await supabase
         .from('transactions')
         .select('*')
         .eq('from_user_id', userId)
         .order('created_at', { ascending: false });
-
       const { data: receivedTx, error: receivedError } = await supabase
         .from('transactions')
         .select('*')
         .eq('to_user_id', userId)
         .order('created_at', { ascending: false });
-
+  
       if (sentError || receivedError) {
         return res.status(500).json({ success: false, error: 'Ошибка при получении транзакций пользователя' });
       }
-
-      allTransactions = [
-        ...(sentTx || []).map(tx => ({ ...tx, type: 'sent' })),
-        ...(receivedTx || []).map(tx => ({ ...tx, type: 'received' }))
-      ];
+  
+      allTransactions = [...(sentTx || []), ...(receivedTx || [])];
     }
-
-    // Если передан merchantId – получаем операции мерчанта
+  
     if (merchantId) {
+      // Если необходимо объединить операции мерчанта (например, если записи остаются в merchant_payments)
       const { data: merchantPayments, error: merchantError } = await supabase
         .from('merchant_payments')
         .select('*')
         .eq('merchant_id', merchantId)
         .order('created_at', { ascending: false });
-
       if (merchantError) {
         return res.status(500).json({ success: false, error: 'Ошибка при получении транзакций мерчанта' });
       }
-
+      // Приводим операции мерчанта к единому типу, чтобы клиент их распознавал
       allTransactions = [
         ...allTransactions,
-        ...(merchantPayments || []).map(tx => ({
-          ...tx,
-          type: 'merchant_payment'  // используем единый тип для операций оплаты по QR
-        }))
+        ...(merchantPayments || []).map(tx => ({ ...tx, type: 'merchant_payment' }))
       ];
     }
-
-    // Сортируем по времени (от новых к старым)
+  
+    // Сортируем все транзакции по времени (от новых к старым)
     allTransactions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
+  
     res.json({ success: true, transactions: allTransactions });
   } catch (err) {
     console.error('[transactions] Ошибка:', err);
     res.status(500).json({ success: false, error: 'Ошибка при получении истории' });
   }
 });
+
 /* ========================
    9) POST /merchantTransfer (мерчант → пользователь)
 ======================== */
