@@ -492,7 +492,7 @@ function openOperationsModal() {
   function showPayTab() {
     // Центрируем блок камеры по середине модального окна
     operationsContent.innerHTML = `
-      <div style="height:35vh; margin-top: -50px; flex-direction:column; align-items:center; justify-content:center;">
+      <div style="height:35vh; margin-top: -65px; flex-direction:column; align-items:center; justify-content:center;">
         <video id="opPayVideo" muted playsinline style="width:100%; max-width:600px; border: 2px solid black;"></video>  
       </div>
     `;
