@@ -153,7 +153,7 @@ function openAuthModal() {
             <h4 style="text-align:left;">Вход</h4>
             <input type="text" id="loginInput" placeholder="Логин">
             <input type="password" id="passwordInput" placeholder="Пароль">
-            <button id="loginSubmitBtn">Войти</button>
+            <button id="loginSubmitBtn" style="display: block; margin: auto; margin-top: 5px;">Войти</button>
           </div>
           <div id="registerSection" style="display:none; margin-top:20px;">
             <h4 style="text-align:left;">Регистрация</h4>
@@ -493,7 +493,7 @@ function openOperationsModal() {
     // Центрируем блок камеры по середине модального окна
     operationsContent.innerHTML = `
       <div style="height:39vh; margin-top: -80px; flex-direction:column; align-items:center; justify-content:center;">
-        <video id="opPayVideo" muted playsinline style="width:100%; max-width:600px; border:none;"></video>  
+        <video id="opPayVideo" muted playsinline style="width:100%; max-width:600px; border: 2px solid black;"></video>  
       </div>
     `;
     const videoEl = document.getElementById("opPayVideo");
