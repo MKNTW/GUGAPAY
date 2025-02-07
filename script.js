@@ -159,7 +159,7 @@ function openAuthModal() {
             <h4 style="text-align:left;">Регистрация</h4>
             <input type="text" id="regLogin" placeholder="Логин">
             <input type="password" id="regPassword" placeholder="Пароль">
-            <button id="registerSubmitBtn">Зарегистрироваться</button>
+            <button id="registerSubmitBtn" style="display: block; margin: auto; margin-top: 5px;">Зарегистрироваться</button>
           </div>
         </div>
         <button id="toggleAuthBtn" style="margin-top:20px;">Войти/Зарегистрироваться</button>
