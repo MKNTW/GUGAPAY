@@ -435,7 +435,7 @@ function openOperationsModal() {
         <button id="opTabTransfer" class="op-tab-btn">Перевод</button>
         <button id="opTabPay" class="op-tab-btn">Оплата по QR</button>
       </div>
-      <div id="operationsContent" style="margin-top:130px;"></div>
+      <div id="operationsContent" style="margin-top:100px;"></div>
     </div>
   `);
   openModal("operationsModal");
