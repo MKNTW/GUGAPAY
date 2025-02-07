@@ -153,13 +153,13 @@ function openAuthModal() {
             <h4 style="text-align:left;">Вход</h4>
             <input type="text" id="loginInput" placeholder="Логин">
             <input type="password" id="passwordInput" placeholder="Пароль">
-            <button id="loginSubmitBtn" style="display: block; margin: auto; margin-top: 5px;">Войти</button>
+            <button id="loginSubmitBtn" style="display: block; margin: auto; margin-top: 10px;">Войти</button>
           </div>
           <div id="registerSection" style="display:none; margin-top:20px;">
             <h4 style="text-align:left;">Регистрация</h4>
             <input type="text" id="regLogin" placeholder="Логин">
             <input type="password" id="regPassword" placeholder="Пароль">
-            <button id="registerSubmitBtn" style="display: block; margin: auto; margin-top: 5px;">Зарегистрироваться</button>
+            <button id="registerSubmitBtn" style="display: block; margin: auto; margin-top: 10px;">Зарегистрироваться</button>
           </div>
         </div>
         <button id="toggleAuthBtn" style="margin-top:20px;">Войти/Зарегистрироваться</button>
