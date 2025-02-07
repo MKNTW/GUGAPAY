@@ -435,7 +435,7 @@ function openOperationsModal() {
         <button id="opTabTransfer" class="op-tab-btn">Перевод</button>
         <button id="opTabPay" class="op-tab-btn">Оплата по QR</button>
       </div>
-      <div id="operationsContent" style="margin-top:40px;width:100%;"></div>
+      <div id="operationsContent" style="margin-top:130px;"></div>
     </div>
   `);
   openModal("operationsModal");
@@ -492,7 +492,7 @@ function openOperationsModal() {
   function showPayTab() {
     // Центрируем блок камеры по середине модального окна
     operationsContent.innerHTML = `
-      <div style="height:70vh; margin:auto; flex-direction:column; align-items:center; justify-content:center;">
+      <div style="height:46vh; margin-top: -80px; margin:auto; flex-direction:column; align-items:center; justify-content:center;">
         <video id="opPayVideo" muted playsinline style="width:100%; max-width:600px; border:none;"></video>  
       </div>
     `;
