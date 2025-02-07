@@ -509,37 +509,40 @@ function openOperationsModal() {
   }
 
   function confirmPayModal({ merchantId, amount, purpose }) {
-    createModal("confirmMerchantPayModal", `
+  createModal("confirmMerchantPayModal", `
+    <div style="display: flex; flex-direction: column; height: 100%;">
       <h3>Оплата по QR коду 💳</h3>
-      <p>Мерчант: ${merchantId}</p>
-      <p>Сумма: ${amount} ₲</p>
-      <p>Назначение: ${purpose}</p>
-      <button id="confirmPayBtn">Оплатить</button>
-    `);
-    openModal("confirmMerchantPayModal");
+      <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+        <p>Мерчант: ${merchantId}</p>
+        <p>Сумма: ${amount} ₲</p>
+        <p>Назначение: ${purpose}</p>
+        <button id="confirmPayBtn">Оплатить</button>
+      </div>
+    </div>
+  `);
+  openModal("confirmMerchantPayModal");
 
-    document.getElementById("confirmPayBtn").onclick = async () => {
-      if (!currentUserId) return;
-      try {
-        const resp = await fetch(`${API_URL}/payMerchantOneTime`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: currentUserId, merchantId, amount, purpose })
-        });
-        const data = await resp.json();
-        if (data.success) {
-          // Убираем упоминание суммы и добавляем зелёный смайлик успеха
-          alert("✅ Оплата прошла успешно!");
-          document.getElementById("confirmMerchantPayModal")?.remove();
-          fetchUserData();
-        } else {
-          alert(`❌ Ошибка оплаты: ${data.error}`);
-        }
-      } catch (err) {
-        console.error("Ошибка payMerchantOneTime:", err);
+  document.getElementById("confirmPayBtn").onclick = async () => {
+    if (!currentUserId) return;
+    try {
+      const resp = await fetch(`${API_URL}/payMerchantOneTime`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: currentUserId, merchantId, amount, purpose })
+      });
+      const data = await resp.json();
+      if (data.success) {
+        alert("✅ Оплата прошла успешно!");
+        document.getElementById("confirmMerchantPayModal")?.remove();
+        fetchUserData();
+      } else {
+        alert(`❌ Ошибка оплаты: ${data.error}`);
       }
-    };
-  }
+    } catch (err) {
+      console.error("Ошибка payMerchantOneTime:", err);
+    }
+  };
+ }
 }
 
 /* ================================
