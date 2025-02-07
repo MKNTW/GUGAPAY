@@ -274,22 +274,17 @@ app.post('/transfer', async (req, res) => {
       .update({ balance: newToBalance.toFixed(5) })
       .eq('user_id', toUserId);
 
-        // Запись в транзакции
-    const { data: insertedData, error: insertError } = await supabase
+    // Запись в транзакции
+    await supabase
       .from('transactions')
       .insert([
         { 
           from_user_id: fromUserId, 
           to_user_id: toUserId, 
           amount, 
-          type: 'sent'
+          type: 'sent'  // можно поставить 'sent', но обычно 'type' будет уже при выборке
         }
       ]);
-
-    if (insertError) {
-      console.error('Ошибка вставки транзакции:', insertError);
-      return res.status(500).json({ success: false, error: 'Ошибка записи транзакции' });
-    }
 
     console.log(`[transfer] from=${fromUserId} to=${toUserId} amount=${amount}`);
     res.json({ success: true, fromBalance: newFromBalance, toBalance: newToBalance });
@@ -305,50 +300,58 @@ app.post('/transfer', async (req, res) => {
 app.get('/transactions', async (req, res) => {
   try {
     const { userId, merchantId } = req.query;
+
+    // Требуется хотя бы один параметр
     if (!userId && !merchantId) {
       return res.status(400).json({ success: false, error: 'userId или merchantId обязателен' });
     }
+
     let allTransactions = [];
+
+    // Если передан userId – получаем операции для пользователя
     if (userId) {
       const { data: sentTx, error: sentError } = await supabase
         .from('transactions')
         .select('*')
         .eq('from_user_id', userId)
         .order('created_at', { ascending: false });
+
       const { data: receivedTx, error: receivedError } = await supabase
         .from('transactions')
         .select('*')
         .eq('to_user_id', userId)
         .order('created_at', { ascending: false });
+
       if (sentError || receivedError) {
-        return res.status(500).json({ success: false, error: 'Ошибка при получении транзакций' });
+        return res.status(500).json({ success: false, error: 'Ошибка при получении транзакций пользователя' });
       }
-      // НЕ затираем тип операции – оставляем, как есть
-      allTransactions = [...(sentTx || []), ...(receivedTx || [])];
+
+      allTransactions = [
+        ...(sentTx || []).map(tx => ({ ...tx, type: 'sent' })),
+        ...(receivedTx || []).map(tx => ({ ...tx, type: 'received' }))
+      ];
     }
-    // Если передан merchantId – дополнительно можно объединить с операциями из merchant_payments,
-    // если вы хотите их отдельно отображать
+
+    // Если передан merchantId – получаем операции мерчанта
     if (merchantId) {
       const { data: merchantPayments, error: merchantError } = await supabase
         .from('merchant_payments')
         .select('*')
         .eq('merchant_id', merchantId)
         .order('created_at', { ascending: false });
+
       if (merchantError) {
         return res.status(500).json({ success: false, error: 'Ошибка при получении транзакций мерчанта' });
       }
+
       allTransactions = [
         ...allTransactions,
-        ...(merchantPayments || []).map(tx => ({ ...tx, type: 'merchant_payment' }))
+        ...(merchantPayments || []).map(tx => ({
+          ...tx,
+          type: 'merchant_payment'  // используем единый тип для операций оплаты по QR
+        }))
       ];
     }
-    allTransactions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    res.json({ success: true, transactions: allTransactions });
-  } catch (err) {
-    console.error('[transactions] Ошибка:', err);
-    res.status(500).json({ success: false, error: 'Ошибка при получении истории' });
-  }
-});
 
     // Сортируем по времени (от новых к старым)
     allTransactions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -478,7 +481,7 @@ app.post('/payMerchantOneTime', async (req, res) => {
       .eq('user_id', userId);
 
     // 4) Зачисляем 95% мерчанту
-    const merchantAmount = amount;
+    const merchantAmount = amount * 0.95;
     const newMerchantBalance = parseFloat(merchData.balance) + merchantAmount;
     await supabase
       .from('merchants')
@@ -486,17 +489,16 @@ app.post('/payMerchantOneTime', async (req, res) => {
       .eq('merchant_id', merchantId);
 
     // 5) Записываем транзакцию у пользователя (type='merchant')
-    // Вместо типа 'merchant'
-await supabase
-  .from('transactions')
-  .insert([
-    {
-      from_user_id: userId,
-      to_user_id: 'MERCHANT:' + merchantId,
-      amount,
-      type: 'merchant_payment'
-    }
-  ]);
+    await supabase
+      .from('transactions')
+      .insert([
+        {
+          from_user_id: userId,
+          to_user_id: 'MERCHANT:' + merchantId,
+          amount,
+          type: 'merchant'
+        }
+      ]);
 
     // 6) Записываем в merchant_payments (или в ту же таблицу):
     await supabase
