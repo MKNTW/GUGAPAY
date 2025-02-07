@@ -92,7 +92,7 @@ body {
 /* Кнопка "Выход" */
 #logoutBtn {
   background-color: transparent;
-  border: 1px solid #000;
+  border: 2px solid #000;
   color: #000;
   font-size: 14px;
   font-weight: 600;
@@ -217,7 +217,7 @@ body {
   height: 70vh;
   background: #fff;
   padding: 15px;
-  border: 1px solid #000;
+  border: 2px solid #000;
   border-radius: 0;
   overflow: hidden;
   margin: auto;
@@ -239,7 +239,7 @@ body {
   width: 90%;
   max-width: 400px;
   margin: 100px auto;
-  border: 1px solid #000;
+  border: 2px solid #000;
   border-radius: 0;
   display: flex;
   flex-direction: column;
@@ -255,7 +255,7 @@ body {
   height: 30px;
   background-color: red;
   color: #fff;
-  border: 1px solid #000;
+  border: 2px solid #000;
   border-radius: 0;
   font-size: 16px;
   line-height: 30px;
@@ -317,7 +317,7 @@ body {
   width: 100%;
   padding: 8px;
   margin-top: 5px;
-  border: 1px solid #000;
+  border: 2px solid #000;
   border-radius: 0;
   font-size: 16px;
   text-align: left;
@@ -326,7 +326,7 @@ body {
 .modal-content button {
   margin-top: 15px;
   padding: 8px;
-  border: 1px solid #000;
+  border: 2px solid #000;
   cursor: pointer;
   border-radius: 0;
   transition: background-color 0.3s ease;
@@ -351,7 +351,7 @@ body {
 .history-group {
   width: 100%;
   padding: 15px;
-  border: 1px solid #000;
+  border: 2px solid #000;
   border-radius: 0;
   margin: 10px auto;
 }
@@ -360,13 +360,13 @@ body {
   font-weight: 600;
   margin-bottom: 10px;
   padding-bottom: 5px;
-  border-bottom: 1px solid #000;
+  border-bottom: 2px solid #000;
   text-align: center;
 }
 
 .history-item {
   padding: 5px 0;
-  border-bottom: 1px dashed #000;
+  border-bottom: 2px dashed #000;
   text-align: left;
 }
 
