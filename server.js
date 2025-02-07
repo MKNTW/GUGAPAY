@@ -16,7 +16,7 @@ if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
 // Подключение к Supabase
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-// Настройка CORS
+// Настройка CORS и парсинг JSON
 app.use(cors());
 app.use(express.json());
 
@@ -159,12 +159,11 @@ app.post('/update', async (req, res) => {
       return res.status(500).json({ success: false, error: 'не удалось обновить баланс' });
     }
 
-    // Обновим статистику halving (если нужно)
+    // Обновляем статистику halving
     const { data: halvingData } = await supabase
       .from('halving')
       .select('*')
       .limit(1);
-
     let totalMined = amount;
     if (halvingData && halvingData.length > 0) {
       totalMined = parseFloat(halvingData[0].total_mined || 0) + amount;
@@ -204,7 +203,6 @@ app.get('/user', async (req, res) => {
       return res.status(403).json({ success: false, error: 'пользователь заблокирован' });
     }
 
-    // Чтобы вернуть halvingStep
     let halvingStep = 0;
     const { data: halvingData } = await supabase
       .from('halving')
@@ -268,13 +266,12 @@ app.post('/transfer', async (req, res) => {
       .from('users')
       .update({ balance: newFromBalance.toFixed(5) })
       .eq('user_id', fromUserId);
-
     await supabase
       .from('users')
       .update({ balance: newToBalance.toFixed(5) })
       .eq('user_id', toUserId);
 
-    // Запись в транзакции
+    // Запись операции в таблицу transactions
     const { data: insertedData, error: insertError } = await supabase
       .from('transactions')
       .insert([
@@ -285,7 +282,6 @@ app.post('/transfer', async (req, res) => {
           type: 'sent'
         }
       ]);
-
     if (insertError) {
       console.error('Ошибка вставки транзакции:', insertError);
       return res.status(500).json({ success: false, error: 'Ошибка записи транзакции' });
@@ -330,7 +326,7 @@ app.get('/transactions', async (req, res) => {
     }
   
     if (merchantId) {
-      // Если необходимо объединить операции мерчанта (например, если записи остаются в merchant_payments)
+      // Если нужно объединить операции мерчанта (например, из merchant_payments)
       const { data: merchantPayments, error: merchantError } = await supabase
         .from('merchant_payments')
         .select('*')
@@ -339,7 +335,6 @@ app.get('/transactions', async (req, res) => {
       if (merchantError) {
         return res.status(500).json({ success: false, error: 'Ошибка при получении транзакций мерчанта' });
       }
-      // Приводим операции мерчанта к единому типу, чтобы клиент их распознавал
       allTransactions = [
         ...allTransactions,
         ...(merchantPayments || []).map(tx => ({ ...tx, type: 'merchant_payment' }))
@@ -365,8 +360,6 @@ app.post('/merchantTransfer', async (req, res) => {
     if (!merchantId || !toUserId || typeof amount !== 'number' || amount <= 0) {
       return res.status(400).json({ success: false, error: 'Неверные данные' });
     }
-
-    // Проверяем мерчанта
     const { data: merch } = await supabase
       .from('merchants')
       .select('*')
@@ -381,8 +374,6 @@ app.post('/merchantTransfer', async (req, res) => {
     if (parseFloat(merch.balance) < amount) {
       return res.status(400).json({ success: false, error: 'Недостаточно средств у мерчанта' });
     }
-
-    // Проверяем пользователя
     const { data: user } = await supabase
       .from('users')
       .select('*')
@@ -391,24 +382,18 @@ app.post('/merchantTransfer', async (req, res) => {
     if (!user) {
       return res.status(404).json({ success: false, error: 'пользователь не найден' });
     }
-
-    // Вычитаем у мерчанта
     const newMerchantBal = parseFloat(merch.balance) - amount;
     await supabase
       .from('merchants')
       .update({ balance: newMerchantBal.toFixed(5) })
       .eq('merchant_id', merchantId);
-
-    // Прибавляем пользователю
     const newUserBal = parseFloat(user.balance) + amount;
     await supabase
       .from('users')
       .update({ balance: newUserBal.toFixed(5) })
       .eq('user_id', toUserId);
-
-    // Запись в transactions (можно или merchant_payments)
-    // Например, в transactions помечаем merchant => user
-    await supabase
+    // Запись в таблицу transactions для перевода мерчанта -> пользователь
+    const { data: insertedData, error: insertError } = await supabase
       .from('transactions')
       .insert([
         {
@@ -418,7 +403,10 @@ app.post('/merchantTransfer', async (req, res) => {
           type: 'received'
         }
       ]);
-
+    if (insertError) {
+      console.error('Ошибка вставки транзакции (merchantTransfer):', insertError);
+      return res.status(500).json({ success: false, error: 'Ошибка записи транзакции' });
+    }
     console.log(`[merchantTransfer] merchant=${merchantId} -> user=${toUserId} amount=${amount}`);
     res.json({ success: true });
   } catch (err) {
@@ -428,8 +416,7 @@ app.post('/merchantTransfer', async (req, res) => {
 });
 
 /* ========================
-   10) POST /payMerchantOneTime 
-   (Пользователь оплачивает QR, 5% комиссия)
+   10) POST /payMerchantOneTime (Пользователь оплачивает QR, 5% комиссия)
 ======================== */
 app.post('/payMerchantOneTime', async (req, res) => {
   try {
@@ -437,8 +424,7 @@ app.post('/payMerchantOneTime', async (req, res) => {
     if (!userId || !merchantId || typeof amount !== 'number' || amount <= 0) {
       return res.status(400).json({ success: false, error: 'Неверные данные для оплаты' });
     }
-
-    // 1) Получаем пользователя (для списания 100%)
+    // 1) Получаем пользователя
     const { data: userData } = await supabase
       .from('users')
       .select('*')
@@ -453,8 +439,7 @@ app.post('/payMerchantOneTime', async (req, res) => {
     if (parseFloat(userData.balance) < amount) {
       return res.status(400).json({ success: false, error: 'Недостаточно средств у пользователя' });
     }
-
-    // 2) Получаем мерчанта (для зачисления 95%)
+    // 2) Получаем мерчанта
     const { data: merchData } = await supabase
       .from('merchants')
       .select('*')
@@ -466,14 +451,12 @@ app.post('/payMerchantOneTime', async (req, res) => {
     if (merchData.blocked === 1) {
       return res.status(403).json({ success: false, error: 'Мерчант заблокирован' });
     }
-
     // 3) Списываем 100% у пользователя
     const newUserBalance = parseFloat(userData.balance) - amount;
     await supabase
       .from('users')
       .update({ balance: newUserBalance.toFixed(5) })
       .eq('user_id', userId);
-
     // 4) Зачисляем 95% мерчанту
     const merchantAmount = amount * 0.95;
     const newMerchantBalance = parseFloat(merchData.balance) + merchantAmount;
@@ -481,20 +464,22 @@ app.post('/payMerchantOneTime', async (req, res) => {
       .from('merchants')
       .update({ balance: newMerchantBalance.toFixed(5) })
       .eq('merchant_id', merchantId);
-
-    // 5) Записываем транзакцию у пользователя (type='merchant')
-    await supabase
+    // 5) Записываем транзакцию в таблицу transactions с типом "merchant_payment"
+    const { data: insertedData, error: insertError } = await supabase
       .from('transactions')
       .insert([
         {
           from_user_id: userId,
           to_user_id: 'MERCHANT:' + merchantId,
           amount,
-          type: 'merchant'
+          type: 'merchant_payment'
         }
       ]);
-
-    // 6) Записываем в merchant_payments (или в ту же таблицу):
+    if (insertError) {
+      console.error('Ошибка вставки транзакции для мерчанта:', insertError);
+      return res.status(500).json({ success: false, error: 'Ошибка записи транзакции' });
+    }
+    // 6) Записываем в merchant_payments
     await supabase
       .from('merchant_payments')
       .insert([
@@ -505,10 +490,6 @@ app.post('/payMerchantOneTime', async (req, res) => {
           purpose
         }
       ]);
-
-    // (Опционально) Можно пометить QR как использованный (одноразовый)
-    // ...
-
     console.log(`[payMerchantOneTime] user=${userId} => merchant=${merchantId}, amount=${amount} -> merchantAmount=${merchantAmount}`);
     res.json({ success: true });
   } catch (err) {
