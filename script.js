@@ -368,8 +368,8 @@ function createMerchantQR(amount, purpose) {
     container.appendChild(qrElem);
     new QRCode(qrElem, {
       text: qrData,
-      width: 350,
-      height: 350,
+      width: 250,
+      height: 250,
       correctLevel: QRCode.CorrectLevel.L
     });
   } else {
