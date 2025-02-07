@@ -276,7 +276,7 @@ function openMerchantUI() {
       <button id="merchantTransferBtn">Перевести</button>
       <button id="merchantLogoutBtn">Выйти</button>
     </div>
-    <div id="merchantQRContainer" style="margin-top:20px;"></div>
+    <div id="merchantQRContainer" style="margin-top:120px;"></div>
   `;
   document.body.appendChild(merchDiv);
 
@@ -368,8 +368,8 @@ function createMerchantQR(amount, purpose) {
     container.appendChild(qrElem);
     new QRCode(qrElem, {
       text: qrData,
-      width: 128,
-      height: 128,
+      width: 350,
+      height: 350,
       correctLevel: QRCode.CorrectLevel.L
     });
   } else {
@@ -435,7 +435,7 @@ function openOperationsModal() {
         <button id="opTabTransfer" class="op-tab-btn">Перевод</button>
         <button id="opTabPay" class="op-tab-btn">Оплата по QR</button>
       </div>
-      <div id="operationsContent" style="margin-top:15px;width:100%;"></div>
+      <div id="operationsContent" style="margin-top:40px;width:100%;"></div>
     </div>
   `);
   openModal("operationsModal");
@@ -492,9 +492,8 @@ function openOperationsModal() {
   function showPayTab() {
     // Центрируем блок камеры по середине модального окна
     operationsContent.innerHTML = `
-      <div style="width:90vw; height:70vh; margin:auto; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-        <video id="opPayVideo" muted playsinline style="width:100%; max-width:600px; border:none;"></video>
-        <p style="margin-top:10px;">Наведите камеру на QR</p>
+      <div style="height:70vh; margin:auto; flex-direction:column; align-items:center; justify-content:center;">
+        <video id="opPayVideo" muted playsinline style="width:100%; max-width:600px; border:none;"></video>  
       </div>
     `;
     const videoEl = document.getElementById("opPayVideo");
@@ -834,6 +833,8 @@ function displayTransactionHistory(transactions) {
     container.innerHTML = "<li>Нет операций</li>";
     return;
   }
+
+  // Группируем записи по датам
   const groups = {};
   transactions.forEach(tx => {
     const d = new Date(tx.created_at);
@@ -841,11 +842,15 @@ function displayTransactionHistory(transactions) {
     if (!groups[label]) groups[label] = [];
     groups[label].push(tx);
   });
+
+  // Сортируем даты (от более новой к более старой)
   const sortedDates = Object.keys(groups).sort((a, b) => {
     const dateA = new Date(groups[a][0].created_at);
     const dateB = new Date(groups[b][0].created_at);
     return dateB - dateA;
   });
+
+  // Рендерим каждую группу (день)
   sortedDates.forEach(dateStr => {
     const groupDiv = document.createElement("div");
     groupDiv.className = "history-group";
@@ -857,37 +862,44 @@ function displayTransactionHistory(transactions) {
     groups[dateStr].forEach(tx => {
       const op = document.createElement("div");
       op.className = "history-item";
-      let opHTML = "";
-      const timeStr = new Date(tx.created_at).toLocaleTimeString("ru-RU");
 
-      if (tx.type === "sent") {
-        opHTML = `
-          <div>Исходящая операция ⤴</div>
-          <div>Кому: ${tx.to_user_id}</div>
-          <div>Сумма: ₲ ${formatBalance(tx.amount)}</div>
-          <div>Время операции: ${timeStr}</div>
-        `;
-      } else if (tx.type === "received") {
-        opHTML = `
-          <div>Входящая операция ⤵</div>
-          <div>От кого: ${tx.from_user_id}</div>
-          <div>Сумма: ₲ ${formatBalance(tx.amount)}</div>
-          <div>Время операции: ${timeStr}</div>
-        `;
-      } else if (tx.type === "merchant_payment") {
+      const timeStr = new Date(tx.created_at).toLocaleTimeString("ru-RU");
+      let opHTML = "";
+
+      // Логика определения, исходящая ли операция или входящая для текущего пользователя
+      if (tx.type === "merchant_payment") {
+        // Оплата мерчанту (или запись с merchant_payments)
         opHTML = `
           <div>Оплата по QR коду 💳</div>
           <div>Мерчант: ${tx.merchant_id || (tx.to_user_id && tx.to_user_id.replace('MERCHANT:', '')) || '???'}</div>
           <div>Сумма: ₲ ${formatBalance(tx.amount)}</div>
           <div>Время операции: ${timeStr}</div>
         `;
-      } else {
+      } else if (tx.from_user_id === currentUserId) {
+        // Для ТЕКУЩЕГО пользователя это исходящая операция
         opHTML = `
-          <div>Неизвестная операция</div>
+          <div>Исходящая операция ⤴</div>
+          <div>Кому: ${tx.to_user_id}</div>
+          <div>Сумма: ₲ ${formatBalance(tx.amount)}</div>
+          <div>Время операции: ${timeStr}</div>
+        `;
+      } else if (tx.to_user_id === currentUserId) {
+        // Для ТЕКУЩЕГО пользователя это входящая операция
+        opHTML = `
+          <div>Входящая операция ⤵</div>
+          <div>От кого: ${tx.from_user_id}</div>
+          <div>Сумма: ₲ ${formatBalance(tx.amount)}</div>
+          <div>Время операции: ${timeStr}</div>
+        `;
+      } else {
+        // На случай, если операции вообще не связаны с текущим пользователем (редко)
+        opHTML = `
+          <div>Операция</div>
           <div>Сумма: ₲ ${formatBalance(tx.amount || 0)}</div>
           <div>Время операции: ${timeStr}</div>
         `;
       }
+
       op.innerHTML = opHTML;
       groupDiv.appendChild(op);
     });
@@ -911,7 +923,8 @@ function getDateLabel(dateObj) {
 function openExchangeModal() {
   createModal("exchangeModal", `
     <h3>Обмен</h3>
-    <div style="display:flex;flex-direction:column;align-items:center;">
+    <div style="display:flex;flex-direction:column;align-items:center;margin-top: auto;
+    margin-bottom: auto;">
       <p id="exchangeRateInfo"></p>
       <p id="rubBalanceInfo"></p>
       <p id="halvingLevel"></p>
