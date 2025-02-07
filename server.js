@@ -275,16 +275,21 @@ app.post('/transfer', async (req, res) => {
       .eq('user_id', toUserId);
 
     // Запись в транзакции
-    await supabase
+    const { data: insertedData, error: insertError } = await supabase
       .from('transactions')
       .insert([
         { 
           from_user_id: fromUserId, 
           to_user_id: toUserId, 
           amount, 
-          type: 'sent'  // можно поставить 'sent', но обычно 'type' будет уже при выборке
+          type: 'sent'
         }
       ]);
+
+    if (insertError) {
+      console.error('Ошибка вставки транзакции:', insertError);
+      return res.status(500).json({ success: false, error: 'Ошибка записи транзакции' });
+    }
 
     console.log(`[transfer] from=${fromUserId} to=${toUserId} amount=${amount}`);
     res.json({ success: true, fromBalance: newFromBalance, toBalance: newToBalance });
