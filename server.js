@@ -572,6 +572,7 @@ app.post('/exchange', async (req, res) => {
     if (!userId || !direction || typeof amount !== 'number' || amount <= 0) {
       return res.status(400).json({ success: false, error: 'Неверные данные' });
     }
+
     // Получаем данные пользователя (rub_balance, balance и т.п.)
     const { data: user, error: userError } = await supabase
       .from('users')
@@ -594,12 +595,15 @@ app.post('/exchange', async (req, res) => {
     if (halvingData && halvingData.length > 0) {
       halvingStep = halvingData[0].halving_step;
     }
+
     // Курс: 1₲ = (1 + halvingStep * 0.02) ₽
     const rubMultiplier = 1 + halvingStep * 0.02;
 
     const currentRub = parseFloat(user.rub_balance || 0);
     const currentCoin = parseFloat(user.balance || 0);
 
+    let newRubBalance, newCoinBalance;
+    let exchangeRate = rubMultiplier;
     if (direction === 'rub_to_coin') {
       // Проверяем, хватает ли рублей
       if (currentRub < amount) {
@@ -607,24 +611,17 @@ app.post('/exchange', async (req, res) => {
       }
       // Сколько монет получим
       const coinAmount = amount / rubMultiplier;
-      const newRubBalance = currentRub - amount;
-      const newCoinBalance = currentCoin + coinAmount;
+      newRubBalance = currentRub - amount;
+      newCoinBalance = currentCoin + coinAmount;
 
-      const { error: updateErr } = await supabase
+      // Обновляем баланс
+      await supabase
         .from('users')
         .update({
           rub_balance: newRubBalance.toFixed(2),
           balance: newCoinBalance.toFixed(5)
         })
         .eq('user_id', userId);
-      if (updateErr) {
-        return res.status(500).json({ success: false, error: 'Ошибка обновления баланса' });
-      }
-      return res.json({
-        success: true,
-        newRubBalance: newRubBalance.toFixed(2),
-        newCoinBalance: newCoinBalance.toFixed(5)
-      });
     } else if (direction === 'coin_to_rub') {
       // Проверяем, хватает ли монет
       if (currentCoin < amount) {
@@ -632,27 +629,43 @@ app.post('/exchange', async (req, res) => {
       }
       // Сколько рублей получим
       const rubAmount = amount * rubMultiplier;
-      const newCoinBalance = currentCoin - amount;
-      const newRubBalance = currentRub + rubAmount;
+      newCoinBalance = currentCoin - amount;
+      newRubBalance = currentRub + rubAmount;
 
-      const { error: updateErr } = await supabase
+      // Обновляем баланс
+      await supabase
         .from('users')
         .update({
           rub_balance: newRubBalance.toFixed(2),
           balance: newCoinBalance.toFixed(5)
         })
         .eq('user_id', userId);
-      if (updateErr) {
-        return res.status(500).json({ success: false, error: 'Ошибка обновления баланса' });
-      }
-      return res.json({
-        success: true,
-        newRubBalance: newRubBalance.toFixed(2),
-        newCoinBalance: newCoinBalance.toFixed(5)
-      });
     } else {
       return res.status(400).json({ success: false, error: 'Неверное направление обмена' });
     }
+
+    // Запись операции в exchange_transactions
+    const { error: insertError } = await supabase
+      .from('exchange_transactions')
+      .insert([{
+        user_id: userId,
+        direction,
+        amount,
+        new_rub_balance: newRubBalance.toFixed(2),
+        new_coin_balance: newCoinBalance.toFixed(5),
+        created_at: new Date().toISOString(),
+        exchange_rate: exchangeRate
+      }]);
+    if (insertError) {
+      console.error('Ошибка записи в exchange_transactions:', insertError);
+      return res.status(500).json({ success: false, error: 'Ошибка записи транзакции' });
+    }
+
+    return res.json({
+      success: true,
+      newRubBalance: newRubBalance.toFixed(2),
+      newCoinBalance: newCoinBalance.toFixed(5)
+    });
   } catch (err) {
     console.error('[exchange] Ошибка:', err);
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
