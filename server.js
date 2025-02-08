@@ -575,24 +575,6 @@ app.post('/exchange', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Неверные данные' });
     }
 
-    // Задаем максимальные значения для полей в таблице:
-const MAX_NUMERIC_RUB = 999999999.99999;     // для NUMERIC(12,2) или другого типа, как вам нужно
-const MAX_NUMERIC_COIN = 999999999.99999;    // для NUMERIC(12,5)
-
-if (newRubBalance > MAX_NUMERIC_RUB) {
-  return res.status(400).json({ 
-    success: false, 
-    error: 'Новый рублевый баланс превышает максимально допустимое значение'
-  });
-}
-if (newCoinBalance > MAX_NUMERIC_COIN) {
-  return res.status(400).json({ 
-    success: false, 
-    error: 'Новый монетный баланс превышает максимально допустимое значение'
-  });
-}
-
-
     // Получаем данные пользователя
     const { data: user, error: userError } = await supabase
       .from('users')
@@ -636,8 +618,8 @@ if (newCoinBalance > MAX_NUMERIC_COIN) {
     }
 
     // Задаем максимальные значения для полей в таблице:
-    const MAX_NUMERIC_RUB = 99999999.99;     // для NUMERIC(10,2)
-    const MAX_NUMERIC_COIN = 99999.99999;      // для NUMERIC(10,5)
+    const MAX_NUMERIC_RUB = 999999999.99999;     // для NUMERIC(10,2)
+    const MAX_NUMERIC_COIN = 999999999.99999;      // для NUMERIC(10,5)
 
     if (newRubBalance > MAX_NUMERIC_RUB) {
       return res.status(400).json({ 
