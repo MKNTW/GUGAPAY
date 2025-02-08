@@ -574,6 +574,13 @@ app.post('/exchange', async (req, res) => {
     if (!userId || !direction || typeof amount !== 'number' || amount <= 0) {
       return res.status(400).json({ success: false, error: 'Неверные данные' });
     }
+
+    // Ограничим сумму обмена (например, не более 99,999,999.99)
+    const MAX_RUB_AMOUNT = 99999999.99;
+    if (amount > MAX_RUB_AMOUNT) {
+      return res.status(400).json({ success: false, error: 'Сумма обмена слишком большая' });
+    }
+
     // Получаем данные пользователя
     const { data: user, error: userError } = await supabase
       .from('users')
@@ -614,6 +621,16 @@ app.post('/exchange', async (req, res) => {
       newRubBalance = parseFloat((parseFloat(user.rub_balance || 0) + rubAmount).toFixed(2));
     } else {
       return res.status(400).json({ success: false, error: 'Неверное направление обмена' });
+    }
+
+    // Задаем максимальные значения для полей в таблице:
+    const MAX_NUMERIC_RUB = 99999999.99;      // для NUMERIC(10,2)
+    const MAX_NUMERIC_COIN = 99999999.99999;    // для NUMERIC(10,5)
+    if (newRubBalance > MAX_NUMERIC_RUB || newCoinBalance > MAX_NUMERIC_COIN) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Полученные значения балансов превышают максимально допустимые пределы' 
+      });
     }
 
     // Обновляем баланс пользователя
