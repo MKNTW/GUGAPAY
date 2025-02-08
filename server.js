@@ -563,16 +563,18 @@ app.get('/halvingInfo', async (req, res) => {
   }
 });
 
-/* ========================
-   13) POST /exchange (RUB ↔ COIN)
-======================== */
+/* ================================
+   3. ОБМЕН (₽ ⇄ ₲)
+================================
+   Здесь после успешного обмена записываем операцию в таблицу exchange_transactions
+================================ */
 app.post('/exchange', async (req, res) => {
   try {
     const { userId, direction, amount } = req.body;
     if (!userId || !direction || typeof amount !== 'number' || amount <= 0) {
       return res.status(400).json({ success: false, error: 'Неверные данные' });
     }
-    // Получаем данные пользователя (rub_balance, balance и т.п.)
+    // Получаем данные пользователя
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('*')
@@ -581,11 +583,8 @@ app.post('/exchange', async (req, res) => {
     if (userError || !user) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
-    if (user.blocked === 1) {
-      return res.status(403).json({ success: false, error: 'Пользователь заблокирован' });
-    }
 
-    // Получаем halvingStep
+    // Получаем уровень halving (для расчёта курса)
     let halvingStep = 0;
     const { data: halvingData } = await supabase
       .from('halving')
@@ -594,93 +593,82 @@ app.post('/exchange', async (req, res) => {
     if (halvingData && halvingData.length > 0) {
       halvingStep = halvingData[0].halving_step;
     }
-    // Курс: 1₲ = (1 + halvingStep * 0.02) ₽
     const rubMultiplier = 1 + halvingStep * 0.02;
 
-    const currentRub = parseFloat(user.rub_balance || 0);
-    const currentCoin = parseFloat(user.balance || 0);
-
+    let newRubBalance, newCoinBalance;
     if (direction === 'rub_to_coin') {
-      // Проверяем, хватает ли рублей
-      if (currentRub < amount) {
-        return res.status(400).json({ success: false, error: 'Недостаточно рублей' });
+      const userRubBalance = parseFloat(user.rub_balance || 0);
+      if (userRubBalance < amount) {
+        return res.status(400).json({ success: false, error: 'Недостаточно рублёвого баланса' });
       }
-      // Сколько монет получим
       const coinAmount = amount / rubMultiplier;
-      const newRubBalance = currentRub - amount;
-      const newCoinBalance = currentCoin + coinAmount;
-
-      const { error: updateErr } = await supabase
-        .from('users')
-        .update({
-          rub_balance: newRubBalance.toFixed(2),
-          balance: newCoinBalance.toFixed(5)
-        })
-        .eq('user_id', userId);
-      if (updateErr) {
-        return res.status(500).json({ success: false, error: 'Ошибка обновления баланса' });
-      }
-      return res.json({
-        success: true,
-        newRubBalance: newRubBalance.toFixed(2),
-        newCoinBalance: newCoinBalance.toFixed(5)
-      });
+      newRubBalance = (userRubBalance - amount).toFixed(2);
+      newCoinBalance = (parseFloat(user.balance) + coinAmount).toFixed(5);
     } else if (direction === 'coin_to_rub') {
-      // Проверяем, хватает ли монет
-      if (currentCoin < amount) {
+      const userCoinBalance = parseFloat(user.balance || 0);
+      if (userCoinBalance < amount) {
         return res.status(400).json({ success: false, error: 'Недостаточно монет' });
       }
-      // Сколько рублей получим
       const rubAmount = amount * rubMultiplier;
-      const newCoinBalance = currentCoin - amount;
-      const newRubBalance = currentRub + rubAmount;
-
-      const { error: updateErr } = await supabase
-        .from('users')
-        .update({
-          rub_balance: newRubBalance.toFixed(2),
-          balance: newCoinBalance.toFixed(5)
-        })
-        .eq('user_id', userId);
-      if (updateErr) {
-        return res.status(500).json({ success: false, error: 'Ошибка обновления баланса' });
-      }
-      return res.json({
-        success: true,
-        newRubBalance: newRubBalance.toFixed(2),
-        newCoinBalance: newCoinBalance.toFixed(5)
-      });
+      newCoinBalance = (userCoinBalance - amount).toFixed(5);
+      newRubBalance = (parseFloat(user.rub_balance || 0) + rubAmount).toFixed(2);
     } else {
       return res.status(400).json({ success: false, error: 'Неверное направление обмена' });
     }
+
+    // Обновляем баланс пользователя
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ rub_balance: newRubBalance, balance: newCoinBalance })
+      .eq('user_id', userId);
+    if (updateError) {
+      return res.status(500).json({ success: false, error: 'Не удалось обновить баланс' });
+    }
+
+    // Записываем операцию обмена в таблицу exchange_transactions
+    const { error: insertError } = await supabase
+      .from('exchange_transactions')
+      .insert([{
+        user_id: userId,
+        direction,
+        amount,
+        new_rub_balance: newRubBalance,
+        new_coin_balance: newCoinBalance
+      }]);
+    if (insertError) {
+      console.error('Ошибка записи exchange_transactions:', insertError);
+      return res.status(500).json({ success: false, error: 'Ошибка записи транзакции обмена' });
+    }
+
+    console.log(`[Exchange] Пользователь ${userId}: направление ${direction}, сумма ${amount}`);
+    res.json({ success: true, newRubBalance, newCoinBalance });
   } catch (err) {
     console.error('[exchange] Ошибка:', err);
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
   }
 });
 
-/* ========================
-   14) POST /cloudtips/callback
-   - Принимает уведомление об успешной оплате
-   - В comment пользователь сам указал "123456" (userId)
-======================== */
-app.post('/cloudtips/callback', async (req, res) => {
+/* ================================
+   4. CloudTips: ПОЛУЧЕНИЕ ОПЛАТЫ (ТОП-АП)
+================================
+   После успешной оплаты через виджет CloudTips клиент отправляет invoiceid и сумму,
+   где invoiceid имеет формат "userId_timestamp".
+   Обновляем рублевый баланс и записываем операцию в таблицу cloudtips_transactions.
+================================ */
+app.post('/cloudtips/complete', async (req, res) => {
   try {
-    const { orderId, status, amount, comment } = req.body;
-    // Проверка статуса
-    if (status !== 'success') {
-      return res.status(400).json({ success: false, error: 'Платеж неуспешен' });
+    const { invoiceid, amount } = req.body;
+    if (!invoiceid || typeof amount !== 'number' || amount <= 0) {
+      return res.status(400).json({ success: false, error: 'Неверные параметры' });
     }
-    // Пытаемся извлечь userId из комментария
-    // Например, пользователь мог просто ввести "123456" или "Мой userId: 123456"
-    const userIdRegex = /(\d+)/; // Ищем любое число
-    const match = comment?.match(userIdRegex);
-    if (!match) {
-      return res.status(400).json({ success: false, error: 'userId не найден в комментарии' });
+    // Ожидаемый формат invoiceid: "userId_timestamp"
+    const parts = invoiceid.split('_');
+    if (parts.length < 2) {
+      return res.status(400).json({ success: false, error: 'Неверный формат invoiceid' });
     }
-    const userId = match[1];
+    const userId = parts[0]; // Из invoiceid извлекаем userId
 
-    // Ищем пользователя
+    // Находим пользователя
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('*')
@@ -689,39 +677,97 @@ app.post('/cloudtips/callback', async (req, res) => {
     if (userError || !user) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
-    if (user.blocked === 1) {
-      return res.status(403).json({ success: false, error: 'Пользователь заблокирован' });
-    }
 
-    // Обновляем rub_balance
     const currentRubBalance = parseFloat(user.rub_balance || 0);
-    const newRubBalance = (currentRubBalance + parseFloat(amount)).toFixed(2);
+    const newRubBalance = (currentRubBalance + amount).toFixed(2);
 
-    const { error: updateErr } = await supabase
+    // Обновляем рублевый баланс пользователя
+    const { error: updateError } = await supabase
       .from('users')
       .update({ rub_balance: newRubBalance })
       .eq('user_id', userId);
-    if (updateErr) {
+    if (updateError) {
       return res.status(500).json({ success: false, error: 'Не удалось обновить баланс' });
     }
 
-    // Запись в cloudtips_transactions
-    const { error: insertErr } = await supabase
+    // Записываем транзакцию пополнения в таблицу cloudtips_transactions
+    const { error: insertError } = await supabase
       .from('cloudtips_transactions')
-      .insert([{
-        order_id: orderId,
-        user_id: userId,
-        rub_amount: amount
-      }]);
-    if (insertErr) {
-      console.error('Ошибка записи cloudtips_transactions:', insertErr);
-      return res.status(500).json({ success: false, error: 'Ошибка записи транзакции' });
+      .insert([{ order_id: invoiceid, user_id: userId, rub_amount: amount }]);
+    if (insertError) {
+      console.error('Ошибка записи cloudtips_transactions:', insertError);
+      return res.status(500).json({ success: false, error: 'Ошибка записи транзакции пополнения' });
     }
 
-    console.log(`[CloudtipsCallback] user=${userId}, amount=${amount}, orderId=${orderId}`);
+    console.log(`[CloudTips] Пользователь ${userId} пополнен на ${amount} ₽. Новый баланс: ${newRubBalance}`);
     res.json({ success: true, newRubBalance });
   } catch (err) {
-    console.error('[cloudtips/callback] Ошибка:', err);
+    console.error('[cloudtips/complete] Ошибка:', err);
+    res.status(500).json({ success: false, error: 'Ошибка сервера' });
+  }
+});
+
+/* ================================
+   5. RUB PURCHASE (Операции покупок/продаж рублей)
+================================
+   Этот endpoint фиксирует операции покупки/продажи рублей (например, если пользователь
+   использует рубли для оплаты товаров или получает рубли при продаже).
+   В зависимости от operation_type ("purchase" – списание, "sale" – зачисление) обновляем rub_balance.
+================================ */
+app.post('/rub_purchase', async (req, res) => {
+  try {
+    const { userId, operation_type, amount } = req.body;
+    // operation_type ожидается как "purchase" (списание) или "sale" (зачисление)
+    if (!userId || !operation_type || typeof amount !== 'number' || amount <= 0) {
+      return res.status(400).json({ success: false, error: 'Неверные параметры' });
+    }
+    // Получаем пользователя
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    if (userError || !user) {
+      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+    }
+
+    let currentRubBalance = parseFloat(user.rub_balance || 0);
+    let newRubBalance;
+    if (operation_type === 'purchase') {
+      // Покупка: списываем рубли
+      if (currentRubBalance < amount) {
+        return res.status(400).json({ success: false, error: 'Недостаточно рублёвого баланса' });
+      }
+      newRubBalance = (currentRubBalance - amount).toFixed(2);
+    } else if (operation_type === 'sale') {
+      // Продажа: зачисляем рубли
+      newRubBalance = (currentRubBalance + amount).toFixed(2);
+    } else {
+      return res.status(400).json({ success: false, error: 'Неверный тип операции' });
+    }
+
+    // Обновляем rub_balance пользователя
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ rub_balance: newRubBalance })
+      .eq('user_id', userId);
+    if (updateError) {
+      return res.status(500).json({ success: false, error: 'Не удалось обновить баланс' });
+    }
+
+    // Записываем операцию в таблицу rub_purchases
+    const { error: insertError } = await supabase
+      .from('rub_purchases')
+      .insert([{ user_id: userId, operation_type, amount }]);
+    if (insertError) {
+      console.error('Ошибка записи rub_purchases:', insertError);
+      return res.status(500).json({ success: false, error: 'Ошибка записи транзакции рублевых операций' });
+    }
+
+    console.log(`[Rub Purchase] Пользователь ${userId}: операция ${operation_type}, сумма ${amount}. Новый рублевый баланс: ${newRubBalance}`);
+    res.json({ success: true, newRubBalance });
+  } catch (err) {
+    console.error('[rub_purchase] Ошибка:', err);
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
   }
 });
