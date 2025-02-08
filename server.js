@@ -316,55 +316,48 @@ app.post('/transfer', async (req, res) => {
 ======================== */
 app.get('/transactions', async (req, res) => {
   try {
-    const { userId, merchantId } = req.query;
-    if (!userId && !merchantId) {
-      return res.status(400).json({ success: false, error: 'userId или merchantId обязателен' });
+    const { userId } = req.query;
+    if (!userId) {
+      return res.status(400).json({ success: false, error: 'userId обязателен' });
     }
 
-    let allTransactions = [];
-    if (userId) {
-      // Получаем операции из таблицы transactions (where from_user_id or to_user_id)
-      const { data: sentTx, error: sentError } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('from_user_id', userId)
-        .order('created_at', { ascending: false });
-      const { data: receivedTx, error: receivedError } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('to_user_id', userId)
-        .order('created_at', { ascending: false });
-  
-      if (sentError || receivedError) {
-        return res.status(500).json({ success: false, error: 'Ошибка при получении транзакций пользователя' });
-      }
-  
-      allTransactions = [...(sentTx || []), ...(receivedTx || [])];
+    // Получаем стандартные транзакции
+    const { data: standardTx, error: standardError } = await supabase
+      .from('transactions')
+      .select('*')
+      .or(`from_user_id.eq.${userId},to_user_id.eq.${userId}`)
+      .order('created_at', { ascending: false });
+
+    if (standardError) {
+      console.error('Ошибка получения стандартных транзакций:', standardError);
+      return res.status(500).json({ success: false, error: 'Ошибка получения транзакций' });
     }
-  
-    if (merchantId) {
-      // Если нужно объединить операции мерчанта (merchant_payments)
-      const { data: merchantPayments, error: merchantError } = await supabase
-        .from('merchant_payments')
-        .select('*')
-        .eq('merchant_id', merchantId)
-        .order('created_at', { ascending: false });
-      if (merchantError) {
-        return res.status(500).json({ success: false, error: 'Ошибка при получении транзакций мерчанта' });
-      }
-      const mappedMerchantTx = (merchantPayments || []).map(tx => ({ ...tx, type: 'merchant_payment' }));
-      allTransactions = [ ...allTransactions, ...mappedMerchantTx ];
+
+    // Получаем операции обмена
+    const { data: exchangeTx, error: exchangeError } = await supabase
+      .from('exchange_transactions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (exchangeError) {
+      console.error('Ошибка получения операций обмена:', exchangeError);
+      return res.status(500).json({ success: false, error: 'Ошибка получения операций обмена' });
     }
-  
-    // Сортируем все транзакции по времени (от новой к старой)
+
+    // Объединяем все транзакции в один массив
+    const allTransactions = [...(standardTx || []), ...(exchangeTx || [])];
+
+    // Сортируем все транзакции по времени (от новых к старым)
     allTransactions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-  
+
     res.json({ success: true, transactions: allTransactions });
   } catch (err) {
-    console.error('[transactions] Ошибка:', err);
-    res.status(500).json({ success: false, error: 'Ошибка при получении истории' });
+    console.error('Ошибка в endpoint /transactions:', err);
+    res.status(500).json({ success: false, error: 'Ошибка сервера' });
   }
 });
+
 
 /* ========================
    9) POST /merchantTransfer (мерчант → пользователь)
