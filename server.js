@@ -672,6 +672,28 @@ app.post('/exchange', async (req, res) => {
   }
 });
 
+fetch(`${API_URL}/exchange`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    userId: currentUserId,
+    direction: "rub_to_coin",
+    amount: amount
+  })
+})
+.then(res => res.json())
+.then(data => {
+  console.log("Ответ от сервера:", data);
+  if (!data.success) {
+    alert("Ошибка обмена: " + data.error);
+  } else {
+    alert("Обмен проведён успешно!");
+    fetchUserData();
+  }
+})
+.catch(err => {
+  console.error("Ошибка запроса:", err);
+});
 
 
 /* ================================
