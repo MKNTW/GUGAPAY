@@ -624,12 +624,19 @@ app.post('/exchange', async (req, res) => {
     }
 
     // Задаем максимальные значения для полей в таблице:
-    const MAX_NUMERIC_RUB = 99999999.99;      // для NUMERIC(10,2)
-    const MAX_NUMERIC_COIN = 99999999.99999;    // для NUMERIC(10,5)
-    if (newRubBalance > MAX_NUMERIC_RUB || newCoinBalance > MAX_NUMERIC_COIN) {
+    const MAX_NUMERIC_RUB = 99999999.99;     // для NUMERIC(10,2)
+    const MAX_NUMERIC_COIN = 99999.99999;      // для NUMERIC(10,5)
+
+    if (newRubBalance > MAX_NUMERIC_RUB) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Полученные значения балансов превышают максимально допустимые пределы' 
+        error: 'Новый рублевый баланс превышает максимально допустимое значение'
+      });
+    }
+    if (newCoinBalance > MAX_NUMERIC_COIN) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Новый монетный баланс превышает максимально допустимое значение'
       });
     }
 
@@ -664,6 +671,7 @@ app.post('/exchange', async (req, res) => {
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
   }
 });
+
 
 
 /* ================================
