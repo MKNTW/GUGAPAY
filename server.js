@@ -575,11 +575,23 @@ app.post('/exchange', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Неверные данные' });
     }
 
-    // Ограничим сумму обмена (например, не более 99,999,999.99)
-    const MAX_RUB_AMOUNT = 99999999.99;
-    if (amount > MAX_RUB_AMOUNT) {
-      return res.status(400).json({ success: false, error: 'Сумма обмена слишком большая' });
-    }
+    // Задаем максимальные значения для полей в таблице:
+const MAX_NUMERIC_RUB = 999999999.99999;     // для NUMERIC(12,2) или другого типа, как вам нужно
+const MAX_NUMERIC_COIN = 999999999.99999;    // для NUMERIC(12,5)
+
+if (newRubBalance > MAX_NUMERIC_RUB) {
+  return res.status(400).json({ 
+    success: false, 
+    error: 'Новый рублевый баланс превышает максимально допустимое значение'
+  });
+}
+if (newCoinBalance > MAX_NUMERIC_COIN) {
+  return res.status(400).json({ 
+    success: false, 
+    error: 'Новый монетный баланс превышает максимально допустимое значение'
+  });
+}
+
 
     // Получаем данные пользователя
     const { data: user, error: userError } = await supabase
