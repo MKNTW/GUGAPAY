@@ -356,9 +356,28 @@ app.get('/transactions', async (req, res) => {
       allTransactions = [ ...allTransactions, ...mappedMerchantTx ];
     }
   
-    // Сортируем все транзакции по времени (от новой к старой)
+    // Получаем операции обмена валюты (тип exchange)
+    const { data: exchangeTx, error: exchangeError } = await supabase
+      .from('exchange_transactions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (exchangeError) {
+      console.error('Ошибка при получении операций обмена:', exchangeError);
+    } else {
+      const mappedExchangeTx = (exchangeTx || []).map(tx => ({
+        ...tx,
+        type: 'exchange', // Помечаем транзакции как обмен
+      }));
+      allTransactions = [...allTransactions, ...mappedExchangeTx];
+    }
+
+    // Сортируем все транзакции по времени (от более новой к более старой)
     allTransactions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-  
+
+    console.log('Transactions:', allTransactions); // Логируем транзакции
+
     res.json({ success: true, transactions: allTransactions });
   } catch (err) {
     console.error('[transactions] Ошибка:', err);
