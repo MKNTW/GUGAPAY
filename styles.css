@@ -75,7 +75,7 @@ body {
   display: inline-block;
   width: 0.82em;
   height: 1em; /* тонкая настройка под конкретный шрифт */
-  margin-bottom: -0.1em; /* выравнивание по базовой линии */
+  margin-bottom: -0.09em; /* выравнивание по базовой линии */
   background-image: url('image.png');
   background-size: contain;
   background-repeat: no-repeat;
