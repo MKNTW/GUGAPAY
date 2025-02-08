@@ -602,16 +602,16 @@ app.post('/exchange', async (req, res) => {
         return res.status(400).json({ success: false, error: 'Недостаточно рублёвого баланса' });
       }
       const coinAmount = amount / rubMultiplier;
-      newRubBalance = (userRubBalance - amount).toFixed(2);
-      newCoinBalance = (parseFloat(user.balance) + coinAmount).toFixed(5);
+      newRubBalance = parseFloat((userRubBalance - amount).toFixed(2));
+      newCoinBalance = parseFloat((parseFloat(user.balance) + coinAmount).toFixed(5));
     } else if (direction === 'coin_to_rub') {
       const userCoinBalance = parseFloat(user.balance || 0);
       if (userCoinBalance < amount) {
         return res.status(400).json({ success: false, error: 'Недостаточно монет' });
       }
       const rubAmount = amount * rubMultiplier;
-      newCoinBalance = (userCoinBalance - amount).toFixed(5);
-      newRubBalance = (parseFloat(user.rub_balance || 0) + rubAmount).toFixed(2);
+      newCoinBalance = parseFloat((userCoinBalance - amount).toFixed(5));
+      newRubBalance = parseFloat((parseFloat(user.rub_balance || 0) + rubAmount).toFixed(2));
     } else {
       return res.status(400).json({ success: false, error: 'Неверное направление обмена' });
     }
@@ -636,8 +636,8 @@ app.post('/exchange', async (req, res) => {
         new_coin_balance: newCoinBalance
       }]);
     if (insertError) {
-      console.error('Ошибка записи exchange_transactions:', insertError);
-      return res.status(500).json({ success: false, error: 'Ошибка записи транзакции обмена' });
+      console.error('Ошибка записи exchange_transactions:', insertError.message);
+      return res.status(500).json({ success: false, error: 'Ошибка записи транзакции обмена: ' + insertError.message });
     }
 
     console.log(`[Exchange] Пользователь ${userId}: направление ${direction}, сумма ${amount}`);
@@ -647,6 +647,7 @@ app.post('/exchange', async (req, res) => {
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
   }
 });
+
 
 /* ================================
    4. CloudTips: ПОЛУЧЕНИЕ ОПЛАТЫ (ТОП-АП)
