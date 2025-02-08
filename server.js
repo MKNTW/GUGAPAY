@@ -571,8 +571,15 @@ app.get('/halvingInfo', async (req, res) => {
 app.post('/exchange', async (req, res) => {
   try {
     const { userId, direction, amount } = req.body;
+    // Проверяем входные параметры
     if (!userId || !direction || typeof amount !== 'number' || amount <= 0) {
       return res.status(400).json({ success: false, error: 'Неверные данные' });
+    }
+
+    // Ограничиваем сумму обмена (например, не более 99,999,999.99)
+    const MAX_RUB_AMOUNT = 99999999.99;
+    if (amount > MAX_RUB_AMOUNT) {
+      return res.status(400).json({ success: false, error: 'Сумма обмена слишком большая' });
     }
 
     // Получаем данные пользователя
@@ -585,7 +592,7 @@ app.post('/exchange', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
 
-    // Получаем уровень halving (для расчёта курса)
+    // Получаем уровень halving для расчёта курса (если используется)
     let halvingStep = 0;
     const { data: halvingData } = await supabase
       .from('halving')
@@ -598,14 +605,18 @@ app.post('/exchange', async (req, res) => {
 
     let newRubBalance, newCoinBalance;
     if (direction === 'rub_to_coin') {
+      // Если происходит обмен рублей на монеты:
       const userRubBalance = parseFloat(user.rub_balance || 0);
       if (userRubBalance < amount) {
         return res.status(400).json({ success: false, error: 'Недостаточно рублёвого баланса' });
       }
+      // Количество монет, которое зачисляем, рассчитывается по формуле:
+      // coinAmount = amount / rubMultiplier
       const coinAmount = amount / rubMultiplier;
       newRubBalance = parseFloat((userRubBalance - amount).toFixed(2));
       newCoinBalance = parseFloat((parseFloat(user.balance) + coinAmount).toFixed(5));
     } else if (direction === 'coin_to_rub') {
+      // Если происходит обмен монет на рубли:
       const userCoinBalance = parseFloat(user.balance || 0);
       if (userCoinBalance < amount) {
         return res.status(400).json({ success: false, error: 'Недостаточно монет' });
@@ -618,8 +629,8 @@ app.post('/exchange', async (req, res) => {
     }
 
     // Задаем максимальные значения для полей в таблице:
-    const MAX_NUMERIC_RUB = 999999999.99999;     // для NUMERIC(10,2)
-    const MAX_NUMERIC_COIN = 999999999.99999;      // для NUMERIC(10,5)
+    const MAX_NUMERIC_RUB = 999999999.99999;     // для NUMERIC(12,2) или другого типа, как вам нужно
+    const MAX_NUMERIC_COIN = 999999999.99999;    // для NUMERIC(12,5)
 
     if (newRubBalance > MAX_NUMERIC_RUB) {
       return res.status(400).json({ 
@@ -634,7 +645,7 @@ app.post('/exchange', async (req, res) => {
       });
     }
 
-    // Обновляем баланс пользователя
+    // Обновляем баланс пользователя в таблице users
     const { error: updateError } = await supabase
       .from('users')
       .update({ rub_balance: newRubBalance, balance: newCoinBalance })
@@ -665,30 +676,6 @@ app.post('/exchange', async (req, res) => {
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
   }
 });
-
-fetch(`${API_URL}/exchange`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    userId: currentUserId,
-    direction: "rub_to_coin",
-    amount: amount
-  })
-})
-.then(res => res.json())
-.then(data => {
-  console.log("Ответ от сервера:", data);
-  if (!data.success) {
-    alert("Ошибка обмена: " + data.error);
-  } else {
-    alert("Обмен проведён успешно!");
-    fetchUserData();
-  }
-})
-.catch(err => {
-  console.error("Ошибка запроса:", err);
-});
-
 
 /* ================================
    4. CloudTips: ПОЛУЧЕНИЕ ОПЛАТЫ (ТОП-АП)
