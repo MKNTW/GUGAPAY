@@ -696,17 +696,25 @@ async function openExchangeModal() {
 
 async function handleExchange(direction) {
   const userId = localStorage.getItem("userId");
-  const amount = parseFloat(document.getElementById("amountInput").value);
-  
+  const amountInput = document.getElementById("amountInput");
+  if (!amountInput) {
+    alert("Поле ввода суммы не найдено");
+    return;
+  }
+  const amount = parseFloat(amountInput.value);
   if (isNaN(amount) || amount <= 0) {
     alert("Введите корректную сумму для обмена");
     return;
   }
 
-  const exchangeRateText = document.getElementById("exchangeRateInfo").textContent;
+  const exchangeRateElem = document.getElementById("exchangeRateInfo");
+  if (!exchangeRateElem) {
+    alert("Элемент обменного курса не найден");
+    return;
+  }
+  const exchangeRateText = exchangeRateElem.textContent;
   const rateMatch = exchangeRateText.match(/=\s*([\d.]+)/);
   const exchangeRate = rateMatch ? parseFloat(rateMatch[1]) : null;
-  
   if (!exchangeRate) {
     alert("Не удалось определить курс обмена");
     return;
@@ -723,16 +731,19 @@ async function handleExchange(direction) {
     
     if (data.success) {
       await loadBalanceAndExchangeRate();
-      let exchangeMessage = '';
-      // Преобразуем exchanged_amount в число
+      // Преобразуем значение exchanged_amount из ответа в число
       const exchangedAmount = parseFloat(data.exchanged_amount);
       
+      let exchangeMessage = "";
       if (direction === 'rub_to_coin') {
+        // Сообщение для обмена рублей на монеты:
+        // "Обмен выполнен успешно! Вы обменяли {amount} ₽ на {exchangedAmount} ₲"
         exchangeMessage = `Обмен выполнен успешно! Вы обменяли ${amount} ₽ на ${exchangedAmount.toFixed(5)} ₲`;
       } else if (direction === 'coin_to_rub') {
+        // Сообщение для обмена монет на рубли:
+        // "Обмен выполнен успешно! Вы обменяли {amount} ₲ на {exchangedAmount} ₽"
         exchangeMessage = `Обмен выполнен успешно! Вы обменяли ${amount} ₲ на ${exchangedAmount.toFixed(2)} ₽`;
       }
-      
       alert(exchangeMessage);
     } else {
       alert('Ошибка выполнения обмена: ' + data.error);
