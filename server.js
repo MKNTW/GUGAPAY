@@ -686,13 +686,14 @@ app.post('/exchange', async (req, res) => {
       return res.status(500).json({ success: false, error: 'Ошибка записи транзакции' });
     }
 
-    // Возвращаем обновлённые балансы и новый курс для отображения
-    return res.json({
-      success: true,
-      newRubBalance: newRubBalance.toFixed(2),
-      newCoinBalance: newCoinBalance.toFixed(5),
-      currentratedisplay: newExchangeRate  // этот параметр будет использоваться для отображения курса
-    });
+    // Возвращаем обновлённые балансы, новый курс и exchanged_amount для отображения
+return res.json({
+  success: true,
+  newRubBalance: newRubBalance.toFixed(2),
+  newCoinBalance: newCoinBalance.toFixed(5),
+  currentratedisplay: newExchangeRate,
+  exchanged_amount: exchangedAmount  // добавляем новое поле
+});
 
   } catch (err) {
     console.error('[exchange] Ошибка:', err);
