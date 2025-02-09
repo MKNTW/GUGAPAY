@@ -703,7 +703,6 @@ async function handleExchange(direction) {
     return;
   }
 
-  // Извлекаем курс обмена из элемента с id="exchangeRateInfo"
   const exchangeRateText = document.getElementById("exchangeRateInfo").textContent;
   const rateMatch = exchangeRateText.match(/=\s*([\d.]+)/);
   const exchangeRate = rateMatch ? parseFloat(rateMatch[1]) : null;
@@ -712,9 +711,8 @@ async function handleExchange(direction) {
     alert("Не удалось определить курс обмена");
     return;
   }
-
+  
   try {
-    console.log("Отправка запроса обмена на сервер...");
     const response = await fetch(`${API_URL}/exchange`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -726,17 +724,14 @@ async function handleExchange(direction) {
     if (data.success) {
       await loadBalanceAndExchangeRate();
       let exchangeMessage = '';
-
-      // Определяем направление обмена и составляем сообщение
+      let exchangedAmount = parseFloat(data.exchanged_amount);
+      
       if (direction === 'rub_to_coin') {
-        const exchangedAmount = data.newCoinBalance; // Полученные монеты
-        exchangeMessage = `Обмен выполнен успешно! Вы обменяли ${amount} ₽ на ${exchangedAmount} ₲`;
+        exchangeMessage = `Обмен выполнен успешно! Вы обменяли ${amount} ₽ на ${exchangedAmount.toFixed(5)} ₲`;
       } else if (direction === 'coin_to_rub') {
-        const exchangedAmount = data.newRubBalance; // Полученные рубли
-        exchangeMessage = `Обмен выполнен успешно! Вы обменяли ${amount} ₲ на ${exchangedAmount} ₽`;
+        exchangeMessage = `Обмен выполнен успешно! Вы обменяли ${amount} ₲ на ${exchangedAmount.toFixed(2)} ₽`;
       }
-
-      alert(exchangeMessage);  // Выводим результат обмена
+      alert(exchangeMessage);
     } else {
       alert('Ошибка выполнения обмена: ' + data.error);
     }
