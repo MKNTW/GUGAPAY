@@ -603,7 +603,7 @@ app.post('/exchange', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Неверные данные' });
     }
 
-    // Получаем данные пользователя (rub_balance, balance и т.п.)
+    // Получаем данные пользователя
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('*')
@@ -616,24 +616,24 @@ app.post('/exchange', async (req, res) => {
       return res.status(403).json({ success: false, error: 'Пользователь заблокирован' });
     }
 
-    // Получаем halvingStep
+    // Получаем текущее значение halving_step
     let halvingStep = 0;
     const { data: halvingData } = await supabase
       .from('halving')
       .select('halving_step')
       .limit(1);
     if (halvingData && halvingData.length > 0) {
-      halvingStep = halvingData[0].halving_step;
+      halvingStep = parseFloat(halvingData[0].halving_step) || 0;
     }
 
-    // Курс: 1₲ = (1 + halvingStep * 0.02) ₽
+    // Рассчитываем текущий курс обмена: 1₲ = (1 + halvingStep * 0.02) ₽
     const rubMultiplier = 1 + halvingStep * 0.02;
-
     const currentRub = parseFloat(user.rub_balance || 0);
     const currentCoin = parseFloat(user.balance || 0);
+    let newRubBalance, newCoinBalance, newHalvingStep = halvingStep;
 
-    let newRubBalance, newCoinBalance;
-    let exchangeRate = rubMultiplier;
+    const EXCHANGE_FACTOR = 100; // каждые 100₽ влияют на halving_step
+
     if (direction === 'rub_to_coin') {
       // Проверяем, хватает ли рублей
       if (currentRub < amount) {
@@ -643,8 +643,11 @@ app.post('/exchange', async (req, res) => {
       const coinAmount = amount / rubMultiplier;
       newRubBalance = currentRub - amount;
       newCoinBalance = currentCoin + coinAmount;
-
-      // Обновляем баланс
+      // При покупке: ценник растёт пропорционально сумме покупки
+      const delta = amount / EXCHANGE_FACTOR;
+      newHalvingStep = halvingStep + delta;
+      
+      // Обновляем баланс пользователя
       await supabase
         .from('users')
         .update({
@@ -652,6 +655,7 @@ app.post('/exchange', async (req, res) => {
           balance: newCoinBalance.toFixed(5)
         })
         .eq('user_id', userId);
+      
     } else if (direction === 'coin_to_rub') {
       // Проверяем, хватает ли монет
       if (currentCoin < amount) {
@@ -661,8 +665,12 @@ app.post('/exchange', async (req, res) => {
       const rubAmount = amount * rubMultiplier;
       newCoinBalance = currentCoin - amount;
       newRubBalance = currentRub + rubAmount;
-
-      // Обновляем баланс
+      // При продаже: ценник падает, но на 2 раза меньше
+      const delta = rubAmount / (2 * EXCHANGE_FACTOR);
+      newHalvingStep = halvingStep - delta;
+      if (newHalvingStep < 0) newHalvingStep = 0;
+      
+      // Обновляем баланс пользователя
       await supabase
         .from('users')
         .update({
@@ -674,7 +682,13 @@ app.post('/exchange', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Неверное направление обмена' });
     }
 
-    // Запись операции в exchange_transactions
+    // Обновляем запись в таблице halving с новым halving_step
+    await supabase
+      .from('halving')
+      .update({ halving_step: newHalvingStep })
+      .eq('id', 1);
+
+    // Записываем операцию обмена в exchange_transactions (как и было)
     const { error: insertError } = await supabase
       .from('exchange_transactions')
       .insert([{
@@ -684,7 +698,7 @@ app.post('/exchange', async (req, res) => {
         new_rub_balance: newRubBalance.toFixed(2),
         new_coin_balance: newCoinBalance.toFixed(5),
         created_at: new Date().toISOString(),
-        exchange_rate: exchangeRate
+        exchange_rate: rubMultiplier
       }]);
     if (insertError) {
       console.error('Ошибка записи в exchange_transactions:', insertError);
@@ -694,8 +708,10 @@ app.post('/exchange', async (req, res) => {
     return res.json({
       success: true,
       newRubBalance: newRubBalance.toFixed(2),
-      newCoinBalance: newCoinBalance.toFixed(5)
+      newCoinBalance: newCoinBalance.toFixed(5),
+      newHalvingStep: newHalvingStep
     });
+    
   } catch (err) {
     console.error('[exchange] Ошибка:', err);
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
