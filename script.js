@@ -727,9 +727,9 @@ async function handleExchange(direction) {
       let exchangedAmount = parseFloat(data.exchanged_amount);
       
       if (direction === 'rub_to_coin') {
-        exchangeMessage = `Обмен выполнен успешно! Вы обменяли ${amount} ₽ на ${exchangedAmount.toFixed(5)} ₲`;
+        exchangeMessage = `Обмен выполнен успешно! Вы обменяли ${amount} ₽ на ${exchanged_amount.toFixed(5)} ₲`;
       } else if (direction === 'coin_to_rub') {
-        exchangeMessage = `Обмен выполнен успешно! Вы обменяли ${amount} ₲ на ${exchangedAmount.toFixed(2)} ₽`;
+        exchangeMessage = `Обмен выполнен успешно! Вы обменяли ${amount} ₲ на ${exchanged_amount.toFixed(2)} ₽`;
       }
       alert(exchangeMessage);
     } else {
@@ -740,7 +740,6 @@ async function handleExchange(direction) {
     alert('Произошла ошибка при обмене');
   }
 }
-
 
 async function recordTransaction(transaction) {
   try {
