@@ -612,37 +612,31 @@ app.post('/exchange', async (req, res) => {
     // Коэффициент: каждые 10 000₽ обмена изменяют курс на 1 единицу
     const EXCHANGE_FACTOR = 10000;
 
-    let exchangedAmount = 0; // Переменная для суммы обмена
+        let exchangedAmount = 0;
 
     if (direction === 'rub_to_coin') {
-      // Покупка: проверяем, хватает ли рублей
+      // Покупка: обмен рублей на монеты
       if (currentRub < amount) {
         return res.status(400).json({ success: false, error: 'Недостаточно рублей' });
       }
-      // Рассчитываем количество монет, которые получит пользователь
       const coinAmount = amount / previousExchangeRate;
       newRubBalance = currentRub - amount;
       newCoinBalance = currentCoin + coinAmount;
-      exchangedAmount = coinAmount; // Сохраняем количество обмененных монет
-      // Новый курс = предыдущий курс + (amount / 10000)
-      const delta = amount / EXCHANGE_FACTOR;  // Например, 500₽ → delta = 0.05
+      exchangedAmount = coinAmount; // Количество полученных монет
+      const delta = amount / EXCHANGE_FACTOR;
       newExchangeRate = previousExchangeRate + delta;
-
     } else if (direction === 'coin_to_rub') {
-      // Продажа: проверяем, хватает ли монет
+      // Продажа: обмен монет на рубли
       if (currentCoin < amount) {
         return res.status(400).json({ success: false, error: 'Недостаточно монет' });
       }
-      // Вычисляем рублевую сумму, получаемую при продаже
       const rubAmount = amount * previousExchangeRate;
       newCoinBalance = currentCoin - amount;
       newRubBalance = currentRub + rubAmount;
-      exchangedAmount = rubAmount; // Сохраняем сумму обменанных рублей
-      // Новый курс = предыдущий курс - ((rubAmount / 10000) / 2)
-      const delta = (rubAmount / EXCHANGE_FACTOR) / 2; // Например, rubAmount = 350₽ → delta ≈ 0.0175
+      exchangedAmount = rubAmount; // Сумма, полученная в рублях
+      const delta = (rubAmount / EXCHANGE_FACTOR) / 2;
       newExchangeRate = previousExchangeRate - delta;
       if (newExchangeRate < 0) newExchangeRate = 0;
-
     } else {
       return res.status(400).json({ success: false, error: 'Неверное направление обмена' });
     }
@@ -665,7 +659,6 @@ app.post('/exchange', async (req, res) => {
       }]);
     if (rateInsertError) {
       console.error('Ошибка сохранения курса в exchange_rate_history:', rateInsertError);
-      // Можно продолжить выполнение, если ошибка не критична
     }
 
     // Записываем операцию обмена в таблицу exchange_transactions (для истории)
@@ -675,7 +668,7 @@ app.post('/exchange', async (req, res) => {
         user_id: userId,
         direction,
         amount,
-        exchanged_amount: exchangedAmount.toFixed(5),  // Добавляем новый столбец для суммы обмена
+        exchanged_amount: exchangedAmount.toFixed(5),  // новый столбец для обмененной суммы
         new_rub_balance: newRubBalance.toFixed(2),
         new_coin_balance: newCoinBalance.toFixed(5),
         created_at: new Date().toISOString(),
@@ -686,14 +679,14 @@ app.post('/exchange', async (req, res) => {
       return res.status(500).json({ success: false, error: 'Ошибка записи транзакции' });
     }
 
-    // Возвращаем обновлённые балансы, новый курс и exchanged_amount для отображения
-return res.json({
-  success: true,
-  newRubBalance: newRubBalance.toFixed(2),
-  newCoinBalance: newCoinBalance.toFixed(5),
-  currentratedisplay: newExchangeRate,
-  exchanged_amount: exchangedAmount  // добавляем новое поле
-});
+    // Возвращаем обновленные балансы, новый курс и exchanged_amount
+    return res.json({
+      success: true,
+      newRubBalance: newRubBalance.toFixed(2),
+      newCoinBalance: newCoinBalance.toFixed(5),
+      currentratedisplay: newExchangeRate,
+      exchanged_amount: exchangedAmount  // возвращаем обмененную сумму
+    });
 
   } catch (err) {
     console.error('[exchange] Ошибка:', err);
