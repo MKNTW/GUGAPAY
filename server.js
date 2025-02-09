@@ -626,29 +626,24 @@ app.post('/exchange', async (req, res) => {
       halvingStep = parseFloat(halvingData[0].halving_step) || 0;
     }
 
-    // Курс обмена: 1₲ = (1 + halvingStep * 0.02) ₽
+    // Текущий курс обмена: 1₲ = (1 + halvingStep * 0.02) ₽
     const rubMultiplier = 1 + halvingStep * 0.02;
     const currentRub = parseFloat(user.rub_balance || 0);
     const currentCoin = parseFloat(user.balance || 0);
     let newRubBalance, newCoinBalance, newHalvingStep = halvingStep;
 
-    // Определяем коэффициент: каждые 1000₽ дают изменение halving_step на 1
-    const EXCHANGE_FACTOR = 1000;
+    // Коэффициент для изменения halving_step
+    const EXCHANGE_FACTOR = 1000; // каждые 1000₽ → изменение на 1
 
     if (direction === 'rub_to_coin') {
-      // Покупка: проверяем, хватает ли рублей
       if (currentRub < amount) {
         return res.status(400).json({ success: false, error: 'Недостаточно рублей' });
       }
-      // Рассчитываем количество монет, которые получит пользователь
       const coinAmount = amount / rubMultiplier;
       newRubBalance = currentRub - amount;
       newCoinBalance = currentCoin + coinAmount;
-      // Изменение halving_step при покупке: увеличение даже на небольшие суммы
       const delta = amount / EXCHANGE_FACTOR;  // например, 100₽ → delta = 0.1
       newHalvingStep = halvingStep + delta;
-      
-      // Обновляем баланс пользователя
       await supabase
         .from('users')
         .update({
@@ -656,22 +651,16 @@ app.post('/exchange', async (req, res) => {
           balance: newCoinBalance.toFixed(5)
         })
         .eq('user_id', userId);
-      
     } else if (direction === 'coin_to_rub') {
-      // Продажа: проверяем, хватает ли монет
       if (currentCoin < amount) {
         return res.status(400).json({ success: false, error: 'Недостаточно монет' });
       }
-      // Рассчитываем сумму в рублях, которую получит пользователь
       const rubAmount = amount * rubMultiplier;
       newCoinBalance = currentCoin - amount;
       newRubBalance = currentRub + rubAmount;
-      // Изменение halving_step при продаже: уменьшение происходит в 2 раза меньше
-      const delta = rubAmount / (2 * EXCHANGE_FACTOR);  // например, при rubAmount = 100₽ → delta = 0.05
+      const delta = rubAmount / (2 * EXCHANGE_FACTOR);  // при rubAmount = 100₽ → delta = 0.05
       newHalvingStep = halvingStep - delta;
       if (newHalvingStep < 0) newHalvingStep = 0;
-      
-      // Обновляем баланс пользователя
       await supabase
         .from('users')
         .update({
@@ -683,11 +672,26 @@ app.post('/exchange', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Неверное направление обмена' });
     }
 
-    // Сохраняем новое значение halving_step в таблице halving
+    // Рассчитываем новый курс обмена
+    const newExchangeRate = 1 + newHalvingStep * 0.02;
+
+    // Обновляем запись в таблице halving (и опционально current_exchange_rate)
     await supabase
       .from('halving')
-      .update({ halving_step: newHalvingStep })
+      .update({ halving_step: newHalvingStep, current_exchange_rate: newExchangeRate })
       .eq('id', 1);
+
+    // Сохраняем новый курс в таблицу истории
+    const { error: rateInsertError } = await supabase
+      .from('exchange_rate_history')
+      .insert([{
+        exchange_rate: newExchangeRate,
+        created_at: new Date().toISOString()
+      }]);
+    if (rateInsertError) {
+      console.error('Ошибка сохранения курса в exchange_rate_history:', rateInsertError);
+      // Можно выбрать не прерывать обмен, если эта ошибка не критична
+    }
 
     // Записываем операцию обмена в таблицу exchange_transactions
     const { error: insertError } = await supabase
@@ -699,7 +703,7 @@ app.post('/exchange', async (req, res) => {
         new_rub_balance: newRubBalance.toFixed(2),
         new_coin_balance: newCoinBalance.toFixed(5),
         created_at: new Date().toISOString(),
-        exchange_rate: rubMultiplier
+        exchange_rate: rubMultiplier  // курс до обмена
       }]);
     if (insertError) {
       console.error('Ошибка записи в exchange_transactions:', insertError);
@@ -710,11 +714,32 @@ app.post('/exchange', async (req, res) => {
       success: true,
       newRubBalance: newRubBalance.toFixed(2),
       newCoinBalance: newCoinBalance.toFixed(5),
-      newHalvingStep: newHalvingStep
+      newHalvingStep: newHalvingStep,
+      newExchangeRate: newExchangeRate
     });
     
   } catch (err) {
     console.error('[exchange] Ошибка:', err);
+    res.status(500).json({ success: false, error: 'Ошибка сервера' });
+  }
+});
+
+/* ========================
+  истории курсов
+======================== */
+
+app.get('/exchangeRates', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('exchange_rate_history')
+      .select('*')
+      .order('created_at', { ascending: true });
+    if (error) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
+    res.json({ success: true, rates: data });
+  } catch (err) {
+    console.error('[exchangeRates] Ошибка:', err);
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
   }
 });
