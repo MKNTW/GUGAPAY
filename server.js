@@ -321,7 +321,7 @@ app.post('/exchange', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Неверные данные' });
     }
 
-    // Получаем данные пользователя (rub_balance, balance и т.п.)
+    // Получаем данные пользователя
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('*')
@@ -346,23 +346,18 @@ app.post('/exchange', async (req, res) => {
 
     // Курс: 1₲ = (1 + halvingStep * 0.02) ₽
     const rubMultiplier = 1 + halvingStep * 0.02;
-
     const currentRub = parseFloat(user.rub_balance || 0);
     const currentCoin = parseFloat(user.balance || 0);
 
     let newRubBalance, newCoinBalance;
     let exchangeRate = rubMultiplier;
     if (direction === 'rub_to_coin') {
-      // Проверяем, хватает ли рублей
       if (currentRub < amount) {
         return res.status(400).json({ success: false, error: 'Недостаточно рублей' });
       }
-      // Сколько монет получим
       const coinAmount = amount / rubMultiplier;
       newRubBalance = currentRub - amount;
       newCoinBalance = currentCoin + coinAmount;
-
-      // Обновляем баланс
       await supabase
         .from('users')
         .update({
@@ -371,16 +366,12 @@ app.post('/exchange', async (req, res) => {
         })
         .eq('user_id', userId);
     } else if (direction === 'coin_to_rub') {
-      // Проверяем, хватает ли монет
       if (currentCoin < amount) {
         return res.status(400).json({ success: false, error: 'Недостаточно монет' });
       }
-      // Сколько рублей получим
       const rubAmount = amount * rubMultiplier;
       newCoinBalance = currentCoin - amount;
       newRubBalance = currentRub + rubAmount;
-
-      // Обновляем баланс
       await supabase
         .from('users')
         .update({
@@ -392,10 +383,10 @@ app.post('/exchange', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Неверное направление обмена' });
     }
 
-    // Если клиент передал время (client_time), используем его, иначе - время сервера
-    const createdAt = client_time || new Date().toISOString();
+    // Используем время клиента, если оно передано, иначе - время сервера
+    const timestamp = client_time || new Date().toISOString();
 
-    // Запись операции в exchange_transactions с использованием времени клиента
+    // Вставляем запись, добавляя новое поле client_time
     const { error: insertError } = await supabase
       .from('exchange_transactions')
       .insert([{
@@ -404,7 +395,8 @@ app.post('/exchange', async (req, res) => {
         amount,
         new_rub_balance: newRubBalance.toFixed(2),
         new_coin_balance: newCoinBalance.toFixed(5),
-        created_at: createdAt,
+        created_at: new Date().toISOString(), // серверное время (если нужно оставить)
+        client_time: timestamp,
         exchange_rate: exchangeRate
       }]);
     if (insertError) {
@@ -422,6 +414,7 @@ app.post('/exchange', async (req, res) => {
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
   }
 });
+
 
 /* ========================
    9) POST /merchantTransfer (мерчант → пользователь)
