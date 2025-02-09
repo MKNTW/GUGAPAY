@@ -697,7 +697,7 @@ async function openExchangeModal() {
 async function handleExchange(direction) {
   const userId = localStorage.getItem("userId");
   const amount = parseFloat(document.getElementById("amountInput").value);
-
+  
   if (isNaN(amount) || amount <= 0) {
     alert("Введите корректную сумму для обмена");
     return;
@@ -706,12 +706,12 @@ async function handleExchange(direction) {
   const exchangeRateText = document.getElementById("exchangeRateInfo").textContent;
   const rateMatch = exchangeRateText.match(/=\s*([\d.]+)/);
   const exchangeRate = rateMatch ? parseFloat(rateMatch[1]) : null;
-
+  
   if (!exchangeRate) {
     alert("Не удалось определить курс обмена");
     return;
   }
-
+  
   try {
     const response = await fetch(`${API_URL}/exchange`, {
       method: 'POST',
@@ -728,10 +728,8 @@ async function handleExchange(direction) {
       const exchangedAmount = parseFloat(data.exchanged_amount);
       
       if (direction === 'rub_to_coin') {
-        // Обмен рублей на монеты: форматируем exchanged_amount до 5 знаков после запятой
         exchangeMessage = `Обмен выполнен успешно! Вы обменяли ${amount} ₽ на ${exchangedAmount.toFixed(5)} ₲`;
       } else if (direction === 'coin_to_rub') {
-        // Обмен монет на рубли: форматируем exchanged_amount до 2 знаков после запятой
         exchangeMessage = `Обмен выполнен успешно! Вы обменяли ${amount} ₲ на ${exchangedAmount.toFixed(2)} ₽`;
       }
       
