@@ -626,25 +626,26 @@ app.post('/exchange', async (req, res) => {
       halvingStep = parseFloat(halvingData[0].halving_step) || 0;
     }
 
-    // Рассчитываем текущий курс обмена: 1₲ = (1 + halvingStep * 0.02) ₽
+    // Курс обмена: 1₲ = (1 + halvingStep * 0.02) ₽
     const rubMultiplier = 1 + halvingStep * 0.02;
     const currentRub = parseFloat(user.rub_balance || 0);
     const currentCoin = parseFloat(user.balance || 0);
     let newRubBalance, newCoinBalance, newHalvingStep = halvingStep;
 
-    const EXCHANGE_FACTOR = 100; // каждые 100₽ влияют на halving_step
+    // Определяем коэффициент: каждые 1000₽ дают изменение halving_step на 1
+    const EXCHANGE_FACTOR = 1000;
 
     if (direction === 'rub_to_coin') {
-      // Проверяем, хватает ли рублей
+      // Покупка: проверяем, хватает ли рублей
       if (currentRub < amount) {
         return res.status(400).json({ success: false, error: 'Недостаточно рублей' });
       }
-      // Сколько монет получим
+      // Рассчитываем количество монет, которые получит пользователь
       const coinAmount = amount / rubMultiplier;
       newRubBalance = currentRub - amount;
       newCoinBalance = currentCoin + coinAmount;
-      // При покупке: ценник растёт пропорционально сумме покупки
-      const delta = amount / EXCHANGE_FACTOR;
+      // Изменение halving_step при покупке: увеличение даже на небольшие суммы
+      const delta = amount / EXCHANGE_FACTOR;  // например, 100₽ → delta = 0.1
       newHalvingStep = halvingStep + delta;
       
       // Обновляем баланс пользователя
@@ -657,16 +658,16 @@ app.post('/exchange', async (req, res) => {
         .eq('user_id', userId);
       
     } else if (direction === 'coin_to_rub') {
-      // Проверяем, хватает ли монет
+      // Продажа: проверяем, хватает ли монет
       if (currentCoin < amount) {
         return res.status(400).json({ success: false, error: 'Недостаточно монет' });
       }
-      // Сколько рублей получим
+      // Рассчитываем сумму в рублях, которую получит пользователь
       const rubAmount = amount * rubMultiplier;
       newCoinBalance = currentCoin - amount;
       newRubBalance = currentRub + rubAmount;
-      // При продаже: ценник падает, но на 2 раза меньше
-      const delta = rubAmount / (2 * EXCHANGE_FACTOR);
+      // Изменение halving_step при продаже: уменьшение происходит в 2 раза меньше
+      const delta = rubAmount / (2 * EXCHANGE_FACTOR);  // например, при rubAmount = 100₽ → delta = 0.05
       newHalvingStep = halvingStep - delta;
       if (newHalvingStep < 0) newHalvingStep = 0;
       
@@ -682,13 +683,13 @@ app.post('/exchange', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Неверное направление обмена' });
     }
 
-    // Обновляем запись в таблице halving с новым halving_step
+    // Сохраняем новое значение halving_step в таблице halving
     await supabase
       .from('halving')
       .update({ halving_step: newHalvingStep })
       .eq('id', 1);
 
-    // Записываем операцию обмена в exchange_transactions (как и было)
+    // Записываем операцию обмена в таблицу exchange_transactions
     const { error: insertError } = await supabase
       .from('exchange_transactions')
       .insert([{
