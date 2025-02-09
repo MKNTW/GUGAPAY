@@ -323,7 +323,7 @@ app.get('/transactions', async (req, res) => {
 
     let allTransactions = [];
     if (userId) {
-      // Получаем операции из таблицы transactions (where from_user_id or to_user_id)
+      // Получаем операции из таблицы transactions (отправленные и полученные)
       const { data: sentTx, error: sentError } = await supabase
         .from('transactions')
         .select('*')
@@ -339,11 +339,15 @@ app.get('/transactions', async (req, res) => {
         return res.status(500).json({ success: false, error: 'Ошибка при получении транзакций пользователя' });
       }
   
-      allTransactions = [...(sentTx || []), ...(receivedTx || [])];
+      // Для операций из таблицы transactions используем created_at как display_time
+      allTransactions = [
+        ...(sentTx || []).map(tx => ({ ...tx, display_time: tx.created_at })),
+        ...(receivedTx || []).map(tx => ({ ...tx, display_time: tx.created_at }))
+      ];
     }
   
     if (merchantId) {
-      // Если нужно объединить операции мерчанта (merchant_payments)
+      // Получаем операции мерчанта
       const { data: merchantPayments, error: merchantError } = await supabase
         .from('merchant_payments')
         .select('*')
@@ -352,31 +356,38 @@ app.get('/transactions', async (req, res) => {
       if (merchantError) {
         return res.status(500).json({ success: false, error: 'Ошибка при получении транзакций мерчанта' });
       }
-      const mappedMerchantTx = (merchantPayments || []).map(tx => ({ ...tx, type: 'merchant_payment' }));
+      const mappedMerchantTx = (merchantPayments || []).map(tx => ({
+        ...tx,
+        type: 'merchant_payment',
+        display_time: tx.created_at
+      }));
       allTransactions = [ ...allTransactions, ...mappedMerchantTx ];
     }
   
     // Получаем операции обмена валюты (тип exchange)
+    // Если у транзакции было передано клиентское время, сортируем по нему
     const { data: exchangeTx, error: exchangeError } = await supabase
       .from('exchange_transactions')
       .select('*')
       .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
+      .order('client_time', { ascending: false });
+      
     if (exchangeError) {
       console.error('Ошибка при получении операций обмена:', exchangeError);
     } else {
       const mappedExchangeTx = (exchangeTx || []).map(tx => ({
         ...tx,
-        type: 'exchange', // Помечаем транзакции как обмен
+        type: 'exchange',
+        // Если поле client_time присутствует, используем его, иначе created_at
+        display_time: tx.client_time || tx.created_at
       }));
       allTransactions = [...allTransactions, ...mappedExchangeTx];
     }
 
-    // Сортируем все транзакции по времени (от более новой к более старой)
-    allTransactions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    // Сортируем все транзакции по display_time (от более новой к более старой)
+    allTransactions.sort((a, b) => new Date(b.display_time) - new Date(a.display_time));
 
-    console.log('Transactions:', allTransactions); // Логируем транзакции
+    console.log('Transactions:', allTransactions); // Логируем итоговый список транзакций
 
     res.json({ success: true, transactions: allTransactions });
   } catch (err) {
