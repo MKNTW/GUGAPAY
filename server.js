@@ -314,74 +314,112 @@ app.post('/transfer', async (req, res) => {
 /* ========================
    7) GET /transactions (история операций)
 ======================== */
-app.get('/transactions', async (req, res) => {
+app.post('/exchange', async (req, res) => {
   try {
-    const { userId, merchantId } = req.query;
-    if (!userId && !merchantId) {
-      return res.status(400).json({ success: false, error: 'userId или merchantId обязателен' });
+    const { userId, direction, amount, client_time } = req.body;
+    if (!userId || !direction || typeof amount !== 'number' || amount <= 0) {
+      return res.status(400).json({ success: false, error: 'Неверные данные' });
     }
 
-    let allTransactions = [];
-    if (userId) {
-      // Получаем операции из таблицы transactions (where from_user_id or to_user_id)
-      const { data: sentTx, error: sentError } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('from_user_id', userId)
-        .order('created_at', { ascending: false });
-      const { data: receivedTx, error: receivedError } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('to_user_id', userId)
-        .order('created_at', { ascending: false });
-  
-      if (sentError || receivedError) {
-        return res.status(500).json({ success: false, error: 'Ошибка при получении транзакций пользователя' });
-      }
-  
-      allTransactions = [...(sentTx || []), ...(receivedTx || [])];
-    }
-  
-    if (merchantId) {
-      // Если нужно объединить операции мерчанта (merchant_payments)
-      const { data: merchantPayments, error: merchantError } = await supabase
-        .from('merchant_payments')
-        .select('*')
-        .eq('merchant_id', merchantId)
-        .order('created_at', { ascending: false });
-      if (merchantError) {
-        return res.status(500).json({ success: false, error: 'Ошибка при получении транзакций мерчанта' });
-      }
-      const mappedMerchantTx = (merchantPayments || []).map(tx => ({ ...tx, type: 'merchant_payment' }));
-      allTransactions = [ ...allTransactions, ...mappedMerchantTx ];
-    }
-  
-    // Получаем операции обмена валюты (тип exchange)
-    const { data: exchangeTx, error: exchangeError } = await supabase
-      .from('exchange_transactions')
+    // Получаем данные пользователя (rub_balance, balance и т.п.)
+    const { data: user, error: userError } = await supabase
+      .from('users')
       .select('*')
       .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
-    if (exchangeError) {
-      console.error('Ошибка при получении операций обмена:', exchangeError);
-    } else {
-      const mappedExchangeTx = (exchangeTx || []).map(tx => ({
-        ...tx,
-        type: 'exchange', // Помечаем транзакции как обмен
-      }));
-      allTransactions = [...allTransactions, ...mappedExchangeTx];
+      .single();
+    if (userError || !user) {
+      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+    }
+    if (user.blocked === 1) {
+      return res.status(403).json({ success: false, error: 'Пользователь заблокирован' });
     }
 
-    // Сортируем все транзакции по времени (от более новой к более старой)
-    allTransactions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    // Получаем halvingStep
+    let halvingStep = 0;
+    const { data: halvingData } = await supabase
+      .from('halving')
+      .select('halving_step')
+      .limit(1);
+    if (halvingData && halvingData.length > 0) {
+      halvingStep = halvingData[0].halving_step;
+    }
 
-    console.log('Transactions:', allTransactions); // Логируем транзакции
+    // Курс: 1₲ = (1 + halvingStep * 0.02) ₽
+    const rubMultiplier = 1 + halvingStep * 0.02;
 
-    res.json({ success: true, transactions: allTransactions });
+    const currentRub = parseFloat(user.rub_balance || 0);
+    const currentCoin = parseFloat(user.balance || 0);
+
+    let newRubBalance, newCoinBalance;
+    let exchangeRate = rubMultiplier;
+    if (direction === 'rub_to_coin') {
+      // Проверяем, хватает ли рублей
+      if (currentRub < amount) {
+        return res.status(400).json({ success: false, error: 'Недостаточно рублей' });
+      }
+      // Сколько монет получим
+      const coinAmount = amount / rubMultiplier;
+      newRubBalance = currentRub - amount;
+      newCoinBalance = currentCoin + coinAmount;
+
+      // Обновляем баланс
+      await supabase
+        .from('users')
+        .update({
+          rub_balance: newRubBalance.toFixed(2),
+          balance: newCoinBalance.toFixed(5)
+        })
+        .eq('user_id', userId);
+    } else if (direction === 'coin_to_rub') {
+      // Проверяем, хватает ли монет
+      if (currentCoin < amount) {
+        return res.status(400).json({ success: false, error: 'Недостаточно монет' });
+      }
+      // Сколько рублей получим
+      const rubAmount = amount * rubMultiplier;
+      newCoinBalance = currentCoin - amount;
+      newRubBalance = currentRub + rubAmount;
+
+      // Обновляем баланс
+      await supabase
+        .from('users')
+        .update({
+          rub_balance: newRubBalance.toFixed(2),
+          balance: newCoinBalance.toFixed(5)
+        })
+        .eq('user_id', userId);
+    } else {
+      return res.status(400).json({ success: false, error: 'Неверное направление обмена' });
+    }
+
+    // Если клиент передал время (client_time), используем его, иначе - время сервера
+    const createdAt = client_time || new Date().toISOString();
+
+    // Запись операции в exchange_transactions с использованием времени клиента
+    const { error: insertError } = await supabase
+      .from('exchange_transactions')
+      .insert([{
+        user_id: userId,
+        direction,
+        amount,
+        new_rub_balance: newRubBalance.toFixed(2),
+        new_coin_balance: newCoinBalance.toFixed(5),
+        created_at: createdAt,
+        exchange_rate: exchangeRate
+      }]);
+    if (insertError) {
+      console.error('Ошибка записи в exchange_transactions:', insertError);
+      return res.status(500).json({ success: false, error: 'Ошибка записи транзакции' });
+    }
+
+    return res.json({
+      success: true,
+      newRubBalance: newRubBalance.toFixed(2),
+      newCoinBalance: newCoinBalance.toFixed(5)
+    });
   } catch (err) {
-    console.error('[transactions] Ошибка:', err);
-    res.status(500).json({ success: false, error: 'Ошибка при получении истории' });
+    console.error('[exchange] Ошибка:', err);
+    res.status(500).json({ success: false, error: 'Ошибка сервера' });
   }
 });
 
