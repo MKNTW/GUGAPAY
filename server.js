@@ -632,7 +632,7 @@ app.post('/exchange', async (req, res) => {
     let newRubBalance, newCoinBalance, newExchangeRate;
     
     // Коэффициент для изменения курса: каждые 1000₽ обмена дают изменение курса на 1 единицу
-    const EXCHANGE_FACTOR = 1000;
+    const EXCHANGE_FACTOR = 10000;
     
     if (direction === 'rub_to_coin') {
       // Покупка: проверяем, хватает ли рублей
