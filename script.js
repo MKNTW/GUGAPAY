@@ -7,19 +7,33 @@ let currentUserId = localStorage.getItem("userId") || null;
 let currentMerchantId = localStorage.getItem("merchantId") || null;
 
 let pendingMinedCoins = parseFloat(localStorage.getItem("pendingMinedCoins")) || 0;
-let localBalance = parseFloat(localStorage.getItem("localBalance")) || 0; // баланс пользователя
+let localBalance = 0;       // баланс пользователя
 let merchantBalance = 0;    // баланс мерчанта
 
 let isMining = false;
 let mineTimer = null;
 let updateInterval = null;
 let currentHalvingStep = 0; // для halvingInfo
+let lastDirection = null;  // хранит направление последней операции (например, 'rub_to_coin' или 'coin_to_rub')
+let cycleCount = 0;        // счетчик для синусоидальной динамики
+let exchangeChartInstance = null;
 
 /* ===================================
    УТИЛИТЫ ФОРМАТИРОВАНИЯ
 ==================================== */
 function formatBalance(num) {
   return parseFloat(num).toFixed(5);
+}
+
+/* ===================================
+   Функция для вычисления синусоидального модификатора
+==================================== */
+
+function getSinusoidalRateModifier() {
+  const frequency = 0.1;  // период колебаний
+  const amplitude = 0.02; // максимальное отклонение
+  cycleCount++;
+  return amplitude * Math.sin(cycleCount * frequency);
 }
 
 /* ===================================
@@ -37,10 +51,11 @@ function createModal(id, content) {
   `;
   document.body.appendChild(modal);
 
-  // Закрытие по клику на оверлей для указанных модалок
+  // Для указанных модалок разрешаем закрытие по клику на оверлей
   const closeOnOverlay = [
     "operationsModal", "historyModal", "exchangeModal",
-    "merchantTransferModal", "createOneTimeQRModal", "confirmMerchantPayModal"
+    "merchantTransferModal", "createOneTimeQRModal",
+    "confirmMerchantPayModal"
   ];
   if (closeOnOverlay.includes(id)) {
     const overlay = modal.querySelector(".modal-overlay");
@@ -77,7 +92,9 @@ async function login() {
     alert("❌ Введите логин и пароль");
     return;
   }
+
   try {
+    // Попытка входа как пользователь
     const userResp = await fetch(`${API_URL}/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -92,9 +109,10 @@ async function login() {
       document.getElementById("authModal")?.remove();
       createUI();
       updateUI();
-      fetchUserData();
+      fetchUserData(); // Обновляем данные пользователя
       return;
     } else {
+      // Если не удалось, пробуем мерчанта
       if (userData.error?.includes("блокирован")) {
         alert("❌ Ваш аккаунт заблокирован");
         return;
@@ -125,6 +143,7 @@ async function login() {
     console.error("Сбой при логине:", err);
   }
 }
+
 
 async function register() {
   const loginVal = document.getElementById("regLogin")?.value;
@@ -173,9 +192,9 @@ function logout() {
   document.getElementById("mineContainer")?.classList.add("hidden");
   document.getElementById("merchantInterface")?.remove();
   closeAllModals();
-  clearInterval(updateInterval);
+  clearInterval(updateInterval); // Останавливаем автоматическое обновление при выходе
   openAuthModal();
-  updateUI();
+  updateUI(); // Обновляем UI после выхода
 }
 
 function openAuthModal() {
@@ -231,11 +250,12 @@ function openAuthModal() {
 ==================================== */
 function createUI() {
   showMainUI();
-  fetchUserData();
-  updateInterval = setInterval(fetchUserData, 2000);
+  fetchUserData(); // Вызываем сразу для первоначального отображения данных
+  updateInterval = setInterval(fetchUserData, 2000); // Автоматическое обновление каждые 2 секунды
 }
 
 function showMainUI() {
+  // Верхняя панель
   if (!document.getElementById("topBar")) {
     const topBar = document.createElement("div");
     topBar.id = "topBar";
@@ -253,6 +273,7 @@ function showMainUI() {
   }
   document.getElementById("topBar").classList.remove("hidden");
   
+  // Нижняя панель
   if (!document.getElementById("bottomBar")) {
     const bottomBar = document.createElement("div");
     bottomBar.id = "bottomBar";
@@ -278,6 +299,7 @@ function updateTopBar() {
     userIdDisplay.textContent = currentUserId ? `ID: ${currentUserId}` : "Не авторизован";
   }
 }
+
 
 function hideMainUI() {
   document.getElementById("topBar")?.classList.add("hidden");
@@ -307,7 +329,7 @@ function openMerchantUI() {
     <div style="display:flex; gap:10px; margin-top:20px;">
       <button id="merchantCreateQRBtn">Создать QR</button>
       <button id="merchantTransferBtn">Перевести</button>
-      <button id="merchantLogoutBtn">Выход</button>
+      <button id="merchantLogoutBtn">Выйти</button>
     </div>
     <div id="merchantQRContainer" style="margin-top:120px;"></div>
   `;
@@ -350,9 +372,6 @@ async function fetchMerchantBalance() {
   }
 }
 
-/* ===================================
-   МОДАЛКИ МЕРЧАНТА, ПЕРЕВОД, QR
-==================================== */
 function openOneTimeQRModal() {
   createModal("createOneTimeQRModal", `
     <div style="width:85vw; height:70vh; display:flex; flex-direction:column; justify-content:center; align-items:center;">
@@ -464,7 +483,9 @@ function openOperationsModal() {
   const opTabTransfer = document.getElementById("opTabTransfer");
   const opTabPay = document.getElementById("opTabPay");
   const operationsContent = document.getElementById("operationsContent");
+
   showTransferTab();
+
   opTabTransfer.onclick = showTransferTab;
   opTabPay.onclick = showPayTab;
 
@@ -485,7 +506,7 @@ function openOperationsModal() {
         return;
       }
       if (toUserId === currentUserId) {
-        alert("❌ Нельзя переводить самому себе");
+        alert("❌ Нельзя перевести самому себе");
         return;
       }
       try {
@@ -636,8 +657,10 @@ function parseMerchantQRData(rawValue) {
    ОБМЕН ВАЛЮТЫ (ГРАФИК И КУРС)
 ==================================== */
 async function openExchangeModal() {
+  // Создаём модальное окно для обмена с блоком графика
   createModal("exchangeModal", `
     <h3>Обмен</h3>
+    <!-- Блок графика обмена -->
     <div id="exchangeChartContainer" style="width:90%;max-width:600px; margin-bottom:20px;">
       <h4 id="currentRateDisplay"></h4>
       <canvas id="exchangeChart"></canvas>
@@ -645,28 +668,40 @@ async function openExchangeModal() {
     <div style="display: flex; flex-direction: column; align-items: center;">
       <p id="balanceInfo">0.00000 ₲</p>
       <p id="rubBalanceInfo">0.00 ₽</p>
-      <p id="exchangeRateInfo">Курс: 1 ₲ = 1.00 ₽</p>
+      <p id="exchangeRateInfo">Курс: 1 ₲ = 0.00 ₽</p>
       <div>
         <label for="amountInput">Сумма:</label>
         <input type="number" id="amountInput" placeholder="Введите сумму" />
       </div>
       <div style="display: flex; gap: 35px; margin-top:10px;">
-        <button id="rubToCoinBtn">₽ → ₲</button>
-        <button id="coinToRubBtn">₲ → ₽</button>
-      </div>
+  <button id="rubToCoinBtn">₽ → ₲</button>
+  <button id="coinToRubBtn">₲ → ₽</button>
+</div>
+
       <p id="conversionResult"></p>
     </div>
   `);
   openModal("exchangeModal");
+
+  // Ждём загрузку данных и обновляем курс
   await loadBalanceAndExchangeRate();
   updateCurrentRateDisplay();
   drawExchangeChart();
+
+  // Используем setTimeout, чтобы убедиться, что элементы уже отрендерены
   setTimeout(() => {
     const rubBtn = document.getElementById("rubToCoinBtn");
     const coinBtn = document.getElementById("coinToRubBtn");
     if (rubBtn && coinBtn) {
-      rubBtn.addEventListener("click", () => handleExchange("rub_to_coin"));
-      coinBtn.addEventListener("click", () => handleExchange("coin_to_rub"));
+      // Для отладки: выводим сообщение при клике
+      rubBtn.addEventListener("click", () => {
+        console.log("Нажата кнопка обмена: rub_to_coin");
+        handleExchange("rub_to_coin");
+      });
+      coinBtn.addEventListener("click", () => {
+        console.log("Нажата кнопка обмена: coin_to_rub");
+        handleExchange("coin_to_rub");
+      });
     } else {
       console.error("Кнопки обмена не найдены в DOM");
     }
@@ -675,48 +710,61 @@ async function openExchangeModal() {
 
 async function handleExchange(direction) {
   const userId = localStorage.getItem("userId");
-  const amountInputElem = document.getElementById("amountInput");
-  if (!amountInputElem) {
+  const amountInput = document.getElementById("amountInput");
+  if (!amountInput) {
     alert("Поле ввода суммы не найдено");
     return;
   }
-  const amount = parseFloat(amountInputElem.value);
+  const amount = parseFloat(amountInput.value);
   if (isNaN(amount) || amount <= 0) {
     alert("Введите корректную сумму для обмена");
     return;
   }
-  const exchangeRateElem = document.getElementById("exchangeRateInfo");
-  if (!exchangeRateElem) {
-    alert("Элемент обменного курса не найден");
+  
+  // Блокируем операцию, если направление совпадает с предыдущим
+  if (lastDirection !== null && lastDirection === direction) {
+    alert("Цикличные операции запрещены. Попробуйте выполнить обратную операцию или подождите.");
     return;
   }
-  const exchangeRateText = exchangeRateElem.textContent;
-  // Ожидается формат "Курс: 1 ₲ = 1.00 ₽"
-  const rateMatch = exchangeRateText.match(/=\s*([\d.]+)\s*₽/);
-  const exchangeRate = rateMatch ? parseFloat(rateMatch[1]) : null;
-  if (!exchangeRate) {
-    alert("Не удалось определить курс обмена");
-    return;
-  }
+  
   try {
     const response = await fetch(`${API_URL}/exchange`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, direction, amount })
     });
+    
     const data = await response.json();
     if (data.success) {
       await loadBalanceAndExchangeRate();
-      const exchangedAmount = parseFloat(data.exchanged_amount);
+      
+      // Если операция обратная предыдущей, применяем синусоидальное изменение курса
+      if (lastDirection !== null && lastDirection !== direction) {
+        const sinusoidalModifier = getSinusoidalRateModifier();
+        const baseRateText = document.getElementById("exchangeRateInfo").textContent;
+        // Пример: заменить базовый курс на (базовый курс + модификатор)
+        // В реальном случае курс пересчитывается сервером, но для демонстрации мы модифицируем локально:
+        const baseRateMatch = baseRateText.match(/=\s*([\d.]+)/);
+        if (baseRateMatch) {
+          const baseRate = parseFloat(baseRateMatch[1]);
+          const newRate = baseRate + sinusoidalModifier;
+          document.getElementById("exchangeRateInfo").textContent = `Курс: 1 ₲ = ${newRate.toFixed(2)} ₽`;
+        }
+      }
+      
       let exchangeMessage = "";
       if (direction === 'rub_to_coin') {
-        exchangeMessage = `Обмен выполнен успешно! Вы обменяли ${amount} ₽ на ${exchangedAmount.toFixed(5)} ₲`;
+        exchangeMessage = `Обмен выполнен успешно! Вы обменяли ${amount} ₽ на ${parseFloat(data.exchanged_amount).toFixed(5)} ₲`;
       } else if (direction === 'coin_to_rub') {
-        exchangeMessage = `Обмен выполнен успешно! Вы обменяли ${amount} ₲ на ${exchangedAmount.toFixed(2)} ₽`;
+        exchangeMessage = `Обмен выполнен успешно! Вы обменяли ${amount} ₲ на ${parseFloat(data.exchanged_amount).toFixed(2)} ₽`;
       }
       alert(exchangeMessage);
+      
+      // Сохраняем текущее направление и сбрасываем через 5 секунд
+      lastDirection = direction;
+      setTimeout(() => { lastDirection = null; }, 5000);
     } else {
-      alert('Ошибка выполнения обмена: ' + data.error);
+      alert('Ошибка обмена: ' + data.error);
     }
   } catch (error) {
     console.error('Ошибка при обмене:', error);
@@ -724,9 +772,36 @@ async function handleExchange(direction) {
   }
 }
 
+
+
+async function recordTransaction(transaction) {
+  try {
+    // Время клиента в формате ISO
+    const clientTime = new Date().toISOString();
+    const response = await fetch(`${API_URL}/exchange_transactions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        ...transaction, 
+        created_at: clientTime 
+      })
+    });
+    const data = await response.json();
+    if (data.success) {
+      console.log('Транзакция сохранена успешно');
+    } else {
+      console.error('Ошибка записи транзакции:', data.error);
+    }
+  } catch (error) {
+    console.error('Ошибка записи транзакции:', error);
+  }
+}
+
+
 async function loadBalanceAndExchangeRate() {
   const userId = localStorage.getItem("userId");
   try {
+    // Получаем данные пользователя
     const response = await fetch(`${API_URL}/user?userId=${userId}`);
     const data = await response.json();
     if (data.success && data.user) {
@@ -735,20 +810,27 @@ async function loadBalanceAndExchangeRate() {
       document.getElementById("balanceInfo").textContent = `${coinBalance.toFixed(5)} ₲`;
       document.getElementById("rubBalanceInfo").textContent = `${rubBalance.toFixed(2)} ₽`;
     }
-    const rateResponse = await fetch(`${API_URL}/exchangeRates`);
+    
+    // Получаем историю обменных курсов (последние 200 записей)
+    const rateResponse = await fetch(`${API_URL}/exchangeRates?limit=200`);
     const rateData = await rateResponse.json();
     if (rateData.success && rateData.rates && rateData.rates.length > 0) {
-      const latestRate = parseFloat(rateData.rates[rateData.rates.length - 1].exchange_rate);
+      drawExchangeChart(rateData.rates);
+      // Предположим, что записи отсортированы по убыванию: самая свежая запись — первая
+      const latestRate = parseFloat(rateData.rates[0].exchange_rate);
       document.getElementById("exchangeRateInfo").textContent = `Курс: 1 ₲ = ${latestRate.toFixed(2)} ₽`;
     } else {
-      document.getElementById("exchangeRateInfo").textContent = `Курс: 1 ₲ = 1.00 ₽`;
+      console.error('Ошибка: нет данных для графика обменных курсов');
+      document.getElementById("exchangeRateInfo").textContent = "Курс: данные отсутствуют";
     }
   } catch (error) {
     console.error('Ошибка при загрузке данных:', error);
   }
 }
 
+
 function updateCurrentRateDisplay() {
+  // Вычисляем текущий курс по формуле из halving
   const currentRate = 1 + currentHalvingStep * 0.02;
   const displayEl = document.getElementById("currentRateDisplay");
   if (displayEl) {
@@ -756,116 +838,247 @@ function updateCurrentRateDisplay() {
   }
 }
 
-async function drawExchangeChart() {
-  try {
-    const response = await fetch(`${API_URL}/exchangeRates`);
-    const result = await response.json();
-    if (!result.success || !result.rates) {
-      console.error('Ошибка получения истории курсов');
-      return;
-    }
-    const labels = result.rates.map(rateRecord => {
-      const date = new Date(rateRecord.created_at);
-      return date.getHours().toString().padStart(2, '0') + ":" + date.getMinutes().toString().padStart(2, '0');
-    });
-    const dataPoints = result.rates.map(rateRecord => parseFloat(rateRecord.exchange_rate));
-    if (window.exchangeChartInstance) {
-      window.exchangeChartInstance.destroy();
-    }
-    const ctx = document.getElementById("exchangeChart").getContext("2d");
-    window.exchangeChartInstance = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: '',
-          data: dataPoints,
-          fill: false,
-          borderColor: 'green',
-          tension: 0.5,
-          pointRadius: 0,
-          borderCapStyle: 'round'
-        }]
-      },
-      options: {
-        layout: { padding: 0 },
-        scales: {
-          x: {
-            grid: {
-              display: false,
-              drawBorder: false,
-              drawTicks: false,
-              borderColor: 'transparent',
-              borderWidth: 0
-            },
-            ticks: { display: false }
-          },
-          y: {
-            position: 'right',
-            grid: {
-              display: true,
-              drawBorder: false,
-              drawTicks: false,
-              borderColor: 'transparent',
-              borderWidth: 0,
-              color: 'rgba(0,0,0,0.1)'
-            },
-            ticks: { beginAtZero: true }
-          }
-        },
-        plugins: { legend: { display: false } }
-      }
-    });
-  } catch (error) {
-    console.error('Ошибка при построении графика обмена:', error);
+function drawExchangeChart(rates) {
+  if (!rates || !Array.isArray(rates) || rates.length === 0) {
+    console.error('Ошибка: отсутствуют данные для отображения графика');
+    return;
   }
+  
+  // Отсортировать данные по возрастанию времени (от старых к новым)
+  const sortedRates = rates.slice().sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+  // Если график уже существует, уничтожаем его
+  if (exchangeChartInstance) {
+    exchangeChartInstance.destroy();
+  }
+
+  // Создаем массивы меток и данных на основе отсортированного массива
+  const labels = sortedRates.map(rate => {
+    const date = new Date(rate.created_at);
+    return date.getHours().toString().padStart(2, '0') + ":" +
+           date.getMinutes().toString().padStart(2, '0');
+  });
+  const dataPoints = sortedRates.map(rate => parseFloat(rate.exchange_rate));
+
+  const ctx = document.getElementById("exchangeChart").getContext("2d");
+
+  // Создаем новый график и сохраняем его в глобальной переменной
+  exchangeChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Курс обмена',
+        data: dataPoints,
+        fill: false,
+        borderColor: 'green',
+        tension: 0.5,
+        pointRadius: 0,
+        borderCapStyle: 'round'
+      }]
+    },
+    options: {
+      layout: { padding: 0 },
+      scales: {
+        x: {
+          grid: {
+            display: false,
+            drawBorder: false,
+            drawTicks: false,
+            borderColor: 'transparent',
+            borderWidth: 0
+          },
+          ticks: { display: false }
+        },
+        y: {
+          position: 'right',
+          grid: {
+            display: true,
+            drawBorder: false,
+            drawTicks: false,
+            borderColor: 'transparent',
+            borderWidth: 0,
+            color: 'rgba(0,0,0,0.1)'
+          },
+          ticks: { beginAtZero: false }
+        }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+
+
+
+async function recordTransaction(transaction) {
+  try {
+    // Получаем время клиента в ISO‑формате
+    const clientTime = new Date().toISOString();
+    const response = await fetch(`${API_URL}/exchange_transactions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      // Передаём клиентское время в отдельном поле
+      body: JSON.stringify({ 
+        ...transaction, 
+        client_time: clientTime 
+      })
+    });
+    const data = await response.json();
+    if (data.success) {
+      console.log('Транзакция сохранена успешно');
+    } else {
+      console.error('Ошибка записи транзакции:', data.error);
+    }
+  } catch (error) {
+    console.error('Ошибка записи транзакции:', error);
+  }
+}
+
+// Пример вызова обмена (POST /exchange)
+function performExchange(userId, direction, amount) {
+  fetch(`${API_URL}/exchange`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, direction, amount })
+  })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // Обновляем балансы, если нужно:
+        updateBalancesDisplay(data.newRubBalance, data.newCoinBalance);
+        // Обновляем текущий курс обмена:
+        updateCurrentRateDisplay(data.currentratedisply);
+      } else {
+        alert('Ошибка обмена: ' + data.error);
+      }
+    })
+    .catch(err => console.error('Ошибка обмена:', err));
+}
+
+// Функция для обновления элемента с текущим курсом обмена
+function updateCurrentRateDisplay(rate) {
+  const rateDisplayEl = document.getElementById("currentratedisplay");
+  if (rateDisplayEl) {
+    rateDisplayEl.textContent = `Текущий курс: ${rate.toFixed(2)} ₽ за 1 монету`;
+  }
+}
+
+// Пример вызова обмена:
+function performExchange(userId, direction, amount) {
+  fetch(`${API_URL}/exchange`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, direction, amount })
+  })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // Обновление балансов и курса
+        updateBalancesDisplay(data.newRubBalance, data.newCoinBalance);
+        updateCurrentRateDisplay(data.currentratedisplay);
+      } else {
+        alert('Ошибка обмена: ' + data.error);
+      }
+    })
+    .catch(err => console.error('Ошибка обмена:', err));
+}
+
+function updateExchangeRateInfo(rate) {
+  const rateElement = document.getElementById("exchangeRateInfo");
+  if (rateElement) {
+    rateElement.textContent = `Курс обмена: 1 ₲ = ${rate.toFixed(2)} ₽`;
+  }
+}
+
+// Пример вызова обмена:
+function performExchange(userId, direction, amount) {
+  fetch(`${API_URL}/exchange`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, direction, amount })
+  })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        updateBalancesDisplay(data.newRubBalance, data.newCoinBalance);
+        // Обновляем элемент, отображающий курс обмена, с данными из последней операции
+        updateExchangeRateInfo(data.currentratedisplay);
+        // (Опционально) можно перерисовать график, если он тоже основан на истории обменов
+        drawExchangeChart();
+      } else {
+        alert('Ошибка обмена: ' + data.error);
+      }
+    })
+    .catch(err => console.error('Ошибка обмена:', err));
 }
 
 /* ===================================
    МАЙНИНГ
 ==================================== */
+
+// Функция майнинга
 function mineCoins() {
-  // Загружаем глобальный localBalance из localStorage
-  localBalance = parseFloat(localStorage.getItem("localBalance")) || 0;
+  // Загружаем текущий баланс из localStorage, если он есть, или начинаем с 0
+  let localBalance = parseFloat(localStorage.getItem("localBalance")) || 0;
+
+  // Увеличиваем баланс на 0.00001
   localBalance += 0.00001;
+
+  // Обновляем отображение баланса на экране
   updateBalanceDisplay(localBalance);
+
+  // Сохраняем обновленный баланс в localStorage
   localStorage.setItem("localBalance", localBalance.toFixed(5));
 
-  let pending = parseFloat(localStorage.getItem("pendingMinedCoins")) || 0;
-  pending += 0.00001;
-  localStorage.setItem("pendingMinedCoins", pending.toFixed(5));
+  // Добавляем к ожидающим монетам для отправки на сервер
+  let pendingMinedCoins = parseFloat(localStorage.getItem("pendingMinedCoins")) || 0;
+  pendingMinedCoins += 0.00001;
+  localStorage.setItem("pendingMinedCoins", pendingMinedCoins.toFixed(5));
 
+  // Таймер для отправки данных на сервер через 1500 мс после последнего клика
   if (mineTimer) clearTimeout(mineTimer);
+
   mineTimer = setTimeout(() => {
     isMining = false;
-    flushMinedCoins();
+    flushMinedCoins();  // Отправляем данные на сервер
   }, 1500);
 }
 
-document.getElementById("mineBtn")?.addEventListener("click", mineCoins);
+// Привязываем обработчик события к кнопке
+document.getElementById("mineBtn").addEventListener("click", mineCoins);
 
+
+// Отправка данных на сервер
 async function flushMinedCoins() {
-  let pending = parseFloat(localStorage.getItem("pendingMinedCoins")) || 0;
-  if (!currentUserId || pending <= 0) return;
+  let pendingMinedCoins = parseFloat(localStorage.getItem("pendingMinedCoins")) || 0;
+
+  if (!currentUserId || pendingMinedCoins <= 0) return;
+
   try {
     const resp = await fetch(`${API_URL}/update`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: currentUserId, amount: pending })
+      body: JSON.stringify({ userId: currentUserId, amount: pendingMinedCoins })
     });
+
     if (!resp.ok) throw new Error(`Сервер ответил статусом ${resp.status}`);
-    pending = 0;
-    localStorage.setItem("pendingMinedCoins", pending);
+
+    // После успешной отправки очищаем локальное хранилище
+    pendingMinedCoins = 0;
+    localStorage.setItem("pendingMinedCoins", pendingMinedCoins);
+
+    // Обновляем данные пользователя
     fetchUserData();
   } catch (err) {
     console.error("Ошибка flushMinedCoins:", err);
   }
 }
 
-function updateBalanceDisplay(balance) {
+// Функция для обновления отображения баланса
+function updateBalanceDisplay(localBalance) {
   const balanceValue = document.getElementById("balanceValue");
   if (balanceValue) {
-    balanceValue.textContent = `${balance.toFixed(5)} ₲`;
+    balanceValue.textContent = `${localBalance.toFixed(5)} ₲`;  // отображаем баланс с точностью до 5 знаков
   }
 }
 
@@ -878,21 +1091,30 @@ async function fetchUserData() {
     console.error("Пользователь не авторизован");
     return;
   }
+
   try {
     const response = await fetch(`${API_URL}/user?userId=${userId}`);
     const data = await response.json();
-    console.log('Полученные данные пользователя:', data);
+    
     if (data.success && data.user) {
+      // Загружаем балансы и обновляем UI
       const userBalance = data.user.balance || 0;
       const rubBalance = data.user.rub_balance || 0;
+
+      // Проверяем наличие элементов перед обновлением
       const balanceValue = document.getElementById("balanceValue");
       const rubBalanceInfo = document.getElementById("rubBalanceInfo");
+
       if (balanceValue) {
-        balanceValue.textContent = `${userBalance.toFixed(5)} ₲`;
+        balanceValue.textContent = `${userBalance.toFixed(5)} ₲`; // Обновляем баланс пользователя
+      } else {
+        console.warn('Элемент balanceValue не найден');
       }
+
       if (rubBalanceInfo) {
-        rubBalanceInfo.textContent = `${rubBalance.toFixed(2)} ₽`;
+        rubBalanceInfo.textContent = `${rubBalance.toFixed(2)} ₽`; // Обновляем баланс в рублях
       }
+
       updateTopBar();
     } else {
       console.error('Ошибка в ответе от сервера', data);
@@ -905,9 +1127,6 @@ async function fetchUserData() {
 /* ===================================
    ИСТОРИЯ ОПЕРАЦИЙ
 ==================================== */
-// Функции для истории (openHistoryModal, fetchTransactionHistory, displayTransactionHistory, getDateLabel)
-// оставьте их без изменений
-
 function openHistoryModal() {
   createModal("historyModal", `
     <h3>История операций</h3>
@@ -942,6 +1161,8 @@ function displayTransactionHistory(transactions) {
     container.innerHTML = "<li>Нет операций</li>";
     return;
   }
+  
+  // Группировка транзакций по датам
   const groups = {};
   transactions.forEach(tx => {
     const d = new Date(tx.client_time || tx.created_at);
@@ -964,6 +1185,7 @@ function displayTransactionHistory(transactions) {
     groups[dateStr].forEach(tx => {
       const op = document.createElement("div");
       op.className = "history-item";
+      // Если присутствует client_time, используем его
       const timeStr = new Date(tx.client_time || tx.created_at).toLocaleTimeString("ru-RU");
       let opHTML = "";
       if (tx.type === "exchange") {
@@ -1041,7 +1263,7 @@ function updateUI() {
 }
 
 /* ===================================
-   ИНИЦАЛИЗАЦИЯ
+   ИНИЦИАЛИЗАЦИЯ
 ==================================== */
 document.addEventListener("DOMContentLoaded", () => {
   if (pendingMinedCoins > 0) {
@@ -1050,30 +1272,19 @@ document.addEventListener("DOMContentLoaded", () => {
   if (currentMerchantId) {
     openMerchantUI();
   } else if (currentUserId) {
-    createUI();
-    fetchUserData();
+    createUI(); // Создаем UI и сразу загружаем данные
+    fetchUserData(); // После создания UI вызываем обновление данных
   } else {
     openAuthModal();
   }
+
+  // Привязка кнопки майнинга (если существует)
   document.getElementById("mineBtn")?.addEventListener("click", mineCoins);
 });
+
 
 window.addEventListener("beforeunload", () => {
   if (pendingMinedCoins > 0) {
     flushMinedCoinsSync();
   }
 });
-
-function flushMinedCoinsSync() {
-  if (!currentUserId || pendingMinedCoins <= 0) return;
-  const xhr = new XMLHttpRequest();
-  xhr.open("POST", `${API_URL}/update`, false);
-  xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-  try {
-    xhr.send(JSON.stringify({ userId: currentUserId, amount: pendingMinedCoins }));
-    pendingMinedCoins = 0;
-    localStorage.setItem("pendingMinedCoins", pendingMinedCoins);
-  } catch (err) {
-    console.error("Ошибка flushMinedCoinsSync:", err);
-  }
-}
