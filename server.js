@@ -573,11 +573,12 @@ app.get('/merchantBalance', async (req, res) => {
 /* ========================
    13) POST /exchange (RUB ↔ COIN)
 ======================== */
-// Глобальные константы для обмена
-const BASE_EXCHANGE_RATE = 0.5;  // Базовый курс (1 рубль за 1 монету)
-const EXCHANGE_FACTOR = 15000; // Если хотите динамику, можно использовать этот коэффициент
-const fee = 0; // Если не нужна комиссия для обратимости, ставим 0
+// Глобальные константы
+const BASE_EXCHANGE_RATE = 0.5;  // Базовый курс (например, 0.5 рубля за 1 монету)
+const EXCHANGE_FACTOR = 15000;   // (Если хотите динамику, можно использовать этот коэффициент)
+const fee = 0.02;                // Комиссия, например, 2%
 
+// Эндпоинт для обмена
 app.post('/exchange', async (req, res) => {
   try {
     const { userId, direction, amount } = req.body;
@@ -598,25 +599,28 @@ app.post('/exchange', async (req, res) => {
       return res.status(403).json({ success: false, error: 'Пользователь заблокирован' });
     }
     
-    // Для упрощения будем использовать фиксированный курс для каждой операции:
-    const currentExchangeRate = BASE_EXCHANGE_RATE; // Используем базовый курс для расчёта
-    
     const currentRub = parseFloat(user.rub_balance || 0);
     const currentCoin = parseFloat(user.balance || 0);
-    let newRubBalance, newCoinBalance;
-    let exchangedAmount = 0;
+    let newRubBalance, newCoinBalance, exchangedAmount = 0;
+    
+    // Для простоты динамический курс здесь не изменяется через глобальные параметры.
+    // При покупке и продаже используем базовый курс для расчёта конверсии.
+    const currentExchangeRate = BASE_EXCHANGE_RATE;
     
     if (direction === 'rub_to_coin') {
+      // Покупка монет за рубли
       if (currentRub < amount) {
         return res.status(400).json({ success: false, error: 'Недостаточно рублей' });
       }
-      // При покупке по курсу 1:1 (с комиссией 0) получаем:
-      const coinAmount = (amount * (1 - fee)) / currentExchangeRate; // = amount
+      // Применяем комиссию
+      const effectiveRub = amount * (1 - fee);
+      // Количество монет = эффективная сумма / курс
+      const coinAmount = effectiveRub / currentExchangeRate;
       newRubBalance = currentRub - amount;
       newCoinBalance = currentCoin + coinAmount;
-      exchangedAmount = coinAmount;
+      exchangedAmount = coinAmount; // Полученные монеты
       
-      // Записываем покупку в очередь для пользователя
+      // Записываем покупку в FIFO-очередь
       const { error: queueError } = await supabase
         .from('user_exchange_queue')
         .insert([{
@@ -631,11 +635,12 @@ app.post('/exchange', async (req, res) => {
       }
       
     } else if (direction === 'coin_to_rub') {
+      // Продажа монет за рубли
       if (currentCoin < amount) {
         return res.status(400).json({ success: false, error: 'Недостаточно монет' });
       }
       
-      // Для продажи используем FIFO: получаем записи очереди
+      // Получаем FIFO-очередь покупок для пользователя
       const { data: queueData, error: queueFetchError } = await supabase
         .from('user_exchange_queue')
         .select('*')
@@ -648,25 +653,26 @@ app.post('/exchange', async (req, res) => {
       let remainingCoinsToSell = amount;
       let totalRubReceived = 0;
       
-      // Обрабатываем записи очереди (FIFO)
+      // Обрабатываем записи FIFO
       for (const record of queueData) {
         if (remainingCoinsToSell <= 0) break;
         const availableCoins = parseFloat(record.coin_amount);
-        const rate = parseFloat(record.exchange_rate); // должен быть BASE_EXCHANGE_RATE
-        if (availableCoins <= remainingCoinsToSell) {
-          totalRubReceived += parseFloat(record.rub_amount);
+        const recordRubAmount = parseFloat(record.rub_amount);
+        if (availableCoins <= remainingCoinsToSell + 1e-6) {
+          totalRubReceived += recordRubAmount;
           remainingCoinsToSell -= availableCoins;
-          // Удаляем запись
+          // Удаляем запись, если полностью списана
           await supabase
             .from('user_exchange_queue')
             .delete()
             .eq('id', record.id);
         } else {
+          // Если в записи больше монет, чем нужно для продажи
           const fraction = remainingCoinsToSell / availableCoins;
-          totalRubReceived += parseFloat(record.rub_amount) * fraction;
-          // Обновляем запись
+          totalRubReceived += recordRubAmount * fraction;
           const newCoinAmount = availableCoins - remainingCoinsToSell;
-          const newRubAmount = parseFloat(record.rub_amount) * (newCoinAmount / availableCoins);
+          const newRubAmount = recordRubAmount * (newCoinAmount / availableCoins);
+          // Обновляем запись
           await supabase
             .from('user_exchange_queue')
             .update({
@@ -693,18 +699,7 @@ app.post('/exchange', async (req, res) => {
         balance: newCoinBalance.toFixed(5)
       })
       .eq('user_id', userId);
-    
-    // Здесь мы можем сохранять курс в историю, даже если он фиксированный
-    const { error: rateInsertError } = await supabase
-      .from('exchange_rate_history')
-      .insert([{
-        exchange_rate: currentExchangeRate.toFixed(5),
-        created_at: new Date().toISOString()
-      }]);
-    if (rateInsertError) {
-      console.error('Ошибка сохранения курса:', rateInsertError);
-    }
-    
+      
     // Записываем операцию обмена в exchange_transactions
     const { error: insertError } = await supabase
       .from('exchange_transactions')
@@ -733,26 +728,6 @@ app.post('/exchange', async (req, res) => {
     
   } catch (err) {
     console.error('[exchange] Ошибка:', err);
-    res.status(500).json({ success: false, error: 'Ошибка сервера' });
-  }
-});
-
-/* ========================
-  истории курсов
-======================== */
-
-app.get('/exchangeRates', async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('exchange_rate_history')
-      .select('*')
-      .order('created_at', { ascending: true });
-    if (error) {
-      return res.status(500).json({ success: false, error: error.message });
-    }
-    res.json({ success: true, rates: data });
-  } catch (err) {
-    console.error('[exchangeRates] Ошибка:', err);
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
   }
 });
