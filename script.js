@@ -733,15 +733,12 @@ async function handleExchange(direction) {
     
     if (data.success) {
       await loadBalanceAndExchangeRate();
-      // Используем значение exchanged_amount, которое сервер вычислил
       const exchangedAmount = parseFloat(data.exchanged_amount);
       
       let exchangeMessage = "";
       if (direction === 'rub_to_coin') {
-        // При покупке: exchangedAmount – полученные монеты
         exchangeMessage = `Обмен выполнен успешно! Вы обменяли ${amount} ₽ на ${exchangedAmount.toFixed(5)} ₲`;
       } else if (direction === 'coin_to_rub') {
-        // При продаже: exchangedAmount – полученные рубли
         exchangeMessage = `Обмен выполнен успешно! Вы обменяли ${amount} ₲ на ${exchangedAmount.toFixed(2)} ₽`;
       }
       
