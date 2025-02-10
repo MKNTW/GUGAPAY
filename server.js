@@ -610,7 +610,7 @@ app.post('/exchange', async (req, res) => {
     let newRubBalance, newCoinBalance, newExchangeRate;
 
     // Коэффициент: каждые 10 000₽ обмена изменяют курс на 1 единицу
-    const EXCHANGE_FACTOR = 10000;
+    const EXCHANGE_FACTOR = 15000;
 
     let exchangedAmount = 0;
 
@@ -632,7 +632,7 @@ if (direction === 'rub_to_coin') {
   newCoinBalance = currentCoin - amount;
   newRubBalance = currentRub + rubAmount;
   exchangedAmount = rubAmount; // именно exchangedAmount = rubAmount
-  const delta = (rubAmount / EXCHANGE_FACTOR) / 2;
+  const delta = (rubAmount / EXCHANGE_FACTOR);
   newExchangeRate = previousExchangeRate - delta;
   if (newExchangeRate < 0) newExchangeRate = 0;
 }
