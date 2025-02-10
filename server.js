@@ -576,8 +576,8 @@ app.get('/merchantBalance', async (req, res) => {
 let netDemand = 0;  // Глобальная переменная для динамики курса
 
 const BASE_EXCHANGE_RATE = 0.5;  // Базовый курс (например, 0.5 рубля за 1 монету)
-const EXCHANGE_FACTOR = 15000;   // Коэффициент динамики
-const fee = 0.03;                // Комиссия (например, 3%)
+const EXCHANGE_FACTOR = 10000;   // Коэффициент динамики
+const fee = 0.05;                // Комиссия (например, 5%)
 
 app.post('/exchange', async (req, res) => {
   try {
