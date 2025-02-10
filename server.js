@@ -573,7 +573,6 @@ app.get('/merchantBalance', async (req, res) => {
 /* ========================
    13) POST /exchange (RUB ↔ COIN)
 ======================== */
-// Глобальные константы
 const BASE_EXCHANGE_RATE = 0.5;  // Базовый курс (например, 0.5 рубля за 1 монету)
 const EXCHANGE_FACTOR = 15000;   // (Если хотите динамику, можно использовать этот коэффициент)
 const fee = 0.02;                // Комиссия, например, 2%
@@ -603,8 +602,7 @@ app.post('/exchange', async (req, res) => {
     const currentCoin = parseFloat(user.balance || 0);
     let newRubBalance, newCoinBalance, exchangedAmount = 0;
     
-    // Для простоты динамический курс здесь не изменяется через глобальные параметры.
-    // При покупке и продаже используем базовый курс для расчёта конверсии.
+    // Фиксированный обменный курс
     const currentExchangeRate = BASE_EXCHANGE_RATE;
     
     if (direction === 'rub_to_coin') {
@@ -614,7 +612,7 @@ app.post('/exchange', async (req, res) => {
       }
       // Применяем комиссию
       const effectiveRub = amount * (1 - fee);
-      // Количество монет = эффективная сумма / курс
+      // Вычисляем количество монет
       const coinAmount = effectiveRub / currentExchangeRate;
       newRubBalance = currentRub - amount;
       newCoinBalance = currentCoin + coinAmount;
@@ -667,7 +665,7 @@ app.post('/exchange', async (req, res) => {
             .delete()
             .eq('id', record.id);
         } else {
-          // Если в записи больше монет, чем нужно для продажи
+          // Если в записи больше монет, чем требуется для продажи
           const fraction = remainingCoinsToSell / availableCoins;
           totalRubReceived += recordRubAmount * fraction;
           const newCoinAmount = availableCoins - remainingCoinsToSell;
@@ -682,6 +680,14 @@ app.post('/exchange', async (req, res) => {
             .eq('id', record.id);
           remainingCoinsToSell = 0;
         }
+      }
+      
+      // Если после обработки очереди остаются монеты, значит, не все операции покупки покрывают продажу
+      if (remainingCoinsToSell > 0) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Недостаточно операций покупки для полного обратного обмена' 
+        });
       }
       
       newCoinBalance = currentCoin - amount;
@@ -723,7 +729,7 @@ app.post('/exchange', async (req, res) => {
       newRubBalance: newRubBalance.toFixed(2),
       newCoinBalance: newCoinBalance.toFixed(5),
       currentratedisplay: currentExchangeRate.toFixed(5),
-      exchanged_amount: exchangedAmount
+      exchanged_amount: exchangedAmount.toFixed(5)
     });
     
   } catch (err) {
@@ -731,6 +737,7 @@ app.post('/exchange', async (req, res) => {
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
   }
 });
+
 
 /* ========================
    14) POST /cloudtips/callback
