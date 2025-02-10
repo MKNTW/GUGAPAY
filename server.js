@@ -578,7 +578,7 @@ let netDemand = 0;
 
 const BASE_EXCHANGE_RATE = 0.5;  // Базовый курс (например, 0.5 рубля за 1 монету)
 const EXCHANGE_FACTOR = 15000;   // Коэффициент динамики – чем больше значение, тем медленнее меняется курс
-const fee = 0.01;                // Комиссия, например, 1%
+const fee = 0.03;                // Комиссия, например, 1%
 
 app.post('/exchange', async (req, res) => {
   try {
