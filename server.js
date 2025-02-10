@@ -573,12 +573,10 @@ app.get('/merchantBalance', async (req, res) => {
 /* ========================
    13) POST /exchange (RUB ↔ COIN)
 ======================== */
-// Глобальная переменная для динамического изменения курса (рекомендуется сохранять в БД для устойчивости)
 let netDemand = 0;
-
 const BASE_EXCHANGE_RATE = 0.5;  // Базовый курс (например, 0.5 рубля за 1 монету)
-const EXCHANGE_FACTOR = 15000;   // Коэффициент динамики – чем больше значение, тем медленнее меняется курс
-const fee = 0.03;                // Комиссия, например, 1%
+const EXCHANGE_FACTOR = 15000;   // Коэффициент динамики
+const fee = 0.03;                // Комиссия
 
 app.post('/exchange', async (req, res) => {
   try {
@@ -604,46 +602,22 @@ app.post('/exchange', async (req, res) => {
     const currentCoin = parseFloat(user.balance || 0);
     let newRubBalance, newCoinBalance, exchangedAmount = 0;
     
-    // Вычисляем текущий курс с учетом динамики: 
-    // currentExchangeRate = BASE_EXCHANGE_RATE * (1 + netDemand / EXCHANGE_FACTOR)
+    // Вычисляем текущий курс с учетом динамики
     let currentExchangeRate = BASE_EXCHANGE_RATE * (1 + netDemand / EXCHANGE_FACTOR);
-    // Защита от слишком малого значения курса
-    currentExchangeRate = Math.max(currentExchangeRate, 0.0001);
+    currentExchangeRate = Math.max(currentExchangeRate, 0.0001); // Защита от слишком маленького курса
     
     if (direction === 'rub_to_coin') {
       // Покупка монет за рубли
       if (currentRub < amount) {
         return res.status(400).json({ success: false, error: 'Недостаточно рублей' });
       }
-      // Применяем комиссию при покупке
       const effectiveRub = amount * (1 - fee);
-      // Рассчитываем количество монет (округляем до 5 знаков)
       const coinAmount = parseFloat((effectiveRub / currentExchangeRate).toFixed(5));
       newRubBalance = currentRub - amount;
       newCoinBalance = currentCoin + coinAmount;
       exchangedAmount = coinAmount;
       
-      // Сохраняем запись о покупке в FIFO-очередь.
-      // Обратите внимание: значения передаются в виде чисел (или строк, соответствующих DECIMAL),
-      // что позволит сохранить их с нужной точностью.
-      const queueData = {
-        user_id: userId,
-        rub_amount: parseFloat(amount.toFixed(2)),          // сумма покупки в рублях
-        coin_amount: coinAmount,                             // полученное количество монет
-        exchange_rate: parseFloat(currentExchangeRate.toFixed(5)),
-        created_at: new Date().toISOString()
-      };
-      
-      const { error: queueError } = await supabase
-        .from('user_exchange_queue')
-        .insert([queueData]);
-      if (queueError) {
-        console.error("Ошибка записи в user_exchange_queue:", queueError);
-        // Можно продолжить выполнение, если запись в очередь не критична,
-        // либо вернуть ошибку, если это важно для логики.
-      }
-      
-      // При покупке netDemand увеличивается на полную сумму (без учета комиссии)
+      // Обновляем netDemand
       netDemand += amount;
       
     } else if (direction === 'coin_to_rub') {
@@ -651,21 +625,19 @@ app.post('/exchange', async (req, res) => {
       if (currentCoin < amount) {
         return res.status(400).json({ success: false, error: 'Недостаточно монет' });
       }
-      // Применяем комиссию при продаже
       const effectiveCoin = amount * (1 - fee);
-      // Рассчитываем рубли, полученные от продажи
       const rubReceived = parseFloat((effectiveCoin * currentExchangeRate).toFixed(2));
       newCoinBalance = currentCoin - amount;
       newRubBalance = currentRub + rubReceived;
       exchangedAmount = rubReceived;
       
-      // При продаже netDemand уменьшается на полученную сумму в рублях
+      // Обновляем netDemand
       netDemand -= rubReceived;
     } else {
       return res.status(400).json({ success: false, error: 'Неверное направление обмена' });
     }
     
-    // Обновляем баланс пользователя в базе
+    // Обновляем баланс пользователя
     await supabase
       .from('users')
       .update({
@@ -674,7 +646,7 @@ app.post('/exchange', async (req, res) => {
       })
       .eq('user_id', userId);
       
-    // Записываем операцию обмена в таблицу exchange_transactions для истории
+    // Записываем операцию обмена в историю
     const { error: insertError } = await supabase
       .from('exchange_transactions')
       .insert([{
@@ -691,8 +663,17 @@ app.post('/exchange', async (req, res) => {
       console.error('Ошибка записи транзакции:', insertError);
       return res.status(500).json({ success: false, error: 'Ошибка записи транзакции' });
     }
+
+    // Записываем курс в таблицу exchange_rate_history
+    const { error: rateError } = await supabase
+      .from('exchange_rate_history')
+      .insert([{
+        exchange_rate: currentExchangeRate.toFixed(5)
+      }]);
+    if (rateError) {
+      console.error('Ошибка записи курса в историю:', rateError);
+    }
     
-    // Пересчитываем текущий обменный курс для ответа (на основе обновленного netDemand)
     const newExchangeRate = BASE_EXCHANGE_RATE * (1 + netDemand / EXCHANGE_FACTOR);
     
     return res.json({
@@ -709,25 +690,29 @@ app.post('/exchange', async (req, res) => {
   }
 });
 
-
 /* ========================
   истории курсов
 ======================== */
+// Эндпоинт для получения истории обменных курсов
 app.get('/exchangeRates', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('exchange_rate_history')
       .select('*')
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: false })
+      .limit(200); // Ограничиваем до 200 последних записей
+
     if (error) {
       return res.status(500).json({ success: false, error: error.message });
     }
+
     res.json({ success: true, rates: data });
   } catch (err) {
     console.error('[exchangeRates] Ошибка:', err);
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
   }
 });
+
 /* ========================
    14) POST /cloudtips/callback
    - Принимает уведомление об успешной оплате
