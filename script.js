@@ -696,22 +696,24 @@ async function openExchangeModal() {
 
 async function handleExchange(direction) {
   const userId = localStorage.getItem("userId");
-  const amountInput = document.getElementById("amountInput");
-  if (!amountInput) {
+  const amountInputElem = document.getElementById("amountInput");
+  if (!amountInputElem) {
     alert("Поле ввода суммы не найдено");
     return;
   }
-  const amount = parseFloat(amountInput.value);
+  
+  const amount = parseFloat(amountInputElem.value);
   if (isNaN(amount) || amount <= 0) {
     alert("Введите корректную сумму для обмена");
     return;
   }
-
+  
   const exchangeRateElem = document.getElementById("exchangeRateInfo");
   if (!exchangeRateElem) {
     alert("Элемент обменного курса не найден");
     return;
   }
+  
   const exchangeRateText = exchangeRateElem.textContent;
   const rateMatch = exchangeRateText.match(/=\s*([\d.]+)/);
   const exchangeRate = rateMatch ? parseFloat(rateMatch[1]) : null;
@@ -731,19 +733,18 @@ async function handleExchange(direction) {
     
     if (data.success) {
       await loadBalanceAndExchangeRate();
-      // Преобразуем значение exchanged_amount из ответа в число
+      // Используем значение exchanged_amount, которое сервер вычислил
       const exchangedAmount = parseFloat(data.exchanged_amount);
       
       let exchangeMessage = "";
       if (direction === 'rub_to_coin') {
-        // Сообщение для обмена рублей на монеты:
-        // "Обмен выполнен успешно! Вы обменяли {amount} ₽ на {exchangedAmount} ₲"
+        // При покупке: exchangedAmount – полученные монеты
         exchangeMessage = `Обмен выполнен успешно! Вы обменяли ${amount} ₽ на ${exchangedAmount.toFixed(5)} ₲`;
       } else if (direction === 'coin_to_rub') {
-        // Сообщение для обмена монет на рубли:
-        // "Обмен выполнен успешно! Вы обменяли {amount} ₲ на {exchangedAmount} ₽"
+        // При продаже: exchangedAmount – полученные рубли
         exchangeMessage = `Обмен выполнен успешно! Вы обменяли ${amount} ₲ на ${exchangedAmount.toFixed(2)} ₽`;
       }
+      
       alert(exchangeMessage);
     } else {
       alert('Ошибка выполнения обмена: ' + data.error);
