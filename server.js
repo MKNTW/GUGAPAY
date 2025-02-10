@@ -573,18 +573,13 @@ app.get('/merchantBalance', async (req, res) => {
 /* ========================
    13) POST /exchange (RUB ↔ COIN)
 ======================== */
-const BASE_EXCHANGE_RATE = 0.5;  // Базовый курс (например, 0.5 рубля за 1 монету)
-const EXCHANGE_FACTOR = 15000;   // (Если хотите динамику, можно использовать этот коэффициент)
-const fee = 0.02;                // Комиссия, например, 2%
-
-// Эндпоинт для обмена
 app.post('/exchange', async (req, res) => {
   try {
     const { userId, direction, amount } = req.body;
     if (!userId || !direction || typeof amount !== 'number' || amount <= 0) {
       return res.status(400).json({ success: false, error: 'Неверные данные' });
     }
-    
+
     // Получаем данные пользователя
     const { data: user, error: userError } = await supabase
       .from('users')
@@ -597,147 +592,122 @@ app.post('/exchange', async (req, res) => {
     if (user.blocked === 1) {
       return res.status(403).json({ success: false, error: 'Пользователь заблокирован' });
     }
-    
+
+    // Получаем предыдущий курс из истории обменов (из таблицы exchange_rate_history)
+    let previousExchangeRate = 1; // значение по умолчанию, если история пуста
+    const { data: lastRateData } = await supabase
+      .from('exchange_rate_history')
+      .select('exchange_rate')
+      .order('created_at', { ascending: false })
+      .limit(1);
+    if (lastRateData && lastRateData.length > 0) {
+      previousExchangeRate = parseFloat(lastRateData[0].exchange_rate) || 1;
+    }
+
+    // Получаем текущие балансы пользователя
     const currentRub = parseFloat(user.rub_balance || 0);
     const currentCoin = parseFloat(user.balance || 0);
-    let newRubBalance, newCoinBalance, exchangedAmount = 0;
-    
-    // Фиксированный обменный курс
-    const currentExchangeRate = BASE_EXCHANGE_RATE;
-    
-    if (direction === 'rub_to_coin') {
-      // Покупка монет за рубли
-      if (currentRub < amount) {
-        return res.status(400).json({ success: false, error: 'Недостаточно рублей' });
-      }
-      // Применяем комиссию
-      const effectiveRub = amount * (1 - fee);
-      // Вычисляем количество монет
-      const coinAmount = effectiveRub / currentExchangeRate;
-      newRubBalance = currentRub - amount;
-      newCoinBalance = currentCoin + coinAmount;
-      exchangedAmount = coinAmount; // Полученные монеты
-      
-      // Записываем покупку в FIFO-очередь
-      const { error: queueError } = await supabase
-        .from('user_exchange_queue')
-        .insert([{
-          user_id: userId,
-          rub_amount: amount.toFixed(2),
-          coin_amount: coinAmount.toFixed(5),
-          exchange_rate: currentExchangeRate.toFixed(5),
-          created_at: new Date().toISOString()
-        }]);
-      if (queueError) {
-        console.error("Ошибка записи в user_exchange_queue:", queueError);
-      }
-      
-    } else if (direction === 'coin_to_rub') {
-      // Продажа монет за рубли
-      if (currentCoin < amount) {
-        return res.status(400).json({ success: false, error: 'Недостаточно монет' });
-      }
-      
-      // Получаем FIFO-очередь покупок для пользователя
-      const { data: queueData, error: queueFetchError } = await supabase
-        .from('user_exchange_queue')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: true });
-      if (queueFetchError || !queueData || queueData.length === 0) {
-        return res.status(400).json({ success: false, error: 'Нет операций покупки для обратного обмена' });
-      }
-      
-      let remainingCoinsToSell = amount;
-      let totalRubReceived = 0;
-      
-      // Обрабатываем записи FIFO
-      for (const record of queueData) {
-        if (remainingCoinsToSell <= 0) break;
-        const availableCoins = parseFloat(record.coin_amount);
-        const recordRubAmount = parseFloat(record.rub_amount);
-        if (availableCoins <= remainingCoinsToSell + 1e-6) {
-          totalRubReceived += recordRubAmount;
-          remainingCoinsToSell -= availableCoins;
-          // Удаляем запись, если полностью списана
-          await supabase
-            .from('user_exchange_queue')
-            .delete()
-            .eq('id', record.id);
-        } else {
-          // Если в записи больше монет, чем требуется для продажи
-          const fraction = remainingCoinsToSell / availableCoins;
-          totalRubReceived += recordRubAmount * fraction;
-          const newCoinAmount = availableCoins - remainingCoinsToSell;
-          const newRubAmount = recordRubAmount * (newCoinAmount / availableCoins);
-          // Обновляем запись
-          await supabase
-            .from('user_exchange_queue')
-            .update({
-              coin_amount: newCoinAmount.toFixed(5),
-              rub_amount: newRubAmount.toFixed(2)
-            })
-            .eq('id', record.id);
-          remainingCoinsToSell = 0;
-        }
-      }
-      
-      // Если после обработки очереди остаются монеты, значит, не все операции покупки покрывают продажу
-      if (remainingCoinsToSell > 0) {
-        return res.status(400).json({ 
-          success: false, 
-          error: 'Недостаточно операций покупки для полного обратного обмена' 
-        });
-      }
-      
-      newCoinBalance = currentCoin - amount;
-      newRubBalance = currentRub + totalRubReceived;
-      exchangedAmount = totalRubReceived;
-    } else {
-      return res.status(400).json({ success: false, error: 'Неверное направление обмена' });
-    }
-    
-    // Обновляем баланс пользователя
-    await supabase
-      .from('users')
-      .update({
-        rub_balance: newRubBalance.toFixed(2),
-        balance: newCoinBalance.toFixed(5)
-      })
-      .eq('user_id', userId);
-      
-    // Записываем операцию обмена в exchange_transactions
-    const { error: insertError } = await supabase
-      .from('exchange_transactions')
-      .insert([{
-        user_id: userId,
-        direction,
-        amount,
-        exchanged_amount: exchangedAmount.toFixed(5),
-        new_rub_balance: newRubBalance.toFixed(2),
-        new_coin_balance: newCoinBalance.toFixed(5),
-        created_at: new Date().toISOString(),
-        exchange_rate: currentExchangeRate.toFixed(5)
-      }]);
-    if (insertError) {
-      console.error('Ошибка записи транзакции:', insertError);
-      return res.status(500).json({ success: false, error: 'Ошибка записи транзакции' });
-    }
-    
-    return res.json({
-      success: true,
-      newRubBalance: newRubBalance.toFixed(2),
-      newCoinBalance: newCoinBalance.toFixed(5),
-      currentratedisplay: currentExchangeRate.toFixed(5),
-      exchanged_amount: exchangedAmount.toFixed(5)
-    });
-    
+    let newRubBalance, newCoinBalance, newExchangeRate;
+
+    // Коэффициент: каждые 10 000₽ обмена изменяют курс на 1 единицу
+    const EXCHANGE_FACTOR = 10000;
+
+    let exchangedAmount = 0;
+
+if (direction === 'rub_to_coin') {
+  if (currentRub < amount) {
+    return res.status(400).json({ success: false, error: 'Недостаточно рублей' });
+  }
+  const coinAmount = amount / previousExchangeRate;
+  newRubBalance = currentRub - amount;
+  newCoinBalance = currentCoin + coinAmount;
+  exchangedAmount = coinAmount; // именно exchangedAmount = coinAmount
+  const delta = amount / EXCHANGE_FACTOR;
+  newExchangeRate = previousExchangeRate + delta;
+} else if (direction === 'coin_to_rub') {
+  if (currentCoin < amount) {
+    return res.status(400).json({ success: false, error: 'Недостаточно монет' });
+  }
+  const rubAmount = amount * previousExchangeRate;
+  newCoinBalance = currentCoin - amount;
+  newRubBalance = currentRub + rubAmount;
+  exchangedAmount = rubAmount; // именно exchangedAmount = rubAmount
+  const delta = (rubAmount / EXCHANGE_FACTOR) / 2;
+  newExchangeRate = previousExchangeRate - delta;
+  if (newExchangeRate < 0) newExchangeRate = 0;
+}
+
+// Обновление баланса пользователя
+await supabase
+  .from('users')
+  .update({
+    rub_balance: newRubBalance.toFixed(2),
+    balance: newCoinBalance.toFixed(5)
+  })
+  .eq('user_id', userId);
+
+// Сохраняем новый курс обмена в таблицу истории
+const { error: rateInsertError } = await supabase
+  .from('exchange_rate_history')
+  .insert([{
+    exchange_rate: newExchangeRate,
+    created_at: new Date().toISOString()
+  }]);
+if (rateInsertError) {
+  console.error('Ошибка сохранения курса в exchange_rate_history:', rateInsertError);
+}
+
+// Записываем операцию обмена в таблицу exchange_transactions с новым полем exchanged_amount
+const { error: insertError } = await supabase
+  .from('exchange_transactions')
+  .insert([{
+    user_id: userId,
+    direction,
+    amount,
+    exchanged_amount: exchangedAmount.toFixed(5), // сохраняем exchangedAmount
+    new_rub_balance: newRubBalance.toFixed(2),
+    new_coin_balance: newCoinBalance.toFixed(5),
+    created_at: new Date().toISOString(),
+    exchange_rate: previousExchangeRate
+  }]);
+if (insertError) {
+  console.error('Ошибка записи в exchange_transactions:', insertError);
+  return res.status(500).json({ success: false, error: 'Ошибка записи транзакции' });
+}
+
+return res.json({
+  success: true,
+  newRubBalance: newRubBalance.toFixed(2),
+  newCoinBalance: newCoinBalance.toFixed(5),
+  currentratedisplay: newExchangeRate,
+  exchanged_amount: exchangedAmount  // возвращаем именно exchanged_amount
+});
+
   } catch (err) {
     console.error('[exchange] Ошибка:', err);
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
   }
 });
 
+/* ========================
+  истории курсов
+======================== */
+
+app.get('/exchangeRates', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('exchange_rate_history')
+      .select('*')
+      .order('created_at', { ascending: true });
+    if (error) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
+    res.json({ success: true, rates: data });
+  } catch (err) {
+    console.error('[exchangeRates] Ошибка:', err);
+    res.status(500).json({ success: false, error: 'Ошибка сервера' });
+  }
+});
 
 /* ========================
    14) POST /cloudtips/callback
