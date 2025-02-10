@@ -632,7 +632,7 @@ if (direction === 'rub_to_coin') {
   newCoinBalance = currentCoin - amount;
   newRubBalance = currentRub + rubAmount;
   exchangedAmount = rubAmount; // именно exchangedAmount = rubAmount
-  const delta = (rubAmount / EXCHANGE_FACTOR);
+  const delta = rubAmount / EXCHANGE_FACTOR;
   newExchangeRate = previousExchangeRate - delta;
   if (newExchangeRate < 0) newExchangeRate = 0;
 }
