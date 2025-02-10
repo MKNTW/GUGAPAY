@@ -714,21 +714,7 @@ app.post('/exchange', async (req, res) => {
   истории курсов
 ======================== */
 
-app.get('/exchangeRates', async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('exchange_rate_history')
-      .select('*')
-      .order('created_at', { ascending: true });
-    if (error) {
-      return res.status(500).json({ success: false, error: error.message });
-    }
-    res.json({ success: true, rates: data });
-  } catch (err) {
-    console.error('[exchangeRates] Ошибка:', err);
-    res.status(500).json({ success: false, error: 'Ошибка сервера' });
-  }
-});
+
 
 /* ========================
    14) POST /cloudtips/callback
