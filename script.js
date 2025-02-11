@@ -721,7 +721,7 @@ async function handleExchange(direction) {
     return;
   }
   
-  // Блокируем операцию, если направление совпадает с предыдущим
+  // Запрет цикличных операций: если последнее направление совпадает, блокируем операцию
   if (lastDirection !== null && lastDirection === direction) {
     alert("Цикличные операции запрещены. Попробуйте выполнить обратную операцию или подождите.");
     return;
@@ -736,21 +736,12 @@ async function handleExchange(direction) {
     
     const data = await response.json();
     if (data.success) {
-      await loadBalanceAndExchangeRate();
+      // Моментальное обновление курса из ответа сервера
+      document.getElementById("exchangeRateInfo").textContent =
+        `Курс: 1 ₲ = ${parseFloat(data.currentratedisplay).toFixed(2)} ₽`;
       
-      // Если операция обратная предыдущей, применяем синусоидальное изменение курса
-      if (lastDirection !== null && lastDirection !== direction) {
-        const sinusoidalModifier = getSinusoidalRateModifier();
-        const baseRateText = document.getElementById("exchangeRateInfo").textContent;
-        // Пример: заменить базовый курс на (базовый курс + модификатор)
-        // В реальном случае курс пересчитывается сервером, но для демонстрации мы модифицируем локально:
-        const baseRateMatch = baseRateText.match(/=\s*([\d.]+)/);
-        if (baseRateMatch) {
-          const baseRate = parseFloat(baseRateMatch[1]);
-          const newRate = baseRate + sinusoidalModifier;
-          document.getElementById("exchangeRateInfo").textContent = `Курс: 1 ₲ = ${newRate.toFixed(2)} ₽`;
-        }
-      }
+      // Обновляем баланс и график
+      await loadBalanceAndExchangeRate();
       
       let exchangeMessage = "";
       if (direction === 'rub_to_coin') {
@@ -760,7 +751,6 @@ async function handleExchange(direction) {
       }
       alert(exchangeMessage);
       
-      // Сохраняем текущее направление и сбрасываем через 5 секунд
       lastDirection = direction;
       setTimeout(() => { lastDirection = null; }, 5000);
     } else {
@@ -771,8 +761,6 @@ async function handleExchange(direction) {
     alert('Произошла ошибка при обмене');
   }
 }
-
-
 
 async function recordTransaction(transaction) {
   try {
@@ -814,9 +802,10 @@ async function loadBalanceAndExchangeRate() {
     // Получаем историю обменных курсов (последние 200 записей)
     const rateResponse = await fetch(`${API_URL}/exchangeRates?limit=200`);
     const rateData = await rateResponse.json();
+    console.log("Данные курса:", rateData);
     if (rateData.success && rateData.rates && rateData.rates.length > 0) {
       drawExchangeChart(rateData.rates);
-      // Предположим, что записи отсортированы по убыванию: самая свежая запись — первая
+      // Предположим, что самая свежая запись (по времени) первая
       const latestRate = parseFloat(rateData.rates[0].exchange_rate);
       document.getElementById("exchangeRateInfo").textContent = `Курс: 1 ₲ = ${latestRate.toFixed(2)} ₽`;
     } else {
