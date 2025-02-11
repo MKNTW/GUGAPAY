@@ -651,6 +651,7 @@ app.post('/exchange', async (req, res) => {
         return res.status(400).json({ success: false, error: 'Недостаточно монет' });
       }
       const effectiveCoin = amount * (1 - fee);
+      // Формула для продажи:
       outputAmount = reserveRub - (reserveRub * reserveCoin) / (reserveCoin + effectiveCoin);
       if (outputAmount <= 0) {
         return res.status(400).json({ success: false, error: 'Невозможно выполнить обмен' });
@@ -677,7 +678,7 @@ app.post('/exchange', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Неверное направление обмена' });
     }
     
-    // Ограничиваем курс: newExchangeRate = newReserveRub / newReserveCoin
+    // Вычисляем новый курс: newExchangeRate = newReserveRub / newReserveCoin
     const newExchangeRate = newReserveRub / newReserveCoin;
     if (newExchangeRate < 0.1) {
       return res.status(400).json({ success: false, error: 'Обмен невозможен: курс не может опуститься ниже 0.1' });
@@ -697,7 +698,7 @@ app.post('/exchange', async (req, res) => {
       return res.status(500).json({ success: false, error: 'Ошибка обновления данных пула' });
     }
     
-    // Записываем операцию обмена в exchange_transactions
+    // Записываем операцию обмена в таблицу exchange_transactions
     const { error: txError } = await supabase
       .from('exchange_transactions')
       .insert([{
@@ -720,7 +721,8 @@ app.post('/exchange', async (req, res) => {
     }
     
     // Записываем текущий курс в историю (exchange_rate_history)
-    const rateValue = Number(currentExchangeRate.toFixed(5));
+    // Здесь заменяем currentExchangeRate на newExchangeRate, так как currentExchangeRate не определена.
+    const rateValue = Number(newExchangeRate.toFixed(5));
     const { error: rateError } = await supabase
       .from('exchange_rate_history')
       .insert([{ exchange_rate: rateValue }]);
@@ -749,7 +751,6 @@ app.post('/exchange', async (req, res) => {
 /* ========================
  Эндпоинт /exchangeRates
 ======================== */
-
 app.get('/exchangeRates', async (req, res) => {
   try {
     const limit = req.query.limit ? parseInt(req.query.limit) : null;
@@ -770,7 +771,6 @@ app.get('/exchangeRates', async (req, res) => {
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
   }
 });
-
 
 /* ========================
    14) POST /cloudtips/callback
