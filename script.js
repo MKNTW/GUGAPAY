@@ -996,7 +996,7 @@ async function handleExchange(direction) {
       if (direction === "rub_to_coin") {
         exchangeMessage = `Обмен выполнен успешно! Вы обменяли ${amount} ₽ на ${parseFloat(data.exchanged_amount).toFixed(5)} ₲`;
       } else if (direction === "coin_to_rub") {
-        exchangeMessage = `Обмен выполнен успешно! Вы обменяли ${amount} GUGA на ${parseFloat(data.exchanged_amount).toFixed(2)} ₽`;
+        exchangeMessage = `Обмен выполнен успешно! Вы обменяли ${amount} ₲ на ${parseFloat(data.exchanged_amount).toFixed(2)} ₽`;
       }
       alert(exchangeMessage);
       
