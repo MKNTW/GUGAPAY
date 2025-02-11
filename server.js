@@ -712,7 +712,7 @@ app.post('/exchange', async (req, res) => {
           ? Number((parseFloat(userData.balance) + outputAmount).toFixed(5))
           : Number((parseFloat(userData.balance) - amount).toFixed(5)),
         created_at: new Date().toISOString(),
-        exchange_rate: Number(currentExchangeRate.toFixed(5))
+        exchange_rate: Number(newExchangeRate.toFixed(5))
       }]);
     if (txError) {
       console.error('Ошибка записи транзакции:', txError);
