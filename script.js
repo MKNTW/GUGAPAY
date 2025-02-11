@@ -724,6 +724,8 @@ async function openExchangeModal() {
         margin: 0 auto;
         padding: 20px;
         background-color: transparent; /* прозрачный фон */
+        max-height: 80vh;
+        overflow-y: auto;
       }
       .main-header {
         text-align: center;
@@ -733,15 +735,16 @@ async function openExchangeModal() {
       }
       .exchange-header h3 {
         text-align: center;
-        margin-bottom: 20px;
-        font-size: 20px;
+        margin-bottom: 10px;
+        font-size: 16px;  /* уменьшенный шрифт */
+        font-weight: normal;  /* менее жирный */
       }
       .exchange-body {
         display: flex;
         flex-direction: column;
         align-items: center;
       }
-      /* Контейнер для трёх блоков (отправляемая валюта, кнопка смены, получаемая валюта) */
+      /* Контейнер для трёх блоков: отправляемая валюта, кнопка смены, получаемая валюта */
       .exchange-row {
         display: flex;
         justify-content: center;
@@ -817,7 +820,7 @@ async function openExchangeModal() {
       .btn-container {
         width: 100%;
         text-align: center;
-        margin-top: 20px;
+        margin-top: 10px; /* кнопка выше */
       }
     </style>
     <div class="exchange-container">
@@ -855,7 +858,7 @@ async function openExchangeModal() {
           <!-- Кнопка смены направления (swap) -->
           <div class="swap-container">
             <button id="swapBtn" class="swap-btn" onclick="swapCurrencies()">
-              <img src="20.png" alt="Swap" style="width:30px; height:30px;">
+              <img src="20.png" alt="Swap" style="width:40px; height:40px;">
             </button>
           </div>
           
@@ -869,7 +872,7 @@ async function openExchangeModal() {
               </div>
             </div>
             <div class="amount-box">
-              <input type="text" id="toAmount" placeholder="Получить" class="currency-input" disabled>
+              <input type="text" id="toAmount" placeholder="Сумма" class="currency-input" disabled>
               <p id="toBalanceInfo">0.00 ₽</p>
             </div>
           </div>
@@ -933,23 +936,23 @@ function swapCurrencies() {
 // Обновление подписей и иконок в форме обмена (без смещения объектов)
 function updateCurrencyLabels() {
   if (currentExchangeDirection === "coin_to_rub") {
-    // Отправляемая валюта: монеты (GUGA), получаемая: рубли
-    document.getElementById("fromCurrencyName").textContent = "₲";
+    // Отправляемая валюта: монеты (GUGA), получаемая: рубли (RUB)
+    document.getElementById("fromCurrencyName").textContent = "GUGA";
     document.getElementById("fromCurrencyDesc").textContent = "GugaCoin";
     document.getElementById("fromIcon").src = "15.png";
-    document.getElementById("toCurrencyName").textContent = "₽";
+    document.getElementById("toCurrencyName").textContent = "RUB";
     document.getElementById("toCurrencyDesc").textContent = "Рубль";
     document.getElementById("toIcon").src = "18.png";
-    document.getElementById("amountInput").placeholder = "Введите сумму";
+    document.getElementById("amountInput").placeholder = "Обменять";
   } else {
-    // Отправляемая валюта: рубли, получаемая: монеты (GUGA)
-    document.getElementById("fromCurrencyName").textContent = "₽";
+    // Отправляемая валюта: рубли (RUB), получаемая: монеты (GUGA)
+    document.getElementById("fromCurrencyName").textContent = "RUB";
     document.getElementById("fromCurrencyDesc").textContent = "Рубль";
     document.getElementById("fromIcon").src = "18.png";
-    document.getElementById("toCurrencyName").textContent = "₲";
+    document.getElementById("toCurrencyName").textContent = "GUGA";
     document.getElementById("toCurrencyDesc").textContent = "GugaCoin";
     document.getElementById("toIcon").src = "15.png";
-    document.getElementById("amountInput").placeholder = "Введите сумму";
+    document.getElementById("amountInput").placeholder = "Обменять";
   }
 }
 
@@ -993,7 +996,7 @@ async function handleExchange(direction) {
       if (direction === "rub_to_coin") {
         exchangeMessage = `Обмен выполнен успешно! Вы обменяли ${amount} ₽ на ${parseFloat(data.exchanged_amount).toFixed(5)} ₲`;
       } else if (direction === "coin_to_rub") {
-        exchangeMessage = `Обмен выполнен успешно! Вы обменяли ${amount} ₲ на ${parseFloat(data.exchanged_amount).toFixed(2)} ₽`;
+        exchangeMessage = `Обмен выполнен успешно! Вы обменяли ${amount} GUGA на ${parseFloat(data.exchanged_amount).toFixed(2)} ₽`;
       }
       alert(exchangeMessage);
       
@@ -1140,8 +1143,6 @@ function drawExchangeChart(rates) {
     }
   });
 }
-
-
 
 /* ===================================
    МАЙНИНГ
