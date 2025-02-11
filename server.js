@@ -746,6 +746,27 @@ app.post('/exchange', async (req, res) => {
   }
 });
 
+app.get('/exchangeRates', async (req, res) => {
+  try {
+    const limit = req.query.limit ? parseInt(req.query.limit) : null;
+    let query = supabase
+      .from('exchange_rate_history')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (limit) {
+      query = query.limit(limit);
+    }
+    const { data, error } = await query;
+    if (error) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
+    res.json({ success: true, rates: data });
+  } catch (err) {
+    console.error('[exchangeRates] Ошибка:', err);
+    res.status(500).json({ success: false, error: 'Ошибка сервера' });
+  }
+});
+
 /* ========================
    14) POST /cloudtips/callback
    - Принимает уведомление об успешной оплате
