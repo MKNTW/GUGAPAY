@@ -812,6 +812,7 @@ async function openExchangeModal() {
     border: none; /* убирает рамку */
     padding: 0; /* убирает внутренние отступы */
     cursor: pointer; /* меняет курсор на указатель */
+    margin-top: 50px;
   }
       .exchange-btn {
         background-color: transparent;
