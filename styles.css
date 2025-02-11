@@ -289,7 +289,7 @@ body {
 #authModal h3::after {
   content: "";
   display: inline-block;
-  width: 0.8em;
+  width: 0.82em;
   height: 1em;
   margin-bottom: -0.1em;
   background-image: url('image.png');
