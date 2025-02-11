@@ -858,7 +858,7 @@ async function openExchangeModal() {
           <!-- Кнопка смены направления (swap) -->
           <div class="swap-container">
             <button id="swapBtn" class="swap-btn" onclick="swapCurrencies()">
-              <img src="20.png" alt="Swap" style="width:40px; height:40px;">
+              <img src="20.png" alt="Swap" style="width:30px; height:30px;">
             </button>
           </div>
           
