@@ -875,7 +875,7 @@ async function openExchangeModal() {
               </div>
             </div>
             <div class="amount-box">
-              <input type="text" id="toAmount" placeholder="Сумма" class="currency-input" disabled>
+              <input type="text" id="toAmount" placeholder="Получить" class="currency-input" disabled>
               <p id="toBalanceInfo">0.00 ₽</p>
             </div>
           </div>
