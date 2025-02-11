@@ -289,9 +289,9 @@ body {
 #authModal h3::after {
   content: "";
   display: inline-block;
-  width: 0.84em;
+  width: 0.8em;
   height: 1em;
-  margin-bottom: -0.1em;
+  margin-bottom: -0.07em;
   background-image: url('image.png');
   background-size: contain;
   background-repeat: no-repeat;
