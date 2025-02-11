@@ -576,7 +576,7 @@ app.get('/merchantBalance', async (req, res) => {
 // Глобальные константы для модели AMM
 let netDemand = 0;  // Если вы планируете комбинировать модель с динамикой пула, можно использовать netDemand (опционально)
 const BASE_EXCHANGE_RATE = 0.5;  // Базовый курс (на случай дополнительных корректировок, но в данном случае курс рассчитывается из пула)
-const fee = 0.03;  // 3% комиссия
+const fee = 0.02;  // 2% комиссия
 
 app.post('/exchange', async (req, res) => {
   try {
@@ -680,7 +680,7 @@ app.post('/exchange', async (req, res) => {
     
     // Вычисляем новый курс: newExchangeRate = newReserveRub / newReserveCoin
     const newExchangeRate = newReserveRub / newReserveCoin;
-    if (newExchangeRate < 0.1) {
+    if (newExchangeRate < 0.01) {
       return res.status(400).json({ success: false, error: 'Обмен невозможен: курс не может опуститься ниже 0.1' });
     }
     
