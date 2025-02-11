@@ -291,7 +291,7 @@ body {
   display: inline-block;
   width: 0.8em;
   height: 1em;
-  margin-bottom: -0.08em;
+  margin-bottom: -0.1em;
   background-image: url('image.png');
   background-size: contain;
   background-repeat: no-repeat;
