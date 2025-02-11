@@ -800,6 +800,7 @@ async function openExchangeModal() {
         background-color: transparent;
         border: none;
         cursor: pointer;
+        border: 1px #fff;
       }
       .swap-btn img {
         border: none; /* без границ */
