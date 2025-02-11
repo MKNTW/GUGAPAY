@@ -592,6 +592,7 @@ app.post('/exchange', async (req, res) => {
       .eq('user_id', userId)
       .single();
     if (userError || !userData) {
+      console.error("Ошибка получения пользователя:", userError);
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
     if (userData.blocked === 1) {
@@ -605,63 +606,58 @@ app.post('/exchange', async (req, res) => {
       .eq('id', 1)
       .single();
     if (poolError || !poolData) {
+      console.error("Ошибка получения данных пула:", poolError);
       return res.status(500).json({ success: false, error: 'Данные пула не найдены' });
     }
     
     let reserveCoin = parseFloat(poolData.reserve_coin);
     let reserveRub = parseFloat(poolData.reserve_rub);
-
     let newReserveCoin, newReserveRub, outputAmount;
-
+    
     if (direction === 'rub_to_coin') {
-      // Проверяем, что у пользователя достаточно рублей
       const userRub = parseFloat(userData.rub_balance || 0);
       if (userRub < amount) {
         return res.status(400).json({ success: false, error: 'Недостаточно рублей' });
       }
       // Применяем комиссию
       const effectiveRub = amount * (1 - fee);
-      // Используем модель constant product:
-      // outputAmount = reserveCoin - (reserveCoin * reserveRub)/(reserveRub + effectiveRub)
+      // Модель constant product:
       outputAmount = reserveCoin - (reserveCoin * reserveRub) / (reserveRub + effectiveRub);
       if (outputAmount <= 0) {
         return res.status(400).json({ success: false, error: 'Невозможно выполнить обмен' });
       }
       newReserveRub = reserveRub + effectiveRub;
       newReserveCoin = reserveCoin - outputAmount;
-
-      // Обновляем баланс пользователя: рубли уменьшаются на всю сумму, монеты увеличиваются на outputAmount
+      
+      // Обновляем баланс пользователя
       const newUserRub = userRub - amount;
       const userCoin = parseFloat(userData.balance || 0);
       const newUserCoin = userCoin + outputAmount;
       
-      // Обновляем пользователя
       const { error: updateUserError } = await supabase
         .from('users')
         .update({
-          rub_balance: newUserRub.toFixed(2),
-          balance: newUserCoin.toFixed(5)
+          rub_balance: Number(newUserRub.toFixed(2)),
+          balance: Number(newUserCoin.toFixed(5))
         })
         .eq('user_id', userId);
       if (updateUserError) {
+        console.error("Ошибка обновления пользователя:", updateUserError);
         return res.status(500).json({ success: false, error: 'Ошибка обновления баланса пользователя' });
       }
     } else if (direction === 'coin_to_rub') {
-      // Проверяем, что у пользователя достаточно монет
       const userCoin = parseFloat(userData.balance || 0);
       if (userCoin < amount) {
         return res.status(400).json({ success: false, error: 'Недостаточно монет' });
       }
       const effectiveCoin = amount * (1 - fee);
-      // Формула для продажи:
-      // outputAmount = reserveRub - (reserveRub * reserveCoin)/(reserveCoin + effectiveCoin)
       outputAmount = reserveRub - (reserveRub * reserveCoin) / (reserveCoin + effectiveCoin);
       if (outputAmount <= 0) {
         return res.status(400).json({ success: false, error: 'Невозможно выполнить обмен' });
       }
       newReserveCoin = reserveCoin + effectiveCoin;
       newReserveRub = reserveRub - outputAmount;
-
+      
       const userRub = parseFloat(userData.rub_balance || 0);
       const newUserRub = userRub + outputAmount;
       const newUserCoin = userCoin - amount;
@@ -669,62 +665,65 @@ app.post('/exchange', async (req, res) => {
       const { error: updateUserError } = await supabase
         .from('users')
         .update({
-          rub_balance: newUserRub.toFixed(2),
-          balance: newUserCoin.toFixed(5)
+          rub_balance: Number(newUserRub.toFixed(2)),
+          balance: Number(newUserCoin.toFixed(5))
         })
         .eq('user_id', userId);
       if (updateUserError) {
+        console.error("Ошибка обновления пользователя:", updateUserError);
         return res.status(500).json({ success: false, error: 'Ошибка обновления баланса пользователя' });
       }
     } else {
       return res.status(400).json({ success: false, error: 'Неверное направление обмена' });
     }
     
-    // Ограничение: не допускаем, чтобы курс (reserveRub/reserveCoin) опустился ниже 0.1
+    // Ограничиваем курс: newExchangeRate = newReserveRub / newReserveCoin
     const newExchangeRate = newReserveRub / newReserveCoin;
     if (newExchangeRate < 0.1) {
       return res.status(400).json({ success: false, error: 'Обмен невозможен: курс не может опуститься ниже 0.1' });
     }
     
-    // Обновляем данные пула
+    // Обновляем данные пула ликвидности
     const { error: updatePoolError } = await supabase
       .from('liquidity_pool')
       .update({
-        reserve_coin: newReserveCoin.toFixed(5),
-        reserve_rub: newReserveRub.toFixed(2),
+        reserve_coin: Number(newReserveCoin.toFixed(5)),
+        reserve_rub: Number(newReserveRub.toFixed(2)),
         updated_at: new Date().toISOString()
       })
       .eq('id', 1);
     if (updatePoolError) {
+      console.error("Ошибка обновления пула:", updatePoolError);
       return res.status(500).json({ success: false, error: 'Ошибка обновления данных пула' });
     }
     
-    // Записываем операцию обмена в таблицу exchange_transactions
+    // Записываем операцию обмена в exchange_transactions
     const { error: txError } = await supabase
       .from('exchange_transactions')
       .insert([{
         user_id: userId,
         direction,
         amount,
-        exchanged_amount: outputAmount.toFixed(5),
-        new_rub_balance: (direction === 'rub_to_coin'
-                          ? (parseFloat(userData.rub_balance) - amount)
-                          : (parseFloat(userData.rub_balance) + outputAmount)).toFixed(2),
-        new_coin_balance: (direction === 'rub_to_coin'
-                          ? (parseFloat(userData.balance) + outputAmount)
-                          : (parseFloat(userData.balance) - amount)).toFixed(5),
+        exchanged_amount: Number(outputAmount.toFixed(5)),
+        new_rub_balance: direction === 'rub_to_coin'
+          ? Number((parseFloat(userData.rub_balance) - amount).toFixed(2))
+          : Number((parseFloat(userData.rub_balance) + outputAmount).toFixed(2)),
+        new_coin_balance: direction === 'rub_to_coin'
+          ? Number((parseFloat(userData.balance) + outputAmount).toFixed(5))
+          : Number((parseFloat(userData.balance) - amount).toFixed(5)),
         created_at: new Date().toISOString(),
-        exchange_rate: currentExchangeRate.toFixed(5)
+        exchange_rate: Number(currentExchangeRate.toFixed(5))
       }]);
     if (txError) {
       console.error('Ошибка записи транзакции:', txError);
       return res.status(500).json({ success: false, error: 'Ошибка записи транзакции' });
     }
     
-    // Записываем курс обмена в историю (exchange_rate_history)
+    // Записываем текущий курс в историю (exchange_rate_history)
+    const rateValue = Number(currentExchangeRate.toFixed(5));
     const { error: rateError } = await supabase
       .from('exchange_rate_history')
-      .insert([{ exchange_rate: currentExchangeRate.toFixed(5) }]);
+      .insert([{ exchange_rate: rateValue }]);
     if (rateError) {
       console.error('Ошибка записи курса в историю:', rateError);
     }
@@ -732,19 +731,24 @@ app.post('/exchange', async (req, res) => {
     return res.json({
       success: true,
       newRubBalance: direction === 'rub_to_coin'
-        ? (parseFloat(userData.rub_balance) - amount).toFixed(2)
-        : (parseFloat(userData.rub_balance) + outputAmount).toFixed(2),
+        ? Number((parseFloat(userData.rub_balance) - amount).toFixed(2))
+        : Number((parseFloat(userData.rub_balance) + outputAmount).toFixed(2)),
       newCoinBalance: direction === 'rub_to_coin'
-        ? (parseFloat(userData.balance) + outputAmount).toFixed(5)
-        : (parseFloat(userData.balance) - amount).toFixed(5),
-      currentratedisplay: newExchangeRate.toFixed(5),
-      exchanged_amount: outputAmount.toFixed(5)
+        ? Number((parseFloat(userData.balance) + outputAmount).toFixed(5))
+        : Number((parseFloat(userData.balance) - amount).toFixed(5)),
+      currentratedisplay: Number(newExchangeRate.toFixed(5)),
+      exchanged_amount: Number(outputAmount.toFixed(5))
     });
+    
   } catch (err) {
     console.error('[exchange] Ошибка:', err);
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
   }
 });
+
+/* ========================
+ Эндпоинт /exchangeRates
+======================== */
 
 app.get('/exchangeRates', async (req, res) => {
   try {
@@ -766,6 +770,7 @@ app.get('/exchangeRates', async (req, res) => {
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
   }
 });
+
 
 /* ========================
    14) POST /cloudtips/callback
