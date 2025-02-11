@@ -807,6 +807,12 @@ async function openExchangeModal() {
         width:30px; 
         height:30px;
       }
+      #swapBtn {
+    background: none; /* убирает фон */
+    border: none; /* убирает рамку */
+    padding: 0; /* убирает внутренние отступы */
+    cursor: pointer; /* меняет курсор на указатель */
+  }
       .exchange-btn {
         background-color: transparent;
         color: #28a745;
@@ -861,8 +867,8 @@ async function openExchangeModal() {
           <!-- Кнопка смены направления (swap) -->
           <div class="swap-container">
             <button id="swapBtn" class="swap-btn" onclick="swapCurrencies()">
-              <img src="20.png" alt="Swap">
-            </button>
+  <img src="20.png" alt="Swap" style="width: 30px;height: 30px;">
+</button>
           </div>
           
           <!-- Секция получаемой валюты (to) -->
