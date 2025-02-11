@@ -573,11 +573,10 @@ app.get('/merchantBalance', async (req, res) => {
 /* ========================
    13) POST /exchange (RUB ↔ COIN)
 ======================== */
-let netDemand = 0;  // Глобальная переменная для динамики курса
-
-const BASE_EXCHANGE_RATE = 0.5;  // Базовый курс (например, 0.5 рубля за 1 монету)
-const EXCHANGE_FACTOR = 10000;   // Коэффициент динамики
-const fee = 0.05;                // Комиссия (например, 5%)
+// Глобальные константы для модели AMM
+let netDemand = 0;  // Если вы планируете комбинировать модель с динамикой пула, можно использовать netDemand (опционально)
+const BASE_EXCHANGE_RATE = 0.5;  // Базовый курс (на случай дополнительных корректировок, но в данном случае курс рассчитывается из пула)
+const fee = 0.03;  // 3% комиссия
 
 app.post('/exchange', async (req, res) => {
   try {
@@ -587,72 +586,133 @@ app.post('/exchange', async (req, res) => {
     }
     
     // Получаем данные пользователя
-    const { data: user, error: userError } = await supabase
+    const { data: userData, error: userError } = await supabase
       .from('users')
       .select('*')
       .eq('user_id', userId)
       .single();
-    if (userError || !user) {
+    if (userError || !userData) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
-    if (user.blocked === 1) {
+    if (userData.blocked === 1) {
       return res.status(403).json({ success: false, error: 'Пользователь заблокирован' });
     }
     
-    const currentRub = parseFloat(user.rub_balance || 0);
-    const currentCoin = parseFloat(user.balance || 0);
-    let newRubBalance, newCoinBalance, exchangedAmount = 0;
+    // Получаем данные пула ликвидности (предполагаем, что id = 1)
+    const { data: poolData, error: poolError } = await supabase
+      .from('liquidity_pool')
+      .select('*')
+      .eq('id', 1)
+      .single();
+    if (poolError || !poolData) {
+      return res.status(500).json({ success: false, error: 'Данные пула не найдены' });
+    }
     
-    // Вычисляем текущий курс с динамикой:
-    let currentExchangeRate = BASE_EXCHANGE_RATE * (1 + netDemand / EXCHANGE_FACTOR);
-    currentExchangeRate = Math.max(currentExchangeRate, 0.0001);
-    
+    let reserveCoin = parseFloat(poolData.reserve_coin);
+    let reserveRub = parseFloat(poolData.reserve_rub);
+
+    let newReserveCoin, newReserveRub, outputAmount;
+
     if (direction === 'rub_to_coin') {
-      if (currentRub < amount) {
+      // Проверяем, что у пользователя достаточно рублей
+      const userRub = parseFloat(userData.rub_balance || 0);
+      if (userRub < amount) {
         return res.status(400).json({ success: false, error: 'Недостаточно рублей' });
       }
+      // Применяем комиссию
       const effectiveRub = amount * (1 - fee);
-      const coinAmount = parseFloat((effectiveRub / currentExchangeRate).toFixed(5));
-      newRubBalance = currentRub - amount;
-      newCoinBalance = currentCoin + coinAmount;
-      exchangedAmount = coinAmount;
+      // Используем модель constant product:
+      // outputAmount = reserveCoin - (reserveCoin * reserveRub)/(reserveRub + effectiveRub)
+      outputAmount = reserveCoin - (reserveCoin * reserveRub) / (reserveRub + effectiveRub);
+      if (outputAmount <= 0) {
+        return res.status(400).json({ success: false, error: 'Невозможно выполнить обмен' });
+      }
+      newReserveRub = reserveRub + effectiveRub;
+      newReserveCoin = reserveCoin - outputAmount;
+
+      // Обновляем баланс пользователя: рубли уменьшаются на всю сумму, монеты увеличиваются на outputAmount
+      const newUserRub = userRub - amount;
+      const userCoin = parseFloat(userData.balance || 0);
+      const newUserCoin = userCoin + outputAmount;
       
-      netDemand += amount;  // При покупке увеличиваем netDemand
-      
+      // Обновляем пользователя
+      const { error: updateUserError } = await supabase
+        .from('users')
+        .update({
+          rub_balance: newUserRub.toFixed(2),
+          balance: newUserCoin.toFixed(5)
+        })
+        .eq('user_id', userId);
+      if (updateUserError) {
+        return res.status(500).json({ success: false, error: 'Ошибка обновления баланса пользователя' });
+      }
     } else if (direction === 'coin_to_rub') {
-      if (currentCoin < amount) {
+      // Проверяем, что у пользователя достаточно монет
+      const userCoin = parseFloat(userData.balance || 0);
+      if (userCoin < amount) {
         return res.status(400).json({ success: false, error: 'Недостаточно монет' });
       }
       const effectiveCoin = amount * (1 - fee);
-      const rubReceived = parseFloat((effectiveCoin * currentExchangeRate).toFixed(2));
-      newCoinBalance = currentCoin - amount;
-      newRubBalance = currentRub + rubReceived;
-      exchangedAmount = rubReceived;
+      // Формула для продажи:
+      // outputAmount = reserveRub - (reserveRub * reserveCoin)/(reserveCoin + effectiveCoin)
+      outputAmount = reserveRub - (reserveRub * reserveCoin) / (reserveCoin + effectiveCoin);
+      if (outputAmount <= 0) {
+        return res.status(400).json({ success: false, error: 'Невозможно выполнить обмен' });
+      }
+      newReserveCoin = reserveCoin + effectiveCoin;
+      newReserveRub = reserveRub - outputAmount;
+
+      const userRub = parseFloat(userData.rub_balance || 0);
+      const newUserRub = userRub + outputAmount;
+      const newUserCoin = userCoin - amount;
       
-      netDemand -= rubReceived; // При продаже уменьшаем netDemand
+      const { error: updateUserError } = await supabase
+        .from('users')
+        .update({
+          rub_balance: newUserRub.toFixed(2),
+          balance: newUserCoin.toFixed(5)
+        })
+        .eq('user_id', userId);
+      if (updateUserError) {
+        return res.status(500).json({ success: false, error: 'Ошибка обновления баланса пользователя' });
+      }
     } else {
       return res.status(400).json({ success: false, error: 'Неверное направление обмена' });
     }
     
-    // Обновляем баланс пользователя
-    await supabase
-      .from('users')
+    // Ограничение: не допускаем, чтобы курс (reserveRub/reserveCoin) опустился ниже 0.1
+    const newExchangeRate = newReserveRub / newReserveCoin;
+    if (newExchangeRate < 0.1) {
+      return res.status(400).json({ success: false, error: 'Обмен невозможен: курс не может опуститься ниже 0.1' });
+    }
+    
+    // Обновляем данные пула
+    const { error: updatePoolError } = await supabase
+      .from('liquidity_pool')
       .update({
-        rub_balance: newRubBalance.toFixed(2),
-        balance: newCoinBalance.toFixed(5)
+        reserve_coin: newReserveCoin.toFixed(5),
+        reserve_rub: newReserveRub.toFixed(2),
+        updated_at: new Date().toISOString()
       })
-      .eq('user_id', userId);
-      
-    // Записываем операцию обмена
+      .eq('id', 1);
+    if (updatePoolError) {
+      return res.status(500).json({ success: false, error: 'Ошибка обновления данных пула' });
+    }
+    
+    // Записываем операцию обмена в таблицу exchange_transactions
     const { error: txError } = await supabase
       .from('exchange_transactions')
       .insert([{
         user_id: userId,
         direction,
         amount,
-        exchanged_amount: exchangedAmount.toFixed(5),
-        new_rub_balance: newRubBalance.toFixed(2),
-        new_coin_balance: newCoinBalance.toFixed(5),
+        exchanged_amount: outputAmount.toFixed(5),
+        new_rub_balance: (direction === 'rub_to_coin'
+                          ? (parseFloat(userData.rub_balance) - amount)
+                          : (parseFloat(userData.rub_balance) + outputAmount)).toFixed(2),
+        new_coin_balance: (direction === 'rub_to_coin'
+                          ? (parseFloat(userData.balance) + outputAmount)
+                          : (parseFloat(userData.balance) - amount)).toFixed(5),
         created_at: new Date().toISOString(),
         exchange_rate: currentExchangeRate.toFixed(5)
       }]);
@@ -661,51 +721,27 @@ app.post('/exchange', async (req, res) => {
       return res.status(500).json({ success: false, error: 'Ошибка записи транзакции' });
     }
     
-    // Сохраняем курс обмена в историю
+    // Записываем курс обмена в историю (exchange_rate_history)
     const { error: rateError } = await supabase
       .from('exchange_rate_history')
-      .insert([{
-        exchange_rate: currentExchangeRate.toFixed(5)
-      }]);
+      .insert([{ exchange_rate: currentExchangeRate.toFixed(5) }]);
     if (rateError) {
       console.error('Ошибка записи курса в историю:', rateError);
     }
     
-    const newExchangeRate = BASE_EXCHANGE_RATE * (1 + netDemand / EXCHANGE_FACTOR);
-    
     return res.json({
       success: true,
-      newRubBalance: newRubBalance.toFixed(2),
-      newCoinBalance: newCoinBalance.toFixed(5),
+      newRubBalance: direction === 'rub_to_coin'
+        ? (parseFloat(userData.rub_balance) - amount).toFixed(2)
+        : (parseFloat(userData.rub_balance) + outputAmount).toFixed(2),
+      newCoinBalance: direction === 'rub_to_coin'
+        ? (parseFloat(userData.balance) + outputAmount).toFixed(5)
+        : (parseFloat(userData.balance) - amount).toFixed(5),
       currentratedisplay: newExchangeRate.toFixed(5),
-      exchanged_amount: exchangedAmount.toFixed(5)
+      exchanged_amount: outputAmount.toFixed(5)
     });
-    
   } catch (err) {
     console.error('[exchange] Ошибка:', err);
-    res.status(500).json({ success: false, error: 'Ошибка сервера' });
-  }
-});
-
-/* ========================
-  истории курсов
-======================== */
-// Эндпоинт для получения истории обменных курсов
-app.get('/exchangeRates', async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('exchange_rate_history')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(200); // Ограничиваем до 200 последних записей
-
-    if (error) {
-      return res.status(500).json({ success: false, error: error.message });
-    }
-
-    res.json({ success: true, rates: data });
-  } catch (err) {
-    console.error('[exchangeRates] Ошибка:', err);
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
   }
 });
