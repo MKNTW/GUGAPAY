@@ -735,7 +735,7 @@ async function openExchangeModal() {
       }
       .exchange-header h3 {
         text-align: center;
-        margin-bottom: 10px;
+        margin-bottom: 50px;
         font-size: 16px;  /* уменьшенный шрифт */
         font-weight: normal;  /* менее жирный */
       }
