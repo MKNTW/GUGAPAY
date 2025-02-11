@@ -76,7 +76,7 @@ body {
   width: 0.83em;
   height: 1em; /* тонкая настройка под конкретный шрифт */
   margin-bottom: -0.09em; /* выравнивание по базовой линии */
-  background-image: url('image.png');
+  background-image: url('15.png');
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
@@ -292,7 +292,7 @@ body {
   width: 1em;
   height: 0.8em;
   #margin-bottom: -0.1em;
-  background-image: url('image.png');
+  background-image: url('15.png');
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
