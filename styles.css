@@ -73,7 +73,7 @@ body {
 #appTitle::after {
   content: "";
   display: inline-block;
-  width: 0.9em;
+  width: 0.8em;
   height: 1em; /* тонкая настройка под конкретный шрифт */
   margin-bottom: -0.09em; /* выравнивание по базовой линии */
   background-image: url('15.png');
