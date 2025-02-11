@@ -531,7 +531,8 @@ function openOperationsModal() {
 
   function showPayTab() {
     operationsContent.innerHTML = `
-      <div style="height:40vh; margin-top:-50px; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+      <div style="height:40vh; margin-top:-35px; display:flex; flex-direction:column; align-items:center; justify-content:center; width: 100%;
+    margin: auto;">
         <video id="opPayVideo" muted playsinline style="width:100%; max-width:600px; border:2px solid black;"></video>
       </div>
     `;
@@ -659,28 +660,30 @@ function parseMerchantQRData(rawValue) {
 async function openExchangeModal() {
   // Создаём модальное окно для обмена с блоком графика
   createModal("exchangeModal", `
-    <h3>Обмен</h3>
-    <!-- Блок графика обмена -->
-    <div id="exchangeChartContainer" style="width:90%;max-width:600px; margin-bottom:20px;">
-      <h4 id="currentRateDisplay"></h4>
-      <canvas id="exchangeChart"></canvas>
-    </div>
-    <div style="display: flex; flex-direction: column; align-items: center;">
-      <p id="balanceInfo">0.00000 ₲</p>
-      <p id="rubBalanceInfo">0.00 ₽</p>
-      <p id="exchangeRateInfo">Курс: 1 ₲ = 0.00 ₽</p>
-      <div>
-        <label for="amountInput">Сумма:</label>
-        <input type="number" id="amountInput" placeholder="Введите сумму" />
+    <div style="max-height: 80vh; overflow-y: auto; padding: 10px;">
+      <h3>Обмен</h3>
+      <!-- Блок графика обмена -->
+      <div id="exchangeChartContainer" style="width:100%; max-width:600px; margin: 0 auto;">
+        <h4 id="currentRateDisplay"></h4>
+        <canvas id="exchangeChart"></canvas>
       </div>
-      <div style="display: flex; gap: 35px; margin-top:10px;">
-  <button id="rubToCoinBtn">₽ → ₲</button>
-  <button id="coinToRubBtn">₲ → ₽</button>
-</div>
-
-      <p id="conversionResult"></p>
+      <div style="display: flex; flex-direction: column; align-items: center; width: 100%; margin: auto;">
+        <p id="balanceInfo">0.00000 ₲</p>
+        <p id="rubBalanceInfo">0.00 ₽</p>
+        <p id="exchangeRateInfo">1 ₲ = 0.00 ₽</p>
+        <div>
+          <label for="amountInput">Сумма:</label>
+          <input type="number" id="amountInput" placeholder="Введите сумму" />
+        </div>
+        <div style="display: flex; gap: 35px; margin-top: 10px;">
+          <button id="rubToCoinBtn">₽ → ₲</button>
+          <button id="coinToRubBtn">₲ → ₽</button>
+        </div>
+        <p id="conversionResult"></p>
+      </div>
     </div>
   `);
+  
   openModal("exchangeModal");
 
   // Ждём загрузку данных и обновляем курс
@@ -807,10 +810,10 @@ async function loadBalanceAndExchangeRate() {
       drawExchangeChart(rateData.rates);
       // Предположим, что самая свежая запись (по времени) первая
       const latestRate = parseFloat(rateData.rates[0].exchange_rate);
-      document.getElementById("exchangeRateInfo").textContent = `Курс: 1 ₲ = ${latestRate.toFixed(2)} ₽`;
+      document.getElementById("exchangeRateInfo").textContent = `1 ₲ = ${latestRate.toFixed(2)} ₽`;
     } else {
       console.error('Ошибка: нет данных для графика обменных курсов');
-      document.getElementById("exchangeRateInfo").textContent = "Курс: данные отсутствуют";
+      document.getElementById("exchangeRateInfo").textContent = "Данные отсутствуют";
     }
   } catch (error) {
     console.error('Ошибка при загрузке данных:', error);
@@ -882,7 +885,7 @@ function drawExchangeChart(rates) {
         y: {
           position: 'right',
           grid: {
-            display: true,
+            display: false,
             drawBorder: false,
             drawTicks: false,
             borderColor: 'transparent',
