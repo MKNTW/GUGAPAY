@@ -820,7 +820,7 @@ async function openExchangeModal() {
       .btn-container {
         width: 100%;
         text-align: center;
-        margin-top: 10px; /* кнопка выше */
+        margin-top: 0px; /* кнопка выше */
       }
     </style>
     <div class="exchange-container">
