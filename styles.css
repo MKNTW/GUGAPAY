@@ -16,6 +16,27 @@ ul {
     unicode-bidi: isolate;
 }
 
+#exchangeChart {
+  border: none;
+  outline: none;
+}
+
+/* CSS для стилизации кнопок мерчанта (схожий дизайн с UI пользователя) */
+.merchant-btn {
+  background-color: #fff;      /* Пример: ярко-синий фон */
+  color: #fff;                    /* Белый текст */
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.merchant-btn:hover {
+  background-color: #0f7ad1;
+}
+
 body {
   font-family: 'Oswald', sans-serif;
   margin: 0;
@@ -73,10 +94,10 @@ body {
 #appTitle::after {
   content: "";
   display: inline-block;
-  width: 0.9em;
-  height: 0.8em; /* тонкая настройка под конкретный шрифт */
-  margin-bottom: 0.0em; /* выравнивание по базовой линии */
-  background-image: url('15.png');
+  width: 1em;
+  height: 1em; /* тонкая настройка под конкретный шрифт */
+  margin-bottom: -0.1em; /* выравнивание по базовой линии */
+  background-image: url('1.png');
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
@@ -145,6 +166,11 @@ body {
   transform: translateX(-50%);
   text-align: center;
   z-index: 1000;
+  font-weight: 600;
+  font-size: 28px;
+  text-transform: uppercase;
+  color: #000;
+  text-align: center;
 }
 
 #balanceLabel {
@@ -290,9 +316,9 @@ body {
   content: "";
   display: inline-block;
   width: 1em;
-  height: 0.8em;
-  #margin-bottom: -0.1em;
-  background-image: url('15.png');
+  height: 1em;
+  margin-bottom: -0.1em;
+  background-image: url('1.png');
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
@@ -324,9 +350,9 @@ body {
 }
 
 .modal-content button {
-  margin-top: 15px;
+  margin-top: 50px;
   padding: 8px;
-  border: 2px solid #000;
+  #border: 2px solid #000;
   cursor: pointer;
   border-radius: 0;
   transition: background-color 0.3s ease;
