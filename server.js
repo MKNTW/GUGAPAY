@@ -156,12 +156,15 @@ app.post('/login', async (req, res) => {
     // Генерация JWT-токена с данными пользователя и ролью "user"
     const token = jwt.sign({ userId: data.user_id, role: 'user' }, JWT_SECRET, { expiresIn: '1h' });
     // Устанавливаем httpOnly cookie с токеном
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // true в production
-      sameSite: 'none', // используйте 'none' для кросс-доменных запросов (с HTTPS)
-      maxAge: 3600000 // 1 час
-    });
+    const env = process.env.NODE_ENV || 'development';
+res.cookie('token', token, {
+  httpOnly: true,
+  secure: env === 'production', // true если приложение работает по HTTPS
+  sameSite: 'none',             // обязательно для кросс-доменных запросов
+  // Не указывайте параметр domain, если клиент и API находятся на разных доменах,
+  // чтобы браузер сам установил cookie для текущего домена API.
+  maxAge: 3600000               // например, 1 час
+});
     console.log('[Login] Пользователь вошёл:', username, ' userId=', data.user_id);
     res.json({ success: true, message: 'Пользователь успешно авторизован' });
   } catch (err) {
@@ -208,10 +211,11 @@ app.post('/merchantLogin', async (req, res) => {
     // Устанавливаем httpOnly cookie с токеном
     res.cookie('token', token, {
   httpOnly: true,
-  secure: env === 'production', // secure: true в продакшене, false в development
-  sameSite: 'none',
-  // domain: '.yourmaindomain.com', // задавайте только если у вас единый домен для API и клиента
-  maxAge: 3600000 // 1 час
+  secure: env === 'production', // true если приложение работает по HTTPS
+  sameSite: 'none',             // обязательно для кросс-доменных запросов
+  // Не указывайте параметр domain, если клиент и API находятся на разных доменах,
+  // чтобы браузер сам установил cookie для текущего домена API.
+  maxAge: 3600000               // например, 1 час
 });
     console.log('[MerchantLogin] Мерчант вошёл:', username, ' merchantId=', data.merchant_id);
     res.json({ success: true, message: 'Мерчант успешно авторизован' });
