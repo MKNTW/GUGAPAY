@@ -546,7 +546,7 @@ const payMerchantSchema = Joi.object({
   merchantId: Joi.string().required(),
   amount: Joi.number().positive().required(),
   purpose: Joi.string().allow('')
-});
+}).unknown(true); // Разрешаем дополнительные поля, например, "merchantId"
 
 app.post('/payMerchantOneTime', verifyToken, async (req, res) => {
   try {
@@ -559,6 +559,8 @@ app.post('/payMerchantOneTime', verifyToken, async (req, res) => {
       return res.status(400).json({ success: false, error: error.details[0].message });
     }
     const { merchantId, amount, purpose } = value;
+    
+    // Получаем данные пользователя
     const { data: userData } = await supabase
       .from('users')
       .select('*')
@@ -573,6 +575,8 @@ app.post('/payMerchantOneTime', verifyToken, async (req, res) => {
     if (parseFloat(userData.balance) < amount) {
       return res.status(400).json({ success: false, error: 'Недостаточно средств у пользователя' });
     }
+    
+    // Получаем данные мерчанта
     const { data: merchData } = await supabase
       .from('merchants')
       .select('*')
@@ -584,17 +588,22 @@ app.post('/payMerchantOneTime', verifyToken, async (req, res) => {
     if (merchData.blocked === 1) {
       return res.status(403).json({ success: false, error: 'Мерчант заблокирован' });
     }
+    
+    // Обновляем балансы: списываем у пользователя и добавляем мерчанту
     const newUserBalance = parseFloat(userData.balance) - amount;
     await supabase
       .from('users')
       .update({ balance: newUserBalance.toFixed(5) })
       .eq('user_id', userId);
+      
     const merchantAmount = amount;
     const newMerchantBalance = parseFloat(merchData.balance) + merchantAmount;
     await supabase
       .from('merchants')
       .update({ balance: newMerchantBalance.toFixed(5) })
       .eq('merchant_id', merchantId);
+      
+    // Записываем транзакцию
     const { error: insertError } = await supabase
       .from('transactions')
       .insert([{
@@ -607,6 +616,7 @@ app.post('/payMerchantOneTime', verifyToken, async (req, res) => {
       console.error('Ошибка вставки транзакции для мерчанта:', insertError);
       return res.status(500).json({ success: false, error: 'Ошибка записи транзакции' });
     }
+    
     await supabase
       .from('merchant_payments')
       .insert([{
@@ -615,6 +625,7 @@ app.post('/payMerchantOneTime', verifyToken, async (req, res) => {
         amount: merchantAmount,
         purpose
       }]);
+      
     console.log(`[payMerchantOneTime] user=${userId} => merchant=${merchantId}, amount=${amount}, merchantGets=${merchantAmount}`);
     res.json({ success: true });
   } catch (err) {
@@ -622,6 +633,7 @@ app.post('/payMerchantOneTime', verifyToken, async (req, res) => {
     res.status(500).json({ success: false, error: 'Ошибка сервера при оплате мерчанту' });
   }
 });
+
 
 /* ========================
    11) GET /merchantBalance
