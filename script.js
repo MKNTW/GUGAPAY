@@ -93,8 +93,11 @@ async function login() {
     return;
   }
 
-  // Показываем глобальный индикатор загрузки при старте входа
+  // Добавляем класс для смещения загрузки ниже в авторизации
+  const loader = document.getElementById("loadingIndicator");
+  loader.classList.add("auth-loading");
   showGlobalLoading();
+
   try {
     // Попытка входа как пользователь
     const userResp = await fetch(`${API_URL}/login`, {
@@ -144,8 +147,76 @@ async function login() {
   } catch (err) {
     console.error("Сбой при логине:", err);
   } finally {
-    // Скрываем индикатор загрузки в любом случае
     hideGlobalLoading();
+    loader.classList.remove("auth-loading");
+  }
+}
+
+
+async function login() {
+  const loginVal = document.getElementById("loginInput")?.value;
+  const passVal = document.getElementById("passwordInput")?.value;
+  if (!loginVal || !passVal) {
+    alert("❌ Введите логин и пароль");
+    return;
+  }
+
+  // Добавляем класс для смещения загрузки ниже в авторизации
+  const loader = document.getElementById("loadingIndicator");
+  loader.classList.add("auth-loading");
+  showGlobalLoading();
+
+  try {
+    // Попытка входа как пользователь
+    const userResp = await fetch(`${API_URL}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: loginVal, password: passVal })
+    });
+    const userData = await userResp.json();
+    if (userResp.ok && userData.success) {
+      currentUserId = userData.userId;
+      localStorage.setItem("userId", currentUserId);
+      localStorage.removeItem("merchantId");
+      currentMerchantId = null;
+      document.getElementById("authModal")?.remove();
+      createUI();
+      updateUI();
+      fetchUserData(); // Обновляем данные пользователя
+      return;
+    } else {
+      // Если не удалось, пробуем мерчанта
+      if (userData.error?.includes("блокирован")) {
+        alert("❌ Ваш аккаунт заблокирован");
+        return;
+      }
+      const merchResp = await fetch(`${API_URL}/merchantLogin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: loginVal, password: passVal })
+      });
+      const merchData = await merchResp.json();
+      if (merchResp.ok && merchData.success) {
+        currentMerchantId = merchData.merchantId;
+        localStorage.setItem("merchantId", currentMerchantId);
+        localStorage.removeItem("userId");
+        currentUserId = null;
+        document.getElementById("authModal")?.remove();
+        openMerchantUI();
+        return;
+      } else {
+        if (merchData.error?.includes("блокирован")) {
+          alert("❌ Ваш аккаунт заблокирован");
+        } else {
+          alert(`❌ Ошибка входа: ${merchData.error}`);
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Сбой при логине:", err);
+  } finally {
+    hideGlobalLoading();
+    loader.classList.remove("auth-loading");
   }
 }
 
@@ -158,8 +229,10 @@ async function register() {
     return;
   }
   
-  // Показываем глобальный индикатор загрузки при старте регистрации
+  const loader = document.getElementById("loadingIndicator");
+  loader.classList.add("auth-loading");
   showGlobalLoading();
+  
   try {
     const resp = await fetch(`${API_URL}/register`, {
       method: "POST",
@@ -187,8 +260,8 @@ async function register() {
   } catch (err) {
     console.error("Сбой при регистрации:", err);
   } finally {
-    // Скрываем глобальный индикатор загрузки независимо от результата
     hideGlobalLoading();
+    loader.classList.remove("auth-loading");
   }
 }
 
@@ -255,7 +328,6 @@ function openAuthModal() {
   document.getElementById("registerSection").style.display = "none";
   authModal.classList.remove("hidden");
 }
-
 
 /* ===================================
    UI ПОЛЬЗОВАТЕЛЯ
