@@ -93,6 +93,8 @@ async function login() {
     return;
   }
 
+  // Показываем глобальный индикатор загрузки при старте входа
+  showGlobalLoading();
   try {
     // Попытка входа как пользователь
     const userResp = await fetch(`${API_URL}/login`, {
@@ -141,6 +143,9 @@ async function login() {
     }
   } catch (err) {
     console.error("Сбой при логине:", err);
+  } finally {
+    // Скрываем индикатор загрузки в любом случае
+    hideGlobalLoading();
   }
 }
 
@@ -152,6 +157,9 @@ async function register() {
     alert("❌ Введите логин и пароль");
     return;
   }
+  
+  // Показываем глобальный индикатор загрузки при старте регистрации
+  showGlobalLoading();
   try {
     const resp = await fetch(`${API_URL}/register`, {
       method: "POST",
@@ -178,6 +186,9 @@ async function register() {
     }
   } catch (err) {
     console.error("Сбой при регистрации:", err);
+  } finally {
+    // Скрываем глобальный индикатор загрузки независимо от результата
+    hideGlobalLoading();
   }
 }
 
@@ -244,6 +255,7 @@ function openAuthModal() {
   document.getElementById("registerSection").style.display = "none";
   authModal.classList.remove("hidden");
 }
+
 
 /* ===================================
    UI ПОЛЬЗОВАТЕЛЯ
@@ -717,6 +729,10 @@ let currentExchangeRate = 0; // Актуальный курс, получаем�
 
 // Функция открытия модального окна обмена с новым статичным интерфейсом
 async function openExchangeModal() {
+  // Показываем глобальную анимацию загрузки сразу при открытии модального окна
+  showGlobalLoading();
+
+  // Создаём модальное окно обмена с необходимыми стилями и содержимым
   createModal("exchangeModal", `
     <style>
       .exchange-container {
@@ -808,12 +824,12 @@ async function openExchangeModal() {
         height:20px;
       }
       #swapBtn {
-    background: none; /* убирает фон */
-    border: none; /* убирает рамку */
-    padding: 0; /* убирает внутренние отступы */
-    cursor: pointer; /* меняет курсор на указатель */
-    margin-top: 50px;
-  }
+        background: none; /* убирает фон */
+        border: none; /* убирает рамку */
+        padding: 0; /* убирает внутренние отступы */
+        cursor: pointer; /* меняет курсор на указатель */
+        margin-top: 50px;
+      }
       .exchange-btn {
         background-color: transparent;
         color: #28a745;
@@ -868,8 +884,8 @@ async function openExchangeModal() {
           <!-- Кнопка смены направления (swap) -->
           <div class="swap-container">
             <button id="swapBtn" class="swap-btn" onclick="swapCurrencies()">
-  <img src="24.png" alt="Swap" style="width: 20px;height: 20px;">
-</button>
+              <img src="24.png" alt="Swap" style="width: 20px; height: 20px;">
+            </button>
           </div>
           
           <!-- Секция получаемой валюты (to) -->
@@ -902,16 +918,25 @@ async function openExchangeModal() {
   currentExchangeDirection = "coin_to_rub";
   updateCurrencyLabels();
 
-  // Загружаем баланс, курс и данные для графика, обновляем статичный курс
-  await loadBalanceAndExchangeRate();
-  updateCurrentRateDisplay();
-  drawExchangeChart();
+  try {
+    // Загружаем баланс, курс и данные для графика
+    await loadBalanceAndExchangeRate();
+    updateCurrentRateDisplay();
+    drawExchangeChart();
 
-  // Назначаем обработчик для кнопки выполнения обмена
-  document.getElementById("btnPerformExchange").addEventListener("click", function() {
-    handleExchange(currentExchangeDirection);
-  });
+    // Назначаем обработчик для кнопки выполнения обмена
+    document.getElementById("btnPerformExchange").addEventListener("click", function() {
+      handleExchange(currentExchangeDirection);
+    });
+  } catch (error) {
+    console.error("Ошибка при загрузке данных обмена:", error);
+  } finally {
+    // После завершения загрузки всех блоков скрываем глобальный индикатор
+    hideGlobalLoading();
+  }
 }
+
+
 
 // При вводе суммы рассчитываем результат обмена и выводим его в поле "toAmount"
 function updateExchange() {
@@ -1045,9 +1070,10 @@ async function recordTransaction(transaction) {
 }
 
 // Функция загрузки баланса пользователя и истории обменных курсов.
-// Баланс под каждой валютой отображается статично, а курс берётся с сервера.
 async function loadBalanceAndExchangeRate() {
   const userId = localStorage.getItem("userId");
+  
+  // Загрузка данных пользователя (без анимации)
   try {
     const response = await fetch(`${API_URL}/user?userId=${userId}`);
     const data = await response.json();
@@ -1062,7 +1088,12 @@ async function loadBalanceAndExchangeRate() {
         document.getElementById("toBalanceInfo").textContent = `${(data.user.balance || 0).toFixed(5)} ₲`;
       }
     }
-    
+  } catch (error) {
+    console.error('Ошибка при загрузке данных пользователя:', error);
+  }
+  
+  // Загрузка курсов обмена (эта часть оборачиваем в глобальную анимацию)
+  try {
     const rateResponse = await fetch(`${API_URL}/exchangeRates?limit=200`);
     const rateData = await rateResponse.json();
     if (rateData.success && rateData.rates && rateData.rates.length > 0) {
@@ -1075,9 +1106,10 @@ async function loadBalanceAndExchangeRate() {
       console.error('Ошибка: нет данных для графика обменных курсов');
     }
   } catch (error) {
-    console.error('Ошибка при загрузке данных:', error);
+    console.error('Ошибка при загрузке данных курса:', error);
   }
 }
+
 
 // Функция обновления отображения курса (статично)
 function updateCurrentRateDisplay() {
@@ -1225,38 +1257,52 @@ function updateBalanceDisplay(localBalance) {
 }
 
 /* ===================================
+   Глобальный менеджер загрузки
+==================================== */
+
+let loadingRequests = 0;
+
+function showGlobalLoading() {
+  loadingRequests++;
+  document.getElementById("loadingIndicator").style.display = 'flex';
+}
+
+function hideGlobalLoading() {
+  loadingRequests--;
+  if (loadingRequests <= 0) {
+    loadingRequests = 0;
+    document.getElementById("loadingIndicator").style.display = 'none';
+  }
+}
+
+/* ===================================
    ЗАГРУЗКА ДАННЫХ ПОЛЬЗОВАТЕЛЯ
 ==================================== */
+
 async function fetchUserData() {
   const userId = localStorage.getItem("userId");
   if (!userId) {
     console.error("Пользователь не авторизован");
     return;
   }
-
+  
   try {
+    // Здесь не вызываем showGlobalLoading(), чтобы не показывать анимацию
     const response = await fetch(`${API_URL}/user?userId=${userId}`);
     const data = await response.json();
     
     if (data.success && data.user) {
-      // Загружаем балансы и обновляем UI
       const userBalance = data.user.balance || 0;
       const rubBalance = data.user.rub_balance || 0;
-
-      // Проверяем наличие элементов перед обновлением
       const balanceValue = document.getElementById("balanceValue");
       const rubBalanceInfo = document.getElementById("rubBalanceInfo");
-
+      
       if (balanceValue) {
-        balanceValue.textContent = `${userBalance.toFixed(5)} ₲`; // Обновляем баланс пользователя
-      } else {
-        console.warn('Элемент balanceValue не найден');
+        balanceValue.textContent = `${userBalance.toFixed(5)} ₲`;
       }
-
       if (rubBalanceInfo) {
-        rubBalanceInfo.textContent = `${rubBalance.toFixed(2)} ₽`; // Обновляем баланс в рублях
+        rubBalanceInfo.textContent = `${rubBalance.toFixed(2)} ₽`;
       }
-
       updateTopBar();
     } else {
       console.error('Ошибка в ответе от сервера', data);
@@ -1265,6 +1311,23 @@ async function fetchUserData() {
     console.error("Ошибка загрузки данных пользователя:", error);
   }
 }
+
+
+
+function showLoading() {
+  const loader = document.getElementById("loadingIndicator");
+  if (loader) {
+    loader.style.display = 'flex';
+  }
+}
+
+function hideLoading() {
+  const loader = document.getElementById("loadingIndicator");
+  if (loader) {
+    loader.style.display = 'none';
+  }
+}
+
 
 /* ===================================
    ИСТОРИЯ ОПЕРАЦИЙ
@@ -1283,6 +1346,9 @@ function openHistoryModal() {
 async function fetchTransactionHistory() {
   if (!currentUserId) return;
   try {
+    // Показываем анимацию загрузки для истории операций
+    showGlobalLoading();
+    
     const resp = await fetch(`${API_URL}/transactions?userId=${currentUserId}`);
     const data = await resp.json();
     if (resp.ok && data.success && data.transactions) {
@@ -1292,8 +1358,11 @@ async function fetchTransactionHistory() {
     }
   } catch (err) {
     console.error("Ошибка fetchTransactionHistory:", err);
+  } finally {
+    hideGlobalLoading();
   }
 }
+
 
 function displayTransactionHistory(transactions) {
   const container = document.getElementById("transactionList");
