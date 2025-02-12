@@ -205,11 +205,12 @@ app.post('/merchantLogin', async (req, res) => {
     const token = jwt.sign({ merchantId: data.merchant_id, role: 'merchant' }, JWT_SECRET, { expiresIn: '1h' });
     // Устанавливаем httpOnly cookie с токеном
     res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'none',
-      maxAge: 3600000
-    });
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'none',
+  domain: 'https://mkntw.ru', // например, если у вас есть общий домен для всех сервисов
+  maxAge: 3600000
+});
     console.log('[MerchantLogin] Мерчант вошёл:', username, ' merchantId=', data.merchant_id);
     res.json({ success: true, message: 'Мерчант успешно авторизован' });
   } catch (err) {
