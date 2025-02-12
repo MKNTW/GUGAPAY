@@ -333,7 +333,7 @@ app.get('/user', verifyToken, async (req, res) => {
 const transferSchema = Joi.object({
   toUserId: Joi.string().required(),
   amount: Joi.number().positive().required()
-});
+}).unknown(true);
 
 app.post('/transfer', verifyToken, async (req, res) => {
   try {
@@ -349,6 +349,7 @@ app.post('/transfer', verifyToken, async (req, res) => {
     if (fromUserId === toUserId) {
       return res.status(400).json({ success: false, error: 'Нельзя переводить самому себе' });
     }
+    // Проверка отправителя
     const { data: fromUser } = await supabase
       .from('users')
       .select('*')
@@ -360,6 +361,7 @@ app.post('/transfer', verifyToken, async (req, res) => {
     if (parseFloat(fromUser.balance) < amount) {
       return res.status(400).json({ success: false, error: 'Недостаточно средств' });
     }
+    // Проверка получателя
     const { data: toUser } = await supabase
       .from('users')
       .select('*')
