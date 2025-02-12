@@ -30,7 +30,7 @@ app.use(cookieParser());
 
 // Настройка CORS – разрешаем запросы только с доверённого домена клиента и включаем передачу credentials
 app.use(cors({
-  origin: ['https://yourclientdomain.vercel.app'], // Замените на URL вашего сайта на Vercel
+  origin: ['https://mkntw.ru'], // Замените на URL вашего сайта на Vercel
   credentials: true,
   optionsSuccessStatus: 200
 }));
