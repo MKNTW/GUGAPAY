@@ -910,8 +910,6 @@ app.post('/cloudtips/callback', async (req, res) => {
 /* ========================
  POST /merchant/info
 ======================== */
-
-// Endpoint для получения информации о мерчанте по cookie
 app.get('/merchant/info', verifyToken, async (req, res) => {
   if (req.user.role !== 'merchant') {
     return res.status(403).json({ success: false, error: 'Доступ запрещён' });
@@ -927,8 +925,6 @@ app.get('/merchant/info', verifyToken, async (req, res) => {
   }
   res.json({ success: true, merchant: merchantData });
 });
-
-
 /* ========================
    ЗАПУСК СЕРВЕРА
 ======================== */
