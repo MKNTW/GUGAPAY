@@ -33,6 +33,11 @@ ul {
   height: 50px;
 }
 
+/* Класс для авторизации — индикатор будет ниже */
+.loading-indicator.auth-loading {
+  top: -20%;
+}
+
 .hidden {
   display: none;
 }
