@@ -1,15 +1,18 @@
+// scrypt.js
+
 /* ===================================
    ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
 ==================================== */
-// Используем только in‑memory переменные; http‑only cookie хранит токен на сервере
 const API_URL = "https://mkntw-github-io.onrender.com"; // Ваш backend-сервер
 
+// Не будем сохранять userId/merchantId в localStorage, так как http‑only cookie 
+// и запрос к /user дадут актуальную информацию для каждого устройства.
 let currentUserId = null;
 let currentMerchantId = null;
 
-let pendingMinedCoins = 0; // ожидаемые монеты для отправки на сервер
-let localBalance = 0;      // локальный баланс пользователя (для визуального отклика)
-let merchantBalance = 0;   // баланс мерчанта
+let pendingMinedCoins = parseFloat(localStorage.getItem("pendingMinedCoins")) || 0;
+let localBalance = 0;       // локальный баланс для визуального отклика
+let merchantBalance = 0;    // баланс мерчанта
 
 let isMining = false;
 let mineTimer = null;
@@ -18,6 +21,9 @@ let currentHalvingStep = 0; // для halvingInfo
 let lastDirection = null;   // хранит направление последней операции (например, 'rub_to_coin' или 'coin_to_rub')
 let cycleCount = 0;         // счетчик для синусоидальной динамики
 let exchangeChartInstance = null;
+
+// Определяем переменную окружения (если NODE_ENV не задан, по умолчанию "development")
+const env = process.env.NODE_ENV || 'development';
 
 /* ===================================
    УТИЛИТЫ ФОРМАТИРОВАНИЯ
@@ -30,8 +36,8 @@ function formatBalance(num) {
    Функция для вычисления синусоидального модификатора
 ==================================== */
 function getSinusoidalRateModifier() {
-  const frequency = 0.1;  // период колебаний
-  const amplitude = 0.02; // максимальное отклонение
+  const frequency = 0.1;
+  const amplitude = 0.02;
   cycleCount++;
   return amplitude * Math.sin(cycleCount * frequency);
 }
@@ -51,7 +57,6 @@ function createModal(id, content) {
   `;
   document.body.appendChild(modal);
 
-  // Для указанных модалок разрешаем закрытие по клику на оверлей
   const closeOnOverlay = [
     "operationsModal", "historyModal", "exchangeModal",
     "merchantTransferModal", "createOneTimeQRModal",
@@ -92,7 +97,6 @@ async function login() {
     alert("❌ Введите логин и пароль");
     return;
   }
-
   const loader = document.getElementById("loadingIndicator");
   loader.classList.add("auth-loading");
   showGlobalLoading();
@@ -107,15 +111,14 @@ async function login() {
     });
     const userData = await userResp.json();
     if (userResp.ok && userData.success) {
-      // После успешного логина http‑only cookie устанавливается на сервере.
-      // Теперь запрашиваем данные пользователя
-      await fetchUserData(); 
+      // После успешного логина cookie установится, теперь обновляем данные пользователя
+      await fetchUserData();
       document.getElementById("authModal")?.remove();
       createUI();
       updateUI();
       return;
     } else {
-      // Если не удалось, пробуем мерчанта
+      // Если вход как пользователь не удался – пробуем мерчанта
       if (userData.error?.includes("блокирован")) {
         alert("❌ Ваш аккаунт заблокирован");
         return;
@@ -128,7 +131,6 @@ async function login() {
       });
       const merchData = await merchResp.json();
       if (merchResp.ok && merchData.success) {
-        // После мерчант-логина также запрашиваем данные мерчанта
         await fetchMerchantData();
         document.getElementById("authModal")?.remove();
         openMerchantUI();
@@ -156,22 +158,20 @@ async function register() {
     alert("❌ Введите логин и пароль");
     return;
   }
-  
   const loader = document.getElementById("loadingIndicator");
   loader.classList.add("auth-loading");
   showGlobalLoading();
-  
   try {
     const resp = await fetch(`${API_URL}/register`, {
       method: "POST",
-      credentials: "include", // для случаев, когда сервер выставит cookie (если требуется)
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: loginVal, password: passVal })
     });
     const data = await resp.json();
     if (resp.ok && data.success) {
       alert(`✅ Аккаунт создан! Ваш userId: ${data.userId}`);
-      // После регистрации можно выполнить логин автоматически
+      // После регистрации выполняем автоматический вход
       await login();
     } else {
       if (data.error?.includes("блокирован")) {
@@ -190,7 +190,6 @@ async function register() {
 
 async function logout() {
   try {
-    // Вызываем endpoint для выхода, который очистит http‑only cookie
     await fetch(`${API_URL}/logout`, {
       method: "POST",
       credentials: "include"
@@ -198,7 +197,7 @@ async function logout() {
   } catch (err) {
     console.error("Ошибка при выходе:", err);
   }
-  // Очищаем in‑memory переменные и обновляем UI
+  // Очищаем in‑memory данные
   currentUserId = null;
   currentMerchantId = null;
   document.getElementById("topBar")?.remove();
@@ -265,7 +264,6 @@ function openAuthModal() {
 ==================================== */
 function createUI() {
   showMainUI();
-  // Запрашиваем данные пользователя (они теперь получаются с сервера по cookie)
   fetchUserData();
   updateInterval = setInterval(fetchUserData, 2000);
 }
@@ -359,7 +357,7 @@ function openMerchantUI() {
 async function fetchMerchantData() {
   await fetchMerchantBalance();
   try {
-    const halvingResp = await fetch(`${API_URL}/halvingInfo`);
+    const halvingResp = await fetch(`${API_URL}/halvingInfo`, { credentials: "include" });
     const halvingData = await halvingResp.json();
     if (halvingResp.ok && halvingData.success) {
       currentHalvingStep = halvingData.halvingStep || 0;
@@ -374,7 +372,7 @@ async function fetchMerchantData() {
 async function fetchMerchantBalance() {
   if (!currentMerchantId) return;
   try {
-    const resp = await fetch(`${API_URL}/merchantBalance?merchantId=${currentMerchantId}`);
+    const resp = await fetch(`${API_URL}/merchantBalance?merchantId=${currentMerchantId}`, { credentials: "include" });
     const data = await resp.json();
     if (resp.ok && data.success) {
       merchantBalance = parseFloat(data.balance) || 0;
@@ -394,16 +392,14 @@ function openOneTimeQRModal() {
     <div class="modal-overlay" 
          onclick="if(event.target === this) closeModal('createOneTimeQRModal');" 
          style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
-      <div class="modal-content" style="width: 85vw; max-width: 500px; padding: 20px; text-align: center;">
+      <div class="modal-content" style="width:85vw;max-width:500px; padding:20px; text-align:center;">
         <h3>Создать запрос на оплату</h3>
         <label for="qrAmountInput">Сумма (₲):</label>
-        <input type="number" id="qrAmountInput" step="0.00001" placeholder="Введите сумму" 
-               style="width: 100%; max-width: 200px; margin: 5px 0;" oninput="calcRubEquivalent()">
+        <input type="number" id="qrAmountInput" step="0.00001" placeholder="Введите сумму" style="width:100%;max-width:200px; margin:5px 0;" oninput="calcRubEquivalent()">
         <p id="qrRubEquivalent"></p>
         <label for="qrPurposeInput">Назначение:</label>
-        <input type="text" id="qrPurposeInput" placeholder="Например, заказ #123" 
-               style="width: 100%; max-width: 200px; margin: 5px 0;">
-        <button id="createQRBtn" class="btn btn-primary" style="margin-top: 15px;">Создать</button>
+        <input type="text" id="qrPurposeInput" placeholder="Например, заказ #123" style="width:100%;max-width:200px; margin:5px 0;">
+        <button id="createQRBtn" class="btn btn-primary" style="margin-top:15px;">Создать</button>
       </div>
     </div>
   `);
@@ -431,14 +427,13 @@ function calcRubEquivalent() {
 /* === Модальное окно с QR-кодом и мониторинг оплаты === */
 function createMerchantQR(amount, purpose) {
   const qrData = `guga://merchantId=${currentMerchantId}&amount=${amount}&purpose=${encodeURIComponent(purpose)}`;
-  
   createModal("merchantQRModal", `
     <div class="modal-overlay" 
          onclick="if(event.target === this) closeModal('merchantQRModal');" 
          style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
-      <div class="modal-content" style="width: 85vw; max-width: 500px; padding: 20px; text-align: center;">
+      <div class="modal-content" style="width:85vw;max-width:500px; padding:20px; text-align:center;">
         <div id="merchantQRModalContainer"></div>
-        <p style="margin-top: 15px; font-weight: bold;">Запрашиваемая сумма: ${amount} ₲</p>
+        <p style="margin-top:15px; font-weight:bold;">Запрашиваемая сумма: ${amount} ₲</p>
       </div>
     </div>
   `);
@@ -462,7 +457,7 @@ function createMerchantQR(amount, purpose) {
 function monitorPayment(qrData, amount) {
   const checkInterval = setInterval(async () => {
     try {
-      const response = await fetch(`${API_URL}/checkPaymentStatus?merchantId=${currentMerchantId}&qrData=${encodeURIComponent(qrData)}`);
+      const response = await fetch(`${API_URL}/checkPaymentStatus?merchantId=${currentMerchantId}&qrData=${encodeURIComponent(qrData)}`, { credentials: "include" });
       const data = await response.json();
       if (data.success && data.paid) {
         clearInterval(checkInterval);
@@ -480,16 +475,14 @@ function openMerchantTransferModal() {
   createModal("merchantTransferModal", `
     <div class="modal-overlay" 
          onclick="if(event.target === this) closeModal('merchantTransferModal');" 
-         style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
-      <div class="modal-content" style="width: 85vw; max-width: 500px; padding: 20px; text-align: center;">
+         style="display: flex; align-items: center; justify-content: center; width:100%; height:100%;">
+      <div class="modal-content" style="width:85vw;max-width:500px; padding:20px; text-align:center;">
         <h3>Перевести на пользователя</h3>
         <label for="merchantToUserIdInput">Кому (ID):</label>
-        <input type="text" id="merchantToUserIdInput" placeholder="Введите ID" 
-               style="width: 100%; max-width: 200px; margin: 5px 0;">
+        <input type="text" id="merchantToUserIdInput" placeholder="Введите ID" style="width:100%;max-width:200px; margin:5px 0;">
         <label for="merchantTransferAmountInput">Сумма (₲):</label>
-        <input type="number" id="merchantTransferAmountInput" step="0.00001" placeholder="Сумма" 
-               style="width: 100%; max-width: 200px; margin: 5px 0;">
-        <button id="merchantTransferSendBtn" class="btn btn-primary" style="margin-top: 15px;">Отправить</button>
+        <input type="number" id="merchantTransferAmountInput" step="0.00001" placeholder="Сумма" style="width:100%;max-width:200px; margin:5px 0;">
+        <button id="merchantTransferSendBtn" class="btn btn-primary" style="margin-top:15px;">Отправить</button>
       </div>
     </div>
   `);
@@ -594,8 +587,7 @@ function openOperationsModal() {
 
   function showPayTab() {
     operationsContent.innerHTML = `
-      <div style="height:40vh; margin-top:-35px; display:flex; flex-direction:column; align-items:center; justify-content:center; width: 100%;
-    margin: auto;">
+      <div style="height:40vh; margin-top:-35px; display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; margin:auto;">
         <video id="opPayVideo" muted playsinline style="width:100%; max-width:600px; border:2px solid black;"></video>
       </div>
     `;
@@ -613,9 +605,9 @@ function openOperationsModal() {
 
   function confirmPayModal({ merchantId, amount, purpose }) {
     createModal("confirmMerchantPayModal", `
-      <div style="display: flex; flex-direction: column; height: 100%;">
+      <div style="display:flex; flex-direction:column; height:100%;">
         <h3>Оплата по QR коду 💳</h3>
-        <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items:center;">
+        <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center;">
           <p>Мерчант: ${merchantId}</p>
           <p>Сумма: ${amount} ₲</p>
           <p>Назначение: ${purpose}</p>
@@ -721,128 +713,36 @@ function parseMerchantQRData(rawValue) {
 /* ===================================
    ОБМЕН ВАЛЮТЫ (ГРАФИК И КУРС)
 ==================================== */
-// Глобальные переменные для состояния обмена
 let currentExchangeDirection = "coin_to_rub"; // "coin_to_rub" – обмен монет на рубли; "rub_to_coin" – обмен рублей на монеты
-let currentExchangeRate = 0; // Актуальный курс, получаемый с сервера
+let currentExchangeRate = 0;
 
 async function openExchangeModal() {
   showGlobalLoading();
   createModal("exchangeModal", `
     <style>
-      .exchange-container {
-        max-width: 600px;
-        margin: 0 auto;
-        padding: 20px;
-        background-color: transparent;
-        max-height: 80vh;
-        overflow-y: auto;
-      }
-      .main-header {
-        text-align: center;
-        font-size: 24px;
-        font-weight: bold;
-        margin-bottom: 20px;
-      }
-      .exchange-header h3 {
-        text-align: center;
-        margin-bottom: 50px;
-        font-size: 16px;
-        font-weight: normal;
-      }
-      .exchange-body {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
-      .exchange-row {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 100%;
-        margin-bottom: 20px;
-      }
-      .fromSection, .toSection {
-        flex: 1;
-        max-width: 45%;
-        text-align: center;
-      }
-      .swap-container {
-        width: 60px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      }
-      .currency-box {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 10px;
-      }
-      .currency-icon {
-        width: 40px;
-        height: 40px;
-        margin-right: 10px;
-        border: none;
-      }
-      .currency-name {
-        font-weight: bold;
-        font-size: 18px;
-      }
-      .currency-description {
-        font-size: 14px;
-        color: gray;
-      }
-      .amount-box {
-        text-align: center;
-      }
-      .currency-input {
-        width: 100%;
-        padding: 10px;
-        margin-bottom: 10px;
-        font-size: 16px;
-        border: none;
-        border-radius: 5px;
-        background: transparent;
-      }
-      .swap-btn {
-        background-color: transparent;
-        border: none;
-        cursor: pointer;
-        border: 1px #fff;
-      }
-      .swap-btn img {
-        border: none;
-        width:20px; 
-        height:20px;
-      }
-      #swapBtn {
-        background: none;
-        border: none;
-        padding: 0;
-        cursor: pointer;
-        margin-top: 50px;
-      }
-      .exchange-btn {
-        background-color: transparent;
-        color: #28a745;
-        padding: 15px 30px;
-        border: 2px solid #000;
-        cursor: pointer;
-        font-size: 16px;
-      }
-      #exchangeChart {
-        width: 100%;
-        height: 300px;
-      }
-      .btn-container {
-        width: 100%;
-        text-align: center;
-        margin-top: 0px;
-      }
+      .exchange-container { max-width:600px; margin:0 auto; padding:20px; background-color:transparent; max-height:80vh; overflow-y:auto; }
+      .main-header { text-align:center; font-size:24px; font-weight:bold; margin-bottom:20px; }
+      .exchange-header h3 { text-align:center; margin-bottom:50px; font-size:16px; font-weight:normal; }
+      .exchange-body { display:flex; flex-direction:column; align-items:center; }
+      .exchange-row { display:flex; justify-content:center; align-items:center; width:100%; margin-bottom:20px; }
+      .fromSection, .toSection { flex:1; max-width:45%; text-align:center; }
+      .swap-container { width:60px; display:flex; justify-content:center; align-items:center; }
+      .currency-box { display:flex; align-items:center; justify-content:center; margin-bottom:10px; }
+      .currency-icon { width:40px; height:40px; margin-right:10px; border:none; }
+      .currency-name { font-weight:bold; font-size:18px; }
+      .currency-description { font-size:14px; color:gray; }
+      .amount-box { text-align:center; }
+      .currency-input { width:100%; padding:10px; margin-bottom:10px; font-size:16px; border:none; border-radius:5px; background:transparent; }
+      .swap-btn { background-color:transparent; border:none; cursor:pointer; border:1px #fff; }
+      .swap-btn img { border:none; width:20px; height:20px; }
+      #swapBtn { background:none; border:none; padding:0; cursor:pointer; margin-top:50px; }
+      .exchange-btn { background-color:transparent; color:#28a745; padding:15px 30px; border:2px solid #000; cursor:pointer; font-size:16px; }
+      #exchangeChart { width:100%; height:300px; }
+      .btn-container { width:100%; text-align:center; margin-top:0px; }
     </style>
     <div class="exchange-container">
       <div class="main-header">Обменять</div>
-      <div id="exchangeChartContainer" style="width:100%; max-width:600px; margin: 0 auto;">
+      <div id="exchangeChartContainer" style="width:100%;max-width:600px; margin:0 auto;">
         <canvas id="exchangeChart"></canvas>
       </div>
       <div class="exchange-header">
@@ -865,7 +765,7 @@ async function openExchangeModal() {
           </div>
           <div class="swap-container">
             <button id="swapBtn" class="swap-btn" onclick="swapCurrencies()">
-              <img src="24.png" alt="Swap" style="width: 20px; height: 20px;">
+              <img src="24.png" alt="Swap" style="width:20px; height:20px;">
             </button>
           </div>
           <div class="toSection" id="toSection">
@@ -888,7 +788,6 @@ async function openExchangeModal() {
       </div>
     </div>
   `);
-  
   openModal("exchangeModal");
   currentExchangeDirection = "coin_to_rub";
   updateCurrencyLabels();
@@ -977,7 +876,6 @@ async function handleExchange(direction) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ direction, amount })
     });
-    
     const data = await response.json();
     if (data.success) {
       document.getElementById("currentRateDisplay").textContent =
@@ -1008,10 +906,7 @@ async function recordTransaction(transaction) {
       method: 'POST',
       credentials: "include",
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        ...transaction, 
-        created_at: clientTime 
-      })
+      body: JSON.stringify({ ...transaction, created_at: clientTime })
     });
     const data = await response.json();
     if (data.success) {
@@ -1026,9 +921,7 @@ async function recordTransaction(transaction) {
 
 async function loadBalanceAndExchangeRate() {
   try {
-    const response = await fetch(`${API_URL}/user`, {
-      credentials: "include"
-    });
+    const response = await fetch(`${API_URL}/user`, { credentials: "include" });
     const data = await response.json();
     if (data.success && data.user) {
       currentUserId = data.user.user_id;
@@ -1048,7 +941,7 @@ async function loadBalanceAndExchangeRate() {
   }
   
   try {
-    const rateResponse = await fetch(`${API_URL}/exchangeRates?limit=200`);
+    const rateResponse = await fetch(`${API_URL}/exchangeRates?limit=200`, { credentials: "include" });
     const rateData = await rateResponse.json();
     if (rateData.success && rateData.rates && rateData.rates.length > 0) {
       drawExchangeChart(rateData.rates);
@@ -1110,25 +1003,12 @@ function drawExchangeChart(rates) {
       layout: { padding: 0 },
       scales: {
         x: {
-          grid: {
-            display: false,
-            drawBorder: false,
-            drawTicks: false,
-            borderColor: 'transparent',
-            borderWidth: 0
-          },
+          grid: { display: false, drawBorder: false, drawTicks: false, borderColor: 'transparent', borderWidth: 0 },
           ticks: { display: false }
         },
         y: {
           position: 'right',
-          grid: {
-            display: true,
-            drawBorder: false,
-            drawTicks: false,
-            borderColor: 'transparent',
-            borderWidth: 0,
-            color: 'rgba(0,0,0,0.1)'
-          },
+          grid: { display: true, drawBorder: false, drawTicks: false, borderColor: 'transparent', borderWidth: 0, color: 'rgba(0,0,0,0.1)' },
           ticks: { beginAtZero: false }
         }
       },
@@ -1187,12 +1067,10 @@ function updateBalanceDisplay(localBalance) {
    ГЛОБАЛЬНЫЙ МЕНЕДЖЕР ЗАГРУЗКИ
 ==================================== */
 let loadingRequests = 0;
-
 function showGlobalLoading() {
   loadingRequests++;
   document.getElementById("loadingIndicator").style.display = 'flex';
 }
-
 function hideGlobalLoading() {
   loadingRequests--;
   if (loadingRequests <= 0) {
@@ -1206,9 +1084,7 @@ function hideGlobalLoading() {
 ==================================== */
 async function fetchUserData() {
   try {
-    const response = await fetch(`${API_URL}/user`, {
-      credentials: "include"
-    });
+    const response = await fetch(`${API_URL}/user`, { credentials: "include" });
     const data = await response.json();
     if (data.success && data.user) {
       currentUserId = data.user.user_id;
@@ -1233,16 +1109,11 @@ async function fetchUserData() {
 
 function showLoading() {
   const loader = document.getElementById("loadingIndicator");
-  if (loader) {
-    loader.style.display = 'flex';
-  }
+  if (loader) loader.style.display = 'flex';
 }
-
 function hideLoading() {
   const loader = document.getElementById("loadingIndicator");
-  if (loader) {
-    loader.style.display = 'none';
-  }
+  if (loader) loader.style.display = 'none';
 }
 
 /* ===================================
@@ -1263,9 +1134,7 @@ async function fetchTransactionHistory() {
   if (!currentUserId) return;
   try {
     showGlobalLoading();
-    const resp = await fetch(`${API_URL}/transactions?userId=${currentUserId}`, {
-      credentials: "include"
-    });
+    const resp = await fetch(`${API_URL}/transactions?userId=${currentUserId}`, { credentials: "include" });
     const data = await resp.json();
     if (resp.ok && data.success && data.transactions) {
       displayTransactionHistory(data.transactions);
@@ -1389,7 +1258,7 @@ function updateUI() {
    ИНИЦИАЛИЗАЦИЯ
 ==================================== */
 document.addEventListener("DOMContentLoaded", () => {
-  // При загрузке страницы запрашиваем данные пользователя
+  // При загрузке страницы пытаемся получить данные пользователя по cookie
   fetchUserData().then(() => {
     if (currentMerchantId) {
       openMerchantUI();
@@ -1399,7 +1268,6 @@ document.addEventListener("DOMContentLoaded", () => {
       openAuthModal();
     }
   });
-  
   document.getElementById("mineBtn")?.addEventListener("click", mineCoins);
 });
 
