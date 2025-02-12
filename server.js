@@ -893,6 +893,34 @@ app.post('/cloudtips/callback', async (req, res) => {
 });
 
 /* ========================
+ POST /merchant/info
+======================== */
+
+// Этот endpoint возвращает информацию о мерчанте на основе JWT-токена из http‑only cookie
+app.get('/merchant/info', verifyToken, async (req, res) => {
+  // Убедимся, что пользователь имеет роль мерчанта
+  if (req.user.role !== 'merchant') {
+    return res.status(403).json({ success: false, error: 'Доступ запрещён' });
+  }
+  
+  const merchantId = req.user.merchantId;
+  
+  // Получаем данные мерчанта из базы данных (например, из таблицы "merchants")
+  const { data: merchantData, error } = await supabase
+    .from('merchants')
+    .select('*')
+    .eq('merchant_id', merchantId)
+    .single();
+    
+  if (error || !merchantData) {
+    return res.status(404).json({ success: false, error: 'Мерчант не найден' });
+  }
+  
+  // Возвращаем данные мерчанта
+  res.json({ success: true, merchant: merchantData });
+});
+
+/* ========================
    ЗАПУСК СЕРВЕРА
 ======================== */
 app.listen(port, '0.0.0.0', () => {
