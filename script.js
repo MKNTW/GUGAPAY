@@ -23,7 +23,7 @@ let cycleCount = 0;         // счетчик для синусоидально�
 let exchangeChartInstance = null;
 
 // Определяем переменную окружения (если NODE_ENV не задан, по умолчанию "development")
-const env = process.env.NODE_ENV || 'development';
+const env = 'development'; // или 'production'
 
 /* ===================================
    УТИЛИТЫ ФОРМАТИРОВАНИЯ
