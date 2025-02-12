@@ -3,7 +3,7 @@
 /* ===================================
    ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
 ==================================== */
-const API_URL = "https://mkntw-github-io.onrender.com"; // Ваш backend-сервер
+const API_URL = "https://api.mkntw.ru"; // Ваш backend-сервер
 
 // Не будем сохранять userId/merchantId в localStorage, так как http‑only cookie 
 // и запрос к /user дадут актуальную информацию для каждого устройства.
