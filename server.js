@@ -8,6 +8,7 @@ const { createClient } = require('@supabase/supabase-js');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Joi = require('joi');
+const env = process.env.NODE_ENV || 'development';
 require('dotenv').config();
 
 const app = express();
@@ -206,10 +207,10 @@ app.post('/merchantLogin', async (req, res) => {
     // Устанавливаем httpOnly cookie с токеном
     res.cookie('token', token, {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
+  secure: env === 'production', // secure: true в продакшене, false в development
   sameSite: 'none',
-  domain: 'https://mkntw.ru', // например, если у вас есть общий домен для всех сервисов
-  maxAge: 3600000
+  // domain: '.yourmaindomain.com', // задавайте только если у вас единый домен для API и клиента
+  maxAge: 3600000 // 1 час
 });
     console.log('[MerchantLogin] Мерчант вошёл:', username, ' merchantId=', data.merchant_id);
     res.json({ success: true, message: 'Мерчант успешно авторизован' });
