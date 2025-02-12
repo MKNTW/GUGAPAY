@@ -471,29 +471,32 @@ app.get('/transactions', verifyToken, async (req, res) => {
 const merchantTransferSchema = Joi.object({
   toUserId: Joi.string().required(),
   amount: Joi.number().positive().required()
-});
+}).unknown(true); // разрешаем дополнительные поля, такие как "merchantId"
 
 app.post('/merchantTransfer', verifyToken, async (req, res) => {
   try {
     if (req.user.role !== 'merchant') {
       return res.status(403).json({ success: false, error: 'Доступ запрещён' });
     }
-    const merchantId = req.user.merchantId;
+    const merchantId = req.user.merchantId; // получаем мерчант id из JWT
     const { error, value } = merchantTransferSchema.validate(req.body);
     if (error) {
       return res.status(400).json({ success: false, error: error.details[0].message });
     }
     const { toUserId, amount } = value;
+    if (!merchantId) {
+      return res.status(400).json({ success: false, error: 'Отсутствует идентификатор мерчанта' });
+    }
     const { data: merch } = await supabase
       .from('merchants')
       .select('*')
       .eq('merchant_id', merchantId)
       .single();
     if (!merch) {
-      return res.status(404).json({ success: false, error: 'мерчант не найден' });
+      return res.status(404).json({ success: false, error: 'Мерчант не найден' });
     }
     if (merch.blocked === 1) {
-      return res.status(403).json({ success: false, error: 'аккаунт заблокирован' });
+      return res.status(403).json({ success: false, error: 'Аккаунт заблокирован' });
     }
     if (parseFloat(merch.balance) < amount) {
       return res.status(400).json({ success: false, error: 'Недостаточно средств у мерчанта' });
@@ -504,7 +507,7 @@ app.post('/merchantTransfer', verifyToken, async (req, res) => {
       .eq('user_id', toUserId)
       .single();
     if (!user) {
-      return res.status(404).json({ success: false, error: 'пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
     const newMerchantBal = parseFloat(merch.balance) - amount;
     await supabase
