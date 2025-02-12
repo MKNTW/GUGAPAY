@@ -338,8 +338,9 @@ async function fetchMerchantInfo() {
   }
 }
 
+// Функция открытия интерфейса мерчанта
 async function openMerchantUI() {
-  // Если currentMerchantId не задан, пробуем получить его
+  // Если currentMerchantId не задан, пробуем получить его через /merchant/info
   if (!currentMerchantId) {
     await fetchMerchantInfo();
     if (!currentMerchantId) {
@@ -374,10 +375,11 @@ async function openMerchantUI() {
   document.getElementById("merchantTransferBtn").addEventListener("click", openMerchantTransferModal);
   document.getElementById("merchantLogoutBtn").addEventListener("click", logout);
 
-  // Обновляем данные мерчанта (баланс, halvingInfo и т.д.)
+  // Обновляем данные мерчанта: баланс, halvingInfo и т.д.
   fetchMerchantData();
 }
 
+// Обновление данных мерчанта
 async function fetchMerchantData() {
   await fetchMerchantBalance();
   try {
@@ -393,6 +395,7 @@ async function fetchMerchantData() {
   }
 }
 
+// Получение баланса мерчанта
 async function fetchMerchantBalance() {
   if (!currentMerchantId) return;
   try {
@@ -542,7 +545,6 @@ async function merchantTransfer(toUserId, amount) {
     console.error("Сбой merchantTransfer:", err);
   }
 }
-
 
 /* ===================================
    ОПЕРАЦИИ ПОЛЬЗОВАТЕЛЯ (ПЕРЕВОД / ОПЛАТА)
