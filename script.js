@@ -1,21 +1,22 @@
 /* ===================================
    ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
 ==================================== */
+// Используем только in‑memory переменные; http‑only cookie хранит токен на сервере
 const API_URL = "https://mkntw-github-io.onrender.com"; // Ваш backend-сервер
 
-let currentUserId = localStorage.getItem("userId") || null;
-let currentMerchantId = localStorage.getItem("merchantId") || null;
+let currentUserId = null;
+let currentMerchantId = null;
 
-let pendingMinedCoins = parseFloat(localStorage.getItem("pendingMinedCoins")) || 0;
-let localBalance = 0;       // баланс пользователя
-let merchantBalance = 0;    // баланс мерчанта
+let pendingMinedCoins = 0; // ожидаемые монеты для отправки на сервер
+let localBalance = 0;      // локальный баланс пользователя (для визуального отклика)
+let merchantBalance = 0;   // баланс мерчанта
 
 let isMining = false;
 let mineTimer = null;
 let updateInterval = null;
 let currentHalvingStep = 0; // для halvingInfo
-let lastDirection = null;  // хранит направление последней операции (например, 'rub_to_coin' или 'coin_to_rub')
-let cycleCount = 0;        // счетчик для синусоидальной динамики
+let lastDirection = null;   // хранит направление последней операции (например, 'rub_to_coin' или 'coin_to_rub')
+let cycleCount = 0;         // счетчик для синусоидальной динамики
 let exchangeChartInstance = null;
 
 /* ===================================
@@ -28,7 +29,6 @@ function formatBalance(num) {
 /* ===================================
    Функция для вычисления синусоидального модификатора
 ==================================== */
-
 function getSinusoidalRateModifier() {
   const frequency = 0.1;  // период колебаний
   const amplitude = 0.02; // максимальное отклонение
@@ -93,7 +93,6 @@ async function login() {
     return;
   }
 
-  // Добавляем класс для смещения загрузки ниже в авторизации
   const loader = document.getElementById("loadingIndicator");
   loader.classList.add("auth-loading");
   showGlobalLoading();
@@ -102,19 +101,18 @@ async function login() {
     // Попытка входа как пользователь
     const userResp = await fetch(`${API_URL}/login`, {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: loginVal, password: passVal })
     });
     const userData = await userResp.json();
     if (userResp.ok && userData.success) {
-      currentUserId = userData.userId;
-      localStorage.setItem("userId", currentUserId);
-      localStorage.removeItem("merchantId");
-      currentMerchantId = null;
+      // После успешного логина http‑only cookie устанавливается на сервере.
+      // Теперь запрашиваем данные пользователя
+      await fetchUserData(); 
       document.getElementById("authModal")?.remove();
       createUI();
       updateUI();
-      fetchUserData(); // Обновляем данные пользователя
       return;
     } else {
       // Если не удалось, пробуем мерчанта
@@ -124,15 +122,14 @@ async function login() {
       }
       const merchResp = await fetch(`${API_URL}/merchantLogin`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: loginVal, password: passVal })
       });
       const merchData = await merchResp.json();
       if (merchResp.ok && merchData.success) {
-        currentMerchantId = merchData.merchantId;
-        localStorage.setItem("merchantId", currentMerchantId);
-        localStorage.removeItem("userId");
-        currentUserId = null;
+        // После мерчант-логина также запрашиваем данные мерчанта
+        await fetchMerchantData();
         document.getElementById("authModal")?.remove();
         openMerchantUI();
         return;
@@ -151,75 +148,6 @@ async function login() {
     loader.classList.remove("auth-loading");
   }
 }
-
-
-async function login() {
-  const loginVal = document.getElementById("loginInput")?.value;
-  const passVal = document.getElementById("passwordInput")?.value;
-  if (!loginVal || !passVal) {
-    alert("❌ Введите логин и пароль");
-    return;
-  }
-
-  // Добавляем класс для смещения загрузки ниже в авторизации
-  const loader = document.getElementById("loadingIndicator");
-  loader.classList.add("auth-loading");
-  showGlobalLoading();
-
-  try {
-    // Попытка входа как пользователь
-    const userResp = await fetch(`${API_URL}/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: loginVal, password: passVal })
-    });
-    const userData = await userResp.json();
-    if (userResp.ok && userData.success) {
-      currentUserId = userData.userId;
-      localStorage.setItem("userId", currentUserId);
-      localStorage.removeItem("merchantId");
-      currentMerchantId = null;
-      document.getElementById("authModal")?.remove();
-      createUI();
-      updateUI();
-      fetchUserData(); // Обновляем данные пользователя
-      return;
-    } else {
-      // Если не удалось, пробуем мерчанта
-      if (userData.error?.includes("блокирован")) {
-        alert("❌ Ваш аккаунт заблокирован");
-        return;
-      }
-      const merchResp = await fetch(`${API_URL}/merchantLogin`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: loginVal, password: passVal })
-      });
-      const merchData = await merchResp.json();
-      if (merchResp.ok && merchData.success) {
-        currentMerchantId = merchData.merchantId;
-        localStorage.setItem("merchantId", currentMerchantId);
-        localStorage.removeItem("userId");
-        currentUserId = null;
-        document.getElementById("authModal")?.remove();
-        openMerchantUI();
-        return;
-      } else {
-        if (merchData.error?.includes("блокирован")) {
-          alert("❌ Ваш аккаунт заблокирован");
-        } else {
-          alert(`❌ Ошибка входа: ${merchData.error}`);
-        }
-      }
-    }
-  } catch (err) {
-    console.error("Сбой при логине:", err);
-  } finally {
-    hideGlobalLoading();
-    loader.classList.remove("auth-loading");
-  }
-}
-
 
 async function register() {
   const loginVal = document.getElementById("regLogin")?.value;
@@ -236,20 +164,15 @@ async function register() {
   try {
     const resp = await fetch(`${API_URL}/register`, {
       method: "POST",
+      credentials: "include", // для случаев, когда сервер выставит cookie (если требуется)
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: loginVal, password: passVal })
     });
     const data = await resp.json();
     if (resp.ok && data.success) {
       alert(`✅ Аккаунт создан! Ваш userId: ${data.userId}`);
-      currentUserId = data.userId;
-      localStorage.setItem("userId", currentUserId);
-      localStorage.removeItem("merchantId");
-      currentMerchantId = null;
-      document.getElementById("authModal")?.remove();
-      createUI();
-      updateUI();
-      fetchUserData();
+      // После регистрации можно выполнить логин автоматически
+      await login();
     } else {
       if (data.error?.includes("блокирован")) {
         alert("❌ Ваш аккаунт заблокирован");
@@ -265,9 +188,17 @@ async function register() {
   }
 }
 
-function logout() {
-  localStorage.removeItem("userId");
-  localStorage.removeItem("merchantId");
+async function logout() {
+  try {
+    // Вызываем endpoint для выхода, который очистит http‑only cookie
+    await fetch(`${API_URL}/logout`, {
+      method: "POST",
+      credentials: "include"
+    });
+  } catch (err) {
+    console.error("Ошибка при выходе:", err);
+  }
+  // Очищаем in‑memory переменные и обновляем UI
   currentUserId = null;
   currentMerchantId = null;
   document.getElementById("topBar")?.remove();
@@ -276,9 +207,9 @@ function logout() {
   document.getElementById("mineContainer")?.classList.add("hidden");
   document.getElementById("merchantInterface")?.remove();
   closeAllModals();
-  clearInterval(updateInterval); // Останавливаем автоматическое обновление при выходе
+  clearInterval(updateInterval);
   openAuthModal();
-  updateUI(); // Обновляем UI после выхода
+  updateUI();
 }
 
 function openAuthModal() {
@@ -334,12 +265,12 @@ function openAuthModal() {
 ==================================== */
 function createUI() {
   showMainUI();
-  fetchUserData(); // Вызываем сразу для первоначального отображения данных
-  updateInterval = setInterval(fetchUserData, 2000); // Автоматическое обновление каждые 2 секунды
+  // Запрашиваем данные пользователя (они теперь получаются с сервера по cookie)
+  fetchUserData();
+  updateInterval = setInterval(fetchUserData, 2000);
 }
 
 function showMainUI() {
-  // Верхняя панель
   if (!document.getElementById("topBar")) {
     const topBar = document.createElement("div");
     topBar.id = "topBar";
@@ -356,8 +287,7 @@ function showMainUI() {
     document.getElementById("logoutBtn").addEventListener("click", logout);
   }
   document.getElementById("topBar").classList.remove("hidden");
-  
-  // Нижняя панель
+
   if (!document.getElementById("bottomBar")) {
     const bottomBar = document.createElement("div");
     bottomBar.id = "bottomBar";
@@ -384,7 +314,6 @@ function updateTopBar() {
   }
 }
 
-
 function hideMainUI() {
   document.getElementById("topBar")?.classList.add("hidden");
   document.getElementById("bottomBar")?.classList.add("hidden");
@@ -396,7 +325,6 @@ function hideMainUI() {
 /* ===================================
    UI МЕРЧАНТА
 ==================================== */
-// Интерфейс мерчанта
 function openMerchantUI() {
   hideMainUI();
   closeAllModals();
@@ -488,7 +416,6 @@ function openOneTimeQRModal() {
       alert("❌ Введите корректную сумму");
       return;
     }
-    // Закрываем окно запроса на оплату и открываем окно с QR-кодом
     closeModal("createOneTimeQRModal");
     createMerchantQR(amountVal, purposeVal);
   };
@@ -529,15 +456,12 @@ function createMerchantQR(amount, purpose) {
   } else {
     document.getElementById("merchantQRModalContainer").innerHTML = `QR Data: ${qrData}`;
   }
-
-  // Начинаем мониторинг статуса оплаты (проверка каждые 3 секунды)
   monitorPayment(qrData, amount);
 }
 
 function monitorPayment(qrData, amount) {
   const checkInterval = setInterval(async () => {
     try {
-      // Пример запроса для проверки оплаты (адаптируйте под своё API)
       const response = await fetch(`${API_URL}/checkPaymentStatus?merchantId=${currentMerchantId}&qrData=${encodeURIComponent(qrData)}`);
       const data = await response.json();
       if (data.success && data.paid) {
@@ -552,7 +476,6 @@ function monitorPayment(qrData, amount) {
   }, 3000);
 }
 
-/* === Модальное окно перевода на пользователя === */
 function openMerchantTransferModal() {
   createModal("merchantTransferModal", `
     <div class="modal-overlay" 
@@ -587,6 +510,7 @@ async function merchantTransfer(toUserId, amount) {
   try {
     const resp = await fetch(`${API_URL}/merchantTransfer`, {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ merchantId: currentMerchantId, toUserId, amount })
     });
@@ -650,6 +574,7 @@ function openOperationsModal() {
       try {
         const response = await fetch(`${API_URL}/transfer`, {
           method: "POST",
+          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ fromUserId: currentUserId, toUserId, amount })
         });
@@ -704,6 +629,7 @@ function openOperationsModal() {
       try {
         const resp = await fetch(`${API_URL}/payMerchantOneTime`, {
           method: "POST",
+          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId: currentUserId, merchantId, amount, purpose })
         });
@@ -799,19 +725,15 @@ function parseMerchantQRData(rawValue) {
 let currentExchangeDirection = "coin_to_rub"; // "coin_to_rub" – обмен монет на рубли; "rub_to_coin" – обмен рублей на монеты
 let currentExchangeRate = 0; // Актуальный курс, получаемый с сервера
 
-// Функция открытия модального окна обмена с новым статичным интерфейсом
 async function openExchangeModal() {
-  // Показываем глобальную анимацию загрузки сразу при открытии модального окна
   showGlobalLoading();
-
-  // Создаём модальное окно обмена с необходимыми стилями и содержимым
   createModal("exchangeModal", `
     <style>
       .exchange-container {
         max-width: 600px;
         margin: 0 auto;
         padding: 20px;
-        background-color: transparent; /* прозрачный фон */
+        background-color: transparent;
         max-height: 80vh;
         overflow-y: auto;
       }
@@ -824,15 +746,14 @@ async function openExchangeModal() {
       .exchange-header h3 {
         text-align: center;
         margin-bottom: 50px;
-        font-size: 16px;  /* уменьшенный шрифт */
-        font-weight: normal;  /* менее жирный */
+        font-size: 16px;
+        font-weight: normal;
       }
       .exchange-body {
         display: flex;
         flex-direction: column;
         align-items: center;
       }
-      /* Контейнер для трёх блоков: отправляемая валюта, кнопка смены, получаемая валюта */
       .exchange-row {
         display: flex;
         justify-content: center;
@@ -845,7 +766,6 @@ async function openExchangeModal() {
         max-width: 45%;
         text-align: center;
       }
-      /* Фиксированный центральный блок для кнопки смены направлений */
       .swap-container {
         width: 60px;
         display: flex;
@@ -862,7 +782,7 @@ async function openExchangeModal() {
         width: 40px;
         height: 40px;
         margin-right: 10px;
-        border: none; /* без границ */
+        border: none;
       }
       .currency-name {
         font-weight: bold;
@@ -880,7 +800,7 @@ async function openExchangeModal() {
         padding: 10px;
         margin-bottom: 10px;
         font-size: 16px;
-        border: none; /* без границ */
+        border: none;
         border-radius: 5px;
         background: transparent;
       }
@@ -891,15 +811,15 @@ async function openExchangeModal() {
         border: 1px #fff;
       }
       .swap-btn img {
-        border: none; /* без границ */
+        border: none;
         width:20px; 
         height:20px;
       }
       #swapBtn {
-        background: none; /* убирает фон */
-        border: none; /* убирает рамку */
-        padding: 0; /* убирает внутренние отступы */
-        cursor: pointer; /* меняет курсор на указатель */
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
         margin-top: 50px;
       }
       .exchange-btn {
@@ -910,7 +830,6 @@ async function openExchangeModal() {
         cursor: pointer;
         font-size: 16px;
       }
-      /* Стили для графика */
       #exchangeChart {
         width: 100%;
         height: 300px;
@@ -918,27 +837,19 @@ async function openExchangeModal() {
       .btn-container {
         width: 100%;
         text-align: center;
-        margin-top: 0px; /* кнопка выше */
+        margin-top: 0px;
       }
     </style>
     <div class="exchange-container">
-      <!-- Верхний заголовок -->
       <div class="main-header">Обменять</div>
-      
-      <!-- Блок графика обменных курсов -->
       <div id="exchangeChartContainer" style="width:100%; max-width:600px; margin: 0 auto;">
         <canvas id="exchangeChart"></canvas>
       </div>
-      
-      <!-- Статичный курс, полученный с сервера -->
       <div class="exchange-header">
         <h3 id="currentRateDisplay">Курс обмена: --</h3>
       </div>
-      
-      <!-- Форма обмена -->
       <div class="exchange-body">
         <div class="exchange-row">
-          <!-- Секция отправляемой валюты (from) -->
           <div class="fromSection" id="fromSection">
             <div class="currency-box">
               <img id="fromIcon" src="15.png" alt="GUGA" class="currency-icon">
@@ -952,15 +863,11 @@ async function openExchangeModal() {
               <p id="balanceInfo">0.00000 ₲</p>
             </div>
           </div>
-          
-          <!-- Кнопка смены направления (swap) -->
           <div class="swap-container">
             <button id="swapBtn" class="swap-btn" onclick="swapCurrencies()">
               <img src="24.png" alt="Swap" style="width: 20px; height: 20px;">
             </button>
           </div>
-          
-          <!-- Секция получаемой валюты (to) -->
           <div class="toSection" id="toSection">
             <div class="currency-box">
               <img id="toIcon" src="18.png" alt="RUB" class="currency-icon">
@@ -975,8 +882,6 @@ async function openExchangeModal() {
             </div>
           </div>
         </div>
-        
-        <!-- Кнопка для выполнения обмена, расположенная по центру внизу -->
         <div class="btn-container">
           <button id="btnPerformExchange" class="exchange-btn">Обменять</button>
         </div>
@@ -985,32 +890,23 @@ async function openExchangeModal() {
   `);
   
   openModal("exchangeModal");
-
-  // Устанавливаем начальное направление обмена (по умолчанию: обмен монет на рубли)
   currentExchangeDirection = "coin_to_rub";
   updateCurrencyLabels();
 
   try {
-    // Загружаем баланс, курс и данные для графика
     await loadBalanceAndExchangeRate();
     updateCurrentRateDisplay();
     drawExchangeChart();
-
-    // Назначаем обработчик для кнопки выполнения обмена
     document.getElementById("btnPerformExchange").addEventListener("click", function() {
       handleExchange(currentExchangeDirection);
     });
   } catch (error) {
     console.error("Ошибка при загрузке данных обмена:", error);
   } finally {
-    // После завершения загрузки всех блоков скрываем глобальный индикатор
     hideGlobalLoading();
   }
 }
 
-
-
-// При вводе суммы рассчитываем результат обмена и выводим его в поле "toAmount"
 function updateExchange() {
   const amountInput = document.getElementById("amountInput");
   const toAmount = document.getElementById("toAmount");
@@ -1023,27 +919,22 @@ function updateExchange() {
   if (currentExchangeDirection === "coin_to_rub") {
     result = amount * currentExchangeRate;
     toAmount.value = result.toFixed(2);
-  } else { // rub_to_coin
+  } else {
     result = amount / currentExchangeRate;
     toAmount.value = result.toFixed(5);
   }
 }
 
-// Функция смены направления обмена – объекты остаются на своих местах
 function swapCurrencies() {
   currentExchangeDirection = currentExchangeDirection === "coin_to_rub" ? "rub_to_coin" : "coin_to_rub";
   updateCurrencyLabels();
-  // Очищаем поля ввода
   document.getElementById("amountInput").value = "";
   document.getElementById("toAmount").value = "";
-  // Перезагружаем балансы для статичного отображения
   loadBalanceAndExchangeRate();
 }
 
-// Обновление подписей и иконок в форме обмена (без смещения объектов)
 function updateCurrencyLabels() {
   if (currentExchangeDirection === "coin_to_rub") {
-    // Отправляемая валюта: монеты (GUGA), получаемая: рубли (RUB)
     document.getElementById("fromCurrencyName").textContent = "GUGA";
     document.getElementById("fromCurrencyDesc").textContent = "GugaCoin";
     document.getElementById("fromIcon").src = "15.png";
@@ -1052,7 +943,6 @@ function updateCurrencyLabels() {
     document.getElementById("toIcon").src = "18.png";
     document.getElementById("amountInput").placeholder = "Обменять";
   } else {
-    // Отправляемая валюта: рубли (RUB), получаемая: монеты (GUGA)
     document.getElementById("fromCurrencyName").textContent = "RUB";
     document.getElementById("fromCurrencyDesc").textContent = "Рубль";
     document.getElementById("fromIcon").src = "18.png";
@@ -1063,9 +953,7 @@ function updateCurrencyLabels() {
   }
 }
 
-// Функция обработки обмена. Курс отображается статично (берётся с сервера)
 async function handleExchange(direction) {
-  const userId = localStorage.getItem("userId");
   const amountInput = document.getElementById("amountInput");
   if (!amountInput) {
     alert("Поле ввода суммы не найдено");
@@ -1077,7 +965,6 @@ async function handleExchange(direction) {
     return;
   }
   
-  // Защита от циклических операций
   if (lastDirection !== null && lastDirection === direction) {
     alert("Цикличные операции запрещены. Попробуйте выполнить обратную операцию или подождите.");
     return;
@@ -1086,19 +973,16 @@ async function handleExchange(direction) {
   try {
     const response = await fetch(`${API_URL}/exchange`, {
       method: 'POST',
+      credentials: "include",
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, direction, amount })
+      body: JSON.stringify({ direction, amount })
     });
     
     const data = await response.json();
     if (data.success) {
-      // Отображаем курс, полученный с сервера, без инверсии
       document.getElementById("currentRateDisplay").textContent =
           `Курс обмена: 1 ₲ = ${parseFloat(data.currentratedisplay).toFixed(2)} ₽`;
-      
-      // Обновляем баланс и данные графика
       await loadBalanceAndExchangeRate();
-      
       let exchangeMessage = "";
       if (direction === "rub_to_coin") {
         exchangeMessage = `Обмен выполнен успешно! Вы обменяли ${amount} ₽ на ${parseFloat(data.exchanged_amount).toFixed(5)} ₲`;
@@ -1106,7 +990,6 @@ async function handleExchange(direction) {
         exchangeMessage = `Обмен выполнен успешно! Вы обменяли ${amount} ₲ на ${parseFloat(data.exchanged_amount).toFixed(2)} ₽`;
       }
       alert(exchangeMessage);
-      
       lastDirection = direction;
       setTimeout(() => { lastDirection = null; }, 5000);
     } else {
@@ -1118,12 +1001,12 @@ async function handleExchange(direction) {
   }
 }
 
-// Функция записи транзакции на сервер с добавлением клиентского времени
 async function recordTransaction(transaction) {
   try {
     const clientTime = new Date().toISOString();
     const response = await fetch(`${API_URL}/exchange_transactions`, {
       method: 'POST',
+      credentials: "include",
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         ...transaction, 
@@ -1141,15 +1024,14 @@ async function recordTransaction(transaction) {
   }
 }
 
-// Функция загрузки баланса пользователя и истории обменных курсов.
 async function loadBalanceAndExchangeRate() {
-  const userId = localStorage.getItem("userId");
-  
-  // Загрузка данных пользователя (без анимации)
   try {
-    const response = await fetch(`${API_URL}/user?userId=${userId}`);
+    const response = await fetch(`${API_URL}/user`, {
+      credentials: "include"
+    });
     const data = await response.json();
     if (data.success && data.user) {
+      currentUserId = data.user.user_id;
       if (currentExchangeDirection === "coin_to_rub") {
         const coinBalance = data.user.balance || 0;
         document.getElementById("balanceInfo").textContent = `${coinBalance.toFixed(5)} ₲`;
@@ -1159,12 +1041,12 @@ async function loadBalanceAndExchangeRate() {
         document.getElementById("balanceInfo").textContent = `${rubBalance.toFixed(2)} ₽`;
         document.getElementById("toBalanceInfo").textContent = `${(data.user.balance || 0).toFixed(5)} ₲`;
       }
+      updateTopBar();
     }
   } catch (error) {
     console.error('Ошибка при загрузке данных пользователя:', error);
   }
   
-  // Загрузка курсов обмена (эта часть оборачиваем в глобальную анимацию)
   try {
     const rateResponse = await fetch(`${API_URL}/exchangeRates?limit=200`);
     const rateData = await rateResponse.json();
@@ -1182,8 +1064,6 @@ async function loadBalanceAndExchangeRate() {
   }
 }
 
-
-// Функция обновления отображения курса (статично)
 function updateCurrentRateDisplay() {
   const displayEl = document.getElementById("currentRateDisplay");
   if (displayEl) {
@@ -1193,7 +1073,6 @@ function updateCurrentRateDisplay() {
   }
 }
 
-// Функция построения графика обменных курсов с использованием Chart.js
 function drawExchangeChart(rates) {
   if (!rates || !Array.isArray(rates) || rates.length === 0) {
     console.error('Ошибка: отсутствуют данные для отображения графика');
@@ -1261,77 +1140,52 @@ function drawExchangeChart(rates) {
 /* ===================================
    МАЙНИНГ
 ==================================== */
-
-// Функция майнинга
 function mineCoins() {
-  // Загружаем текущий баланс из localStorage, если он есть, или начинаем с 0
   let localBalance = parseFloat(localStorage.getItem("localBalance")) || 0;
-
-  // Увеличиваем баланс на 0.00001
   localBalance += 0.00001;
-
-  // Обновляем отображение баланса на экране
   updateBalanceDisplay(localBalance);
-
-  // Сохраняем обновленный баланс в localStorage
   localStorage.setItem("localBalance", localBalance.toFixed(5));
-
-  // Добавляем к ожидающим монетам для отправки на сервер
   let pendingMinedCoins = parseFloat(localStorage.getItem("pendingMinedCoins")) || 0;
   pendingMinedCoins += 0.00001;
   localStorage.setItem("pendingMinedCoins", pendingMinedCoins.toFixed(5));
-
-  // Таймер для отправки данных на сервер через 1500 мс после последнего клика
   if (mineTimer) clearTimeout(mineTimer);
-
   mineTimer = setTimeout(() => {
     isMining = false;
-    flushMinedCoins();  // Отправляем данные на сервер
+    flushMinedCoins();
   }, 1500);
 }
 
-// Привязываем обработчик события к кнопке
-document.getElementById("mineBtn").addEventListener("click", mineCoins);
+document.getElementById("mineBtn")?.addEventListener("click", mineCoins);
 
-
-// Отправка данных на сервер
 async function flushMinedCoins() {
   let pendingMinedCoins = parseFloat(localStorage.getItem("pendingMinedCoins")) || 0;
-
   if (!currentUserId || pendingMinedCoins <= 0) return;
-
   try {
     const resp = await fetch(`${API_URL}/update`, {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: currentUserId, amount: pendingMinedCoins })
+      body: JSON.stringify({ amount: pendingMinedCoins })
     });
-
     if (!resp.ok) throw new Error(`Сервер ответил статусом ${resp.status}`);
-
-    // После успешной отправки очищаем локальное хранилище
     pendingMinedCoins = 0;
     localStorage.setItem("pendingMinedCoins", pendingMinedCoins);
-
-    // Обновляем данные пользователя
     fetchUserData();
   } catch (err) {
     console.error("Ошибка flushMinedCoins:", err);
   }
 }
 
-// Функция для обновления отображения баланса
 function updateBalanceDisplay(localBalance) {
   const balanceValue = document.getElementById("balanceValue");
   if (balanceValue) {
-    balanceValue.textContent = `${localBalance.toFixed(5)} ₲`;  // отображаем баланс с точностью до 5 знаков
+    balanceValue.textContent = `${localBalance.toFixed(5)} ₲`;
   }
 }
 
 /* ===================================
-   Глобальный менеджер загрузки
+   ГЛОБАЛЬНЫЙ МЕНЕДЖЕР ЗАГРУЗКИ
 ==================================== */
-
 let loadingRequests = 0;
 
 function showGlobalLoading() {
@@ -1350,27 +1204,20 @@ function hideGlobalLoading() {
 /* ===================================
    ЗАГРУЗКА ДАННЫХ ПОЛЬЗОВАТЕЛЯ
 ==================================== */
-
 async function fetchUserData() {
-  const userId = localStorage.getItem("userId");
-  if (!userId) {
-    console.error("Пользователь не авторизован");
-    return;
-  }
-  
   try {
-    // Здесь не вызываем showGlobalLoading(), чтобы не показывать анимацию
-    const response = await fetch(`${API_URL}/user?userId=${userId}`);
+    const response = await fetch(`${API_URL}/user`, {
+      credentials: "include"
+    });
     const data = await response.json();
-    
     if (data.success && data.user) {
-      const userBalance = data.user.balance || 0;
+      currentUserId = data.user.user_id;
+      const coinBalance = data.user.balance || 0;
       const rubBalance = data.user.rub_balance || 0;
       const balanceValue = document.getElementById("balanceValue");
       const rubBalanceInfo = document.getElementById("rubBalanceInfo");
-      
       if (balanceValue) {
-        balanceValue.textContent = `${userBalance.toFixed(5)} ₲`;
+        balanceValue.textContent = `${coinBalance.toFixed(5)} ₲`;
       }
       if (rubBalanceInfo) {
         rubBalanceInfo.textContent = `${rubBalance.toFixed(2)} ₽`;
@@ -1383,8 +1230,6 @@ async function fetchUserData() {
     console.error("Ошибка загрузки данных пользователя:", error);
   }
 }
-
-
 
 function showLoading() {
   const loader = document.getElementById("loadingIndicator");
@@ -1399,7 +1244,6 @@ function hideLoading() {
     loader.style.display = 'none';
   }
 }
-
 
 /* ===================================
    ИСТОРИЯ ОПЕРАЦИЙ
@@ -1418,10 +1262,10 @@ function openHistoryModal() {
 async function fetchTransactionHistory() {
   if (!currentUserId) return;
   try {
-    // Показываем анимацию загрузки для истории операций
     showGlobalLoading();
-    
-    const resp = await fetch(`${API_URL}/transactions?userId=${currentUserId}`);
+    const resp = await fetch(`${API_URL}/transactions?userId=${currentUserId}`, {
+      credentials: "include"
+    });
     const data = await resp.json();
     if (resp.ok && data.success && data.transactions) {
       displayTransactionHistory(data.transactions);
@@ -1435,7 +1279,6 @@ async function fetchTransactionHistory() {
   }
 }
 
-
 function displayTransactionHistory(transactions) {
   const container = document.getElementById("transactionList");
   if (!container) return;
@@ -1444,8 +1287,6 @@ function displayTransactionHistory(transactions) {
     container.innerHTML = "<li>Нет операций</li>";
     return;
   }
-  
-  // Группировка транзакций по датам
   const groups = {};
   transactions.forEach(tx => {
     const d = new Date(tx.client_time || tx.created_at);
@@ -1468,7 +1309,6 @@ function displayTransactionHistory(transactions) {
     groups[dateStr].forEach(tx => {
       const op = document.createElement("div");
       op.className = "history-item";
-      // Если присутствует client_time, используем его
       const timeStr = new Date(tx.client_time || tx.created_at).toLocaleTimeString("ru-RU");
       let opHTML = "";
       if (tx.type === "exchange") {
@@ -1549,25 +1389,22 @@ function updateUI() {
    ИНИЦИАЛИЗАЦИЯ
 ==================================== */
 document.addEventListener("DOMContentLoaded", () => {
-  if (pendingMinedCoins > 0) {
-    flushMinedCoins();
-  }
-  if (currentMerchantId) {
-    openMerchantUI();
-  } else if (currentUserId) {
-    createUI(); // Создаем UI и сразу загружаем данные
-    fetchUserData(); // После создания UI вызываем обновление данных
-  } else {
-    openAuthModal();
-  }
-
-  // Привязка кнопки майнинга (если существует)
+  // При загрузке страницы запрашиваем данные пользователя
+  fetchUserData().then(() => {
+    if (currentMerchantId) {
+      openMerchantUI();
+    } else if (currentUserId) {
+      createUI();
+    } else {
+      openAuthModal();
+    }
+  });
+  
   document.getElementById("mineBtn")?.addEventListener("click", mineCoins);
 });
 
-
 window.addEventListener("beforeunload", () => {
   if (pendingMinedCoins > 0) {
-    flushMinedCoinsSync();
+    flushMinedCoins();
   }
 });
