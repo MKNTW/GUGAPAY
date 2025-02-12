@@ -266,7 +266,7 @@ body {
   position: relative; /* добавляем позиционирование */
   z-index: 2;         /* выше оверлея */
   width: 85vw;
-  height: 75vh;
+  height: 80vh;
   background: #fff;
   padding: 15px;
   #border: 2px solid #000;
