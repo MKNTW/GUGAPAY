@@ -323,7 +323,30 @@ function hideMainUI() {
 /* ===================================
    UI МЕРЧАНТА
 ==================================== */
-function openMerchantUI() {
+async function fetchMerchantInfo() {
+  try {
+    const resp = await fetch(`${API_URL}/merchant/info`, { credentials: "include" });
+    const data = await resp.json();
+    if (resp.ok && data.success && data.merchant) {
+      currentMerchantId = data.merchant.merchant_id;
+      merchantBalance = parseFloat(data.merchant.balance) || 0;
+    } else {
+      console.error("Не удалось получить информацию о мерчанте:", data.error);
+    }
+  } catch (err) {
+    console.error("Ошибка получения информации о мерчанте:", err);
+  }
+}
+
+async function openMerchantUI() {
+  // Если currentMerchantId не задан, пробуем получить его
+  if (!currentMerchantId) {
+    await fetchMerchantInfo();
+    if (!currentMerchantId) {
+      alert("Ошибка: мерчант не авторизован. Пожалуйста, выполните вход.");
+      return;
+    }
+  }
   hideMainUI();
   closeAllModals();
   document.getElementById("merchantInterface")?.remove();
@@ -337,7 +360,7 @@ function openMerchantUI() {
   merchDiv.innerHTML = `
     <h1>КАБИНЕТ МЕРЧАНТА</h1>
     <p>Мерчант: <strong>${currentMerchantId}</strong></p>
-    <p>Баланс: <span id="merchantBalanceValue">0.00000</span> ₲</p>
+    <p>Баланс: <span id="merchantBalanceValue">${merchantBalance.toFixed(5)}</span> ₲</p>
     <div class="merchant-buttons" style="display: flex; gap: 10px; margin-top: 20px;">
       <button id="merchantCreateQRBtn" class="btn btn-primary">Создать QR</button>
       <button id="merchantTransferBtn" class="btn btn-primary">Перевести</button>
@@ -351,6 +374,7 @@ function openMerchantUI() {
   document.getElementById("merchantTransferBtn").addEventListener("click", openMerchantTransferModal);
   document.getElementById("merchantLogoutBtn").addEventListener("click", logout);
 
+  // Обновляем данные мерчанта (баланс, halvingInfo и т.д.)
   fetchMerchantData();
 }
 
@@ -389,16 +413,17 @@ async function fetchMerchantBalance() {
 /* === Модальное окно "Создать запрос на оплату" === */
 function openOneTimeQRModal() {
   createModal("createOneTimeQRModal", `
-    <div class="modal-overlay" 
-         onclick="if(event.target === this) closeModal('createOneTimeQRModal');" 
+    <div class="modal-overlay" onclick="if(event.target === this) closeModal('createOneTimeQRModal');" 
          style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
-      <div class="modal-content" style="width:85vw;max-width:500px; padding:20px; text-align:center;">
+      <div class="modal-content" style="width:85vw; max-width:500px; padding:20px; text-align:center;">
         <h3>Создать запрос на оплату</h3>
         <label for="qrAmountInput">Сумма (₲):</label>
-        <input type="number" id="qrAmountInput" step="0.00001" placeholder="Введите сумму" style="width:100%;max-width:200px; margin:5px 0;" oninput="calcRubEquivalent()">
+        <input type="number" id="qrAmountInput" step="0.00001" placeholder="Введите сумму" 
+               style="width:100%; max-width:200px; margin:5px 0;" oninput="calcRubEquivalent()">
         <p id="qrRubEquivalent"></p>
         <label for="qrPurposeInput">Назначение:</label>
-        <input type="text" id="qrPurposeInput" placeholder="Например, заказ #123" style="width:100%;max-width:200px; margin:5px 0;">
+        <input type="text" id="qrPurposeInput" placeholder="Например, заказ #123" 
+               style="width:100%; max-width:200px; margin:5px 0;">
         <button id="createQRBtn" class="btn btn-primary" style="margin-top:15px;">Создать</button>
       </div>
     </div>
@@ -428,10 +453,9 @@ function calcRubEquivalent() {
 function createMerchantQR(amount, purpose) {
   const qrData = `guga://merchantId=${currentMerchantId}&amount=${amount}&purpose=${encodeURIComponent(purpose)}`;
   createModal("merchantQRModal", `
-    <div class="modal-overlay" 
-         onclick="if(event.target === this) closeModal('merchantQRModal');" 
-         style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
-      <div class="modal-content" style="width:85vw;max-width:500px; padding:20px; text-align:center;">
+    <div class="modal-overlay" onclick="if(event.target === this) closeModal('merchantQRModal');" 
+         style="display: flex; align-items: center; justify-content: center; width:100%; height:100%;">
+      <div class="modal-content" style="width:85vw; max-width:500px; padding:20px; text-align:center;">
         <div id="merchantQRModalContainer"></div>
         <p style="margin-top:15px; font-weight:bold;">Запрашиваемая сумма: ${amount} ₲</p>
       </div>
@@ -473,15 +497,14 @@ function monitorPayment(qrData, amount) {
 
 function openMerchantTransferModal() {
   createModal("merchantTransferModal", `
-    <div class="modal-overlay" 
-         onclick="if(event.target === this) closeModal('merchantTransferModal');" 
+    <div class="modal-overlay" onclick="if(event.target === this) closeModal('merchantTransferModal');" 
          style="display: flex; align-items: center; justify-content: center; width:100%; height:100%;">
-      <div class="modal-content" style="width:85vw;max-width:500px; padding:20px; text-align:center;">
+      <div class="modal-content" style="width:85vw; max-width:500px; padding:20px; text-align:center;">
         <h3>Перевести на пользователя</h3>
         <label for="merchantToUserIdInput">Кому (ID):</label>
-        <input type="text" id="merchantToUserIdInput" placeholder="Введите ID" style="width:100%;max-width:200px; margin:5px 0;">
+        <input type="text" id="merchantToUserIdInput" placeholder="Введите ID" style="width:100%; max-width:200px; margin:5px 0;">
         <label for="merchantTransferAmountInput">Сумма (₲):</label>
-        <input type="number" id="merchantTransferAmountInput" step="0.00001" placeholder="Сумма" style="width:100%;max-width:200px; margin:5px 0;">
+        <input type="number" id="merchantTransferAmountInput" step="0.00001" placeholder="Сумма" style="width:100%; max-width:200px; margin:5px 0;">
         <button id="merchantTransferSendBtn" class="btn btn-primary" style="margin-top:15px;">Отправить</button>
       </div>
     </div>
@@ -519,6 +542,7 @@ async function merchantTransfer(toUserId, amount) {
     console.error("Сбой merchantTransfer:", err);
   }
 }
+
 
 /* ===================================
    ОПЕРАЦИИ ПОЛЬЗОВАТЕЛЯ (ПЕРЕВОД / ОПЛАТА)
