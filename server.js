@@ -198,7 +198,7 @@ app.post('/merchantLogin', async (req, res) => {
       return res.status(401).json({ success: false, error: 'Неверные данные пользователя' });
     }
     if (data.blocked === 1) {
-      return res.status(403).json({ success: false, error: 'аккаунт заблокирован' });
+      return res.status(403).json({ success: false, error: 'Аккаунт заблокирован' });
     }
 
     const isPassOk = await bcrypt.compare(password, data.merchant_password);
@@ -206,17 +206,15 @@ app.post('/merchantLogin', async (req, res) => {
       return res.status(401).json({ success: false, error: 'Неверные данные пользователя' });
     }
 
-    // Генерация JWT-токена для мерчанта с ролью "merchant"
-    const token = jwt.sign({ merchantId: data.merchant_id, role: 'merchant' }, JWT_SECRET, { expiresIn: '1h' });
+    // Генерация JWT-токена с ролью "merchant" и сроком жизни 24 часа
+    const token = jwt.sign({ merchantId: data.merchant_id, role: 'merchant' }, JWT_SECRET, { expiresIn: '24h' });
     // Устанавливаем httpOnly cookie с токеном
     res.cookie('token', token, {
-  httpOnly: true,
-  secure: env === 'production', // true если приложение работает по HTTPS
-  sameSite: 'none',             // обязательно для кросс-доменных запросов
-  // Не указывайте параметр domain, если клиент и API находятся на разных доменах,
-  // чтобы браузер сам установил cookie для текущего домена API.
-  maxAge: 3600000               // например, 1 час
-});
+      httpOnly: true,
+      secure: env === 'production', // true если API работает по HTTPS
+      sameSite: 'none',             // обязательно для кросс-доменных запросов
+      maxAge: 24 * 3600000           // 24 часа
+    });
     console.log('[MerchantLogin] Мерчант вошёл:', username, ' merchantId=', data.merchant_id);
     res.json({ success: true, message: 'Мерчант успешно авторизован' });
   } catch (err) {
@@ -913,29 +911,23 @@ app.post('/cloudtips/callback', async (req, res) => {
  POST /merchant/info
 ======================== */
 
-// Этот endpoint возвращает информацию о мерчанте на основе JWT-токена из http‑only cookie
+// Endpoint для получения информации о мерчанте по cookie
 app.get('/merchant/info', verifyToken, async (req, res) => {
-  // Убедимся, что пользователь имеет роль мерчанта
   if (req.user.role !== 'merchant') {
     return res.status(403).json({ success: false, error: 'Доступ запрещён' });
   }
-  
   const merchantId = req.user.merchantId;
-  
-  // Получаем данные мерчанта из базы данных (например, из таблицы "merchants")
   const { data: merchantData, error } = await supabase
     .from('merchants')
     .select('*')
     .eq('merchant_id', merchantId)
     .single();
-    
   if (error || !merchantData) {
     return res.status(404).json({ success: false, error: 'Мерчант не найден' });
   }
-  
-  // Возвращаем данные мерчанта
   res.json({ success: true, merchant: merchantData });
 });
+
 
 /* ========================
    ЗАПУСК СЕРВЕРА
