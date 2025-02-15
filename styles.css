@@ -163,7 +163,7 @@ ul {
   transform: scale(0.95);
 }
 
-/* Нижняя панель (Bottom Bar) – всегда фиксирована внизу */
+/* Нижняя панель (Bottom Bar) – всегда закреплена снизу */
 #bottomBar {
   position: fixed;
   bottom: 0;
@@ -191,6 +191,32 @@ ul {
 }
 
 #bottomBar button:hover {
+  background-color: #f0f0f0;
+}
+
+/* Блок главного экрана с кнопками "Перевод" и "QR" под балансом */
+.main-buttons-container {
+  position: fixed;
+  top: 220px; /* ниже блока баланса */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  gap: 20px;
+}
+
+.main-buttons-container button {
+  padding: 12px 20px;
+  font-size: 16px;
+  border: 2px solid #000;
+  background: transparent;
+  border-radius: 5px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: background-color 0.3s ease;
+}
+
+.main-buttons-container button:hover {
   background-color: #f0f0f0;
 }
 
@@ -316,32 +342,6 @@ ul {
 
 .history-item:last-child {
   border-bottom: none;
-}
-
-/* Раздел "Операции": 2 отцентрованных кнопки (Перевод и Оплата QR) ниже баланса */
-.operations-container {
-  position: fixed;
-  top: 220px; /* ниже блока с балансом */
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1000;
-  display: flex;
-  gap: 20px;
-}
-
-.operations-container button {
-  padding: 12px 20px;
-  font-size: 16px;
-  border: 2px solid #000;
-  background: transparent;
-  border-radius: 5px;
-  cursor: pointer;
-  text-transform: uppercase;
-  transition: background-color 0.3s ease;
-}
-
-.operations-container button:hover {
-  background-color: #f0f0f0;
 }
 
 /* Адаптивность */
