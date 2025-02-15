@@ -876,9 +876,9 @@ async function fetchTransactionHistory() {
 }
 
 /**************************************************
- * ВАЖНО: ПЕРЕРАБОТАННАЯ ФУНКЦИЯ ОТОБРАЖЕНИЯ ИСТОРИИ
+ * ВАЖНО: ПЕРЕРАБОТАННАЯ ФУНКЦИЯ
+ * DISPLAYTRANSACTIONHISTORY (И getDateLabel)
  **************************************************/
-
 function displayTransactionHistory(transactions) {
   const list = document.getElementById("transactionList");
   if (!list) return;
@@ -889,7 +889,7 @@ function displayTransactionHistory(transactions) {
     return;
   }
 
-  // Группируем транзакции по датам (сегодня, вчера, и т.д.)
+  // Группируем транзакции по датам (сегодня, вчера, ...)
   const groups = {};
   transactions.forEach((tx) => {
     const d = new Date(tx.client_time || tx.created_at);
@@ -905,24 +905,38 @@ function displayTransactionHistory(transactions) {
     return dB - dA;
   });
 
-  sortedDates.forEach((dateStr) => {
+  sortedDates.forEach((dateStr, dateIndex) => {
+    // Блок для конкретной даты
     const dateItem = document.createElement("li");
-    dateItem.style.border = "1px solid #ccc";
-    dateItem.style.margin = "10px";
-    dateItem.style.padding = "10px";
-    dateItem.innerHTML = `<strong>${dateStr}</strong>`;
-    groups[dateStr].forEach((tx) => {
-      const timeStr = new Date(
-        tx.client_time || tx.created_at
-      ).toLocaleTimeString("ru-RU");
+    dateItem.style.listStyle = "none"; // убираем "li" маркеры
+    dateItem.style.marginTop = "20px"; // отступ сверху, чтобы отделить блок даты от предыдущих операций
+    dateItem.style.padding = "0";      // убираем внутренние отступы
 
-      // === Определяем что за операция ===
-      let iconSrc = "";     // Картинка
-      let titleText = "";   // "Получено", "Отправлено", "Оплата по QR" и т.п.
-      let detailsText = ""; // "От кого: ...", "Кому: ...", "Мерчант: ..."
-      let amountSign = "";  // "+" или "-"
+    // Заголовок даты (Например: Сегодня, Вчера, 11.05.2023)
+    const dateHeader = document.createElement("div");
+    dateHeader.textContent = dateStr;
+    dateHeader.style.fontWeight = "bold";
+    dateHeader.style.marginBottom = "10px"; // отступ под датой
+    dateHeader.style.fontSize = "16px";
+    dateHeader.style.color = "#333";
+
+    dateItem.appendChild(dateHeader);
+
+    // Массив транзакций за этот день
+    const dayTransactions = groups[dateStr];
+
+    dayTransactions.forEach((tx) => {
+      // Формируем карточку операции
+      const timeStr = new Date(tx.client_time || tx.created_at).toLocaleTimeString("ru-RU");
+
+      // Иконка, заголовок, детали, знак суммы
+      let iconSrc = "";     
+      let titleText = "";   
+      let detailsText = ""; 
+      let amountSign = "";  
       let amountValue = formatBalance(tx.amount || 0);
 
+      // Логика определения типа операции
       if (tx.type === "merchant_payment") {
         // Оплата по QR
         iconSrc = "56.webp";
@@ -949,43 +963,42 @@ function displayTransactionHistory(transactions) {
         amountSign = "+";
       } 
       else if (tx.type === "exchange") {
-        // Обмен (можно тоже стилизовать, 
-        // либо оставить старый формат)
-        iconSrc = "67.png"; // условно
+        // Обмен
+        iconSrc = "67.png"; // или любая другая иконка
         titleText = "Обмен";
-        // Можно сформировать detailsText иначе, 
-        // например, показать направление
         detailsText = `Направление: ${
           tx.direction === "rub_to_coin" ? "Рубли → Монеты" : "Монеты → Рубли"
         }`;
-        // Для обмена не всегда "плюс" или "минус" 
-        // — но, допустим, ставим "-" если coin_to_rub, 
-        // и "+" если rub_to_coin
-        amountSign = tx.direction === "rub_to_coin" ? "+" : "-";
+        // Примем условно, что rub_to_coin = входящая (+), coin_to_rub = исходящая (-)
+        amountSign = (tx.direction === "rub_to_coin") ? "+" : "-";
         amountValue = formatBalance(tx.amount);
       } 
       else {
-        // Прочее — fallback
+        // fallback для прочих случаев
         iconSrc = "67.png";
         titleText = "Операция";
         detailsText = "Детали не указаны";
-        amountSign = ""; 
+        amountSign = "";
       }
 
-      const itemDiv = document.createElement("div");
-      itemDiv.style.display = "flex";
-      itemDiv.style.alignItems = "center";
-      itemDiv.style.borderBottom = "1px dashed #ccc";
-      itemDiv.style.padding = "10px 0";
+      // Карточка
+      const cardDiv = document.createElement("div");
+      // Светло-серый фон, закруглённые края, без бордеров
+      cardDiv.style.background = "#f7f7f7"; 
+      cardDiv.style.borderRadius = "8px";
+      cardDiv.style.display = "flex";
+      cardDiv.style.alignItems = "center";
+      cardDiv.style.padding = "10px";
+      cardDiv.style.marginBottom = "8px"; // отступ между карточками
 
-      // Левая часть (иконка в круге)
+      // Левая иконка (круг)
       const leftDiv = document.createElement("div");
-      leftDiv.style.width = "50px";
-      leftDiv.style.height = "50px";
-      leftDiv.style.minWidth = "50px";
-      leftDiv.style.minHeight = "50px";
+      leftDiv.style.width = "44px";
+      leftDiv.style.height = "44px";
+      leftDiv.style.minWidth = "44px";
+      leftDiv.style.minHeight = "44px";
       leftDiv.style.borderRadius = "50%";
-      leftDiv.style.background = "#f4f4f4"; // светло-серый фон
+      leftDiv.style.background = "#eeeeee"; 
       leftDiv.style.display = "flex";
       leftDiv.style.alignItems = "center";
       leftDiv.style.justifyContent = "center";
@@ -994,18 +1007,19 @@ function displayTransactionHistory(transactions) {
       const iconImg = document.createElement("img");
       iconImg.src = iconSrc;
       iconImg.alt = "icon";
-      iconImg.style.width = "28px";
-      iconImg.style.height = "28px";
+      iconImg.style.width = "24px";
+      iconImg.style.height = "24px";
       leftDiv.appendChild(iconImg);
 
-      // Центральный блок (название + "от кого / мерчант / ...")
+      // Центральный блок (название + «от кого / кому / мерчант»)
       const centerDiv = document.createElement("div");
       centerDiv.style.flex = "1"; 
-      // title
+
       const titleEl = document.createElement("div");
       titleEl.textContent = titleText;
       titleEl.style.fontWeight = "bold";
-      // details
+      titleEl.style.marginBottom = "4px";
+
       const detailsEl = document.createElement("div");
       detailsEl.textContent = detailsText;
       detailsEl.style.fontSize = "14px";
@@ -1019,40 +1033,42 @@ function displayTransactionHistory(transactions) {
       rightDiv.style.display = "flex";
       rightDiv.style.flexDirection = "column";
       rightDiv.style.alignItems = "flex-end";
-      
-      // Сумма
+
       const amountEl = document.createElement("div");
       amountEl.style.fontWeight = "bold";
-      amountEl.style.marginBottom = "5px";
-      // Если входящая (или rub_to_coin) — зелёный текст, 
-      // если исходящая — красный
-      let color = "#333";
-      if (amountSign === "+") color = "green";
-      if (amountSign === "-") color = "red";
+      let color = "#000";
+      if (amountSign === "+") {
+        color = "green";
+      } else if (amountSign === "-") {
+        color = "red";
+      }
       amountEl.style.color = color;
-
       amountEl.textContent = `${amountSign} ${amountValue} ₲`;
 
-      // Время
       const timeEl = document.createElement("div");
       timeEl.textContent = timeStr;
       timeEl.style.fontSize = "12px";
       timeEl.style.color = "#888";
+      timeEl.style.marginTop = "3px";
 
       rightDiv.appendChild(amountEl);
       rightDiv.appendChild(timeEl);
 
       // Собираем
-      itemDiv.appendChild(leftDiv);
-      itemDiv.appendChild(centerDiv);
-      itemDiv.appendChild(rightDiv);
+      cardDiv.appendChild(leftDiv);
+      cardDiv.appendChild(centerDiv);
+      cardDiv.appendChild(rightDiv);
 
-      dateItem.appendChild(itemDiv);
+      // Добавляем карточку в dateItem
+      dateItem.appendChild(cardDiv);
     });
+
+    // Добавляем dateItem в основной список
     list.appendChild(dateItem);
   });
 }
 
+// Дата "Сегодня", "Вчера" или DD.MM.YYYY
 function getDateLabel(dateObj) {
   const today = new Date();
   const yesterday = new Date();
@@ -1061,6 +1077,7 @@ function getDateLabel(dateObj) {
   if (dateObj.toDateString() === yesterday.toDateString()) return "Вчера";
   return dateObj.toLocaleDateString("ru-RU");
 }
+
 
 /**************************************************
  * МЕРЧАНТСКИЙ ИНТЕРФЕЙС
