@@ -1,27 +1,77 @@
-/* СБРОС БАЗОВЫХ СТИЛЕЙ */
+/* Общие стили */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
 
-body, html {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  min-height: 100%;
+ul {
+    display: block;
+    list-style-type: disc;
+    margin-block-start: 1em;
+    margin-block-end: 1em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+    padding-inline-start: 0px;
+    unicode-bidi: isolate;
 }
 
-/* Базовый шрифт — используем системный стек, чтобы на iOS выглядело ближе к SF Pro */
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
-               Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
-  background-color: #f4f4f9;
-  color: #000;
+.loading-indicator {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000; /* выше всех модальных окон */
+}
+
+.loading-indicator img {
+  width: 50px; /* размер анимации */
+  height: 50px;
+}
+
+/* Класс для авторизации — индикатор будет ниже */
+.loading-indicator.auth-loading {
+  top: -20%;
+}
+
+.hidden {
+  display: none;
+}
+
+#exchangeChart {
+  border: none;
+  outline: none;
+}
+
+/* CSS для стилизации кнопок мерчанта (схожий дизайн с UI пользователя) */
+.merchant-btn {
+  background-color: #fff;      /* Пример: ярко-синий фон */
+  color: #fff;                    /* Белый текст */
+  border: none;
+  padding: 10px 20px;
   font-size: 16px;
-  font-weight: 400;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.merchant-btn:hover {
+  background-color: #0f7ad1;
+}
+
+body {
+  font-family: 'Oswald', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f9;
   position: relative;
   overflow-x: hidden;
+  font-size: 16px;
+  font-weight: 400;
 }
 
 /* Скрытый элемент */
@@ -29,216 +79,171 @@ body {
   display: none;
 }
 
-/* ---------- ИНДИКАТОР ЗАГРУЗКИ ---------- */
-.loading-indicator {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
-  background: rgba(255,255,255,0.4);
-}
-
-.loading-indicator img {
-  width: 50px;
-  height: 50px;
-}
-
-.loading-indicator.auth-loading {
-  top: -20%;
-}
-
-/* ---------- ВЕРХНЯЯ ПАНЕЛЬ (СТИЛЬ TON) ---------- */
+/* Верхняя панель */
 #topBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  z-index: 1000;
+  padding: 8px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#topBarLeft {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+#topBarRight {
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 10px 16px;
-  background-color: #f4f4f9;
-  position: relative; /* чтобы иконка logout (settings) располагалась справа */
-  z-index: 1000;
-  box-shadow: none; /* убираем старую тень */
-  border-bottom: 1px solid rgba(0,0,0,0.05);
 }
 
-/* "Кнопка" Wallet по центру — используем #appTitle как pill */
 #appTitle {
-  display: inline-flex;
-  align-items: center;
-  background-color: #fff;
-  border-radius: 16px;
-  padding: 6px 12px;
-  font-size: 16px;
   font-weight: 600;
-  color: #000;
-  text-transform: none; /* убираем uppercase */
-  cursor: default;
-}
-
-/* Иконка (или кнопка) "Выход" (#logoutBtn) в правом верхнем углу.
-   Можно заменить иконкой "шестерёнка" или оставить как есть. */
-#logoutBtn {
-  position: absolute;
-  right: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  width: 24px;
-  height: 24px;
-  cursor: pointer;
-  padding: 0;
-  color: #000;
-  font-size: 0; /* чтобы не было текста */
-  /* Если у вас есть SVG иконка, можете вставить через background-image */
-  /* background: url('settings-icon.svg') center/cover no-repeat; */
-}
-
-/* Скрываем надпись на кнопке, если не нужна */
-#logoutBtn::after {
-  content: "";
-  display: block;
-  width: 24px;
-  height: 24px;
-  background: url('...') center/contain no-repeat; /* Подставьте иконку */
-}
-
-/* ---------- БАЛАНС (ПО СЕРЕДИНЕ ЭКРАНА) ---------- */
-#balanceDisplay {
-  margin-top: 10px;
+  font-size: 24px;
+  text-transform: uppercase;
+  color: #333;
   text-align: center;
-  z-index: 1000;
+  #display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-#balanceLabel {
-  display: none; /* прячем старую надпись "Balance", если не нужно */
-}
-
-#balanceValue {
-  font-size: 36px;  /* крупный размер, как в TON-кошельке */
-  font-weight: 600;
-  margin-bottom: 4px;
+#appTitle::after {
+  content: "";
+  display: inline-block;
+  width: 1em;
+  height: 1em; /* тонкая настройка под конкретный шрифт */
+  margin-bottom: -0.1em; /* выравнивание по базовой линии */
+  background-image: url('15.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
 #userIdDisplay {
-  font-size: 14px;
-  color: #666;
-  font-weight: 400;
-  text-align: center;
-}
-
-/* Если у вас нужно "Your address: UQBW...fPEu", подставьте в userIdDisplay */
-#userIdDisplay::before {
-  content: "Your address: ";
-  color: #666;
-  font-weight: 400;
-}
-
-/* ---------- КНОПКА "МАЙНИТЬ" (МОЖНО СКРЫТЬ) ---------- */
-#mineContainer {
-  display: none; /* Скрываем, т.к. в TON-кошельке этого нет */
-}
-
-/* ---------- КНОПКИ "ОПЕРАЦИИ" (SEND / RECEIVE / SCAN / SWAP / BUY TON / STAKE) ----------
-   В вашем коде их нет, но если хотите — создайте контейнер. 
-   Ниже пример, если решите добавить такой блок. 
-   Если не нужно — можно удалить. */
-.operations-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  max-width: 400px;
-  margin: 24px auto 0 auto;
-  text-align: center;
-}
-.op-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  cursor: pointer;
-}
-.op-item img {
-  width: 32px;
-  height: 32px;
-  margin-bottom: 6px;
-}
-.op-item span {
-  font-size: 14px;
-  color: #333;
-}
-
-/* ---------- НИЖНЯЯ ПАНЕЛЬ (ТАБ-БАР) В СТИЛЕ TON ---------- */
-#bottomBar {
-  position: fixed;
-  bottom: 0; left: 0;
-  width: 100%;
-  height: 60px;
-  background-color: #fff;
-  box-shadow: 0 -1px 6px rgba(0,0,0,0.1);
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  z-index: 1000;
-  border-top: 1px solid rgba(0,0,0,0.05);
-}
-
-/* У вас были кнопки #operationsBtn, #historyBtn, #exchangeBtn — 
-   Заменим их на табы Wallet / History / Browser, 
-   но сохраним ID, чтобы скрипт не ломался. 
-   При желании переименуйте и логику в JS. */
-#bottomBar button {
-  flex: 1;
-  background: none;
-  border: none;
-  text-align: center;
-  cursor: pointer;
-  font-size: 0; /* Скрываем текст, если хотим иконку */
-  position: relative;
-  color: #666;
-}
-
-/* Иконки табов (можете заменить на свои) */
-#bottomBar button::before {
-  content: "";
-  display: block;
-  width: 24px;
-  height: 24px;
-  margin: 0 auto 2px auto;
-  background: url('...') center/contain no-repeat; /* Подставьте нужную иконку */
-}
-#operationsBtn::before {
-  /* Иконка для Wallet */
-  background-image: url('wallet-icon.png');
-}
-#historyBtn::before {
-  /* Иконка для History */
-  background-image: url('history-icon.png');
-}
-#exchangeBtn::before {
-  /* Иконка для Browser */
-  background-image: url('browser-icon.png');
-}
-
-/* Текст под иконками (маленький) — если нужно */
-#bottomBar button span {
-  display: block;
-  font-size: 12px;
-  color: #666;
-}
-
-/* Активная вкладка — можно вручную менять класс в JS */
-#bottomBar button.active span {
-  color: #000;
+  font-size: 16px;
   font-weight: 600;
+  color: #555;
+  text-align: center;
 }
 
-/* ---------- МОДАЛЬНЫЕ ОКНА ---------- */
+/* Кнопка "Выход" */
+#logoutBtn {
+  background-color: transparent;
+  border: 2px solid #000;
+  color: #000;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 8px 12px;
+  transition: background-color 0.3s ease;
+}
+
+#logoutBtn:hover {
+  background-color: #f0f0f0;
+}
+
+/* Нижняя панель */
+#bottomBar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 18px 1px;
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+    background-color: #fff;
+    box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+#bottomBar button {
+  flex: 0 0 28%;
+  padding: 8px;
+  background-color: transparent;
+  color: #000;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#bottomBar button:hover {
+  background-color: #f0f0f0;
+}
+
+/* Блок отображения баланса */
+#balanceDisplay {
+  position: fixed;
+  top: 130px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  z-index: 1000;
+  font-weight: 600;
+  font-size: 28px;
+  text-transform: uppercase;
+  color: #000;
+  text-align: center;
+}
+
+#balanceLabel {
+  font-size: 28px;
+  font-weight: 600;
+  color: #000;
+}
+
+#balanceValue {
+  font-size: 32px;
+  font-weight: 600;
+  color: #000;
+}
+
+/* Контейнер кнопки "Майнить" */
+#mineContainer {
+  position: fixed;
+  bottom: 120px;
+  left: 51%;
+  transform: translateX(-50%);
+  width: 250px;
+  height: 250px;
+  background: transparent;
+  border: none;
+  z-index: 1000;
+}
+
+#mineBtn {
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  border-radius: 0;
+  transition: transform 0.1s ease;
+  background: rgba(0,0,0,0);
+}
+
+#mineBtn:active {
+  transform: scale(0.95);
+}
+
+/* Модальные окна (все, кроме окна авторизации) */
 .modal {
   position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   background: rgba(0,0,0,0.5);
   z-index: 1500;
   display: flex;
@@ -246,35 +251,64 @@ body {
   align-items: center;
 }
 
+/* Добавляем курсор для оверлея */
 .modal-overlay {
   position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   cursor: pointer;
-  z-index: 1;
+  z-index: 1; /* нижний слой */
 }
 
 .modal-content {
-  position: relative;
-  z-index: 2;
-  width: 90%;
-  max-width: 400px;
+  position: relative; /* добавляем позиционирование */
+  z-index: 2;         /* выше оверлея */
+  width: 85vw;
+  height: 80vh;
   background: #fff;
-  border-radius: 12px;
-  padding: 20px;
+  padding: 15px;
+  #border: 2px solid #000;
+  border-radius: 0;
   overflow: hidden;
   margin: auto;
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
 }
 
-/* Кнопка закрытия (крестик) в правом верхнем углу */
+.modal-content > *:first-child {
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+/* Окно авторизации */
+#authModal .modal-content {
+  width: 90%;
+  max-width: 400px;
+  margin: 100px auto;
+  border: 2px solid #000;
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Кнопка закрытия модального окна */
 .close-btn {
   position: absolute;
-  top: 10px; right: 10px;
-  width: 30px; height: 30px;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
   background-color: red;
   color: #fff;
-  border: none;
-  border-radius: 50%;
+  border: 2px solid #000;
+  border-radius: 0;
   font-size: 16px;
   line-height: 30px;
   text-align: center;
@@ -282,39 +316,76 @@ body {
   z-index: 1600;
 }
 
-/* Заголовки в модалках */
+/* Заголовки модальных окон */
 .modal-content h3,
 .modal-content h4 {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
   color: #000;
   text-align: center;
-  margin-bottom: 10px;
 }
 
-/* Поля ввода в модалках */
+#authModal h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #000;
+  text-align: center;
+  #display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin: 0 0 20px 0;
+}
+
+#authModal h3::after {
+  content: "";
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-bottom: -0.1em;
+  background-image: url('15.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* Для окна авторизации */
+#authModal h4 {
+  text-align: left;
+  margin: 0px;
+}
+
+/* Элементы формы в модальных окнах */
+.modal-content label {
+  display: block;
+  margin-top: 10px;
+  font-size: 16px;
+  color: #000;
+  text-align: left;
+}
+
 .modal-content input {
   width: 100%;
-  padding: 10px;
+  padding: 8px;
   margin-top: 5px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 14px;
+  border: 2px solid #000;
+  border-radius: 0;
+  font-size: 16px;
+  text-align: left;
 }
 
-/* Кнопки в модалках */
 .modal-content button {
-  display: block;
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #000;
-  border-radius: 8px;
-  background-color: #fff;
-  font-size: 14px;
-  font-weight: 600;
   margin-top: 10px;
+  padding: 8px;
+  border: 2px solid #000;
   cursor: pointer;
+  border-radius: 0;
   transition: background-color 0.3s ease;
+  font-size: 16px;
+  font-weight: 600;
+  background-color: transparent;
+  color: #000;
 }
 
 .modal-content button:hover {
@@ -324,52 +395,49 @@ body {
 /* Прокручиваемое содержимое внутри модальных окон */
 .scrollable-content {
   width: 100%;
-  max-height: 60vh; /* ограничиваем высоту, чтобы скролл не вылезал за окно */
+  height: 100%;
   overflow-y: auto;
 }
 
-/* ---------- БЛОК ИСТОРИИ ОПЕРАЦИЙ ---------- */
+/* Блок истории операций */
 .history-group {
   width: 100%;
-  background: #fff;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  margin: 10px 0;
-  padding: 10px;
+  padding: 15px;
+  border: 2px solid #000;
+  border-radius: 0;
+  margin: 10px auto;
 }
 
 .history-date {
   font-weight: 600;
-  margin-bottom: 5px;
-  border-bottom: 1px solid #eee;
+  margin-bottom: 10px;
   padding-bottom: 5px;
+  border-bottom: 2px solid #000;
   text-align: center;
 }
 
 .history-item {
   padding: 5px 0;
-  border-bottom: 1px dashed #eee;
-  font-size: 14px;
-  color: #333;
+  border-bottom: 2px dashed #000;
+  text-align: left;
 }
+
 .history-item:last-child {
   border-bottom: none;
 }
 
-/* ---------- ДЛЯ ОБМЕНА (EXCHANGE) И ПРОЧИХ РАЗДЕЛОВ ---------- */
-#exchangeChart {
-  border: none;
-  outline: none;
-}
-
+/* Окно "Обменять" */
 #exchangeContent {
   display: flex;
   flex-direction: column;
-  align-items: center;
   justify-content: center;
+  align-items: center;
+  height: 100%;
 }
 
-#transferContent {
+/* Удаляем окантовку для flex-контейнеров в разделах "Перевести" и "Обменять" */
+#transferContent,
+#exchangeContent {
   border: none;
   padding: 10px;
   width: 100%;
@@ -377,52 +445,29 @@ body {
   margin: 0 auto;
 }
 
-/* ---------- АДАПТИВНОСТЬ ---------- */
+/* Адаптивность */
 @media (max-width: 600px) {
   #appTitle {
-    font-size: 14px;
-    padding: 4px 8px;
+    font-size: 24px;
   }
-
-  #logoutBtn {
-    width: 20px;
-    height: 20px;
-    right: 8px;
-  }
-  #logoutBtn::after {
-    width: 20px;
-    height: 20px;
-  }
-
-  #balanceValue {
-    font-size: 32px;
-  }
-
   #userIdDisplay {
-    font-size: 12px;
+    font-size: 16px;
   }
-
-  #bottomBar {
-    height: 56px;
+  #balanceValue {
+    font-size: 28px;
   }
-
-  #bottomBar button::before {
-    width: 20px; height: 20px;
-    margin-bottom: 2px;
+  #mineBtn {
+    width: 250px;
+    height: 250px;
   }
-  #bottomBar button span {
-    font-size: 11px;
-  }
-
-  .modal-content {
-    max-width: 90%;
-    border-radius: 12px;
-    padding: 16px;
+  #bottomBar button,
+  #logoutBtn {
+    font-size: 14px;
   }
   .close-btn {
-    width: 28px;
-    height: 28px;
-    font-size: 14px;
-    line-height: 28px;
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+    line-height: 30px;
   }
 }
