@@ -23,16 +23,12 @@ function formatBalance(num) {
 }
 
 /** 
- * Удаляем все модалки из DOM (чтобы «Главная» 
- * точно не оставляла никаких окон).
+ * Удаляем все модалки из DOM
 */
 function removeAllModals() {
   document.querySelectorAll(".modal").forEach((m) => m.remove());
 }
 
-/** 
- * Вспомогательный лоадер 
- */
 function showGlobalLoading() {
   const loader = document.getElementById("loadingIndicator");
   if (loader) loader.style.display = "flex";
@@ -46,16 +42,13 @@ function hideGlobalLoading() {
  * СОЗДАНИЕ/ОТКРЫТИЕ/ЗАКРЫТИЕ МОДАЛЬНЫХ ОКОН
  **************************************************/
 function createModal(id, innerHtml, { showCloseBtn = false } = {}) {
-  // Удаляем старую, если была
   const oldModal = document.getElementById(id);
   if (oldModal) oldModal.remove();
 
-  // Внешний контейнер .modal
   const modal = document.createElement("div");
   modal.id = id;
-  modal.className = "modal"; // класс для поиска (необязательно)
+  modal.className = "modal";
   
-  // Стили .modal (можно вынести в CSS)
   modal.style.position = "fixed";
   modal.style.top = "0";
   modal.style.left = "0";
@@ -65,11 +58,9 @@ function createModal(id, innerHtml, { showCloseBtn = false } = {}) {
   modal.style.zIndex = "1500";
   modal.style.display = "flex";
   modal.style.flexDirection = "column";
-  // justfyContent: flex-start, чтобы контент был сверху
   modal.style.justifyContent = "flex-start";
   modal.style.alignItems = "center";
 
-  // Оверлей
   const overlay = document.createElement("div");
   overlay.className = "modal-overlay";
   overlay.style.position = "absolute";
@@ -79,15 +70,11 @@ function createModal(id, innerHtml, { showCloseBtn = false } = {}) {
   overlay.style.height = "100%";
   overlay.style.zIndex = "1";
 
-  // Основной блок контента
   const contentDiv = document.createElement("div");
   contentDiv.className = "modal-content";
-  // Делаем отступ сверху
   contentDiv.style.marginTop = "60px";
-  // Занимаем всю ширину, но ограничиваем max-width
   contentDiv.style.width = "100%";
   contentDiv.style.maxWidth = "600px";
-  // Высота — почти весь экран, минус отступ
   contentDiv.style.height = "calc(100% - 60px)";
   contentDiv.style.background = "#fff";
   contentDiv.style.zIndex = "2";
@@ -97,7 +84,6 @@ function createModal(id, innerHtml, { showCloseBtn = false } = {}) {
   contentDiv.style.borderRadius = "10px";
   contentDiv.style.padding = "20px";
 
-  // Кнопка закрытия (если нужно)
   let closeBtnHtml = "";
   if (showCloseBtn) {
     closeBtnHtml = `
@@ -110,22 +96,18 @@ function createModal(id, innerHtml, { showCloseBtn = false } = {}) {
     `;
   }
 
-  // Вставляем HTML внутрь contentDiv
   contentDiv.innerHTML = closeBtnHtml + innerHtml;
 
-  // Собираем всё
   modal.appendChild(overlay);
   modal.appendChild(contentDiv);
   document.body.appendChild(modal);
 
-  // Закрытие по клику на оверлей
   overlay.addEventListener("click", (e) => {
     if (e.target === overlay) {
       modal.remove();
     }
   });
 
-  // Если есть кнопка X
   if (showCloseBtn) {
     const closeBtn = contentDiv.querySelector(".close-btn");
     if (closeBtn) {
@@ -164,7 +146,6 @@ async function login() {
       updateUI();
       return;
     } else {
-      // Пробуем мерчант
       if (data.error?.includes("блокирован")) {
         alert("❌ Ваш аккаунт заблокирован");
         return;
@@ -230,7 +211,6 @@ async function logout() {
   } catch (err) {
     console.error("Ошибка logout:", err);
   }
-  // Сбрасываем всё
   currentUserId = null;
   currentMerchantId = null;
   document.getElementById("bottomBar")?.remove();
@@ -294,7 +274,6 @@ function openAuthModal() {
  * ГЛАВНЫЙ ЭКРАН
  **************************************************/
 function createMainUI() {
-  // Создаём нижнюю панель
   if (!document.getElementById("bottomBar")) {
     const bottomBar = document.createElement("div");
     bottomBar.id = "bottomBar";
@@ -319,8 +298,6 @@ function createMainUI() {
 
     // События
     document.getElementById("btnMain").addEventListener("click", () => {
-      // При нажатии на "Главная" удаляем все модалки, 
-      // оставляем главное окно (баланс + кнопки ниже)
       removeAllModals();
     });
     document.getElementById("historyBtn").addEventListener("click", () => {
@@ -338,13 +315,12 @@ function createMainUI() {
   if (balanceDisplay) {
     balanceDisplay.style.display = "block";
   }
-
   const mineContainer = document.getElementById("mineContainer");
   if (mineContainer) {
     mineContainer.style.display = "block";
   }
 
-  // Создаём контейнер с двумя кнопками (перевести, оплата)
+  // Action buttons (Перевести, Оплата по QR)
   if (!document.getElementById("actionButtonsContainer")) {
     const container = document.createElement("div");
     container.id = "actionButtonsContainer";
@@ -352,15 +328,13 @@ function createMainUI() {
     container.style.flexDirection = "row";
     container.style.justifyContent = "center";
     container.style.gap = "16px";
-    // Сдвигаем ниже, чтобы не наезжать на ID
-    container.style.marginTop = "140px"; // увеличим отступ
+    container.style.marginTop = "140px";
     container.innerHTML = `
       <button id="transferBtn" style="padding:10px;">Перевести</button>
       <button id="payQRBtn" style="padding:10px;">Оплата по QR</button>
     `;
     document.body.appendChild(container);
 
-    // Привязываем клики
     document.getElementById("transferBtn").addEventListener("click", () => {
       removeAllModals();
       openTransferModal(); 
@@ -397,19 +371,14 @@ async function fetchUserData() {
       const coinBalance = data.user.balance || 0;
       const rubBalance = data.user.rub_balance || 0;
 
-      // Отображаем в #balanceValue
       const balanceValue = document.getElementById("balanceValue");
       if (balanceValue) {
         balanceValue.textContent = coinBalance.toFixed(5) + " ₲";
       }
-
-      // Отображаем ID (под балансом)
       const userIdEl = document.getElementById("userIdDisplay");
       if (userIdEl) {
         userIdEl.textContent = "ID: " + currentUserId;
       }
-
-      // Если есть rubBalanceInfo
       const rubBalanceInfo = document.getElementById("rubBalanceInfo");
       if (rubBalanceInfo) {
         rubBalanceInfo.textContent = rubBalance.toFixed(2) + " ₽";
@@ -466,7 +435,7 @@ async function flushMinedCoins() {
 }
 
 /**************************************************
- * МОДАЛКА "ПЕРЕВОД" (С КНОПКОЙ ЗАКРЫТИЯ)
+ * МОДАЛКА "ПЕРЕВОД"
  **************************************************/
 function openTransferModal() {
   createModal(
@@ -519,7 +488,7 @@ function openTransferModal() {
 }
 
 /**************************************************
- * МОДАЛКА "ОПЛАТА ПО QR" (С КНОПКОЙ ЗАКРЫТИЯ)
+ * МОДАЛКА "ОПЛАТА ПО QR"
  **************************************************/
 function openPayQRModal() {
   createModal(
@@ -661,7 +630,7 @@ let currentExchangeRate = 0;
 
 async function openExchangeModal() {
   showGlobalLoading();
-  removeAllModals(); // удаляем другие окна
+  removeAllModals();
 
   createModal(
     "exchangeModal",
@@ -803,7 +772,6 @@ async function loadBalanceAndExchangeRate() {
     console.error("loadBalanceAndExchangeRate user error:", err);
   }
 
-  // Загрузим историю курсов
   try {
     const rateResp = await fetch(`${API_URL}/exchangeRates?limit=200`, {
       credentials: "include",
@@ -907,15 +875,21 @@ async function fetchTransactionHistory() {
   }
 }
 
+/**************************************************
+ * ВАЖНО: ПЕРЕРАБОТАННАЯ ФУНКЦИЯ ОТОБРАЖЕНИЯ ИСТОРИИ
+ **************************************************/
+
 function displayTransactionHistory(transactions) {
   const list = document.getElementById("transactionList");
   if (!list) return;
   list.innerHTML = "";
+
   if (!transactions.length) {
     list.innerHTML = "<li>Нет операций</li>";
     return;
   }
-  // Группируем
+
+  // Группируем транзакции по датам (сегодня, вчера, и т.д.)
   const groups = {};
   transactions.forEach((tx) => {
     const d = new Date(tx.client_time || tx.created_at);
@@ -923,13 +897,14 @@ function displayTransactionHistory(transactions) {
     if (!groups[label]) groups[label] = [];
     groups[label].push(tx);
   });
-  // сортируем заголовки
+
+  // Сортируем даты по убыванию
   const sortedDates = Object.keys(groups).sort((a, b) => {
     const dA = new Date(groups[a][0].client_time || groups[a][0].created_at);
     const dB = new Date(groups[b][0].client_time || groups[b][0].created_at);
     return dB - dA;
   });
-  // Выводим
+
   sortedDates.forEach((dateStr) => {
     const dateItem = document.createElement("li");
     dateItem.style.border = "1px solid #ccc";
@@ -940,65 +915,139 @@ function displayTransactionHistory(transactions) {
       const timeStr = new Date(
         tx.client_time || tx.created_at
       ).toLocaleTimeString("ru-RU");
-      let opHTML = "";
-      if (tx.type === "exchange") {
-        const rate = tx.exchange_rate ? Number(tx.exchange_rate) : null;
-        let credited = "N/A";
-        if (rate) {
-          credited =
-            tx.direction === "rub_to_coin"
-              ? (tx.amount / rate).toFixed(5) + " ₲"
-              : (tx.amount * rate).toFixed(2) + " ₽";
-        }
-        opHTML = `
-          <div>Обмен валюты 💱</div>
-          <div>Направление: ${
-            tx.direction === "rub_to_coin" ? "Рубли → Монеты" : "Монеты → Рубли"
-          }</div>
-          <div>Сумма списания: ${
-            tx.direction === "rub_to_coin" ? tx.amount + " ₽" : tx.amount + " ₲"
-          }</div>
-          <div>Сумма зачисления: ${credited}</div>
-          <div>Курс: 1 ₲ = ${rate ? rate.toFixed(2) : "N/A"} ₽</div>
-          <div>Время: ${timeStr}</div>
-        `;
-      } else if (tx.type === "merchant_payment") {
-        const merch =
+
+      // === Определяем что за операция ===
+      let iconSrc = "";     // Картинка
+      let titleText = "";   // "Получено", "Отправлено", "Оплата по QR" и т.п.
+      let detailsText = ""; // "От кого: ...", "Кому: ...", "Мерчант: ..."
+      let amountSign = "";  // "+" или "-"
+      let amountValue = formatBalance(tx.amount || 0);
+
+      if (tx.type === "merchant_payment") {
+        // Оплата по QR
+        iconSrc = "56.webp";
+        titleText = "Оплата по QR";
+        detailsText = `Мерчант: ${
           tx.merchant_id ||
           (tx.to_user_id && tx.to_user_id.replace("MERCHANT:", "")) ||
-          "???";
-        opHTML = `
-          <div>Оплата по QR 💳</div>
-          <div>Мерчант: ${merch}</div>
-          <div>Сумма: ${tx.amount} ₲</div>
-          <div>Время: ${timeStr}</div>
-        `;
-      } else if (tx.from_user_id === currentUserId) {
-        opHTML = `
-          <div>Исходящая операция ⤴</div>
-          <div>Кому: ${tx.to_user_id}</div>
-          <div>Сумма: ${formatBalance(tx.amount)} ₲</div>
-          <div>Время: ${timeStr}</div>
-        `;
-      } else if (tx.to_user_id === currentUserId) {
-        opHTML = `
-          <div>Входящая операция ⤵</div>
-          <div>От кого: ${tx.from_user_id}</div>
-          <div>Сумма: ${formatBalance(tx.amount)} ₲</div>
-          <div>Время: ${timeStr}</div>
-        `;
-      } else {
-        opHTML = `
-          <div>Операция</div>
-          <div>Сумма: ${formatBalance(tx.amount || 0)} ₲</div>
-          <div>Время: ${timeStr}</div>
-        `;
+          "???"
+        }`;
+        amountSign = "-"; // списание
+      } 
+      else if (tx.from_user_id === currentUserId) {
+        // Исходящая
+        iconSrc = "67.png";
+        titleText = "Отправлено";
+        detailsText = `Кому: ${tx.to_user_id}`;
+        amountSign = "-";
+      } 
+      else if (tx.to_user_id === currentUserId) {
+        // Входящая
+        iconSrc = "66.png";
+        titleText = "Получено";
+        detailsText = `От кого: ${tx.from_user_id}`;
+        amountSign = "+";
+      } 
+      else if (tx.type === "exchange") {
+        // Обмен (можно тоже стилизовать, 
+        // либо оставить старый формат)
+        iconSrc = "67.png"; // условно
+        titleText = "Обмен";
+        // Можно сформировать detailsText иначе, 
+        // например, показать направление
+        detailsText = `Направление: ${
+          tx.direction === "rub_to_coin" ? "Рубли → Монеты" : "Монеты → Рубли"
+        }`;
+        // Для обмена не всегда "плюс" или "минус" 
+        // — но, допустим, ставим "-" если coin_to_rub, 
+        // и "+" если rub_to_coin
+        amountSign = tx.direction === "rub_to_coin" ? "+" : "-";
+        amountValue = formatBalance(tx.amount);
+      } 
+      else {
+        // Прочее — fallback
+        iconSrc = "67.png";
+        titleText = "Операция";
+        detailsText = "Детали не указаны";
+        amountSign = ""; 
       }
-      const txDiv = document.createElement("div");
-      txDiv.style.borderBottom = "1px dashed #ccc";
-      txDiv.style.padding = "5px 0";
-      txDiv.innerHTML = opHTML;
-      dateItem.appendChild(txDiv);
+
+      const itemDiv = document.createElement("div");
+      itemDiv.style.display = "flex";
+      itemDiv.style.alignItems = "center";
+      itemDiv.style.borderBottom = "1px dashed #ccc";
+      itemDiv.style.padding = "10px 0";
+
+      // Левая часть (иконка в круге)
+      const leftDiv = document.createElement("div");
+      leftDiv.style.width = "50px";
+      leftDiv.style.height = "50px";
+      leftDiv.style.minWidth = "50px";
+      leftDiv.style.minHeight = "50px";
+      leftDiv.style.borderRadius = "50%";
+      leftDiv.style.background = "#f4f4f4"; // светло-серый фон
+      leftDiv.style.display = "flex";
+      leftDiv.style.alignItems = "center";
+      leftDiv.style.justifyContent = "center";
+      leftDiv.style.marginRight = "10px";
+
+      const iconImg = document.createElement("img");
+      iconImg.src = iconSrc;
+      iconImg.alt = "icon";
+      iconImg.style.width = "28px";
+      iconImg.style.height = "28px";
+      leftDiv.appendChild(iconImg);
+
+      // Центральный блок (название + "от кого / мерчант / ...")
+      const centerDiv = document.createElement("div");
+      centerDiv.style.flex = "1"; 
+      // title
+      const titleEl = document.createElement("div");
+      titleEl.textContent = titleText;
+      titleEl.style.fontWeight = "bold";
+      // details
+      const detailsEl = document.createElement("div");
+      detailsEl.textContent = detailsText;
+      detailsEl.style.fontSize = "14px";
+      detailsEl.style.color = "#666";
+
+      centerDiv.appendChild(titleEl);
+      centerDiv.appendChild(detailsEl);
+
+      // Правая часть (сумма + время)
+      const rightDiv = document.createElement("div");
+      rightDiv.style.display = "flex";
+      rightDiv.style.flexDirection = "column";
+      rightDiv.style.alignItems = "flex-end";
+      
+      // Сумма
+      const amountEl = document.createElement("div");
+      amountEl.style.fontWeight = "bold";
+      amountEl.style.marginBottom = "5px";
+      // Если входящая (или rub_to_coin) — зелёный текст, 
+      // если исходящая — красный
+      let color = "#333";
+      if (amountSign === "+") color = "green";
+      if (amountSign === "-") color = "red";
+      amountEl.style.color = color;
+
+      amountEl.textContent = `${amountSign} ${amountValue} ₲`;
+
+      // Время
+      const timeEl = document.createElement("div");
+      timeEl.textContent = timeStr;
+      timeEl.style.fontSize = "12px";
+      timeEl.style.color = "#888";
+
+      rightDiv.appendChild(amountEl);
+      rightDiv.appendChild(timeEl);
+
+      // Собираем
+      itemDiv.appendChild(leftDiv);
+      itemDiv.appendChild(centerDiv);
+      itemDiv.appendChild(rightDiv);
+
+      dateItem.appendChild(itemDiv);
     });
     list.appendChild(dateItem);
   });
@@ -1112,7 +1161,6 @@ function updateUI() {
  * DOMContentLoaded
  **************************************************/
 document.addEventListener("DOMContentLoaded", () => {
-  // При загрузке пытаемся понять, кто мы (пользователь или мерчант)
   fetchUserData().then(() => {
     if (currentMerchantId) {
       openMerchantUI();
@@ -1123,7 +1171,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Привязываем к кнопке "Майнить"
   const mineBtn = document.getElementById("mineBtn");
   if (mineBtn) {
     mineBtn.addEventListener("click", mineCoins);
