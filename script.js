@@ -1,68 +1,56 @@
 /* ===================================
    ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
 ==================================== */
-const API_URL = "https://api.mkntw.ru"; // Ваш backend-сервер
+const API_URL = "https://api.mkntw.ru";
 
-// Не храним userId/merchantId в localStorage, опираемся на http-only cookie
 let currentUserId = null;
 let currentMerchantId = null;
 
 let pendingMinedCoins = parseFloat(localStorage.getItem("pendingMinedCoins")) || 0;
-let localBalance = 0;       // локальный баланс для визуального отклика
-let merchantBalance = 0;    // баланс мерчанта
+let localBalance = 0;
+let merchantBalance = 0;
 
 let isMining = false;
 let mineTimer = null;
 let updateInterval = null;
 
-let currentHalvingStep = 0; // для halvingInfo
-let lastDirection = null;   // хранит направление последней операции (например, 'rub_to_coin')
-let cycleCount = 0;         // счётчик для синусоидальной динамики (если нужно)
+let currentHalvingStep = 0;
+let lastDirection = null;
+let cycleCount = 0;
 let exchangeChartInstance = null;
 
-// Для удобства (если потребуется):
-const env = "development"; // или "production"
-
 /* ===================================
-   УТИЛИТЫ ФОРМАТИРОВАНИЯ
+   ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 ==================================== */
 function formatBalance(num) {
   return parseFloat(num).toFixed(5);
 }
 
-/* ===================================
-   Вспомогательная функция (пример, если нужна была синусоида)
-==================================== */
-function getSinusoidalRateModifier() {
-  const frequency = 0.1;
-  const amplitude = 0.02;
-  cycleCount++;
-  return amplitude * Math.sin(cycleCount * frequency);
-}
+function createModal(id, innerHtml, { showCloseBtn = false } = {}) {
+  // Удаляем, если уже был такой
+  const existing = document.getElementById(id);
+  if (existing) existing.remove();
 
-/* ===================================
-   МОДАЛЬНЫЕ ОКНА: СОЗДАНИЕ / ОТКРЫТИЕ / ЗАКРЫТИЕ
-==================================== */
-function createModal(id, htmlContent) {
-  // Если уже есть элемент с таким id — удаляем, чтобы создать заново
-  const existingModal = document.getElementById(id);
-  if (existingModal) existingModal.remove();
-
-  // Создаём обёртку-модал
+  // Создаем контейнер-модал
   const modal = document.createElement("div");
   modal.id = id;
   modal.className = "modal hidden";
+  // Кнопка закрытия (только если showCloseBtn = true)
+  const closeButtonHtml = showCloseBtn
+    ? `<button class="close-btn" onclick="closeModal('${id}')">×</button>`
+    : "";
+
+  // Вставляем структуру
   modal.innerHTML = `
     <div class="modal-overlay"></div>
     <div class="modal-content">
-      <!-- Кнопка закрытия -->
-      <button class="close-btn" onclick="closeModal('${id}')">×</button>
-      ${htmlContent}
+      ${closeButtonHtml}
+      ${innerHtml}
     </div>
   `;
   document.body.appendChild(modal);
 
-  // Закрытие по клику на оверлей
+  // Закрытие по клику на оверлей — если нужно
   const overlay = modal.querySelector(".modal-overlay");
   if (overlay) {
     overlay.addEventListener("click", (e) => {
@@ -71,15 +59,16 @@ function createModal(id, htmlContent) {
       }
     });
   }
+
   return modal;
 }
 
-function openModal(modalId) {
-  document.getElementById(modalId)?.classList.remove("hidden");
+function openModal(id) {
+  document.getElementById(id)?.classList.remove("hidden");
 }
 
-function closeModal(modalId) {
-  document.getElementById(modalId)?.classList.add("hidden");
+function closeModal(id) {
+  document.getElementById(id)?.classList.add("hidden");
 }
 
 function closeAllModals() {
@@ -87,7 +76,7 @@ function closeAllModals() {
 }
 
 /* ===================================
-   АВТОРИЗАЦИЯ: ВХОД, РЕГИСТРАЦИЯ, ВЫХОД
+   АВТОРИЗАЦИЯ
 ==================================== */
 async function login() {
   const loginVal = document.getElementById("loginInput")?.value;
@@ -101,7 +90,7 @@ async function login() {
   showGlobalLoading();
 
   try {
-    // Пытаемся войти как обычный пользователь
+    // Попытка входа как обычный пользователь
     const userResp = await fetch(`${API_URL}/login`, {
       method: "POST",
       credentials: "include",
@@ -110,14 +99,14 @@ async function login() {
     });
     const userData = await userResp.json();
     if (userResp.ok && userData.success) {
-      // Успешная авторизация как пользователь
+      // Успешно
       await fetchUserData();
       document.getElementById("authModal")?.remove();
       createMainUI();
       updateUI();
       return;
     } else {
-      // Если пользовательский вход не удался, пробуем мерчанта
+      // Пробуем мерчанта
       if (userData.error?.includes("блокирован")) {
         alert("❌ Ваш аккаунт заблокирован");
         return;
@@ -130,14 +119,14 @@ async function login() {
       });
       const merchData = await merchResp.json();
       if (merchResp.ok && merchData.success) {
-        // Успешная авторизация как мерчант
+        // Авторизация как мерчант
         await fetchMerchantData();
         document.getElementById("authModal")?.remove();
         openMerchantUI();
         return;
       } else {
         if (merchData.error?.includes("блокирован")) {
-          alert("❌ Ваш мерчант-аккаунт заблокирован");
+          alert("❌ Ваш аккаунт заблокирован");
         } else {
           alert(`❌ Ошибка входа: ${merchData.error}`);
         }
@@ -171,7 +160,7 @@ async function register() {
     const data = await resp.json();
     if (resp.ok && data.success) {
       alert(`✅ Аккаунт создан! Ваш userId: ${data.userId}`);
-      // После регистрации выполняем автоматический вход
+      // Автоматический вход
       await login();
     } else {
       if (data.error?.includes("блокирован")) {
@@ -197,7 +186,7 @@ async function logout() {
   } catch (err) {
     console.error("Ошибка при выходе:", err);
   }
-  // Очищаем данные в памяти
+  // Сброс
   currentUserId = null;
   currentMerchantId = null;
 
@@ -212,7 +201,6 @@ async function logout() {
   updateUI();
 }
 
-/* Окно авторизации */
 function openAuthModal() {
   hideMainUI();
   document.getElementById("merchantInterface")?.remove();
@@ -223,9 +211,12 @@ function openAuthModal() {
   authModal = document.createElement("div");
   authModal.id = "authModal";
   authModal.className = "modal hidden";
+
   authModal.innerHTML = `
-    <div class="modal-content" style="width:90%;max-width:400px;">
-      <button class="close-btn" onclick="document.getElementById('authModal')?.classList.add('hidden')">×</button>
+    <div class="modal-overlay"></div>
+    <div class="modal-content" style="max-width:400px; margin:60px auto;">
+      <!-- Нет отдельной кнопки закрытия,
+           будем закрывать по нажатию на "Главная" или при логине -->
       <h3>GugaCoin</h3>
       <div id="authForm">
         <div id="loginSection">
@@ -246,12 +237,22 @@ function openAuthModal() {
   `;
   document.body.appendChild(authModal);
 
-  // Открываем (убираем hidden)
+  // Событие для overlay
+  authModal.querySelector(".modal-overlay").addEventListener("click", (e) => {
+    if (e.target.classList.contains("modal-overlay")) {
+      // По клику вне контента — ничего (или можно скрывать)
+      // authModal.classList.add("hidden");
+    }
+  });
+
+  // Показываем
   authModal.classList.remove("hidden");
 
-  // Привязываем события
+  // События кнопок
   document.getElementById("loginSubmitBtn").addEventListener("click", login);
-  document.getElementById("registerSubmitBtn").addEventListener("click", register);
+  document
+    .getElementById("registerSubmitBtn")
+    .addEventListener("click", register);
   document.getElementById("toggleAuthBtn").addEventListener("click", () => {
     const loginSection = document.getElementById("loginSection");
     const registerSection = document.getElementById("registerSection");
@@ -263,48 +264,48 @@ function openAuthModal() {
       registerSection.style.display = "none";
     }
   });
+
   // Начальное состояние
   document.getElementById("loginSection").style.display = "block";
   document.getElementById("registerSection").style.display = "none";
 }
 
 /* ===================================
-   ГЛАВНЫЙ UI ДЛЯ ПОЛЬЗОВАТЕЛЯ
+   ГЛАВНЫЙ ЭКРАН ПОЛЬЗОВАТЕЛЯ
 ==================================== */
-/* Убираем любой topBar (если был), вместо этого
-   используем фиксированный блок #balanceDisplay и пр. */
-
 function createMainUI() {
-  // Блок bottomBar
+  // Создаём нижнюю панель, если нет
   if (!document.getElementById("bottomBar")) {
     const bottomBar = document.createElement("div");
     bottomBar.id = "bottomBar";
     bottomBar.innerHTML = `
-      <!-- Три кнопки внизу:
-           1) "Главная" (может перезагружать/обновлять UI)
-           2) "История"
-           3) "Обменять"
-      -->
       <button id="btnMain">Главная</button>
       <button id="historyBtn">История</button>
       <button id="exchangeBtn">Обменять</button>
     `;
     document.body.appendChild(bottomBar);
 
-    // Привязываем события
+    // При нажатии на главную — скрыть все модалки
     document.getElementById("btnMain").addEventListener("click", () => {
-      // "Главная" — просто обновим UI
-      updateUI();
+      closeAllModals();
     });
-    document.getElementById("historyBtn").addEventListener("click", openHistoryModal);
-    document.getElementById("exchangeBtn").addEventListener("click", openExchangeModal);
+    // При нажатии на историю — скрыть все, открыть history
+    document.getElementById("historyBtn").addEventListener("click", () => {
+      closeAllModals();
+      openHistoryModal();
+    });
+    // При нажатии на обменять — скрыть все, открыть exchange
+    document.getElementById("exchangeBtn").addEventListener("click", () => {
+      closeAllModals();
+      openExchangeModal();
+    });
   }
 
-  // Показываем блок с балансом, если скрыт
+  // Показываем блоки баланса и майна
   document.getElementById("balanceDisplay")?.classList.remove("hidden");
   document.getElementById("mineContainer")?.classList.remove("hidden");
 
-  // Добавим блок "Главная", если нужен (текстовый):
+  // Создаем «Главная» (заголовок), если нужно
   if (!document.getElementById("mainTitle")) {
     const mainTitle = document.createElement("div");
     mainTitle.id = "mainTitle";
@@ -312,28 +313,33 @@ function createMainUI() {
     document.body.appendChild(mainTitle);
   }
 
-  // Добавим контейнер с 2 кнопками: "Перевести" и "Оплата по QR"
+  // Блок с 2 кнопками: "Перевести" + "Оплата по QR"
   if (!document.getElementById("actionButtonsContainer")) {
-    const container = document.createElement("div");
-    container.id = "actionButtonsContainer";
-    container.innerHTML = `
+    const cont = document.createElement("div");
+    cont.id = "actionButtonsContainer";
+    cont.innerHTML = `
       <button id="transferBtn">Перевести</button>
       <button id="payQRBtn">Оплата по QR</button>
     `;
-    document.body.appendChild(container);
+    document.body.appendChild(cont);
 
-    // Привязываем клик
-    document.getElementById("transferBtn").addEventListener("click", openTransferModal);
-    document.getElementById("payQRBtn").addEventListener("click", openPayQRModal);
+    // При нажатии — сначала скрываем всё
+    document.getElementById("transferBtn").addEventListener("click", () => {
+      closeAllModals();
+      openTransferModal(); // у этого окна есть кнопка закрытия (X)
+    });
+    document.getElementById("payQRBtn").addEventListener("click", () => {
+      closeAllModals();
+      openPayQRModal(); // у этого окна есть кнопка закрытия (X)
+    });
   }
 
-  // Запускаем циклическое обновление данных
+  // Стартуем обновление
   fetchUserData();
   clearInterval(updateInterval);
   updateInterval = setInterval(fetchUserData, 2000);
 }
 
-/* Скрыть главный UI */
 function hideMainUI() {
   document.getElementById("balanceDisplay")?.classList.add("hidden");
   document.getElementById("mineContainer")?.classList.add("hidden");
@@ -343,7 +349,8 @@ function hideMainUI() {
 }
 
 /* ===================================
-   ОТДЕЛЬНОЕ МОДАЛЬНОЕ ОКНО ДЛЯ "ПЕРЕВОД"
+   МОДАЛКА "ПЕРЕВОД"
+   (С КНОПКОЙ ЗАКРЫТИЯ)
 ==================================== */
 function openTransferModal() {
   createModal(
@@ -357,7 +364,8 @@ function openTransferModal() {
         <input type="number" id="transferAmountInput" step="0.00001" placeholder="Введите сумму" style="width:100%; margin-bottom:10px;"/>
         <button id="sendTransferBtn">Отправить</button>
       </div>
-    `
+    `,
+    { showCloseBtn: true } // <<=== Есть кнопка "X"
   );
   openModal("transferModal");
 
@@ -395,7 +403,8 @@ function openTransferModal() {
 }
 
 /* ===================================
-   ОТДЕЛЬНОЕ МОДАЛЬНОЕ ОКНО "ОПЛАТА ПО QR"
+   МОДАЛКА "ОПЛАТА ПО QR"
+   (С КНОПКОЙ ЗАКРЫТИЯ)
 ==================================== */
 function openPayQRModal() {
   createModal(
@@ -405,7 +414,8 @@ function openPayQRModal() {
       <div style="margin-top:20px; display:flex; flex-direction:column; align-items:center; width:90%;max-width:500px;">
         <video id="opPayVideo" muted playsinline style="width:100%; max-width:600px; border:2px solid black;"></video>
       </div>
-    `
+    `,
+    { showCloseBtn: true } // <<=== Есть кнопка "X"
   );
   openModal("payQRModal");
 
@@ -414,28 +424,28 @@ function openPayQRModal() {
     closeModal("payQRModal");
     const parsed = parseMerchantQRData(rawValue);
     if (!parsed.merchantId) {
-      alert("❌ Не удалось извлечь merchantId из QR-кода");
+      alert("❌ Не удалось извлечь merchantId");
       return;
     }
-    confirmMerchantPayModal(parsed);
+    confirmPayMerchantModal(parsed);
   });
 }
 
-/* Подтверждение оплаты мерчанту после сканирования QR */
-function confirmMerchantPayModal({ merchantId, amount, purpose }) {
+function confirmPayMerchantModal({ merchantId, amount, purpose }) {
   createModal(
-    "confirmMerchantPayModal",
+    "confirmPayMerchantModal",
     `
-      <h3>Оплата по QR коду</h3>
+      <h3>Подтверждение оплаты</h3>
       <div style="margin-top:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%;">
         <p>Мерчант: ${merchantId}</p>
         <p>Сумма: ${amount} ₲</p>
         <p>Назначение: ${purpose}</p>
         <button id="confirmPayBtn">Оплатить</button>
       </div>
-    `
+    `,
+    { showCloseBtn: true } // Можно и без кнопки, но пусть будет
   );
-  openModal("confirmMerchantPayModal");
+  openModal("confirmPayMerchantModal");
 
   document.getElementById("confirmPayBtn").onclick = async () => {
     if (!currentUserId) return;
@@ -449,7 +459,7 @@ function confirmMerchantPayModal({ merchantId, amount, purpose }) {
       const data = await resp.json();
       if (data.success) {
         alert("✅ Оплата прошла успешно!");
-        closeModal("confirmMerchantPayModal");
+        closeModal("confirmPayMerchantModal");
         fetchUserData();
       } else {
         alert(`❌ Ошибка оплаты: ${data.error}`);
@@ -461,7 +471,7 @@ function confirmMerchantPayModal({ merchantId, amount, purpose }) {
 }
 
 /* ===================================
-   UNIVERSAL QR СКАНИРОВАНИЕ
+   UNIVERSAL QR СКАН
 ==================================== */
 function startUniversalQRScanner(videoEl, onSuccess) {
   navigator.mediaDevices
@@ -470,7 +480,6 @@ function startUniversalQRScanner(videoEl, onSuccess) {
       videoEl.srcObject = stream;
       videoEl.play();
       if ("BarcodeDetector" in window) {
-        // Используем API BarcodeDetector
         const detector = new BarcodeDetector({ formats: ["qr_code"] });
         const scanFrame = async () => {
           try {
@@ -488,8 +497,7 @@ function startUniversalQRScanner(videoEl, onSuccess) {
         };
         requestAnimationFrame(scanFrame);
       } else {
-        // Fallback на jsQR
-        console.log("BarcodeDetector не поддерживается, fallback jsQR.");
+        // fallback jsQR
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
         const scanFrame = () => {
@@ -520,7 +528,7 @@ function startUniversalQRScanner(videoEl, onSuccess) {
 function stopVideoStream(videoEl) {
   const stream = videoEl.srcObject;
   if (stream) {
-    stream.getTracks().forEach((track) => track.stop());
+    stream.getTracks().forEach((t) => t.stop());
   }
   videoEl.srcObject = null;
 }
@@ -538,171 +546,40 @@ function parseMerchantQRData(rawValue) {
 }
 
 /* ===================================
-   ОБМЕН ВАЛЮТЫ (КУРС, ГРАФИК)
+   ОБМЕН ВАЛЮТЫ
 ==================================== */
-let currentExchangeDirection = "coin_to_rub"; 
+let currentExchangeDirection = "coin_to_rub";
 let currentExchangeRate = 0;
 
 async function openExchangeModal() {
   showGlobalLoading();
+  // Закрываем все предыдущие — согласно пожеланию
+  closeAllModals();
+
   createModal(
     "exchangeModal",
     `
-      <style>
-        .exchange-container {
-          max-width:600px; 
-          margin:0 auto; 
-          padding:20px; 
-          background-color:transparent; 
-          max-height:80vh; 
-          overflow-y:auto; 
-        }
-        .main-header {
-          text-align:center; 
-          font-size:24px; 
-          font-weight:bold; 
-          margin-bottom:20px; 
-        }
-        .exchange-header h3 {
-          text-align:center; 
-          margin-bottom:50px; 
-          font-size:16px; 
-          font-weight:normal; 
-        }
-        .exchange-body {
-          display:flex; 
-          flex-direction:column; 
-          align-items:center; 
-        }
-        .exchange-row {
-          display:flex; 
-          justify-content:center; 
-          align-items:center; 
-          width:100%; 
-          margin-bottom:20px; 
-        }
-        .fromSection, .toSection {
-          flex:1; 
-          max-width:45%; 
-          text-align:center; 
-        }
-        .swap-container {
-          width:60px; 
-          display:flex; 
-          justify-content:center; 
-          align-items:center; 
-        }
-        .currency-box {
-          display:flex; 
-          align-items:center; 
-          justify-content:center; 
-          margin-bottom:10px; 
-        }
-        .currency-icon {
-          width:40px; 
-          height:40px; 
-          margin-right:10px; 
-          border:none; 
-        }
-        .currency-name {
-          font-weight:bold; 
-          font-size:18px; 
-        }
-        .currency-description {
-          font-size:14px; 
-          color:gray; 
-        }
-        .amount-box { text-align:center; }
-        .currency-input {
-          width:100%; 
-          padding:10px; 
-          margin-bottom:10px; 
-          font-size:16px; 
-          border:none; 
-          border-radius:5px; 
-          background:transparent; 
-        }
-        .swap-btn {
-          background-color:transparent; 
-          border:none; 
-          cursor:pointer; 
-          border:1px #fff; 
-        }
-        .swap-btn img { 
-          border:none; 
-          width:20px; 
-          height:20px; 
-        }
-        #swapBtn {
-          background:none; 
-          border:none; 
-          padding:0; 
-          cursor:pointer; 
-          margin-top:50px; 
-        }
-        .exchange-btn {
-          background-color:transparent; 
-          color:#28a745; 
-          padding:15px 30px; 
-          border:2px solid #000; 
-          cursor:pointer; 
-          font-size:16px; 
-        }
-        #exchangeChart {
-          width:100%; 
-          height:300px; 
-        }
-        .btn-container { 
-          width:100%; 
-          text-align:center; 
-          margin-top:0px; 
-        }
-      </style>
-      <div class="exchange-container">
-        <div class="main-header">Обменять</div>
-        <div id="exchangeChartContainer" style="width:100%;max-width:600px; margin:0 auto;">
+      <div class="exchange-container" style="margin-top:20px;">
+        <h3>Обмен</h3>
+        <div id="exchangeChartContainer" style="width:100%; max-width:600px; margin:0 auto;">
           <canvas id="exchangeChart"></canvas>
         </div>
-        <div class="exchange-header">
-          <h3 id="currentRateDisplay">Курс обмена: --</h3>
-        </div>
-        <div class="exchange-body">
-          <div class="exchange-row">
-            <div class="fromSection" id="fromSection">
-              <div class="currency-box">
-                <img id="fromIcon" src="15.png" alt="GUGA" class="currency-icon">
-                <div>
-                  <p class="currency-name" id="fromCurrencyName">GUGA</p>
-                  <p class="currency-description" id="fromCurrencyDesc">GugaCoin</p>
-                </div>
-              </div>
-              <div class="amount-box">
-                <input type="number" id="amountInput" placeholder="Обменять" class="currency-input" oninput="updateExchange()">
-                <p id="balanceInfo">0.00000 ₲</p>
-              </div>
+        <h4 id="currentRateDisplay">Курс обмена: --</h4>
+        <div class="exchange-body" style="margin-top:20px;">
+          <div class="exchange-row" style="display:flex;justify-content:center;align-items:center;gap:10px;">
+            <div style="flex:1;text-align:center;">
+              <p id="fromLabel">GUGA</p>
+              <input type="number" id="amountInput" placeholder="0.00" oninput="updateExchange()">
+              <p id="balanceInfo">0.00000 ₲</p>
             </div>
-            <div class="swap-container">
-              <button id="swapBtn" class="swap-btn" onclick="swapCurrencies()">
-                <img src="24.png" alt="Swap" style="width:20px; height:20px;">
-              </button>
-            </div>
-            <div class="toSection" id="toSection">
-              <div class="currency-box">
-                <img id="toIcon" src="18.png" alt="RUB" class="currency-icon">
-                <div>
-                  <p class="currency-name" id="toCurrencyName">RUB</p>
-                  <p class="currency-description" id="toCurrencyDesc">Рубль</p>
-                </div>
-              </div>
-              <div class="amount-box">
-                <input type="text" id="toAmount" placeholder="Получить" class="currency-input" disabled>
-                <p id="toBalanceInfo">0.00 ₽</p>
-              </div>
+            <button id="swapBtn">⇄</button>
+            <div style="flex:1;text-align:center;">
+              <p id="toLabel">RUB</p>
+              <input type="text" id="toAmount" placeholder="0.00" disabled>
+              <p id="toBalanceInfo">0.00 ₽</p>
             </div>
           </div>
-          <div class="btn-container">
-            <button id="btnPerformExchange" class="exchange-btn">Обменять</button>
-          </div>
+          <button id="btnPerformExchange" style="margin-top:20px;">Обменять</button>
         </div>
       </div>
     `
@@ -718,11 +595,12 @@ async function openExchangeModal() {
     drawExchangeChart();
     document
       .getElementById("btnPerformExchange")
-      .addEventListener("click", function () {
-        handleExchange(currentExchangeDirection);
-      });
+      .addEventListener("click", () => handleExchange(currentExchangeDirection));
+    document.getElementById("swapBtn").onclick = () => {
+      swapCurrencies();
+    };
   } catch (error) {
-    console.error("Ошибка при загрузке данных обмена:", error);
+    console.error("Ошибка при открытии обмена:", error);
   } finally {
     hideGlobalLoading();
   }
@@ -738,11 +616,9 @@ function updateExchange() {
   }
   let result = 0;
   if (currentExchangeDirection === "coin_to_rub") {
-    // Монеты -> рубли
     result = amount * currentExchangeRate;
     toAmount.value = result.toFixed(2);
   } else {
-    // Рубли -> монеты
     result = amount / currentExchangeRate;
     toAmount.value = result.toFixed(5);
   }
@@ -758,93 +634,66 @@ function swapCurrencies() {
 }
 
 function updateCurrencyLabels() {
+  const fromLabel = document.getElementById("fromLabel");
+  const toLabel = document.getElementById("toLabel");
+
   if (currentExchangeDirection === "coin_to_rub") {
-    document.getElementById("fromCurrencyName").textContent = "GUGA";
-    document.getElementById("fromCurrencyDesc").textContent = "GugaCoin";
-    document.getElementById("fromIcon").src = "15.png";
-
-    document.getElementById("toCurrencyName").textContent = "RUB";
-    document.getElementById("toCurrencyDesc").textContent = "Рубль";
-    document.getElementById("toIcon").src = "18.png";
+    if (fromLabel) fromLabel.textContent = "GUGA";
+    if (toLabel) toLabel.textContent = "RUB";
   } else {
-    document.getElementById("fromCurrencyName").textContent = "RUB";
-    document.getElementById("fromCurrencyDesc").textContent = "Рубль";
-    document.getElementById("fromIcon").src = "18.png";
-
-    document.getElementById("toCurrencyName").textContent = "GUGA";
-    document.getElementById("toCurrencyDesc").textContent = "GugaCoin";
-    document.getElementById("toIcon").src = "15.png";
+    if (fromLabel) fromLabel.textContent = "RUB";
+    if (toLabel) toLabel.textContent = "GUGA";
   }
 }
 
 async function handleExchange(direction) {
-  const amountInput = document.getElementById("amountInput");
-  if (!amountInput) {
-    alert("Поле ввода суммы не найдено");
-    return;
-  }
-  const amount = parseFloat(amountInput.value);
+  const amount = parseFloat(document.getElementById("amountInput").value);
   if (isNaN(amount) || amount <= 0) {
-    alert("Введите корректную сумму для обмена");
+    alert("Введите корректную сумму");
     return;
   }
-
-  // Ограничение на «цикличные операции» подряд
-  if (lastDirection !== null && lastDirection === direction) {
-    alert("Цикличные операции запрещены. Попробуйте другую операцию или подождите.");
+  // Анти-цикл
+  if (lastDirection === direction) {
+    alert("Нельзя выполнять одинаковые операции подряд. Подождите или поменяйте направление.");
     return;
   }
-
   try {
-    const response = await fetch(`${API_URL}/exchange`, {
+    const resp = await fetch(`${API_URL}/exchange`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ direction, amount }),
     });
-    const data = await response.json();
+    const data = await resp.json();
     if (data.success) {
       // Обновим UI
-      const newRate = parseFloat(data.currentratedisplay).toFixed(2);
-      document.getElementById(
-        "currentRateDisplay"
-      ).textContent = `Курс обмена: 1 ₲ = ${newRate} ₽`;
       await loadBalanceAndExchangeRate();
-
-      let exchangeMessage = "";
+      let msg = "";
       if (direction === "rub_to_coin") {
-        exchangeMessage = `Вы обменяли ${amount} ₽ на ${parseFloat(
-          data.exchanged_amount
-        ).toFixed(5)} ₲`;
+        msg = `Обмен: ${amount} ₽ → ${parseFloat(data.exchanged_amount).toFixed(5)} ₲`;
       } else {
-        exchangeMessage = `Вы обменяли ${amount} ₲ на ${parseFloat(
-          data.exchanged_amount
-        ).toFixed(2)} ₽`;
+        msg = `Обмен: ${amount} ₲ → ${parseFloat(data.exchanged_amount).toFixed(2)} ₽`;
       }
-      alert(`✅ Обмен выполнен успешно!\n${exchangeMessage}`);
-
+      alert("✅ " + msg);
       lastDirection = direction;
-      // Через 5 секунд «сбрасываем» lastDirection
       setTimeout(() => {
         lastDirection = null;
       }, 5000);
     } else {
-      alert("Ошибка обмена: " + data.error);
+      alert("❌ Ошибка обмена: " + data.error);
     }
-  } catch (error) {
-    console.error("Ошибка при обмене:", error);
+  } catch (err) {
+    console.error("Ошибка обмена:", err);
     alert("Произошла ошибка при обмене");
   }
 }
 
 async function loadBalanceAndExchangeRate() {
-  // Обновляем баланс пользователя под текущую операцию
   try {
-    const response = await fetch(`${API_URL}/user`, { credentials: "include" });
-    const data = await response.json();
+    const resp = await fetch(`${API_URL}/user`, { credentials: "include" });
+    const data = await resp.json();
     if (data.success && data.user) {
       currentUserId = data.user.user_id;
-      // Отображаем баланс, в зависимости от направления
       if (currentExchangeDirection === "coin_to_rub") {
         const coinBalance = data.user.balance || 0;
         document.getElementById("balanceInfo").textContent = `${coinBalance.toFixed(
@@ -864,25 +713,20 @@ async function loadBalanceAndExchangeRate() {
       }
     }
   } catch (error) {
-    console.error("Ошибка при загрузке данных пользователя:", error);
+    console.error("Ошибка загрузки пользователя:", error);
   }
 
-  // Загружаем историю обменных курсов (для графика)
   try {
     const rateResp = await fetch(`${API_URL}/exchangeRates?limit=200`, {
       credentials: "include",
     });
     const rateData = await rateResp.json();
-    if (rateData.success && rateData.rates && rateData.rates.length > 0) {
+    if (rateData.success && rateData.rates?.length) {
       drawExchangeChart(rateData.rates);
-      const latestRate = parseFloat(rateData.rates[0].exchange_rate);
-      currentExchangeRate = latestRate;
-      const rateEl = document.getElementById("currentRateDisplay");
-      rateEl.textContent = `Курс обмена: 1 ₲ = ${latestRate.toFixed(2)} ₽`;
-    } else {
-      document.getElementById("currentRateDisplay").textContent =
-        "Курс обмена: Данные отсутствуют";
-      console.log("Нет данных для графика обмена");
+      currentExchangeRate = parseFloat(rateData.rates[0].exchange_rate);
+      document.getElementById(
+        "currentRateDisplay"
+      ).textContent = `Курс: 1 ₲ = ${currentExchangeRate.toFixed(2)} ₽`;
     }
   } catch (error) {
     console.error("Ошибка при загрузке курса:", error);
@@ -891,34 +735,29 @@ async function loadBalanceAndExchangeRate() {
 
 function updateCurrentRateDisplay() {
   const el = document.getElementById("currentRateDisplay");
-  if (!el) return;
-  el.textContent = currentExchangeRate
-    ? `Курс обмена: 1 ₲ = ${currentExchangeRate.toFixed(2)} ₽`
-    : "Курс обмена: --";
+  if (el) {
+    el.textContent = currentExchangeRate
+      ? `Курс: 1 ₲ = ${currentExchangeRate.toFixed(2)} ₽`
+      : "Курс: --";
+  }
 }
 
 function drawExchangeChart(rates) {
-  if (!rates || !Array.isArray(rates) || rates.length === 0) {
-    console.error("Отсутствуют данные для графика");
-    return;
-  }
-  const sortedRates = rates
-    .slice()
-    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-  if (exchangeChartInstance) {
-    exchangeChartInstance.destroy();
-  }
-  const labels = sortedRates.map((rate) => {
-    const d = new Date(rate.created_at);
+  if (!rates || !rates.length) return;
+  if (exchangeChartInstance) exchangeChartInstance.destroy();
+
+  const sorted = [...rates].sort(
+    (a, b) => new Date(a.created_at) - new Date(b.created_at)
+  );
+  const labels = sorted.map((r) => {
+    const d = new Date(r.created_at);
     return (
       d.getHours().toString().padStart(2, "0") +
       ":" +
       d.getMinutes().toString().padStart(2, "0")
     );
   });
-  const dataPoints = sortedRates.map((rate) =>
-    parseFloat(rate.exchange_rate)
-  );
+  const dataPoints = sorted.map((r) => parseFloat(r.exchange_rate));
 
   const ctx = document.getElementById("exchangeChart").getContext("2d");
   exchangeChartInstance = new Chart(ctx, {
@@ -927,45 +766,21 @@ function drawExchangeChart(rates) {
       labels,
       datasets: [
         {
-          label: "Курс обмена",
+          label: "Курс",
           data: dataPoints,
-          fill: false,
           borderColor: "green",
-          tension: 0.5,
+          fill: false,
+          tension: 0.4,
           pointRadius: 0,
-          borderCapStyle: "round",
         },
       ],
     },
     options: {
-      layout: { padding: 0 },
       scales: {
-        x: {
-          grid: {
-            display: false,
-            drawBorder: false,
-            drawTicks: false,
-            borderColor: "transparent",
-            borderWidth: 0,
-          },
-          ticks: { display: false },
-        },
-        y: {
-          position: "right",
-          grid: {
-            display: true,
-            drawBorder: false,
-            drawTicks: false,
-            borderColor: "transparent",
-            borderWidth: 0,
-            color: "rgba(0,0,0,0.1)",
-          },
-          ticks: { beginAtZero: false },
-        },
+        x: { display: false },
+        y: { position: "right" },
       },
-      plugins: {
-        legend: { display: false },
-      },
+      plugins: { legend: { display: false } },
     },
   });
 }
@@ -974,10 +789,10 @@ function drawExchangeChart(rates) {
    МАЙНИНГ
 ==================================== */
 function mineCoins() {
-  let locBalance = parseFloat(localStorage.getItem("localBalance")) || 0;
-  locBalance += 0.00001;
-  updateBalanceDisplay(locBalance);
-  localStorage.setItem("localBalance", locBalance.toFixed(5));
+  let locBal = parseFloat(localStorage.getItem("localBalance")) || 0;
+  locBal += 0.00001;
+  updateBalanceDisplay(locBal);
+  localStorage.setItem("localBalance", locBal.toFixed(5));
 
   let pmc = parseFloat(localStorage.getItem("pendingMinedCoins")) || 0;
   pmc += 0.00001;
@@ -990,10 +805,10 @@ function mineCoins() {
   }, 1500);
 }
 
-function updateBalanceDisplay(localBalance) {
-  const balanceValue = document.getElementById("balanceValue");
-  if (balanceValue) {
-    balanceValue.textContent = `${localBalance.toFixed(5)} ₲`;
+function updateBalanceDisplay(num) {
+  const balVal = document.getElementById("balanceValue");
+  if (balVal) {
+    balVal.textContent = `${num.toFixed(5)} ₲`;
   }
 }
 
@@ -1007,17 +822,17 @@ async function flushMinedCoins() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ amount: pmc }),
     });
-    if (!resp.ok) throw new Error(`Сервер ответил статусом ${resp.status}`);
+    if (!resp.ok) throw new Error("Сервер вернул ошибку " + resp.status);
     pmc = 0;
     localStorage.setItem("pendingMinedCoins", pmc);
     fetchUserData();
   } catch (err) {
-    console.error("Ошибка flushMinedCoins:", err);
+    console.error("Ошибка при отправке намайненных монет:", err);
   }
 }
 
 /* ===================================
-   ГЛОБАЛЬНЫЙ ИНДИКАТОР ЗАГРУЗКИ
+   ЗАГРУЗКА / ИСТОРИЯ
 ==================================== */
 let loadingRequests = 0;
 function showGlobalLoading() {
@@ -1034,39 +849,28 @@ function hideGlobalLoading() {
   }
 }
 
-/* ===================================
-   ДАННЫЕ ПОЛЬЗОВАТЕЛЯ
-==================================== */
 async function fetchUserData() {
   try {
-    const response = await fetch(`${API_URL}/user`, { credentials: "include" });
-    const data = await response.json();
+    const resp = await fetch(`${API_URL}/user`, { credentials: "include" });
+    const data = await resp.json();
     if (data.success && data.user) {
       currentUserId = data.user.user_id;
-      // Обновляем баланс на экране
       const coinBalance = data.user.balance || 0;
       const rubBalance = data.user.rub_balance || 0;
+      const balVal = document.getElementById("balanceValue");
+      if (balVal) balVal.textContent = `${coinBalance.toFixed(5)} ₲`;
 
-      // Отображаем в #balanceValue
-      const balanceVal = document.getElementById("balanceValue");
-      if (balanceVal) {
-        balanceVal.textContent = `${coinBalance.toFixed(5)} ₲`;
-      }
+      const rubBal = document.getElementById("rubBalanceInfo");
+      if (rubBal) rubBal.textContent = `${rubBalance.toFixed(2)} ₽`;
 
-      // Отображаем рублевый баланс, если есть отдельный элемент
-      const rubBalanceInfo = document.getElementById("rubBalanceInfo");
-      if (rubBalanceInfo) {
-        rubBalanceInfo.textContent = `${rubBalance.toFixed(2)} ₽`;
-      }
-
-      // Также обновим поле ID под балансом
+      // Отображаем ID под балансом
       const userIdEl = document.getElementById("userIdDisplay");
       if (userIdEl) {
         userIdEl.textContent = `ID: ${currentUserId}`;
       }
     }
-  } catch (error) {
-    console.error("Ошибка загрузки данных пользователя:", error);
+  } catch (err) {
+    console.error("Ошибка fetchUserData:", err);
   }
 }
 
@@ -1078,7 +882,7 @@ function openHistoryModal() {
     "historyModal",
     `
       <h3>История операций</h3>
-      <div class="scrollable-content">
+      <div class="scrollable-content" style="height:calc(100vh - 200px);overflow-y:auto;">
         <ul id="transactionList"></ul>
       </div>
     `
@@ -1091,15 +895,14 @@ async function fetchTransactionHistory() {
   if (!currentUserId) return;
   try {
     showGlobalLoading();
-    const resp = await fetch(
-      `${API_URL}/transactions?userId=${currentUserId}`,
-      { credentials: "include" }
-    );
+    const resp = await fetch(`${API_URL}/transactions?userId=${currentUserId}`, {
+      credentials: "include",
+    });
     const data = await resp.json();
     if (resp.ok && data.success && data.transactions) {
       displayTransactionHistory(data.transactions);
     } else {
-      console.error("Ошибка получения истории:", data.error);
+      console.error("Ошибка истории:", data.error);
     }
   } catch (err) {
     console.error("Ошибка fetchTransactionHistory:", err);
@@ -1116,7 +919,6 @@ function displayTransactionHistory(transactions) {
     container.innerHTML = "<li>Нет операций</li>";
     return;
   }
-  // Группируем по дате
   const groups = {};
   transactions.forEach((tx) => {
     const d = new Date(tx.client_time || tx.created_at);
@@ -1125,11 +927,10 @@ function displayTransactionHistory(transactions) {
     groups[label].push(tx);
   });
 
-  // Сортируем группы по убыванию даты
   const sortedDates = Object.keys(groups).sort((a, b) => {
-    const dateA = new Date(groups[a][0].client_time || groups[a][0].created_at);
-    const dateB = new Date(groups[b][0].client_time || groups[b][0].created_at);
-    return dateB - dateA;
+    const dA = new Date(groups[a][0].client_time || groups[a][0].created_at);
+    const dB = new Date(groups[b][0].client_time || groups[b][0].created_at);
+    return dB - dA;
   });
 
   sortedDates.forEach((dateStr) => {
@@ -1150,7 +951,6 @@ function displayTransactionHistory(transactions) {
 
       let opHTML = "";
       if (tx.type === "exchange") {
-        // Обмен
         const rate = tx.exchange_rate ? Number(tx.exchange_rate) : null;
         let credited = "N/A";
         if (rate) {
@@ -1165,18 +965,13 @@ function displayTransactionHistory(transactions) {
             tx.direction === "rub_to_coin" ? "Рубли → Монеты" : "Монеты → Рубли"
           }</div>
           <div>Сумма списания: ${
-            tx.direction === "rub_to_coin"
-              ? tx.amount + " ₽"
-              : tx.amount + " ₲"
+            tx.direction === "rub_to_coin" ? tx.amount + " ₽" : tx.amount + " ₲"
           }</div>
           <div>Сумма зачисления: ${credited}</div>
-          <div>Курс: 1 ₲ = ${
-            rate ? rate.toFixed(2) : "N/A"
-          } ₽</div>
-          <div>Время операции: ${timeStr}</div>
+          <div>Курс: 1 ₲ = ${rate ? rate.toFixed(2) : "N/A"} ₽</div>
+          <div>Время: ${timeStr}</div>
         `;
       } else if (tx.type === "merchant_payment") {
-        // Оплата мерчанту
         opHTML = `
           <div>Оплата по QR 💳</div>
           <div>Мерчант: ${
@@ -1185,40 +980,36 @@ function displayTransactionHistory(transactions) {
             "???"
           }</div>
           <div>Сумма: ₲ ${tx.amount}</div>
-          <div>Время операции: ${timeStr}</div>
+          <div>Время: ${timeStr}</div>
         `;
       } else if (tx.from_user_id === currentUserId) {
-        // Исходящая
         opHTML = `
           <div>Исходящая операция ⤴</div>
           <div>Кому: ${tx.to_user_id}</div>
           <div>Сумма: ₲ ${formatBalance(tx.amount)}</div>
-          <div>Время операции: ${timeStr}</div>
+          <div>Время: ${timeStr}</div>
         `;
       } else if (tx.to_user_id === currentUserId) {
-        // Входящая
         opHTML = `
           <div>Входящая операция ⤵</div>
           <div>От кого: ${tx.from_user_id}</div>
           <div>Сумма: ₲ ${formatBalance(tx.amount)}</div>
-          <div>Время операции: ${timeStr}</div>
+          <div>Время: ${timeStr}</div>
         `;
       } else {
         opHTML = `
           <div>Операция</div>
           <div>Сумма: ₲ ${formatBalance(tx.amount || 0)}</div>
-          <div>Время операции: ${timeStr}</div>
+          <div>Время: ${timeStr}</div>
         `;
       }
       op.innerHTML = opHTML;
       groupDiv.appendChild(op);
     });
-
     container.appendChild(groupDiv);
   });
 }
 
-/* Функция для показа "Сегодня"/"Вчера"/дата */
 function getDateLabel(dateObj) {
   const today = new Date();
   const yesterday = new Date();
@@ -1229,10 +1020,9 @@ function getDateLabel(dateObj) {
 }
 
 /* ===================================
-   UI МЕРЧАНТА (если вход как мерчант)
+   МЕРЧАНТ (НЕ ТРОГАЛИ СИЛЬНО)
 ==================================== */
 async function openMerchantUI() {
-  // Если currentMerchantId не известен — попробуем получить
   if (!currentMerchantId) {
     await fetchMerchantInfo();
     if (!currentMerchantId) {
@@ -1263,7 +1053,6 @@ async function openMerchantUI() {
   `;
   document.body.appendChild(merchDiv);
 
-  // Привязываем события
   document
     .getElementById("merchantCreateQRBtn")
     .addEventListener("click", openOneTimeQRModal);
@@ -1272,7 +1061,6 @@ async function openMerchantUI() {
     .addEventListener("click", openMerchantTransferModal);
   document.getElementById("merchantLogoutBtn").addEventListener("click", logout);
 
-  // Обновим данные
   fetchMerchantData();
 }
 
@@ -1285,26 +1073,22 @@ async function fetchMerchantInfo() {
     if (resp.ok && data.success && data.merchant) {
       currentMerchantId = data.merchant.merchant_id;
       merchantBalance = parseFloat(data.merchant.balance) || 0;
-    } else {
-      console.log("Не удалось получить info мерчанта:", data.error);
     }
   } catch (err) {
-    console.log("Ошибка fetchMerchantInfo:", err);
+    console.error("Ошибка получения merchantInfo:", err);
   }
 }
 
 async function fetchMerchantData() {
-  // Обновим баланс мерчанта
   await fetchMerchantBalance();
-  // Получим halvingInfo
   try {
     const resp = await fetch(`${API_URL}/halvingInfo`, { credentials: "include" });
-    const data = await resp.json();
-    if (resp.ok && data.success) {
-      currentHalvingStep = data.halvingStep || 0;
+    const halvingData = await resp.json();
+    if (resp.ok && halvingData.success) {
+      currentHalvingStep = halvingData.halvingStep || 0;
     }
   } catch (err) {
-    console.log("Ошибка получения halvingInfo:", err);
+    console.error("Ошибка получения halvingInfo:", err);
   }
 }
 
@@ -1321,24 +1105,26 @@ async function fetchMerchantBalance() {
       const mb = document.getElementById("merchantBalanceValue");
       if (mb) mb.textContent = merchantBalance.toFixed(5);
     } else {
-      alert("❌ Ошибка при получении баланса мерчанта: " + (data.error || ""));
+      alert("Ошибка баланса мерчанта: " + (data.error || ""));
     }
   } catch (err) {
     console.error("Сбой fetchMerchantBalance:", err);
   }
 }
 
-/* Модалка "Создать QR на оплату" */
+/* Модальное окно "Создать запрос на оплату" (мерчант) */
 function openOneTimeQRModal() {
   createModal(
     "createOneTimeQRModal",
     `
       <h3>Создать запрос на оплату</h3>
       <label for="qrAmountInput">Сумма (₲):</label>
-      <input type="number" id="qrAmountInput" step="0.00001" placeholder="Введите сумму" style="width:100%; max-width:200px; margin:5px 0;" oninput="calcRubEquivalent()">
+      <input type="number" id="qrAmountInput" step="0.00001" placeholder="Введите сумму"
+             style="width:100%; max-width:200px; margin:5px 0;" oninput="calcRubEquivalent()">
       <p id="qrRubEquivalent"></p>
       <label for="qrPurposeInput">Назначение:</label>
-      <input type="text" id="qrPurposeInput" placeholder="Например, заказ #123" style="width:100%; max-width:200px; margin:5px 0;">
+      <input type="text" id="qrPurposeInput" placeholder="Например, заказ #123"
+             style="width:100%; max-width:200px; margin:5px 0;">
       <button id="createQRBtn" class="btn btn-primary" style="margin-top:15px;">Создать</button>
     `
   );
@@ -1360,10 +1146,11 @@ function calcRubEquivalent() {
   const coinVal = parseFloat(document.getElementById("qrAmountInput")?.value) || 0;
   const rubMultiplier = 1 + currentHalvingStep * 0.02;
   const rubVal = coinVal * rubMultiplier;
-  const eqEl = document.getElementById("qrRubEquivalent");
-  if (eqEl) eqEl.textContent = `≈ ${rubVal.toFixed(2)} RUB`;
+  const eq = document.getElementById("qrRubEquivalent");
+  if (eq) eq.textContent = `≈ ${rubVal.toFixed(2)} RUB`;
 }
 
+/* Модалка с QR-кодом (мерчант) */
 function createMerchantQR(amount, purpose) {
   const qrData = `guga://merchantId=${currentMerchantId}&amount=${amount}&purpose=${encodeURIComponent(
     purpose
@@ -1377,12 +1164,11 @@ function createMerchantQR(amount, purpose) {
   );
   openModal("merchantQRModal");
 
-  // Если QRCode() доступен
   if (typeof QRCode === "function") {
-    const container = document.getElementById("merchantQRModalContainer");
-    if (container) {
+    const cont = document.getElementById("merchantQRModalContainer");
+    if (cont) {
       const qrElem = document.createElement("div");
-      container.appendChild(qrElem);
+      cont.appendChild(qrElem);
       new QRCode(qrElem, {
         text: qrData,
         width: 280,
@@ -1391,32 +1177,30 @@ function createMerchantQR(amount, purpose) {
       });
     }
   } else {
-    // Если нет библиотеки QRCode
     const c = document.getElementById("merchantQRModalContainer");
     if (c) c.innerHTML = `QR Data: ${qrData}`;
   }
   monitorPayment(qrData, amount);
 }
 
-/* Периодическая проверка оплаты */
 function monitorPayment(qrData, amount) {
   const checkInterval = setInterval(async () => {
     try {
-      const response = await fetch(
+      const resp = await fetch(
         `${API_URL}/checkPaymentStatus?merchantId=${currentMerchantId}&qrData=${encodeURIComponent(
           qrData
         )}`,
         { credentials: "include" }
       );
-      const data = await response.json();
+      const data = await resp.json();
       if (data.success && data.paid) {
         clearInterval(checkInterval);
         closeModal("merchantQRModal");
-        alert("✅ Оплата успешно прошла и поступила на ваш баланс!");
+        alert("✅ Оплата успешно прошла!");
         fetchMerchantBalance();
       }
-    } catch (error) {
-      console.error("Ошибка проверки статуса оплаты:", error);
+    } catch (err) {
+      console.error("Ошибка оплаты:", err);
     }
   }, 3000);
 }
@@ -1438,9 +1222,7 @@ function openMerchantTransferModal() {
 
   document.getElementById("merchantTransferSendBtn").onclick = async () => {
     const toUser = document.getElementById("merchantToUserIdInput")?.value;
-    const amt = parseFloat(
-      document.getElementById("merchantTransferAmountInput")?.value
-    );
+    const amt = parseFloat(document.getElementById("merchantTransferAmountInput")?.value);
     if (!toUser || !amt || amt <= 0) {
       alert("❌ Введите корректные данные");
       return;
@@ -1463,7 +1245,7 @@ async function merchantTransfer(toUserId, amount) {
       closeModal("merchantTransferModal");
       fetchMerchantBalance();
     } else {
-      alert("❌ Ошибка перевода: " + (data.error || "Неизвестная ошибка"));
+      alert("❌ Ошибка перевода: " + (data.error || ""));
     }
   } catch (err) {
     console.error("Сбой merchantTransfer:", err);
@@ -1471,31 +1253,22 @@ async function merchantTransfer(toUserId, amount) {
 }
 
 /* ===================================
-   ОБНОВЛЕНИЕ / ИНИЦИАЛИЗАЦИЯ UI
+   UPDATE UI
 ==================================== */
 function updateUI() {
-  // Если у нас есть userId — показываем UI пользователя
   if (currentUserId && !currentMerchantId) {
     createMainUI();
-  }
-  // Если мерчант
-  else if (currentMerchantId) {
+  } else if (currentMerchantId) {
     openMerchantUI();
-  }
-  // Иначе — окно авторизации
-  else {
+  } else {
     openAuthModal();
   }
 }
 
-// Скрываем все элементы, кроме авторизации, если UI не готов
-function hideAll() {
-  hideMainUI();
-  document.getElementById("merchantInterface")?.remove();
-}
-
+/* ===================================
+   СТАРТ ПРИ ЗАГРУЗКЕ
+==================================== */
 document.addEventListener("DOMContentLoaded", () => {
-  // При загрузке пытаемся определить, кто мы (пользователь или мерчант)
   fetchUserData().then(() => {
     if (currentMerchantId) {
       openMerchantUI();
@@ -1506,14 +1279,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Привязка к кнопке "Майнить" (если есть в HTML)
+  // Привязываем к кнопке "Майнить", если есть
   const mineBtn = document.getElementById("mineBtn");
   if (mineBtn) {
     mineBtn.addEventListener("click", mineCoins);
   }
 });
 
-// Если при закрытии страницы есть непросланные намайненные монеты — отправляем
 window.addEventListener("beforeunload", () => {
   if (pendingMinedCoins > 0) {
     flushMinedCoins();
