@@ -22,10 +22,17 @@ function formatBalance(num) {
   return parseFloat(num).toFixed(5);
 }
 
-function closeAllModals() {
-  document.querySelectorAll(".modal").forEach((m) => m.classList.add("hidden"));
+/** 
+ * Удаляем все модалки из DOM (чтобы «Главная» 
+ * точно не оставляла никаких окон).
+*/
+function removeAllModals() {
+  document.querySelectorAll(".modal").forEach((m) => m.remove());
 }
 
+/** 
+ * Вспомогательный лоадер 
+ */
 function showGlobalLoading() {
   const loader = document.getElementById("loadingIndicator");
   if (loader) loader.style.display = "flex";
@@ -39,18 +46,16 @@ function hideGlobalLoading() {
  * СОЗДАНИЕ/ОТКРЫТИЕ/ЗАКРЫТИЕ МОДАЛЬНЫХ ОКОН
  **************************************************/
 function createModal(id, innerHtml, { showCloseBtn = false } = {}) {
-  // Удаляем старую модалку, если была
+  // Удаляем старую, если была
   const oldModal = document.getElementById(id);
   if (oldModal) oldModal.remove();
 
-  // Создаём "контейнер" всей модалки
+  // Внешний контейнер .modal
   const modal = document.createElement("div");
   modal.id = id;
-  modal.className = "modal hidden";
-
-  // Стили самого контейнера .modal
-  // (Можно перенести в отдельный CSS — главное убедиться,
-  //  что .modal-content имеет z-index выше оверлея)
+  modal.className = "modal"; // класс для поиска (необязательно)
+  
+  // Стили .modal (можно вынести в CSS)
   modal.style.position = "fixed";
   modal.style.top = "0";
   modal.style.left = "0";
@@ -58,11 +63,11 @@ function createModal(id, innerHtml, { showCloseBtn = false } = {}) {
   modal.style.height = "100%";
   modal.style.background = "rgba(0,0,0,0.5)";
   modal.style.zIndex = "1500";
-  // flex-контейнер, чтобы контент был сверху
   modal.style.display = "flex";
   modal.style.flexDirection = "column";
-  modal.style.alignItems = "center";
+  // justfyContent: flex-start, чтобы контент был сверху
   modal.style.justifyContent = "flex-start";
+  modal.style.alignItems = "center";
 
   // Оверлей
   const overlay = document.createElement("div");
@@ -72,28 +77,31 @@ function createModal(id, innerHtml, { showCloseBtn = false } = {}) {
   overlay.style.left = "0";
   overlay.style.width = "100%";
   overlay.style.height = "100%";
-  overlay.style.zIndex = "1"; // оверлей на слое 1
+  overlay.style.zIndex = "1";
 
-  // Контейнер контента
+  // Основной блок контента
   const contentDiv = document.createElement("div");
   contentDiv.className = "modal-content";
-  contentDiv.style.position = "relative";
-  contentDiv.style.marginTop = "60px"; // отступ сверху, чтобы контент был "выше"
-  contentDiv.style.zIndex = "2"; // контент выше оверлея
+  // Делаем отступ сверху
+  contentDiv.style.marginTop = "60px";
+  // Занимаем всю ширину, но ограничиваем max-width
   contentDiv.style.width = "100%";
   contentDiv.style.maxWidth = "600px";
+  // Высота — почти весь экран, минус отступ
+  contentDiv.style.height = "calc(100% - 60px)";
   contentDiv.style.background = "#fff";
-  contentDiv.style.borderRadius = "10px";
+  contentDiv.style.zIndex = "2";
+  contentDiv.style.position = "relative";
   contentDiv.style.boxSizing = "border-box";
   contentDiv.style.overflowY = "auto";
-  contentDiv.style.maxHeight = "calc(100% - 80px)"; // чуть меньше 100% высоты
+  contentDiv.style.borderRadius = "10px";
   contentDiv.style.padding = "20px";
 
-  // Если нужна круглая кнопка закрытия (showCloseBtn)
+  // Кнопка закрытия (если нужно)
   let closeBtnHtml = "";
   if (showCloseBtn) {
     closeBtnHtml = `
-      <button class="close-btn"
+      <button class="close-btn" 
               style="position:absolute;top:10px;right:10px;border:none;
                      background-color:#000;color:#fff;border-radius:50%;
                      width:35px;height:35px;font-size:18px;cursor:pointer;z-index:3;">
@@ -102,7 +110,7 @@ function createModal(id, innerHtml, { showCloseBtn = false } = {}) {
     `;
   }
 
-  // Вставляем основной HTML
+  // Вставляем HTML внутрь contentDiv
   contentDiv.innerHTML = closeBtnHtml + innerHtml;
 
   // Собираем всё
@@ -113,30 +121,21 @@ function createModal(id, innerHtml, { showCloseBtn = false } = {}) {
   // Закрытие по клику на оверлей
   overlay.addEventListener("click", (e) => {
     if (e.target === overlay) {
-      modal.classList.add("hidden");
+      modal.remove();
     }
   });
 
-  // Если есть close-btn, вешаем событие
+  // Если есть кнопка X
   if (showCloseBtn) {
     const closeBtn = contentDiv.querySelector(".close-btn");
     if (closeBtn) {
       closeBtn.addEventListener("click", () => {
-        modal.classList.add("hidden");
+        modal.remove();
       });
     }
   }
 
   return modal;
-}
-
-function openModal(id) {
-  const modal = document.getElementById(id);
-  if (modal) modal.classList.remove("hidden");
-}
-
-function closeModal(id) {
-  document.getElementById(id)?.classList.add("hidden");
 }
 
 /**************************************************
@@ -165,7 +164,7 @@ async function login() {
       updateUI();
       return;
     } else {
-      // Пробуем мерчанта
+      // Пробуем мерчант
       if (data.error?.includes("блокирован")) {
         alert("❌ Ваш аккаунт заблокирован");
         return;
@@ -211,7 +210,6 @@ async function register() {
     const data = await resp.json();
     if (resp.ok && data.success) {
       alert(`✅ Аккаунт создан! Ваш userId: ${data.userId}`);
-      // Автоматически логиним
       await login();
     } else {
       alert(`❌ Ошибка регистрации: ${data.error}`);
@@ -236,7 +234,7 @@ async function logout() {
   currentUserId = null;
   currentMerchantId = null;
   document.getElementById("bottomBar")?.remove();
-  closeAllModals();
+  removeAllModals();
   hideMainUI();
   openAuthModal();
 }
@@ -246,6 +244,8 @@ async function logout() {
  **************************************************/
 function openAuthModal() {
   hideMainUI();
+  removeAllModals();
+
   createModal(
     "authModal",
     `
@@ -271,7 +271,6 @@ function openAuthModal() {
       </div>
     `
   );
-  openModal("authModal");
 
   document.getElementById("loginSubmitBtn").addEventListener("click", login);
   document.getElementById("registerSubmitBtn").addEventListener("click", register);
@@ -299,7 +298,6 @@ function createMainUI() {
   if (!document.getElementById("bottomBar")) {
     const bottomBar = document.createElement("div");
     bottomBar.id = "bottomBar";
-    // Стили bottomBar (можно вынести в CSS)
     bottomBar.style.position = "fixed";
     bottomBar.style.bottom = "0";
     bottomBar.style.left = "0";
@@ -321,15 +319,16 @@ function createMainUI() {
 
     // События
     document.getElementById("btnMain").addEventListener("click", () => {
-      // При нажатии на "Главная" — закрыть все модалки, но оставить главный экран
-      closeAllModals();
+      // При нажатии на "Главная" удаляем все модалки, 
+      // оставляем главное окно (баланс + кнопки ниже)
+      removeAllModals();
     });
     document.getElementById("historyBtn").addEventListener("click", () => {
-      closeAllModals();
+      removeAllModals();
       openHistoryModal();
     });
     document.getElementById("exchangeBtn").addEventListener("click", () => {
-      closeAllModals();
+      removeAllModals();
       openExchangeModal();
     });
   }
@@ -337,7 +336,7 @@ function createMainUI() {
   // Показываем блоки баланса и кнопки для майнинга
   const balanceDisplay = document.getElementById("balanceDisplay");
   if (balanceDisplay) {
-    balanceDisplay.style.display = "block"; // убираем скрытие
+    balanceDisplay.style.display = "block";
   }
 
   const mineContainer = document.getElementById("mineContainer");
@@ -345,28 +344,29 @@ function createMainUI() {
     mineContainer.style.display = "block";
   }
 
-  // Добавляем две кнопки: "Перевести" и "Оплата по QR"
+  // Создаём контейнер с двумя кнопками (перевести, оплата)
   if (!document.getElementById("actionButtonsContainer")) {
     const container = document.createElement("div");
     container.id = "actionButtonsContainer";
     container.style.display = "flex";
-    container.style.gap = "16px";
+    container.style.flexDirection = "row";
     container.style.justifyContent = "center";
-    container.style.marginTop = "100px"; // отступ сверху
-
+    container.style.gap = "16px";
+    // Сдвигаем ниже, чтобы не наезжать на ID
+    container.style.marginTop = "140px"; // увеличим отступ
     container.innerHTML = `
       <button id="transferBtn" style="padding:10px;">Перевести</button>
       <button id="payQRBtn" style="padding:10px;">Оплата по QR</button>
     `;
     document.body.appendChild(container);
 
-    // Привязка
+    // Привязываем клики
     document.getElementById("transferBtn").addEventListener("click", () => {
-      closeAllModals();
+      removeAllModals();
       openTransferModal(); 
     });
     document.getElementById("payQRBtn").addEventListener("click", () => {
-      closeAllModals();
+      removeAllModals();
       openPayQRModal();
     });
   }
@@ -483,7 +483,6 @@ function openTransferModal() {
     `,
     { showCloseBtn: true }
   );
-  openModal("transferModal");
 
   const sendBtn = document.getElementById("sendTransferBtn");
   sendBtn.onclick = async () => {
@@ -508,7 +507,7 @@ function openTransferModal() {
       const data = await resp.json();
       if (data.success) {
         alert("✅ Перевод выполнен!");
-        closeModal("transferModal");
+        document.getElementById("transferModal")?.remove();
         fetchUserData();
       } else {
         alert("❌ Ошибка перевода: " + data.error);
@@ -531,11 +530,10 @@ function openPayQRModal() {
     `,
     { showCloseBtn: true }
   );
-  openModal("payQRModal");
 
   const videoEl = document.getElementById("opPayVideo");
   startUniversalQRScanner(videoEl, (rawValue) => {
-    closeModal("payQRModal");
+    document.getElementById("payQRModal")?.remove();
     const parsed = parseMerchantQRData(rawValue);
     if (!parsed.merchantId) {
       alert("❌ Неверный QR. Нет merchantId.");
@@ -557,7 +555,6 @@ function confirmPayMerchantModal({ merchantId, amount, purpose }) {
     `,
     { showCloseBtn: true }
   );
-  openModal("confirmPayMerchantModal");
 
   document.getElementById("confirmPayBtn").onclick = async () => {
     if (!currentUserId) return;
@@ -571,7 +568,7 @@ function confirmPayMerchantModal({ merchantId, amount, purpose }) {
       const data = await resp.json();
       if (data.success) {
         alert("✅ Оплачено!");
-        closeModal("confirmPayMerchantModal");
+        document.getElementById("confirmPayMerchantModal")?.remove();
         fetchUserData();
       } else {
         alert("❌ Ошибка: " + data.error);
@@ -664,6 +661,8 @@ let currentExchangeRate = 0;
 
 async function openExchangeModal() {
   showGlobalLoading();
+  removeAllModals(); // удаляем другие окна
+
   createModal(
     "exchangeModal",
     `
@@ -688,7 +687,6 @@ async function openExchangeModal() {
       <button id="btnPerformExchange" style="margin-top:20px;padding:10px;">Обменять</button>
     `
   );
-  openModal("exchangeModal");
 
   currentExchangeDirection = "coin_to_rub";
   updateCurrencyLabels();
@@ -749,7 +747,6 @@ async function handleExchange(direction) {
     alert("Введите корректную сумму");
     return;
   }
-  // Предотвращаем повторную ту же операцию
   if (lastDirection === direction) {
     alert("Нельзя подряд делать одинаковые операции");
     return;
@@ -806,7 +803,7 @@ async function loadBalanceAndExchangeRate() {
     console.error("loadBalanceAndExchangeRate user error:", err);
   }
 
-  // Загрузим историю
+  // Загрузим историю курсов
   try {
     const rateResp = await fetch(`${API_URL}/exchangeRates?limit=200`, {
       credentials: "include",
@@ -882,12 +879,11 @@ function openHistoryModal() {
     "historyModal",
     `
       <h2 style="text-align:center;">История операций</h2>
-      <div style="max-height:calc(100% - 100px);overflow-y:auto;">
+      <div style="height:calc(100% - 100px);overflow-y:auto;">
         <ul id="transactionList" style="padding:0;list-style:none;margin:0;"></ul>
       </div>
     `
   );
-  openModal("historyModal");
   fetchTransactionHistory();
 }
 
@@ -1029,7 +1025,7 @@ async function openMerchantUI() {
     }
   }
   hideMainUI();
-  closeAllModals();
+  removeAllModals();
   document.getElementById("merchantInterface")?.remove();
 
   const div = document.createElement("div");
@@ -1091,138 +1087,12 @@ async function fetchMerchantBalance() {
     );
     const data = await resp.json();
     if (data.success) {
-      document.getElementById("merchantBalanceValue").textContent = parseFloat(data.balance).toFixed(5);
+      document.getElementById("merchantBalanceValue").textContent =
+        parseFloat(data.balance).toFixed(5);
     }
   } catch (err) {
     console.error("fetchMerchantBalance:", err);
   }
-}
-
-/* Модалка "Создать QR" (мерчант) */
-function openOneTimeQRModal() {
-  createModal(
-    "createOneTimeQRModal",
-    `
-      <h3>Создать запрос на оплату</h3>
-      <label>Сумма (₲):</label>
-      <input type="number" id="qrAmountInput" step="0.00001" style="padding:8px;font-size:16px;" oninput="calcRubEquivalent()">
-      <p id="qrRubEquivalent"></p>
-      <label>Назначение:</label>
-      <input type="text" id="qrPurposeInput" style="padding:8px;font-size:16px;">
-      <button id="createQRBtn" style="padding:10px;margin-top:10px;">Создать</button>
-    `
-  );
-  openModal("createOneTimeQRModal");
-
-  document.getElementById("createQRBtn").onclick = () => {
-    const amount = parseFloat(document.getElementById("qrAmountInput").value);
-    const purpose = document.getElementById("qrPurposeInput").value || "";
-    if (!amount || amount <= 0) {
-      alert("Некорректная сумма");
-      return;
-    }
-    closeModal("createOneTimeQRModal");
-    createMerchantQR(amount, purpose);
-  };
-}
-
-function calcRubEquivalent() {
-  const coinVal = parseFloat(document.getElementById("qrAmountInput").value) || 0;
-  const rubMultiplier = 1 + currentHalvingStep * 0.02;
-  const rubVal = coinVal * rubMultiplier;
-  document.getElementById("qrRubEquivalent").textContent = "≈ " + rubVal.toFixed(2) + " RUB";
-}
-
-/* Создаём QR (мерчант) */
-function createMerchantQR(amount, purpose) {
-  const qrData = `guga://merchantId=${currentMerchantId}&amount=${amount}&purpose=${encodeURIComponent(purpose)}`;
-  createModal(
-    "merchantQRModal",
-    `
-      <div id="merchantQRModalContainer"></div>
-      <p style="margin-top:10px;">Запрашиваемая сумма: ${amount} ₲</p>
-    `
-  );
-  openModal("merchantQRModal");
-
-  if (typeof QRCode === "function") {
-    const container = document.getElementById("merchantQRModalContainer");
-    if (container) {
-      const qrElem = document.createElement("div");
-      container.appendChild(qrElem);
-      new QRCode(qrElem, {
-        text: qrData,
-        width: 220,
-        height: 220,
-      });
-    }
-  } else {
-    document.getElementById("merchantQRModalContainer").textContent = "QR data: " + qrData;
-  }
-  monitorPayment(qrData);
-}
-
-function monitorPayment(qrData) {
-  const timer = setInterval(async () => {
-    try {
-      const resp = await fetch(
-        `${API_URL}/checkPaymentStatus?merchantId=${currentMerchantId}&qrData=${encodeURIComponent(qrData)}`,
-        { credentials: "include" }
-      );
-      const data = await resp.json();
-      if (data.success && data.paid) {
-        clearInterval(timer);
-        closeModal("merchantQRModal");
-        alert("✅ Оплата прошла успешно!");
-        fetchMerchantBalance();
-      }
-    } catch (err) {
-      console.error("monitorPayment:", err);
-    }
-  }, 3000);
-}
-
-/* Модалка "Перевести" (мерчант -> пользователь) */
-function openMerchantTransferModal() {
-  createModal(
-    "merchantTransferModal",
-    `
-      <h3>Перевести на пользователя</h3>
-      <label>ID пользователя:</label>
-      <input type="text" id="merchantToUserIdInput" style="padding:8px;font-size:16px;">
-      <label>Сумма (₲):</label>
-      <input type="number" id="merchantTransferAmountInput" step="0.00001" style="padding:8px;font-size:16px;">
-      <button id="merchantTransferSendBtn" style="padding:10px;margin-top:10px;">Отправить</button>
-    `
-  );
-  openModal("merchantTransferModal");
-
-  document.getElementById("merchantTransferSendBtn").onclick = async () => {
-    const toUserId = document.getElementById("merchantToUserIdInput").value;
-    const amount = parseFloat(document.getElementById("merchantTransferAmountInput").value);
-    if (!toUserId || !amount || amount <= 0) {
-      alert("Некорректные данные");
-      return;
-    }
-    try {
-      const resp = await fetch(`${API_URL}/merchantTransfer`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ merchantId: currentMerchantId, toUserId, amount }),
-      });
-      const data = await resp.json();
-      if (data.success) {
-        alert("Перевод выполнен!");
-        closeModal("merchantTransferModal");
-        fetchMerchantBalance();
-      } else {
-        alert("Ошибка: " + data.error);
-      }
-    } catch (err) {
-      console.error("merchantTransfer:", err);
-    }
-  };
 }
 
 /**************************************************
@@ -1242,7 +1112,7 @@ function updateUI() {
  * DOMContentLoaded
  **************************************************/
 document.addEventListener("DOMContentLoaded", () => {
-  // При загрузке проверяем, есть ли userId или merchantId
+  // При загрузке пытаемся понять, кто мы (пользователь или мерчант)
   fetchUserData().then(() => {
     if (currentMerchantId) {
       openMerchantUI();
@@ -1253,7 +1123,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Кнопка "Майнить", если есть
+  // Привязываем к кнопке "Майнить"
   const mineBtn = document.getElementById("mineBtn");
   if (mineBtn) {
     mineBtn.addEventListener("click", mineCoins);
