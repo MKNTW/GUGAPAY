@@ -37,37 +37,6 @@ ul {
   display: none;
 }
 
-/* Нижняя панель (Bottom Bar) – всегда фиксирована внизу */
-#bottomBar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  padding: 18px 1px;
-  display: flex;
-  justify-content: space-evenly;
-  align-items: center;
-  background-color: #fff;
-  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.1);
-  z-index: 1000; /* ниже модальных окон (модальные окна – z-index 1500) */
-}
-
-#bottomBar button {
-  flex: 0 0 28%;
-  padding: 8px;
-  background-color: transparent;
-  color: #000;
-  font-size: 14px;
-  font-weight: 600;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-#bottomBar button:hover {
-  background-color: #f0f0f0;
-}
-
 /* Верхняя панель */
 #topBar {
   position: fixed;
@@ -194,6 +163,37 @@ ul {
   transform: scale(0.95);
 }
 
+/* Нижняя панель (Bottom Bar) – всегда фиксирована внизу */
+#bottomBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 18px 1px;
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  background-color: #fff;
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1000; /* ниже модальных окон */
+}
+
+#bottomBar button {
+  flex: 0 0 28%;
+  padding: 8px;
+  background-color: transparent;
+  color: #000;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#bottomBar button:hover {
+  background-color: #f0f0f0;
+}
+
 /* Модальные окна – занимают 100% экрана */
 .modal {
   position: fixed;
@@ -208,7 +208,7 @@ ul {
   align-items: flex-start; /* выравнивание по верху */
 }
 
-/* Окно модального контента – для перевода и оплаты по QR */
+/* Модальное окно (контейнер) для перевода и оплаты по QR */
 .modal-content {
   position: relative;
   width: 100%;
@@ -239,7 +239,7 @@ ul {
   z-index: 1600;
 }
 
-/* Стиль заголовков модальных окон */
+/* Заголовки модальных окон */
 .modal-content h3,
 .modal-content h4 {
   font-size: 20px;
@@ -318,10 +318,10 @@ ul {
   border-bottom: none;
 }
 
-/* Раздел "Операции": 2 отцентрованных кнопки (Перевод и Оплата QR) под балансом */
+/* Раздел "Операции": 2 отцентрованных кнопки (Перевод и Оплата QR) ниже баланса */
 .operations-container {
   position: fixed;
-  top: 220px; /* ниже блока баланса */
+  top: 220px; /* ниже блока с балансом */
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
