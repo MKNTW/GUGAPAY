@@ -16,6 +16,27 @@ let cycleCount = 0;
 let exchangeChartInstance = null;
 
 /**************************************************
+ * АНИМАЦИЯ (CSS) ДЛЯ МОДАЛОК СНИЗУ ВВЕРХ
+ **************************************************/
+const modalAnimationStyle = document.createElement("style");
+modalAnimationStyle.textContent = `
+  @keyframes slideUp {
+    0% {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  .modal-slide-up {
+    animation: slideUp 0.3s ease forwards;
+  }
+`;
+document.head.appendChild(modalAnimationStyle);
+
+/**************************************************
  * УТИЛИТЫ
  **************************************************/
 function formatBalance(num) {
@@ -36,15 +57,17 @@ function hideGlobalLoading() {
 }
 
 /**************************************************
- * СОЗДАНИЕ/ОТКРЫТИЕ/ЗАКРЫТИЕ МОДАЛЬНЫХ ОКОН
+ * СОЗДАНИЕ/ОТКРЫТИЕ МОДАЛЬНЫХ ОКОН + анимация снизу
  **************************************************/
 function createModal(id, innerHtml, { showCloseBtn = false } = {}) {
   const oldModal = document.getElementById(id);
   if (oldModal) oldModal.remove();
 
+  // Контейнер-модал
   const modal = document.createElement("div");
   modal.id = id;
   modal.className = "modal";
+  // Базовые стили
   modal.style.position = "fixed";
   modal.style.top = "0";
   modal.style.left = "0";
@@ -54,9 +77,10 @@ function createModal(id, innerHtml, { showCloseBtn = false } = {}) {
   modal.style.zIndex = "1500";
   modal.style.display = "flex";
   modal.style.flexDirection = "column";
-  modal.style.justifyContent = "flex-start";
+  modal.style.justifyContent = "flex-end"; // чтобы «прилипали» снизу
   modal.style.alignItems = "center";
 
+  // Оверлей
   const overlay = document.createElement("div");
   overlay.className = "modal-overlay";
   overlay.style.position = "absolute";
@@ -66,36 +90,34 @@ function createModal(id, innerHtml, { showCloseBtn = false } = {}) {
   overlay.style.height = "100%";
   overlay.style.zIndex = "1";
 
+  // Контент
   const contentDiv = document.createElement("div");
-  contentDiv.className = "modal-content";
+  contentDiv.className = "modal-content modal-slide-up"; 
+  // Добавим класс .modal-slide-up, 
+  // в котором заданы keyframes slideUp
 
-  // === Убираем скругления для historyModal и exchangeModal ===
-  // По вашему запросу "убрать скругление"
-  // Можно убрать совсем у всех, или точечно.
-  if (id === "historyModal" || id === "exchangeModal") {
-    contentDiv.style.borderRadius = "0"; 
-  } else {
-    contentDiv.style.borderRadius = "10px";
-  }
+  // Убираем скругление
+  contentDiv.style.borderRadius = "0"; 
 
-  contentDiv.style.marginTop = "0"; // для истории и обмена (без отступа)
+  // Занимаем почти всю высоту (чтобы анимация «снизу» была видна)
   contentDiv.style.width = "100%";
   contentDiv.style.maxWidth = "600px";
-  contentDiv.style.height = "100%"; 
+  contentDiv.style.height = "80%"; // или 100% - 50px, на ваше усмотрение
   contentDiv.style.background = "#fff";
   contentDiv.style.zIndex = "2";
   contentDiv.style.position = "relative";
   contentDiv.style.boxSizing = "border-box";
   contentDiv.style.overflowY = "auto";
   contentDiv.style.padding = "20px";
-  
+
+  // Кнопка закрытия?
   let closeBtnHtml = "";
   if (showCloseBtn) {
     closeBtnHtml = `
       <button class="close-btn" 
               style="position:absolute;top:10px;right:10px;border:none;
                      background-color:#000;color:#fff;
-                     width:35px;height:35px;font-size:18px;cursor:pointer;z-index:3;">
+                     width:30px;height:30px;font-size:18px;cursor:pointer;z-index:3;">
         ×
       </button>
     `;
@@ -107,12 +129,14 @@ function createModal(id, innerHtml, { showCloseBtn = false } = {}) {
   modal.appendChild(contentDiv);
   document.body.appendChild(modal);
 
+  // Закрытие по оверлею
   overlay.addEventListener("click", (e) => {
     if (e.target === overlay) {
       modal.remove();
     }
   });
 
+  // Закрытие по кнопке X
   if (showCloseBtn) {
     const closeBtn = contentDiv.querySelector(".close-btn");
     if (closeBtn) {
@@ -274,16 +298,14 @@ function openAuthModal() {
  * ГЛАВНЫЙ ЭКРАН
  **************************************************/
 function createMainUI() {
-  // Иконка профиля - ТОЛЬКО НА ОСНОВНОМ ЭКРАНЕ 
-  // (если userId != null и !merchant)
-  // but we only do it if there's not merchant, i.e. "if (!currentMerchantId)" 
+  // Профильная иконка - только если нет мерчанта
   if (!currentMerchantId && !document.getElementById("profileIcon")) {
     const profileIcon = document.createElement("img");
     profileIcon.id = "profileIcon";
     profileIcon.src = "68.png";
-    // Увеличим фото, скажем 60px
-    profileIcon.style.width = "60px";
-    profileIcon.style.height = "60px";
+    // Меньше фото, скажем 40px
+    profileIcon.style.width = "40px";
+    profileIcon.style.height = "40px";
     profileIcon.style.position = "fixed";
     profileIcon.style.top = "10px";
     profileIcon.style.right = "10px";
@@ -296,7 +318,6 @@ function createMainUI() {
     profileIcon.addEventListener("click", openProfileModal);
   }
 
-  // bottomBar
   if (!document.getElementById("bottomBar")) {
     const bottomBar = document.createElement("div");
     bottomBar.id = "bottomBar";
@@ -312,18 +333,18 @@ function createMainUI() {
     bottomBar.style.boxShadow = "0 -2px 5px rgba(0,0,0,0.1)";
     bottomBar.style.zIndex = "3000";
 
-    // Увеличим иконки (были ~24px, пусть будут 36px)
+    // Меньшие иконки (допустим 28px)
     bottomBar.innerHTML = `
       <button id="btnMain" style="padding:10px;border:none;background:none;">
-        <img src="69.png" style="width:36px;height:36px;display:block;margin:0 auto;">
+        <img src="69.png" style="width:28px;height:28px;display:block;margin:0 auto;">
         Главная
       </button>
       <button id="historyBtn" style="padding:10px;border:none;background:none;">
-        <img src="70.png" style="width:36px;height:36px;display:block;margin:0 auto;">
+        <img src="70.png" style="width:28px;height:28px;display:block;margin:0 auto;">
         История
       </button>
       <button id="exchangeBtn" style="padding:10px;border:none;background:none;">
-        <img src="71.png" style="width:36px;height:36px;display:block;margin:0 auto;">
+        <img src="71.png" style="width:28px;height:28px;display:block;margin:0 auto;">
         Обменять
       </button>
     `;
@@ -345,37 +366,32 @@ function createMainUI() {
 
   // Показываем блоки баланса и кнопки майнинга
   const balanceDisplay = document.getElementById("balanceDisplay");
-  if (balanceDisplay) {
-    balanceDisplay.style.display = "block";
-  }
+  if (balanceDisplay) balanceDisplay.style.display = "block";
   const mineContainer = document.getElementById("mineContainer");
-  if (mineContainer) {
-    mineContainer.style.display = "block";
-  }
+  if (mineContainer) mineContainer.style.display = "block";
 
-  // ActionButtons - зафиксируем (как вы просили) 
+  // actionButtons ТОЛЬКО НА ГЛАВНОМ (и не видны в других окнах)
+  // Делаем position: fixed, центрируем
   if (!document.getElementById("actionButtonsContainer")) {
     const container = document.createElement("div");
     container.id = "actionButtonsContainer";
-    container.style.position = "fixed"; // фиксируем
+    container.style.position = "fixed";
     container.style.top = "120px";
-    container.style.left = "0";
-    container.style.width = "100%";
+    container.style.left = "50%";
+    container.style.transform = "translateX(-50%)";
     container.style.display = "flex";
     container.style.flexDirection = "row";
-    container.style.justifyContent = "center";
     container.style.gap = "16px";
-    // Увеличим отступ сверху (учитывая balanceDisplay + ID)
     container.style.zIndex = "2500";
 
-    // Сделаем иконки больше (36px)
+    // Фото тоже поменьше, скажем 28px
     container.innerHTML = `
-      <button id="transferBtn" style="padding:10px;border:none;background:none;font-size:16px;display:flex;flex-direction:column;align-items:center;gap:4px;">
-        <img src="81.png" style="width:36px;height:36px;">
+      <button id="transferBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <img src="81.png" style="width:28px;height:28px;">
         Перевести
       </button>
-      <button id="payQRBtn" style="padding:10px;border:none;background:none;font-size:16px;display:flex;flex-direction:column;align-items:center;gap:4px;">
-        <img src="83.png" style="width:36px;height:36px;">
+      <button id="payQRBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <img src="83.png" style="width:28px;height:28px;">
         Оплата по QR
       </button>
     `;
@@ -396,7 +412,6 @@ function createMainUI() {
   updateInterval = setInterval(fetchUserData, 2000);
 }
 
-/** "Профиль" - теперь ТОЛЬКО кнопка "Выйти" **/
 function openProfileModal() {
   createModal(
     "profileModal",
@@ -410,7 +425,6 @@ function openProfileModal() {
 }
 
 function hideMainUI() {
-  // Удаляем profileIcon если есть
   document.getElementById("profileIcon")?.remove();
   document.getElementById("actionButtonsContainer")?.remove();
   const bd = document.getElementById("balanceDisplay");
@@ -421,7 +435,7 @@ function hideMainUI() {
 }
 
 /**************************************************
- * ПОЛУЧЕНИЕ ДАННЫХ ПОЛЬЗОВАТЕЛЯ
+ * ЗАГРУЗКА ДАННЫХ ПОЛЬЗОВАТЕЛЯ
  **************************************************/
 async function fetchUserData() {
   try {
@@ -684,7 +698,7 @@ function parseMerchantQRData(rawValue) {
 }
 
 /**************************************************
- * ОБМЕН ВАЛЮТЫ 
+ * ОБМЕН ВАЛЮТЫ
  **************************************************/
 let currentExchangeDirection = "coin_to_rub";
 let currentExchangeRate = 0;
@@ -693,7 +707,6 @@ async function openExchangeModal() {
   showGlobalLoading();
   removeAllModals();
 
-  // Убираем скругление у exchangeModal, фото сделаны больше
   createModal(
     "exchangeModal",
     `
@@ -704,13 +717,13 @@ async function openExchangeModal() {
       <p id="currentRateDisplay" style="text-align:center;margin:10px 0;">Курс: --</p>
       <div style="display:flex;justify-content:center;gap:10px;align-items:center;margin-top:20px;">
         <div style="flex:1;text-align:center;">
-          <p id="fromLabel"><img src="15.png" alt="GUGA" style="width:36px;vertical-align:middle;"> GUGA</p>
+          <p id="fromLabel"><img src="15.png" alt="GUGA" style="width:28px;vertical-align:middle;"> GUGA</p>
           <input type="number" id="amountInput" placeholder="0.00" style="width:100%;padding:8px;" oninput="updateExchange()">
           <p id="balanceInfo" style="font-size:14px;color:#666;">0.00000 ₲</p>
         </div>
         <button id="swapBtn" style="padding:10px;border:none;background:none;cursor:pointer;font-size:24px;">⇄</button>
         <div style="flex:1;text-align:center;">
-          <p id="toLabel"><img src="18.png" alt="RUB" style="width:36px;vertical-align:middle;"> RUB</p>
+          <p id="toLabel"><img src="18.png" alt="RUB" style="width:28px;vertical-align:middle;"> RUB</p>
           <input type="text" id="toAmount" disabled style="width:100%;padding:8px;">
           <p id="toBalanceInfo" style="font-size:14px;color:#666;">0.00 ₽</p>
         </div>
@@ -766,19 +779,11 @@ function updateCurrencyLabels() {
   const fromLabel = document.getElementById("fromLabel");
   const toLabel = document.getElementById("toLabel");
   if (currentExchangeDirection === "coin_to_rub") {
-    if (fromLabel) {
-      fromLabel.innerHTML = `<img src="15.png" alt="GUGA" style="width:36px;vertical-align:middle;"> GUGA`;
-    }
-    if (toLabel) {
-      toLabel.innerHTML = `<img src="18.png" alt="RUB" style="width:36px;vertical-align:middle;"> RUB`;
-    }
+    if (fromLabel) fromLabel.innerHTML = `<img src="15.png" alt="GUGA" style="width:28px;vertical-align:middle;"> GUGA`;
+    if (toLabel)   toLabel.innerHTML   = `<img src="18.png" alt="RUB" style="width:28px;vertical-align:middle;"> RUB`;
   } else {
-    if (fromLabel) {
-      fromLabel.innerHTML = `<img src="18.png" alt="RUB" style="width:36px;vertical-align:middle;"> RUB`;
-    }
-    if (toLabel) {
-      toLabel.innerHTML = `<img src="15.png" alt="GUGA" style="width:36px;vertical-align:middle;"> GUGA`;
-    }
+    if (fromLabel) fromLabel.innerHTML = `<img src="18.png" alt="RUB" style="width:28px;vertical-align:middle;"> RUB`;
+    if (toLabel)   toLabel.innerHTML   = `<img src="15.png" alt="GUGA" style="width:28px;vertical-align:middle;"> GUGA`;
   }
 }
 
@@ -868,7 +873,6 @@ function updateCurrentRateDisplay() {
     "Курс: 1 ₲ = " + currentExchangeRate.toFixed(2) + " ₽";
 }
 
-// Уберём вертикальную линию справа (drawBorder: false)
 function drawExchangeChart(rates) {
   if (!rates || !rates.length) return;
   if (exchangeChartInstance) exchangeChartInstance.destroy();
@@ -877,11 +881,11 @@ function drawExchangeChart(rates) {
     (a, b) => new Date(a.created_at) - new Date(b.created_at)
   );
   const labels = sorted.map((r) => {
-    const dd = new Date(r.created_at);
+    const d = new Date(r.created_at);
     return (
-      dd.getHours().toString().padStart(2, "0") +
+      d.getHours().toString().padStart(2, "0") +
       ":" +
-      dd.getMinutes().toString().padStart(2, "0")
+      d.getMinutes().toString().padStart(2, "0")
     );
   });
   const dataPoints = sorted.map((r) => parseFloat(r.exchange_rate));
@@ -919,15 +923,16 @@ function drawExchangeChart(rates) {
 }
 
 /**************************************************
- * МОДАЛКА "ИСТОРИЯ" (вернуть до последнего обновления)
+ * МОДАЛКА "ИСТОРИЯ" + ПЕРЕРАБОТАННАЯ ФУНКЦИЯ 
+ * displayTransactionHistory (карточки), 
+ * getDateLabel
  **************************************************/
 function openHistoryModal() {
-  // Возвращаем старый заголовок "История операций"
   createModal(
     "historyModal",
     `
       <h2 style="text-align:center;">История операций</h2>
-      <div style="height:100%; overflow-y:auto;">
+      <div style="height:80%; overflow-y:auto;">
         <ul id="transactionList" style="padding:0;list-style:none;margin:0;"></ul>
       </div>
     `
@@ -988,37 +993,33 @@ function displayTransactionHistory(transactions) {
   sortedDates.forEach((dateStr, dateIndex) => {
     // Блок для конкретной даты
     const dateItem = document.createElement("li");
-    dateItem.style.listStyle = "none"; // убираем "li" маркеры
-    dateItem.style.marginTop = "20px"; // отступ сверху, чтобы отделить блок даты от предыдущих операций
-    dateItem.style.padding = "0";      // убираем внутренние отступы
+    dateItem.style.listStyle = "none"; 
+    dateItem.style.marginTop = "20px"; 
+    dateItem.style.padding = "0";     
 
-    // Заголовок даты (Например: Сегодня, Вчера, 11.05.2023)
+    // Заголовок даты
     const dateHeader = document.createElement("div");
     dateHeader.textContent = dateStr;
     dateHeader.style.fontWeight = "bold";
-    dateHeader.style.marginBottom = "10px"; // отступ под датой
+    dateHeader.style.marginBottom = "10px"; 
     dateHeader.style.fontSize = "16px";
     dateHeader.style.color = "#333";
 
     dateItem.appendChild(dateHeader);
 
-    // Массив транзакций за этот день
+    // Транзакции за этот день
     const dayTransactions = groups[dateStr];
 
     dayTransactions.forEach((tx) => {
-      // Формируем карточку операции
       const timeStr = new Date(tx.client_time || tx.created_at).toLocaleTimeString("ru-RU");
 
-      // Иконка, заголовок, детали, знак суммы
       let iconSrc = "";     
       let titleText = "";   
       let detailsText = ""; 
       let amountSign = "";  
       let amountValue = formatBalance(tx.amount || 0);
 
-      // Логика определения типа операции
       if (tx.type === "merchant_payment") {
-        // Оплата по QR
         iconSrc = "56.webp";
         titleText = "Оплата по QR";
         detailsText = `Мерчант: ${
@@ -1026,35 +1027,30 @@ function displayTransactionHistory(transactions) {
           (tx.to_user_id && tx.to_user_id.replace("MERCHANT:", "")) ||
           "???"
         }`;
-        amountSign = "-"; // списание
+        amountSign = "-";
       } 
       else if (tx.from_user_id === currentUserId) {
-        // Исходящая
         iconSrc = "67.png";
         titleText = "Отправлено";
         detailsText = `Кому: ${tx.to_user_id}`;
         amountSign = "-";
       } 
       else if (tx.to_user_id === currentUserId) {
-        // Входящая
         iconSrc = "66.png";
         titleText = "Получено";
         detailsText = `От кого: ${tx.from_user_id}`;
         amountSign = "+";
       } 
       else if (tx.type === "exchange") {
-        // Обмен
-        iconSrc = "67.png"; // или любая другая иконка
+        iconSrc = "67.png"; 
         titleText = "Обмен";
         detailsText = `Направление: ${
           tx.direction === "rub_to_coin" ? "Рубли → Монеты" : "Монеты → Рубли"
         }`;
-        // Примем условно, что rub_to_coin = входящая (+), coin_to_rub = исходящая (-)
         amountSign = (tx.direction === "rub_to_coin") ? "+" : "-";
         amountValue = formatBalance(tx.amount);
       } 
       else {
-        // fallback для прочих случаев
         iconSrc = "67.png";
         titleText = "Операция";
         detailsText = "Детали не указаны";
@@ -1063,13 +1059,12 @@ function displayTransactionHistory(transactions) {
 
       // Карточка
       const cardDiv = document.createElement("div");
-      // Светло-серый фон, закруглённые края, без бордеров
       cardDiv.style.background = "#f7f7f7"; 
       cardDiv.style.borderRadius = "8px";
       cardDiv.style.display = "flex";
       cardDiv.style.alignItems = "center";
       cardDiv.style.padding = "10px";
-      cardDiv.style.marginBottom = "8px"; // отступ между карточками
+      cardDiv.style.marginBottom = "8px"; 
 
       // Левая иконка (круг)
       const leftDiv = document.createElement("div");
@@ -1091,7 +1086,7 @@ function displayTransactionHistory(transactions) {
       iconImg.style.height = "24px";
       leftDiv.appendChild(iconImg);
 
-      // Центральный блок (название + «от кого / кому / мерчант»)
+      // Центральный блок
       const centerDiv = document.createElement("div");
       centerDiv.style.flex = "1"; 
 
@@ -1108,7 +1103,7 @@ function displayTransactionHistory(transactions) {
       centerDiv.appendChild(titleEl);
       centerDiv.appendChild(detailsEl);
 
-      // Правая часть (сумма + время)
+      // Правая часть
       const rightDiv = document.createElement("div");
       rightDiv.style.display = "flex";
       rightDiv.style.flexDirection = "column";
@@ -1117,11 +1112,8 @@ function displayTransactionHistory(transactions) {
       const amountEl = document.createElement("div");
       amountEl.style.fontWeight = "bold";
       let color = "#000";
-      if (amountSign === "+") {
-        color = "green";
-      } else if (amountSign === "-") {
-        color = "red";
-      }
+      if (amountSign === "+") color = "green";
+      else if (amountSign === "-") color = "red";
       amountEl.style.color = color;
       amountEl.textContent = `${amountSign} ${amountValue} ₲`;
 
@@ -1139,16 +1131,13 @@ function displayTransactionHistory(transactions) {
       cardDiv.appendChild(centerDiv);
       cardDiv.appendChild(rightDiv);
 
-      // Добавляем карточку в dateItem
       dateItem.appendChild(cardDiv);
     });
 
-    // Добавляем dateItem в основной список
     list.appendChild(dateItem);
   });
 }
 
-// Дата "Сегодня", "Вчера" или DD.MM.YYYY
 function getDateLabel(dateObj) {
   const today = new Date();
   const yesterday = new Date();
