@@ -1,5 +1,5 @@
 /**************************************************
- * ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ И НАСТРОЙКИ
+ * ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
  **************************************************/
 const API_URL = "https://api.mkntw.ru";
 
@@ -28,13 +28,11 @@ function closeAllModals() {
 
 function showGlobalLoading() {
   const loader = document.getElementById("loadingIndicator");
-  if (!loader) return;
-  loader.style.display = "flex";
+  if (loader) loader.style.display = "flex";
 }
 function hideGlobalLoading() {
   const loader = document.getElementById("loadingIndicator");
-  if (!loader) return;
-  loader.style.display = "none";
+  if (loader) loader.style.display = "none";
 }
 
 /**************************************************
@@ -42,19 +40,17 @@ function hideGlobalLoading() {
  **************************************************/
 function createModal(id, innerHtml, { showCloseBtn = false } = {}) {
   // Удаляем старую модалку, если была
-  const old = document.getElementById(id);
-  if (old) old.remove();
+  const oldModal = document.getElementById(id);
+  if (oldModal) oldModal.remove();
 
-  // Создаём контейнер
+  // Создаём "контейнер" всей модалки
   const modal = document.createElement("div");
   modal.id = id;
   modal.className = "modal hidden";
-  /* 
-    Стили для модалки можно унести в CSS, но ниже — базовые:
-      - растягиваем на весь экран
-      - чуть-чуть отступ сверху (например, 40px)
-      - скролл содержимого, если высота превышает экран
-  */
+
+  // Стили самого контейнера .modal
+  // (Можно перенести в отдельный CSS — главное убедиться,
+  //  что .modal-content имеет z-index выше оверлея)
   modal.style.position = "fixed";
   modal.style.top = "0";
   modal.style.left = "0";
@@ -62,39 +58,13 @@ function createModal(id, innerHtml, { showCloseBtn = false } = {}) {
   modal.style.height = "100%";
   modal.style.background = "rgba(0,0,0,0.5)";
   modal.style.zIndex = "1500";
+  // flex-контейнер, чтобы контент был сверху
   modal.style.display = "flex";
   modal.style.flexDirection = "column";
   modal.style.alignItems = "center";
-  modal.style.justifyContent = "flex-start"; // чтобы начиналось сверху
+  modal.style.justifyContent = "flex-start";
 
-  // Кнопка закрытия (X)
-  const closeBtnHtml = showCloseBtn
-    ? `<button class="close-btn" style="
-          position:absolute;top:10px;right:10px;
-          background-color:#000;color:#fff;border:none;border-radius:50%;
-          width:35px;height:35px;font-size:18px;cursor:pointer;">
-       ×
-       </button>`
-    : "";
-
-  // Контейнер контента
-  // даём ему отступ сверху и максимальную ширину
-  // высота = (100% - небольшой отступ)
-  const contentDiv = document.createElement("div");
-  contentDiv.className = "modal-content";
-  contentDiv.style.position = "relative";
-  contentDiv.style.marginTop = "40px";
-  contentDiv.style.width = "100%";
-  contentDiv.style.maxWidth = "600px";
-  contentDiv.style.background = "#fff";
-  contentDiv.style.borderRadius = "10px";
-  contentDiv.style.boxSizing = "border-box";
-  contentDiv.style.overflowY = "auto";
-  contentDiv.style.maxHeight = "calc(100% - 60px)"; // чуть меньше 100%, с учётом отступа
-  contentDiv.style.padding = "20px";
-  contentDiv.innerHTML = closeBtnHtml + innerHtml;
-
-  // Оверлей (прозрачная подложка)
+  // Оверлей
   const overlay = document.createElement("div");
   overlay.className = "modal-overlay";
   overlay.style.position = "absolute";
@@ -102,9 +72,40 @@ function createModal(id, innerHtml, { showCloseBtn = false } = {}) {
   overlay.style.left = "0";
   overlay.style.width = "100%";
   overlay.style.height = "100%";
-  overlay.style.cursor = "pointer";
+  overlay.style.zIndex = "1"; // оверлей на слое 1
 
-  // Добавляем элементы в DOM
+  // Контейнер контента
+  const contentDiv = document.createElement("div");
+  contentDiv.className = "modal-content";
+  contentDiv.style.position = "relative";
+  contentDiv.style.marginTop = "60px"; // отступ сверху, чтобы контент был "выше"
+  contentDiv.style.zIndex = "2"; // контент выше оверлея
+  contentDiv.style.width = "100%";
+  contentDiv.style.maxWidth = "600px";
+  contentDiv.style.background = "#fff";
+  contentDiv.style.borderRadius = "10px";
+  contentDiv.style.boxSizing = "border-box";
+  contentDiv.style.overflowY = "auto";
+  contentDiv.style.maxHeight = "calc(100% - 80px)"; // чуть меньше 100% высоты
+  contentDiv.style.padding = "20px";
+
+  // Если нужна круглая кнопка закрытия (showCloseBtn)
+  let closeBtnHtml = "";
+  if (showCloseBtn) {
+    closeBtnHtml = `
+      <button class="close-btn"
+              style="position:absolute;top:10px;right:10px;border:none;
+                     background-color:#000;color:#fff;border-radius:50%;
+                     width:35px;height:35px;font-size:18px;cursor:pointer;z-index:3;">
+        ×
+      </button>
+    `;
+  }
+
+  // Вставляем основной HTML
+  contentDiv.innerHTML = closeBtnHtml + innerHtml;
+
+  // Собираем всё
   modal.appendChild(overlay);
   modal.appendChild(contentDiv);
   document.body.appendChild(modal);
@@ -116,7 +117,7 @@ function createModal(id, innerHtml, { showCloseBtn = false } = {}) {
     }
   });
 
-  // Кнопка X
+  // Если есть close-btn, вешаем событие
   if (showCloseBtn) {
     const closeBtn = contentDiv.querySelector(".close-btn");
     if (closeBtn) {
@@ -130,7 +131,8 @@ function createModal(id, innerHtml, { showCloseBtn = false } = {}) {
 }
 
 function openModal(id) {
-  document.getElementById(id)?.classList.remove("hidden");
+  const modal = document.getElementById(id);
+  if (modal) modal.classList.remove("hidden");
 }
 
 function closeModal(id) {
@@ -157,14 +159,13 @@ async function login() {
     });
     const data = await resp.json();
     if (resp.ok && data.success) {
-      // Успешная авторизация
       await fetchUserData();
       document.getElementById("authModal")?.remove();
       createMainUI();
       updateUI();
       return;
     } else {
-      // Пробуем мерчант
+      // Пробуем мерчанта
       if (data.error?.includes("блокирован")) {
         alert("❌ Ваш аккаунт заблокирован");
         return;
@@ -245,30 +246,33 @@ async function logout() {
  **************************************************/
 function openAuthModal() {
   hideMainUI();
-  const oldAuth = document.getElementById("authModal");
-  if (oldAuth) oldAuth.remove();
-
-  createModal("authModal", 
-  `
-    <h2 style="text-align:center;">GugaCoin</h2>
-    <div id="authForm" style="display:flex;flex-direction:column;gap:12px;align-items:stretch;">
-      <div id="loginSection">
-        <h4>Вход</h4>
-        <input type="text" id="loginInput" placeholder="Логин" style="padding:8px;font-size:16px;">
-        <input type="password" id="passwordInput" placeholder="Пароль" style="padding:8px;font-size:16px;">
-        <button id="loginSubmitBtn" style="padding:10px;">Войти</button>
+  createModal(
+    "authModal",
+    `
+      <h2 style="text-align:center;">GugaCoin</h2>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div id="loginSection">
+          <h4>Вход</h4>
+          <input type="text" id="loginInput" placeholder="Логин" 
+                 style="padding:8px;font-size:16px;width:100%;">
+          <input type="password" id="passwordInput" placeholder="Пароль" 
+                 style="padding:8px;font-size:16px;width:100%;margin-top:8px;">
+          <button id="loginSubmitBtn" style="padding:10px;margin-top:8px;">Войти</button>
+        </div>
+        <div id="registerSection" style="display:none;">
+          <h4>Регистрация</h4>
+          <input type="text" id="regLogin" placeholder="Логин" 
+                 style="padding:8px;font-size:16px;width:100%;">
+          <input type="password" id="regPassword" placeholder="Пароль" 
+                 style="padding:8px;font-size:16px;width:100%;margin-top:8px;">
+          <button id="registerSubmitBtn" style="padding:10px;margin-top:8px;">Зарегистрироваться</button>
+        </div>
+        <button id="toggleAuthBtn" style="margin-top:10px;">Войти/Зарегистрироваться</button>
       </div>
-      <div id="registerSection" style="display:none;">
-        <h4>Регистрация</h4>
-        <input type="text" id="regLogin" placeholder="Логин" style="padding:8px;font-size:16px;">
-        <input type="password" id="regPassword" placeholder="Пароль" style="padding:8px;font-size:16px;">
-        <button id="registerSubmitBtn" style="padding:10px;">Зарегистрироваться</button>
-      </div>
-      <button id="toggleAuthBtn" style="margin-top:10px;">Войти/Зарегистрироваться</button>
-    </div>
-  `);
-
+    `
+  );
   openModal("authModal");
+
   document.getElementById("loginSubmitBtn").addEventListener("click", login);
   document.getElementById("registerSubmitBtn").addEventListener("click", register);
   document.getElementById("toggleAuthBtn").addEventListener("click", () => {
@@ -282,7 +286,7 @@ function openAuthModal() {
       registerSection.style.display = "block";
     }
   });
-  // Начальные состояния
+  // Начальное состояние
   document.getElementById("loginSection").style.display = "block";
   document.getElementById("registerSection").style.display = "none";
 }
@@ -295,6 +299,7 @@ function createMainUI() {
   if (!document.getElementById("bottomBar")) {
     const bottomBar = document.createElement("div");
     bottomBar.id = "bottomBar";
+    // Стили bottomBar (можно вынести в CSS)
     bottomBar.style.position = "fixed";
     bottomBar.style.bottom = "0";
     bottomBar.style.left = "0";
@@ -316,7 +321,7 @@ function createMainUI() {
 
     // События
     document.getElementById("btnMain").addEventListener("click", () => {
-      // При нажатии на главную — скрыть все модалки и показать основной экран
+      // При нажатии на "Главная" — закрыть все модалки, но оставить главный экран
       closeAllModals();
     });
     document.getElementById("historyBtn").addEventListener("click", () => {
@@ -329,28 +334,15 @@ function createMainUI() {
     });
   }
 
-  // Блок баланса (если вёрстка уже есть в HTML, просто показываем)
+  // Показываем блоки баланса и кнопки для майнинга
   const balanceDisplay = document.getElementById("balanceDisplay");
   if (balanceDisplay) {
-    balanceDisplay.style.display = "block";  // убираем .hidden
+    balanceDisplay.style.display = "block"; // убираем скрытие
   }
 
-  // Блок кнопки Майнить
   const mineContainer = document.getElementById("mineContainer");
   if (mineContainer) {
     mineContainer.style.display = "block";
-  }
-
-  // Добавляем заголовок "Главная", если хотите
-  if (!document.getElementById("mainTitle")) {
-    const mainTitle = document.createElement("div");
-    mainTitle.id = "mainTitle";
-    mainTitle.textContent = "Главная";
-    mainTitle.style.textAlign = "center";
-    mainTitle.style.marginTop = "100px";
-    mainTitle.style.fontSize = "20px";
-    mainTitle.style.fontWeight = "600";
-    document.body.appendChild(mainTitle);
   }
 
   // Добавляем две кнопки: "Перевести" и "Оплата по QR"
@@ -360,7 +352,7 @@ function createMainUI() {
     container.style.display = "flex";
     container.style.gap = "16px";
     container.style.justifyContent = "center";
-    container.style.marginTop = "20px";
+    container.style.marginTop = "100px"; // отступ сверху
 
     container.innerHTML = `
       <button id="transferBtn" style="padding:10px;">Перевести</button>
@@ -385,7 +377,6 @@ function createMainUI() {
 }
 
 function hideMainUI() {
-  document.getElementById("mainTitle")?.remove();
   document.getElementById("actionButtonsContainer")?.remove();
   const bd = document.getElementById("balanceDisplay");
   if (bd) bd.style.display = "none";
@@ -849,7 +840,11 @@ function drawExchangeChart(rates) {
   );
   const labels = sorted.map((r) => {
     const dd = new Date(r.created_at);
-    return dd.getHours().toString().padStart(2, "0") + ":" + dd.getMinutes().toString().padStart(2, "0");
+    return (
+      dd.getHours().toString().padStart(2, "0") +
+      ":" +
+      dd.getMinutes().toString().padStart(2, "0")
+    );
   });
   const dataPoints = sorted.map((r) => parseFloat(r.exchange_rate));
 
@@ -972,8 +967,10 @@ function displayTransactionHistory(transactions) {
           <div>Время: ${timeStr}</div>
         `;
       } else if (tx.type === "merchant_payment") {
-        const merch = tx.merchant_id ||
-          (tx.to_user_id && tx.to_user_id.replace("MERCHANT:", "")) || "???";
+        const merch =
+          tx.merchant_id ||
+          (tx.to_user_id && tx.to_user_id.replace("MERCHANT:", "")) ||
+          "???";
         opHTML = `
           <div>Оплата по QR 💳</div>
           <div>Мерчант: ${merch}</div>
@@ -981,7 +978,6 @@ function displayTransactionHistory(transactions) {
           <div>Время: ${timeStr}</div>
         `;
       } else if (tx.from_user_id === currentUserId) {
-        // Исходящая
         opHTML = `
           <div>Исходящая операция ⤴</div>
           <div>Кому: ${tx.to_user_id}</div>
@@ -989,7 +985,6 @@ function displayTransactionHistory(transactions) {
           <div>Время: ${timeStr}</div>
         `;
       } else if (tx.to_user_id === currentUserId) {
-        // Входящая
         opHTML = `
           <div>Входящая операция ⤵</div>
           <div>От кого: ${tx.from_user_id}</div>
@@ -1090,9 +1085,10 @@ async function fetchMerchantInfo() {
 async function fetchMerchantBalance() {
   if (!currentMerchantId) return;
   try {
-    const resp = await fetch(`${API_URL}/merchantBalance?merchantId=${currentMerchantId}`, {
-      credentials: "include",
-    });
+    const resp = await fetch(
+      `${API_URL}/merchantBalance?merchantId=${currentMerchantId}`,
+      { credentials: "include" }
+    );
     const data = await resp.json();
     if (data.success) {
       document.getElementById("merchantBalanceValue").textContent = parseFloat(data.balance).toFixed(5);
@@ -1169,9 +1165,10 @@ function createMerchantQR(amount, purpose) {
 function monitorPayment(qrData) {
   const timer = setInterval(async () => {
     try {
-      const resp = await fetch(`${API_URL}/checkPaymentStatus?merchantId=${currentMerchantId}&qrData=${encodeURIComponent(qrData)}`, {
-        credentials: "include",
-      });
+      const resp = await fetch(
+        `${API_URL}/checkPaymentStatus?merchantId=${currentMerchantId}&qrData=${encodeURIComponent(qrData)}`,
+        { credentials: "include" }
+      );
       const data = await resp.json();
       if (data.success && data.paid) {
         clearInterval(timer);
@@ -1245,6 +1242,7 @@ function updateUI() {
  * DOMContentLoaded
  **************************************************/
 document.addEventListener("DOMContentLoaded", () => {
+  // При загрузке проверяем, есть ли userId или merchantId
   fetchUserData().then(() => {
     if (currentMerchantId) {
       openMerchantUI();
@@ -1254,6 +1252,8 @@ document.addEventListener("DOMContentLoaded", () => {
       openAuthModal();
     }
   });
+
+  // Кнопка "Майнить", если есть
   const mineBtn = document.getElementById("mineBtn");
   if (mineBtn) {
     mineBtn.addEventListener("click", mineCoins);
