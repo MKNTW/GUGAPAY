@@ -1012,21 +1012,209 @@ async function fetchTransactionHistory() {
   }
 }
 
-/** Функция отображения истории (предположим, вы уже её настроили под нужный стиль) **/
+/**************************************************
+ * ВАЖНО: ПЕРЕРАБОТАННАЯ ФУНКЦИЯ
+ * DISPLAYTRANSACTIONHISTORY (И getDateLabel)
+ **************************************************/
 function displayTransactionHistory(transactions) {
-  // Здесь используйте вашу версию кода, 
-  // или предыдущую с "карточками" и т.д.
-  // Я кратко оставлю, чтобы не дублировать.
   const list = document.getElementById("transactionList");
   if (!list) return;
   list.innerHTML = "";
+
   if (!transactions.length) {
     list.innerHTML = "<li>Нет операций</li>";
     return;
   }
-  // ... группируем по дате, выводим, и т.п.
-  // Переименовали заголовок на "История" выше.
+
+  // Группируем транзакции по датам (сегодня, вчера, ...)
+  const groups = {};
+  transactions.forEach((tx) => {
+    const d = new Date(tx.client_time || tx.created_at);
+    const label = getDateLabel(d);
+    if (!groups[label]) groups[label] = [];
+    groups[label].push(tx);
+  });
+
+  // Сортируем даты по убыванию
+  const sortedDates = Object.keys(groups).sort((a, b) => {
+    const dA = new Date(groups[a][0].client_time || groups[a][0].created_at);
+    const dB = new Date(groups[b][0].client_time || groups[b][0].created_at);
+    return dB - dA;
+  });
+
+  sortedDates.forEach((dateStr, dateIndex) => {
+    // Блок для конкретной даты
+    const dateItem = document.createElement("li");
+    dateItem.style.listStyle = "none"; // убираем "li" маркеры
+    dateItem.style.marginTop = "20px"; // отступ сверху, чтобы отделить блок даты от предыдущих операций
+    dateItem.style.padding = "0";      // убираем внутренние отступы
+
+    // Заголовок даты (Например: Сегодня, Вчера, 11.05.2023)
+    const dateHeader = document.createElement("div");
+    dateHeader.textContent = dateStr;
+    dateHeader.style.fontWeight = "bold";
+    dateHeader.style.marginBottom = "10px"; // отступ под датой
+    dateHeader.style.fontSize = "16px";
+    dateHeader.style.color = "#333";
+
+    dateItem.appendChild(dateHeader);
+
+    // Массив транзакций за этот день
+    const dayTransactions = groups[dateStr];
+
+    dayTransactions.forEach((tx) => {
+      // Формируем карточку операции
+      const timeStr = new Date(tx.client_time || tx.created_at).toLocaleTimeString("ru-RU");
+
+      // Иконка, заголовок, детали, знак суммы
+      let iconSrc = "";     
+      let titleText = "";   
+      let detailsText = ""; 
+      let amountSign = "";  
+      let amountValue = formatBalance(tx.amount || 0);
+
+      // Логика определения типа операции
+      if (tx.type === "merchant_payment") {
+        // Оплата по QR
+        iconSrc = "56.webp";
+        titleText = "Оплата по QR";
+        detailsText = `Мерчант: ${
+          tx.merchant_id ||
+          (tx.to_user_id && tx.to_user_id.replace("MERCHANT:", "")) ||
+          "???"
+        }`;
+        amountSign = "-"; // списание
+      } 
+      else if (tx.from_user_id === currentUserId) {
+        // Исходящая
+        iconSrc = "67.png";
+        titleText = "Отправлено";
+        detailsText = `Кому: ${tx.to_user_id}`;
+        amountSign = "-";
+      } 
+      else if (tx.to_user_id === currentUserId) {
+        // Входящая
+        iconSrc = "66.png";
+        titleText = "Получено";
+        detailsText = `От кого: ${tx.from_user_id}`;
+        amountSign = "+";
+      } 
+      else if (tx.type === "exchange") {
+        // Обмен
+        iconSrc = "67.png"; // или любая другая иконка
+        titleText = "Обмен";
+        detailsText = `Направление: ${
+          tx.direction === "rub_to_coin" ? "Рубли → Монеты" : "Монеты → Рубли"
+        }`;
+        // Примем условно, что rub_to_coin = входящая (+), coin_to_rub = исходящая (-)
+        amountSign = (tx.direction === "rub_to_coin") ? "+" : "-";
+        amountValue = formatBalance(tx.amount);
+      } 
+      else {
+        // fallback для прочих случаев
+        iconSrc = "67.png";
+        titleText = "Операция";
+        detailsText = "Детали не указаны";
+        amountSign = "";
+      }
+
+      // Карточка
+      const cardDiv = document.createElement("div");
+      // Светло-серый фон, закруглённые края, без бордеров
+      cardDiv.style.background = "#f7f7f7"; 
+      cardDiv.style.borderRadius = "8px";
+      cardDiv.style.display = "flex";
+      cardDiv.style.alignItems = "center";
+      cardDiv.style.padding = "10px";
+      cardDiv.style.marginBottom = "8px"; // отступ между карточками
+
+      // Левая иконка (круг)
+      const leftDiv = document.createElement("div");
+      leftDiv.style.width = "44px";
+      leftDiv.style.height = "44px";
+      leftDiv.style.minWidth = "44px";
+      leftDiv.style.minHeight = "44px";
+      leftDiv.style.borderRadius = "50%";
+      leftDiv.style.background = "#eeeeee"; 
+      leftDiv.style.display = "flex";
+      leftDiv.style.alignItems = "center";
+      leftDiv.style.justifyContent = "center";
+      leftDiv.style.marginRight = "10px";
+
+      const iconImg = document.createElement("img");
+      iconImg.src = iconSrc;
+      iconImg.alt = "icon";
+      iconImg.style.width = "24px";
+      iconImg.style.height = "24px";
+      leftDiv.appendChild(iconImg);
+
+      // Центральный блок (название + «от кого / кому / мерчант»)
+      const centerDiv = document.createElement("div");
+      centerDiv.style.flex = "1"; 
+
+      const titleEl = document.createElement("div");
+      titleEl.textContent = titleText;
+      titleEl.style.fontWeight = "bold";
+      titleEl.style.marginBottom = "4px";
+
+      const detailsEl = document.createElement("div");
+      detailsEl.textContent = detailsText;
+      detailsEl.style.fontSize = "14px";
+      detailsEl.style.color = "#666";
+
+      centerDiv.appendChild(titleEl);
+      centerDiv.appendChild(detailsEl);
+
+      // Правая часть (сумма + время)
+      const rightDiv = document.createElement("div");
+      rightDiv.style.display = "flex";
+      rightDiv.style.flexDirection = "column";
+      rightDiv.style.alignItems = "flex-end";
+
+      const amountEl = document.createElement("div");
+      amountEl.style.fontWeight = "bold";
+      let color = "#000";
+      if (amountSign === "+") {
+        color = "green";
+      } else if (amountSign === "-") {
+        color = "red";
+      }
+      amountEl.style.color = color;
+      amountEl.textContent = `${amountSign} ${amountValue} ₲`;
+
+      const timeEl = document.createElement("div");
+      timeEl.textContent = timeStr;
+      timeEl.style.fontSize = "12px";
+      timeEl.style.color = "#888";
+      timeEl.style.marginTop = "3px";
+
+      rightDiv.appendChild(amountEl);
+      rightDiv.appendChild(timeEl);
+
+      // Собираем
+      cardDiv.appendChild(leftDiv);
+      cardDiv.appendChild(centerDiv);
+      cardDiv.appendChild(rightDiv);
+
+      // Добавляем карточку в dateItem
+      dateItem.appendChild(cardDiv);
+    });
+
+    // Добавляем dateItem в основной список
+    list.appendChild(dateItem);
+  });
 }
+
+// Дата "Сегодня", "Вчера" или DD.MM.YYYY
+function getDateLabel(dateObj) {
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+  if (dateObj.toDateString() === today.toDateString()) return "Сегодня";
+  if (dateObj.toDateString() === yesterday.toDateString()) return "Вчера";
+  return dateObj.toLocaleDateString("ru-RU");
+}
+
 
 /**************************************************
  * МЕРЧАНТСКИЙ ИНТЕРФЕЙС
