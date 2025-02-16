@@ -1107,7 +1107,7 @@ async function loadBalanceAndExchangeRate() {
   }
 
   try {
-    const rateResp = await fetch(`${API_URL}/exchangeRates?limit=25`, {
+    const rateResp = await fetch(`${API_URL}/exchangeRates?limit=50`, {
       credentials: "include",
     });
     const rateData = await rateResp.json();
