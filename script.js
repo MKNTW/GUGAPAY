@@ -1027,7 +1027,7 @@ function openExchangeModal(horizontalSwitch) {
         <!-- Блок с «Текущий курс», стрелкой и процентом -->
         <div style="position:absolute; top:10px; left:10px; display:flex; flex-direction:column; gap:4px;">
           <!-- Текущий курс -->
-          <div id="currentRateText" style="font-size:24px; font-weight:bold;">
+          <div id="currentRateText" style="font-size:24px; font-weight:bold; margin-left: 10px;">
             --
           </div>
           <!-- Стрелка, проценты, разница в рублях -->
