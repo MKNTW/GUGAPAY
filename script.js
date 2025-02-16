@@ -663,7 +663,7 @@ function createMainUI() {
       </button>
       <button id="payQRBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;margin-top: -5px;">
         <img src="90.png" style="width:40px;height:40px;">
-        Оплата
+        Оплатить
       </button>
     `;
     document.body.appendChild(container);
@@ -1138,33 +1138,34 @@ function drawExchangeChart(rates) {
 
   const ctx = document.getElementById("exchangeChart").getContext("2d");
   exchangeChartInstance = new Chart(ctx, {
-    type: "line",
+    type: 'line',
     data: {
-      labels,
-      datasets: [
-        {
-          label: "Курс",
-          data: dataPoints,
-          borderColor: "black",
-          fill: false,
-          tension: 0.4,
-          pointRadius: 0,
-        },
-      ],
+      labels: labels,
+      datasets: [{
+        label: 'Курс обмена',
+        data: dataPoints,
+        fill: false,
+        borderColor: 'black',
+        tension: 0.5,
+        pointRadius: 0,
+        borderCapStyle: 'round'
+      }]
     },
     options: {
+      layout: { padding: 0 },
       scales: {
         x: {
-          display: false,
-          grid: { display: false, drawBorder: false },
+          grid: { display: false, drawBorder: false, drawTicks: false, borderColor: 'transparent', borderWidth: 0 },
+          ticks: { display: false }
         },
         y: {
-          display: true,
-          grid: { display: false, drawBorder: false },
-        },
+          position: 'right',
+          grid: { display: true, drawBorder: false, drawTicks: false, borderColor: 'transparent', borderWidth: 0, color: 'rgba(0,0,0,0.1)' },
+          ticks: { beginAtZero: false }
+        }
       },
-      plugins: { legend: { display: false } },
-    },
+      plugins: { legend: { display: false } }
+    }
   });
 }
 
