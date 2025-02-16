@@ -113,8 +113,9 @@ function closeHistoryOrExchange() {
  *   cornerTopMargin,      // px
  *   cornerTopRadius,      // px (только верхние углы)
  *   hasVerticalScroll,    // bool (overflow-y: auto|hidden)
- *   closeBtnCenter        // bool (крестик по центру)
- * }).
+ * })
+ *
+ * Кнопка закрытия теперь всегда в правом верхнем углу.
  */
 function createModal(
   id,
@@ -124,7 +125,6 @@ function createModal(
     cornerTopMargin = 0,
     cornerTopRadius = 0,
     hasVerticalScroll = true,
-    closeBtnCenter = false,
   } = {}
 ) {
   // Удаляем старое, если есть
@@ -174,42 +174,22 @@ function createModal(
 
   let closeBtnHtml = "";
   if (showCloseBtn) {
-    if (closeBtnCenter) {
-      // Крестик по центру
-      closeBtnHtml = `
-        <button class="close-btn" style="
-          position:absolute;
-          top:10px;
-          left:50%;
-          transform:translateX(-50%);
-          border:none;
-          background:#000;
-          color:#fff;
-          width:30px;
-          height:30px;
-          font-size:18px;
-          cursor:pointer;">
-          ×
-        </button>
-      `;
-    } else {
-      // Крестик справа
-      closeBtnHtml = `
-        <button class="close-btn" style="
-          position:absolute;
-          top:10px;
-          right:10px;
-          border:none;
-          background:#000;
-          color:#fff;
-          width:30px;
-          height:30px;
-          font-size:18px;
-          cursor:pointer;">
-          ×
-        </button>
-      `;
-    }
+    // Кнопка закрытия всегда в правом верхнем углу
+    closeBtnHtml = `
+      <button class="close-btn" style="
+        position:absolute;
+        top:10px;
+        right:10px;
+        border:none;
+        background:#000;
+        color:#fff;
+        width:30px;
+        height:30px;
+        font-size:18px;
+        cursor:pointer;">
+        ×
+      </button>
+    `;
   }
 
   contentDiv.innerHTML = closeBtnHtml + innerHtml;
@@ -369,7 +349,6 @@ function openAuthModal() {
       cornerTopMargin: 0,
       cornerTopRadius: 0,
       hasVerticalScroll: true,
-      closeBtnCenter: false,
     }
   );
 
@@ -591,7 +570,7 @@ async function flushMinedCoins() {
 }
 
 /**************************************************
- * ОКНО "ПРОФИЛЬ" (большие скругления, крестик по центру)
+ * ОКНО "ПРОФИЛЬ"
  **************************************************/
 function openProfileModal() {
   createModal(
@@ -605,7 +584,6 @@ function openProfileModal() {
       cornerTopMargin: 50,
       cornerTopRadius: 20,
       hasVerticalScroll: true,
-      closeBtnCenter: true,
     }
   );
   document.getElementById("profileLogoutBtn").onclick = logout;
@@ -632,7 +610,6 @@ function openTransferModal() {
       cornerTopMargin: 50,
       cornerTopRadius: 20,
       hasVerticalScroll: true,
-      closeBtnCenter: true,
     }
   );
 
@@ -671,7 +648,7 @@ function openTransferModal() {
 }
 
 /**************************************************
- * ОКНО "ОПЛАТА ПО QR"
+ * ОКНО "ОПЛАТА ПО QR" — теперь запрашиваем камеру
  **************************************************/
 function openPayQRModal() {
   createModal(
@@ -685,7 +662,6 @@ function openPayQRModal() {
       cornerTopMargin: 50,
       cornerTopRadius: 20,
       hasVerticalScroll: true,
-      closeBtnCenter: true,
     }
   );
 
@@ -716,7 +692,6 @@ function confirmPayMerchantModal({ merchantId, amount, purpose }) {
       cornerTopMargin: 50,
       cornerTopRadius: 20,
       hasVerticalScroll: true,
-      closeBtnCenter: true,
     }
   );
 
@@ -783,11 +758,10 @@ async function openExchangeModal() {
       </div>
     `,
     {
-      showCloseBtn: false, // без кнопки X
-      cornerTopMargin: 0, // без отступа
-      cornerTopRadius: 0, // без скруглённых углов
+      showCloseBtn: true, // теперь всегда можно закрыть по крестику
+      cornerTopMargin: 0,
+      cornerTopRadius: 0,
       hasVerticalScroll: true,
-      closeBtnCenter: false,
     }
   );
 
@@ -984,7 +958,7 @@ function drawExchangeChart(rates) {
 }
 
 /**************************************************
- * ОКНО "ИСТОРИЯ" (нет вертикальной прокрутки)
+ * ОКНО "ИСТОРИЯ" — теперь можно прокручивать
  **************************************************/
 function openHistoryModal() {
   removeAllModals();
@@ -992,16 +966,15 @@ function openHistoryModal() {
     "historyModal",
     `
       <h2 style="text-align:center;">История операций</h2>
-      <div style="height:100%; overflow-y:hidden;">
+      <div>
         <ul id="transactionList" style="padding:0;list-style:none;margin:0;"></ul>
       </div>
     `,
     {
-      showCloseBtn: false,
+      showCloseBtn: true,
       cornerTopMargin: 0,
       cornerTopRadius: 0,
-      hasVerticalScroll: false,
-      closeBtnCenter: false,
+      hasVerticalScroll: true, // включаем вертикальный скролл
     }
   );
   fetchTransactionHistory();
@@ -1077,6 +1050,9 @@ function displayTransactionHistory(transactions) {
       let detailsText = "";
       let amountSign = "";
       let amountValue = formatBalance(tx.amount || 0);
+
+      // Всё окрашиваем в чёрный
+      let color = "#000";
 
       if (tx.type === "merchant_payment") {
         iconSrc = "90.png";
@@ -1161,10 +1137,7 @@ function displayTransactionHistory(transactions) {
 
       const amountEl = document.createElement("div");
       amountEl.style.fontWeight = "bold";
-      let color = "#000";
-      if (amountSign === "+") color = "green";
-      else if (amountSign === "-") color = "red";
-      amountEl.style.color = color;
+      amountEl.style.color = color; // всегда чёрный
       amountEl.textContent = `${amountSign} ${amountValue} ₲`;
 
       const timeEl = document.createElement("div");
@@ -1295,7 +1268,6 @@ function openOneTimeQRModal() {
       cornerTopMargin: 50,
       cornerTopRadius: 20,
       hasVerticalScroll: true,
-      closeBtnCenter: true,
     }
   );
 
@@ -1333,7 +1305,6 @@ function createMerchantQR(amount, purpose) {
       cornerTopMargin: 50,
       cornerTopRadius: 20,
       hasVerticalScroll: true,
-      closeBtnCenter: true,
     }
   );
   if (typeof QRCode === "function") {
@@ -1393,7 +1364,6 @@ function openMerchantTransferModal() {
       cornerTopMargin: 50,
       cornerTopRadius: 20,
       hasVerticalScroll: true,
-      closeBtnCenter: true,
     }
   );
 
@@ -1459,13 +1429,29 @@ function hideMainUI() {
 }
 
 /**************************************************
- * ПАРСИНГ QR (требуется реализация сканера)
+ * ПАРСИНГ QR + ЗАПРОС КАМЕРЫ
  **************************************************/
 function startUniversalQRScanner(videoElement, onResultCallback) {
-  // Заглушка. Здесь должен быть код инициализации QR-сканера,
-  // который после считывания вызывает onResultCallback(decodedString).
-  // В реальном проекте используйте, например, jsQR или ZXing.
-  console.log("QR Scanner started (stub).");
+  // При открытии окна «Оплата по QR» запрашиваем доступ к камере:
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    alert("Камера не поддерживается вашим браузером");
+    return;
+  }
+  navigator.mediaDevices
+    .getUserMedia({ video: { facingMode: "environment" } })
+    .then((stream) => {
+      videoElement.srcObject = stream;
+      videoElement.play();
+      // Здесь вы можете добавить логику декодирования QR.
+      // Для примера, вызовем onResultCallback(...) вручную через 5 секунд:
+      setTimeout(() => {
+        // Заглушка (демо): "сканируем" QR
+        // onResultCallback("guga://merchantId=DEMO&M=1.23&purpose=Test");
+      }, 5000);
+    })
+    .catch((err) => {
+      alert("Доступ к камере отклонён: " + err);
+    });
 }
 
 function parseMerchantQRData(qrString) {
