@@ -18,39 +18,31 @@ let exchangeChartInstance = null;
 /**************************************************
  * CSS АНИМАЦИИ
  **************************************************/
-const modalAnimationStyle = document.createElement("style");
-modalAnimationStyle.textContent = `
+// Добавим стили через <style> для модалок (снизу вверх) и вращения swapBtn
+const globalStyle = document.createElement("style");
+globalStyle.textContent = `
+  /* Анимация появления модалки (снизу вверх) */
   @keyframes slideUp {
     0% {
       transform: translateY(100%);
       opacity: 0;
     }
     100% {
-      transform: translateY(0);
+      transform: translateY(0%);
       opacity: 1;
     }
   }
   .modal-slide-up {
-    animation: slideUp 0.3s ease forwards;
+    animation: slideUp 0.5s ease forwards; /* более плавно: 0.5s */
   }
 
-  /* Анимация для swapBtn (когда жмём "⇄") */
-  @keyframes swapSpin {
-    0% {
-      transform: rotate(0deg) scale(1);
-    }
-    50% {
-      transform: rotate(180deg) scale(1.2);
-    }
-    100% {
-      transform: rotate(360deg) scale(1);
-    }
-  }
-  .swap-anim {
-    animation: swapSpin 0.3s ease;
+  /* Анимация вращения swapBtn */
+  .swap-rotate {
+    transition: transform 0.3s ease;
+    transform: rotate(360deg);
   }
 `;
-document.head.appendChild(modalAnimationStyle);
+document.head.appendChild(globalStyle);
 
 /**************************************************
  * УТИЛИТЫ
@@ -73,32 +65,38 @@ function hideGlobalLoading() {
 }
 
 /**************************************************
- * СОЗДАНИЕ/ОТКРЫТИЕ МОДАЛЬНЫХ ОКОН (ВЕСЬ ЭКРАН, СНИЗУ ВВЕРХ)
+ * СОЗДАНИЕ/ОТКРЫТИЕ МОДАЛЬНЫХ ОКОН
  **************************************************/
-function createModal(id, innerHtml, { showCloseBtn = false } = {}) {
+/**
+ * Параметр { showCloseBtn = false, cornerTopRounded = false }
+ *  cornerTopRounded = true => скругляем только верхние углы
+ */
+function createModal(id, innerHtml, { showCloseBtn = false, cornerTopRounded = false } = {}) {
+  // Если уже есть — удаляем
   const oldModal = document.getElementById(id);
   if (oldModal) oldModal.remove();
 
-  // Модал
   const modal = document.createElement("div");
   modal.id = id;
   modal.className = "modal";
-  // Ставим zIndex побольше, чтобы точно перекрыть всё (например, 9999)
-  modal.style.zIndex = "9999";
+  // z-index ниже, чем bottomBar => чтобы bottomBar был сверху
+  // но чуть выше, чем остальной контент
+  // Пользователь хочет, чтобы bottomBar был над модалкой,
+  // значит у bottomBar zIndex > у модалки.
+  // Допустим, bottomBar = 15000, тогда тут можно 14000 (или 10000).
+  modal.style.zIndex = "14000";
 
-  // Базовые стили
+  // Растягиваем на весь экран
   modal.style.position = "fixed";
   modal.style.top = "0";
   modal.style.left = "0";
   modal.style.width = "100%";
   modal.style.height = "100%";
   modal.style.background = "rgba(0,0,0,0.5)";
-
-  // Flex, чтобы контент прижимался к низу
   modal.style.display = "flex";
   modal.style.flexDirection = "column";
-  modal.style.justifyContent = "flex-end"; 
-  modal.style.alignItems = "center";
+  modal.style.alignItems = "flex-start"; 
+  modal.style.justifyContent = "flex-start";
 
   // Оверлей
   const overlay = document.createElement("div");
@@ -108,55 +106,57 @@ function createModal(id, innerHtml, { showCloseBtn = false } = {}) {
   overlay.style.left = "0";
   overlay.style.width = "100%";
   overlay.style.height = "100%";
-  overlay.style.zIndex = "1";
 
   // Контент
   const contentDiv = document.createElement("div");
-  contentDiv.className = "modal-content modal-slide-up"; // slideUp анимация
-  // Делаем без скруглений
-  contentDiv.style.borderRadius = "0";
-
-  // На весь экран сверху вниз (без отступов)
+  contentDiv.className = "modal-content modal-slide-up";
   contentDiv.style.width = "100%";
+  // минус высоту bottomBar, чтобы модалка не уезжала за bottomBar?
+  // Если хотим, чтобы модалка была за bottomBar, пусть будет 100%,
+  // bottomBar перекрывает низ.
   contentDiv.style.height = "100%";
   contentDiv.style.background = "#fff";
-  contentDiv.style.position = "relative";
   contentDiv.style.boxSizing = "border-box";
   contentDiv.style.overflowY = "auto";
+
+  // Скругляем только верхние углы, если cornerTopRounded
+  if (cornerTopRounded) {
+    contentDiv.style.borderRadius = "20px 20px 0 0";
+  } else {
+    contentDiv.style.borderRadius = "0";
+  }
+  contentDiv.style.position = "relative";
   contentDiv.style.padding = "20px";
 
   let closeBtnHtml = "";
   if (showCloseBtn) {
     closeBtnHtml = `
-      <button class="close-btn" 
+      <button class="close-btn"
               style="position:absolute;top:10px;right:10px;border:none;
-                     background-color:#000;color:#fff;width:30px;height:30px;
-                     font-size:18px;cursor:pointer;z-index:3;">
+                     background-color:#000;color:#fff;
+                     width:30px;height:30px;font-size:18px;cursor:pointer;">
         ×
       </button>
     `;
   }
-
   contentDiv.innerHTML = closeBtnHtml + innerHtml;
 
   modal.appendChild(overlay);
   modal.appendChild(contentDiv);
   document.body.appendChild(modal);
 
-  // Закрытие по клику на оверлей
+  // Закрытие по оверлею
   overlay.addEventListener("click", (e) => {
     if (e.target === overlay) {
       modal.remove();
     }
   });
 
-  // Закрытие по кнопке X
+  // Закрытие по X
   if (showCloseBtn) {
     const closeBtn = contentDiv.querySelector(".close-btn");
     if (closeBtn) {
-      closeBtn.addEventListener("click", () => {
-        modal.remove();
-      });
+      closeBtn.addEventListener("click", () => modal.remove());
     }
   }
 
@@ -288,7 +288,8 @@ function openAuthModal() {
         </div>
         <button id="toggleAuthBtn" style="margin-top:10px;">Войти/Зарегистрироваться</button>
       </div>
-    `
+    `,
+    { showCloseBtn: false, cornerTopRounded: false }
   );
 
   document.getElementById("loginSubmitBtn").addEventListener("click", login);
@@ -312,24 +313,23 @@ function openAuthModal() {
  * ГЛАВНЫЙ ЭКРАН
  **************************************************/
 function createMainUI() {
-  // Профильная иконка
+  // Профиль (только user, не merchant)
   if (!currentMerchantId && !document.getElementById("profileIcon")) {
     const profileIcon = document.createElement("img");
     profileIcon.id = "profileIcon";
     profileIcon.src = "68.png";
-    // Сделаем её чуть меньше
-    profileIcon.style.width = "32px";
-    profileIcon.style.height = "32px";
-    // Понижаем zIndex, чтобы модалки были выше (9999)
-    profileIcon.style.zIndex = "1000";
+    // допустим 35px
+    profileIcon.style.width = "35px";
+    profileIcon.style.height = "35px";
     profileIcon.style.position = "fixed";
     profileIcon.style.top = "10px";
     profileIcon.style.right = "10px";
     profileIcon.style.cursor = "pointer";
+    // zIndex меньше, чем у модалок (14000), пусть будет 12000
+    profileIcon.style.zIndex = "12000";
     profileIcon.title = "Профиль / Выход";
     document.body.appendChild(profileIcon);
 
-    // При клике — окно профиля (только кнопка "Выйти")
     profileIcon.addEventListener("click", openProfileModal);
   }
 
@@ -347,19 +347,21 @@ function createMainUI() {
     bottomBar.style.alignItems = "center";
     bottomBar.style.padding = "10px 0";
     bottomBar.style.boxShadow = "0 -2px 5px rgba(0,0,0,0.1)";
-    bottomBar.style.zIndex = "1000"; // modals = 9999
+    // zIndex выше, чем у модалок (14000), ставим 15000
+    bottomBar.style.zIndex = "15000";
 
+    // Сделаем фото немного больше, например 30px
     bottomBar.innerHTML = `
       <button id="btnMain" style="padding:10px;border:none;background:none;">
-        <img src="69.png" style="width:24px;height:24px;display:block;margin:0 auto;">
+        <img src="69.png" style="width:30px;height:30px;display:block;margin:0 auto;">
         Главная
       </button>
       <button id="historyBtn" style="padding:10px;border:none;background:none;">
-        <img src="70.png" style="width:24px;height:24px;display:block;margin:0 auto;">
+        <img src="70.png" style="width:30px;height:30px;display:block;margin:0 auto;">
         История
       </button>
       <button id="exchangeBtn" style="padding:10px;border:none;background:none;">
-        <img src="71.png" style="width:24px;height:24px;display:block;margin:0 auto;">
+        <img src="71.png" style="width:30px;height:30px;display:block;margin:0 auto;">
         Обменять
       </button>
     `;
@@ -378,18 +380,17 @@ function createMainUI() {
     });
   }
 
-  // Блоки баланса
+  // Показываем блоки баланса, майнинга
   const balanceDisplay = document.getElementById("balanceDisplay");
-  if (balanceDisplay) {
-    balanceDisplay.style.display = "block";
-  }
-  // Кнопка майнинга (mineContainer) — сделаем её меньше
+  if (balanceDisplay) balanceDisplay.style.display = "block";
+
+  // Кнопка майнинга немного больше
   const mineContainer = document.getElementById("mineContainer");
   if (mineContainer) {
     mineContainer.style.display = "block";
-    mineContainer.style.width = "180px";
-    mineContainer.style.height = "180px";
-    // или меняем сам mineBtn
+    // допустим сделаем 200x200
+    mineContainer.style.width = "200px";
+    mineContainer.style.height = "200px";
     const mineBtn = document.getElementById("mineBtn");
     if (mineBtn) {
       mineBtn.style.width = "100%";
@@ -397,31 +398,29 @@ function createMainUI() {
     }
   }
 
-  // ActionButtons
+  // ActionButtons ниже
   if (!document.getElementById("actionButtonsContainer")) {
     const container = document.createElement("div");
     container.id = "actionButtonsContainer";
-    // Располагаем ещё ниже
     container.style.position = "fixed";
-    container.style.top = "160px"; // делаем больше, чтобы было ниже
+    container.style.top = "200px";
     container.style.left = "50%";
     container.style.transform = "translateX(-50%)";
     container.style.display = "flex";
     container.style.flexDirection = "row";
     container.style.gap = "16px";
-    container.style.zIndex = "1000"; 
-    container.style.alignItems = "center";
+    // zIndex чуть ниже, чем у bottomBar (15000), пусть будет 12000
+    container.style.zIndex = "12000";
 
+    // Заменили 83.png → 90.png
+    // Размер такой же, как у "Перевести" 
     container.innerHTML = `
       <button id="transferBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;">
-        <!-- Меняем 83.png на 90.png -->
-        <img src="81.png" style="width:24px;height:24px;">
+        <img src="81.png" style="width:25px;height:25px;">
         Перевести
       </button>
       <button id="payQRBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;">
-        <!-- Здесь вместо 83.png -> 90.png, но вы писали 83.png на 90.png. 
-             Если именно payQRBtn нужно заменить, ставим 90.png: -->
-        <img src="90.png" style="width:24px;height:24px;">
+        <img src="90.png" style="width:25px;height:25px;">
         Оплата по QR
       </button>
     `;
@@ -442,15 +441,16 @@ function createMainUI() {
   updateInterval = setInterval(fetchUserData, 2000);
 }
 
-/** Окно Профиль (только кнопка «Выйти из аккаунта») **/
+// Профиль
 function openProfileModal() {
+  // Скруглённые верхние углы => cornerTopRounded: true
   createModal(
     "profileModal",
     `
       <h3>Профиль</h3>
       <button id="profileLogoutBtn" style="padding:10px;margin-top:20px;">Выйти из аккаунта</button>
     `,
-    { showCloseBtn: true }
+    { showCloseBtn: true, cornerTopRounded: true }
   );
   document.getElementById("profileLogoutBtn").onclick = logout;
 }
@@ -544,6 +544,7 @@ async function flushMinedCoins() {
  * МОДАЛКА "ПЕРЕВОД"
  **************************************************/
 function openTransferModal() {
+  // Скруглённые верхние углы
   createModal(
     "transferModal",
     `
@@ -556,7 +557,7 @@ function openTransferModal() {
         <button id="sendTransferBtn" style="padding:10px;">Отправить</button>
       </div>
     `,
-    { showCloseBtn: true }
+    { showCloseBtn: true, cornerTopRounded: true }
   );
 
   const sendBtn = document.getElementById("sendTransferBtn");
@@ -601,12 +602,9 @@ function openPayQRModal() {
     "payQRModal",
     `
       <h3>Оплата по QR</h3>
-      <!-- По просьбе, картинку 83.png меняем на 90.png, но 
-           вы уже указали, что payQRBtn = 90.png. 
-           Здесь сама модалка - не меняем иконку -->
       <video id="opPayVideo" style="width:100%;max-width:600px; border:2px solid #333; margin-top:10px;" muted playsinline></video>
     `,
-    { showCloseBtn: true }
+    { showCloseBtn: true, cornerTopRounded: true }
   );
 
   const videoEl = document.getElementById("opPayVideo");
@@ -631,7 +629,7 @@ function confirmPayMerchantModal({ merchantId, amount, purpose }) {
       <p>Назначение: ${purpose}</p>
       <button id="confirmPayBtn" style="padding:10px;margin-top:10px;">Оплатить</button>
     `,
-    { showCloseBtn: true }
+    { showCloseBtn: true, cornerTopRounded: true }
   );
 
   document.getElementById("confirmPayBtn").onclick = async () => {
@@ -658,7 +656,7 @@ function confirmPayMerchantModal({ merchantId, amount, purpose }) {
 }
 
 /**************************************************
- * ОБМЕН ВАЛЮТЫ
+ * ОБМЕН
  **************************************************/
 let currentExchangeDirection = "coin_to_rub";
 let currentExchangeRate = 0;
@@ -677,14 +675,18 @@ async function openExchangeModal() {
       <p id="currentRateDisplay" style="text-align:center;margin:10px 0;">Курс: --</p>
       <div style="display:flex;justify-content:center;gap:10px;align-items:center;margin-top:20px;">
         <div style="flex:1;text-align:center;">
-          <p id="fromLabel"><img src="15.png" alt="GUGA" style="width:28px;vertical-align:middle;"> GUGA</p>
+          <p id="fromLabel">
+            <img src="15.png" alt="GUGA" style="width:25px;vertical-align:middle;"> GUGA
+          </p>
           <input type="number" id="amountInput" placeholder="0.00" style="width:100%;padding:8px;" oninput="updateExchange()">
           <p id="balanceInfo" style="font-size:14px;color:#666;">0.00000 ₲</p>
         </div>
-        <!-- swapBtn с анимацией: при клике добавим .swap-anim -->
+        <!-- swapBtn -->
         <button id="swapBtn" style="padding:10px;border:none;background:none;cursor:pointer;font-size:24px;">⇄</button>
         <div style="flex:1;text-align:center;">
-          <p id="toLabel"><img src="18.png" alt="RUB" style="width:28px;vertical-align:middle;"> RUB</p>
+          <p id="toLabel">
+            <img src="18.png" alt="RUB" style="width:25px;vertical-align:middle;"> RUB
+          </p>
           <input type="text" id="toAmount" disabled style="width:100%;padding:8px;">
           <p id="toBalanceInfo" style="font-size:14px;color:#666;">0.00 ₽</p>
         </div>
@@ -692,28 +694,26 @@ async function openExchangeModal() {
       <div style="text-align:center;margin-top:20px;">
         <button id="btnPerformExchange" style="padding:10px;">Обменять</button>
       </div>
-    `
+    `,
+    { showCloseBtn: true, cornerTopRounded: true }
   );
 
-  currentExchangeDirection = "coin_to_rub";
-  updateCurrencyLabels();
+  // swapBtn анимация + swapCurrencies
+  const swapBtn = document.getElementById("swapBtn");
+  swapBtn.addEventListener("click", () => {
+    swapBtn.classList.add("swap-rotate");
+    setTimeout(() => {
+      swapBtn.classList.remove("swap-rotate");
+    }, 300);
+    swapCurrencies();
+  });
+
   try {
     await loadBalanceAndExchangeRate();
     updateCurrentRateDisplay();
     drawExchangeChart();
     document.getElementById("btnPerformExchange").onclick = () => {
       handleExchange(currentExchangeDirection);
-    };
-    const swapBtn = document.getElementById("swapBtn");
-    swapBtn.onclick = () => {
-      // добавляем класс анимации
-      swapBtn.classList.add("swap-anim");
-      // через 300мс уберём класс
-      setTimeout(() => {
-        swapBtn.classList.remove("swap-anim");
-      }, 300);
-
-      swapCurrencies();
     };
   } catch (err) {
     console.error("openExchangeModal error:", err);
@@ -741,6 +741,7 @@ function swapCurrencies() {
   currentExchangeDirection =
     currentExchangeDirection === "coin_to_rub" ? "rub_to_coin" : "coin_to_rub";
   updateCurrencyLabels();
+  // очищаем поля
   document.getElementById("amountInput").value = "";
   document.getElementById("toAmount").value = "";
   loadBalanceAndExchangeRate();
@@ -750,11 +751,11 @@ function updateCurrencyLabels() {
   const fromLabel = document.getElementById("fromLabel");
   const toLabel = document.getElementById("toLabel");
   if (currentExchangeDirection === "coin_to_rub") {
-    fromLabel.innerHTML = `<img src="15.png" alt="GUGA" style="width:28px;vertical-align:middle;"> GUGA`;
-    toLabel.innerHTML   = `<img src="18.png" alt="RUB" style="width:28px;vertical-align:middle;"> RUB`;
+    fromLabel.innerHTML = `<img src="15.png" alt="GUGA" style="width:25px;vertical-align:middle;"> GUGA`;
+    toLabel.innerHTML   = `<img src="18.png" alt="RUB" style="width:25px;vertical-align:middle;"> RUB`;
   } else {
-    fromLabel.innerHTML = `<img src="18.png" alt="RUB" style="width:28px;vertical-align:middle;"> RUB`;
-    toLabel.innerHTML   = `<img src="15.png" alt="GUGA" style="width:28px;vertical-align:middle;"> GUGA`;
+    fromLabel.innerHTML = `<img src="18.png" alt="RUB" style="width:25px;vertical-align:middle;"> RUB`;
+    toLabel.innerHTML   = `<img src="15.png" alt="GUGA" style="width:25px;vertical-align:middle;"> GUGA`;
   }
 }
 
@@ -786,9 +787,7 @@ async function handleExchange(direction) {
       }
       alert("✅ Обмен выполнен! " + msg);
       lastDirection = direction;
-      setTimeout(() => {
-        lastDirection = null;
-      }, 5000);
+      setTimeout(() => (lastDirection = null), 5000);
       await loadBalanceAndExchangeRate();
     } else {
       alert("❌ Ошибка обмена: " + data.error);
@@ -896,7 +895,7 @@ function drawExchangeChart(rates) {
 }
 
 /**************************************************
- * МОДАЛКА "ИСТОРИЯ" + ПЕРЕРАБОТАННАЯ ФУНКЦИЯ
+ * ИСТОРИЯ
  **************************************************/
 function openHistoryModal() {
   createModal(
@@ -906,7 +905,8 @@ function openHistoryModal() {
       <div style="height:100%; overflow-y:auto;">
         <ul id="transactionList" style="padding:0;list-style:none;margin:0;"></ul>
       </div>
-    `
+    `,
+    { showCloseBtn: false, cornerTopRounded: false }
   );
   fetchTransactionHistory();
 }
@@ -932,7 +932,7 @@ async function fetchTransactionHistory() {
 }
 
 /**************************************************
- * ВАЖНО: ПЕРЕРАБОТАННАЯ ФУНКЦИЯ
+ * ПЕРЕРАБОТАННАЯ ФУНКЦИЯ
  * DISPLAYTRANSACTIONHISTORY (И getDateLabel)
  **************************************************/
 function displayTransactionHistory(transactions) {
@@ -945,7 +945,7 @@ function displayTransactionHistory(transactions) {
     return;
   }
 
-  // Группируем транзакции по датам
+  // группировка по датам
   const groups = {};
   transactions.forEach((tx) => {
     const d = new Date(tx.client_time || tx.created_at);
@@ -953,15 +953,13 @@ function displayTransactionHistory(transactions) {
     if (!groups[label]) groups[label] = [];
     groups[label].push(tx);
   });
-
-  // Сортируем
   const sortedDates = Object.keys(groups).sort((a, b) => {
     const dA = new Date(groups[a][0].client_time || groups[a][0].created_at);
     const dB = new Date(groups[b][0].client_time || groups[b][0].created_at);
     return dB - dA;
   });
 
-  sortedDates.forEach((dateStr, dateIndex) => {
+  sortedDates.forEach((dateStr) => {
     const dateItem = document.createElement("li");
     dateItem.style.listStyle = "none";
     dateItem.style.marginTop = "20px";
@@ -973,13 +971,11 @@ function displayTransactionHistory(transactions) {
     dateHeader.style.marginBottom = "10px";
     dateHeader.style.fontSize = "16px";
     dateHeader.style.color = "#333";
-
     dateItem.appendChild(dateHeader);
 
-    const dayTransactions = groups[dateStr];
-    dayTransactions.forEach((tx) => {
+    const dayTx = groups[dateStr];
+    dayTx.forEach((tx) => {
       const timeStr = new Date(tx.client_time || tx.created_at).toLocaleTimeString("ru-RU");
-
       let iconSrc = "";
       let titleText = "";
       let detailsText = "";
@@ -987,8 +983,7 @@ function displayTransactionHistory(transactions) {
       let amountValue = formatBalance(tx.amount || 0);
 
       if (tx.type === "merchant_payment") {
-        // Меняем 56.webp на 90.png
-        iconSrc = "90.png";
+        iconSrc = "90.png"; // заменили 56.webp → 90.png
         titleText = "Оплата по QR";
         detailsText = `Мерчант: ${
           tx.merchant_id ||
@@ -996,20 +991,17 @@ function displayTransactionHistory(transactions) {
           "???"
         }`;
         amountSign = "-";
-      }
-      else if (tx.from_user_id === currentUserId) {
+      } else if (tx.from_user_id === currentUserId) {
         iconSrc = "67.png";
         titleText = "Отправлено";
         detailsText = `Кому: ${tx.to_user_id}`;
         amountSign = "-";
-      }
-      else if (tx.to_user_id === currentUserId) {
+      } else if (tx.to_user_id === currentUserId) {
         iconSrc = "66.png";
         titleText = "Получено";
         detailsText = `От кого: ${tx.from_user_id}`;
         amountSign = "+";
-      }
-      else if (tx.type === "exchange") {
+      } else if (tx.type === "exchange") {
         iconSrc = "67.png";
         titleText = "Обмен";
         detailsText = `Направление: ${
@@ -1017,8 +1009,7 @@ function displayTransactionHistory(transactions) {
         }`;
         amountSign = (tx.direction === "rub_to_coin") ? "+" : "-";
         amountValue = formatBalance(tx.amount);
-      }
-      else {
+      } else {
         iconSrc = "67.png";
         titleText = "Операция";
         detailsText = "Детали не указаны";
@@ -1053,7 +1044,7 @@ function displayTransactionHistory(transactions) {
       leftDiv.appendChild(iconImg);
 
       const centerDiv = document.createElement("div");
-      centerDiv.style.flex = "1"; 
+      centerDiv.style.flex = "1";
 
       const titleEl = document.createElement("div");
       titleEl.textContent = titleText;
@@ -1096,7 +1087,6 @@ function displayTransactionHistory(transactions) {
 
       dateItem.appendChild(cardDiv);
     });
-
     list.appendChild(dateItem);
   });
 }
@@ -1204,7 +1194,8 @@ function openOneTimeQRModal() {
       <label>Назначение:</label>
       <input type="text" id="qrPurposeInput" style="padding:8px;font-size:16px;">
       <button id="createQRBtn" style="padding:10px;margin-top:10px;">Создать</button>
-    `
+    `,
+    { showCloseBtn: true, cornerTopRounded: true }
   );
 
   document.getElementById("createQRBtn").onclick = () => {
@@ -1233,7 +1224,8 @@ function createMerchantQR(amount, purpose) {
     `
       <div id="merchantQRModalContainer"></div>
       <p style="margin-top:10px;">Запрашиваемая сумма: ${amount} ₲</p>
-    `
+    `,
+    { showCloseBtn: true, cornerTopRounded: true }
   );
   if (typeof QRCode === "function") {
     const container = document.getElementById("merchantQRModalContainer");
@@ -1283,7 +1275,8 @@ function openMerchantTransferModal() {
       <label>Сумма (₲):</label>
       <input type="number" id="merchantTransferAmountInput" step="0.00001" style="padding:8px;font-size:16px;">
       <button id="merchantTransferSendBtn" style="padding:10px;margin-top:10px;">Отправить</button>
-    `
+    `,
+    { showCloseBtn: true, cornerTopRounded: true }
   );
 
   document.getElementById("merchantTransferSendBtn").onclick = async () => {
@@ -1341,6 +1334,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // "Майнить"
   const mineBtn = document.getElementById("mineBtn");
   if (mineBtn) {
     mineBtn.addEventListener("click", mineCoins);
