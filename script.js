@@ -688,7 +688,7 @@ function createMainUI() {
  **************************************************/
 async function fetchUserData() {
   try {
-    const resp = await fetch(`${API_URL}/user`, { credentials: "include" });
+    const resp = await fetch(${API_URL}/user, { credentials: "include" });
     const data = await resp.json();
     if (data.success && data.user) {
       currentUserId = data.user.user_id;
@@ -698,6 +698,10 @@ async function fetchUserData() {
       const balanceValue = document.getElementById("balanceValue");
       if (balanceValue) {
         balanceValue.textContent = formatBalance(coinBalance, 5) + " ₲";
+      }
+      const userIdEl = document.getElementById("userIdDisplay");
+      if (userIdEl) {
+        userIdEl.textContent = "ID: " + currentUserId;
       }
       const rubBalanceInfo = document.getElementById("rubBalanceInfo");
       if (rubBalanceInfo) {
