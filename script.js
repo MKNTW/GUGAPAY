@@ -85,9 +85,13 @@ function closeModalWithAnimation(modalId) {
   content.classList.remove("modal-slide-up");
   content.classList.add("modal-slide-down");
   // По окончании анимации — remove
-  content.addEventListener("animationend", () => {
-    modalEl.remove();
-  }, { once: true });
+  content.addEventListener(
+    "animationend",
+    () => {
+      modalEl.remove();
+    },
+    { once: true }
+  );
 }
 
 /** Закрыть "История" или "Обмен" при нажатии на "Главная" **/
@@ -120,7 +124,7 @@ function createModal(
     cornerTopMargin = 0,
     cornerTopRadius = 0,
     hasVerticalScroll = true,
-    closeBtnCenter = false
+    closeBtnCenter = false,
   } = {}
 ) {
   // Удаляем старое, если есть
@@ -263,6 +267,7 @@ async function login() {
         alert("❌ Ваш аккаунт заблокирован");
         return;
       }
+      // Попробуем мерчант-вход:
       const merchResp = await fetch(`${API_URL}/merchantLogin`, {
         method: "POST",
         credentials: "include",
@@ -364,7 +369,7 @@ function openAuthModal() {
       cornerTopMargin: 0,
       cornerTopRadius: 0,
       hasVerticalScroll: true,
-      closeBtnCenter: false
+      closeBtnCenter: false,
     }
   );
 
@@ -600,7 +605,7 @@ function openProfileModal() {
       cornerTopMargin: 50,
       cornerTopRadius: 20,
       hasVerticalScroll: true,
-      closeBtnCenter: true
+      closeBtnCenter: true,
     }
   );
   document.getElementById("profileLogoutBtn").onclick = logout;
@@ -627,7 +632,7 @@ function openTransferModal() {
       cornerTopMargin: 50,
       cornerTopRadius: 20,
       hasVerticalScroll: true,
-      closeBtnCenter: true
+      closeBtnCenter: true,
     }
   );
 
@@ -680,7 +685,7 @@ function openPayQRModal() {
       cornerTopMargin: 50,
       cornerTopRadius: 20,
       hasVerticalScroll: true,
-      closeBtnCenter: true
+      closeBtnCenter: true,
     }
   );
 
@@ -711,7 +716,7 @@ function confirmPayMerchantModal({ merchantId, amount, purpose }) {
       cornerTopMargin: 50,
       cornerTopRadius: 20,
       hasVerticalScroll: true,
-      closeBtnCenter: true
+      closeBtnCenter: true,
     }
   );
 
@@ -778,11 +783,11 @@ async function openExchangeModal() {
       </div>
     `,
     {
-      showCloseBtn: false,    // без кнопки X
-      cornerTopMargin: 0,     // без отступа
-      cornerTopRadius: 0,     // без скруглённых углов
+      showCloseBtn: false, // без кнопки X
+      cornerTopMargin: 0, // без отступа
+      cornerTopRadius: 0, // без скруглённых углов
       hasVerticalScroll: true,
-      closeBtnCenter: false
+      closeBtnCenter: false,
     }
   );
 
@@ -836,10 +841,10 @@ function updateCurrencyLabels() {
   const toLabel = document.getElementById("toLabel");
   if (currentExchangeDirection === "coin_to_rub") {
     fromLabel.innerHTML = `<img src="15.png" alt="GUGA" style="width:25px;vertical-align:middle;"> GUGA`;
-    toLabel.innerHTML   = `<img src="18.png" alt="RUB" style="width:25px;vertical-align:middle;"> RUB`;
+    toLabel.innerHTML = `<img src="18.png" alt="RUB" style="width:25px;vertical-align:middle;"> RUB`;
   } else {
     fromLabel.innerHTML = `<img src="18.png" alt="RUB" style="width:25px;vertical-align:middle;"> RUB`;
-    toLabel.innerHTML   = `<img src="15.png" alt="GUGA" style="width:25px;vertical-align:middle;"> GUGA`;
+    toLabel.innerHTML = `<img src="15.png" alt="GUGA" style="width:25px;vertical-align:middle;"> GUGA`;
   }
 }
 
@@ -850,7 +855,7 @@ async function handleExchange(direction) {
     return;
   }
   if (lastDirection === direction) {
-    alert("Нельзя подряд делать одинаковые операции");
+    alert("❌ Нельзя подряд делать одинаковые операции");
     return;
   }
   showGlobalLoading();
@@ -996,7 +1001,7 @@ function openHistoryModal() {
       cornerTopMargin: 0,
       cornerTopRadius: 0,
       hasVerticalScroll: false,
-      closeBtnCenter: false
+      closeBtnCenter: false,
     }
   );
   fetchTransactionHistory();
@@ -1063,7 +1068,9 @@ function displayTransactionHistory(transactions) {
     dateItem.appendChild(dateHeader);
 
     groups[dateStr].forEach((tx) => {
-      const timeStr = new Date(tx.client_time || tx.created_at).toLocaleTimeString("ru-RU");
+      const timeStr = new Date(tx.client_time || tx.created_at).toLocaleTimeString(
+        "ru-RU"
+      );
 
       let iconSrc = "";
       let titleText = "";
@@ -1105,7 +1112,7 @@ function displayTransactionHistory(transactions) {
       }
 
       const cardDiv = document.createElement("div");
-      cardDiv.style.background = "#f7f7f7"; 
+      cardDiv.style.background = "#f7f7f7";
       cardDiv.style.borderRadius = "8px";
       cardDiv.style.display = "flex";
       cardDiv.style.alignItems = "center";
@@ -1118,7 +1125,7 @@ function displayTransactionHistory(transactions) {
       leftDiv.style.minWidth = "44px";
       leftDiv.style.minHeight = "44px";
       leftDiv.style.borderRadius = "50%";
-      leftDiv.style.background = "#eeeeee"; 
+      leftDiv.style.background = "#eeeeee";
       leftDiv.style.display = "flex";
       leftDiv.style.alignItems = "center";
       leftDiv.style.justifyContent = "center";
@@ -1288,7 +1295,7 @@ function openOneTimeQRModal() {
       cornerTopMargin: 50,
       cornerTopRadius: 20,
       hasVerticalScroll: true,
-      closeBtnCenter: true
+      closeBtnCenter: true,
     }
   );
 
@@ -1312,7 +1319,9 @@ function calcRubEquivalent() {
 }
 
 function createMerchantQR(amount, purpose) {
-  const qrData = `guga://merchantId=${currentMerchantId}&amount=${amount}&purpose=${encodeURIComponent(purpose)}`;
+  const qrData = `guga://merchantId=${currentMerchantId}&amount=${amount}&purpose=${encodeURIComponent(
+    purpose
+  )}`;
   createModal(
     "merchantQRModal",
     `
@@ -1324,7 +1333,7 @@ function createMerchantQR(amount, purpose) {
       cornerTopMargin: 50,
       cornerTopRadius: 20,
       hasVerticalScroll: true,
-      closeBtnCenter: true
+      closeBtnCenter: true,
     }
   );
   if (typeof QRCode === "function") {
@@ -1339,7 +1348,8 @@ function createMerchantQR(amount, purpose) {
       });
     }
   } else {
-    document.getElementById("merchantQRModalContainer").textContent = "QR data: " + qrData;
+    document.getElementById("merchantQRModalContainer").textContent =
+      "QR data: " + qrData;
   }
   monitorPayment(qrData);
 }
@@ -1348,7 +1358,9 @@ function monitorPayment(qrData) {
   const timer = setInterval(async () => {
     try {
       const resp = await fetch(
-        `${API_URL}/checkPaymentStatus?merchantId=${currentMerchantId}&qrData=${encodeURIComponent(qrData)}`,
+        `${API_URL}/checkPaymentStatus?merchantId=${currentMerchantId}&qrData=${encodeURIComponent(
+          qrData
+        )}`,
         { credentials: "include" }
       );
       const data = await resp.json();
@@ -1381,7 +1393,7 @@ function openMerchantTransferModal() {
       cornerTopMargin: 50,
       cornerTopRadius: 20,
       hasVerticalScroll: true,
-      closeBtnCenter: true
+      closeBtnCenter: true,
     }
   );
 
@@ -1424,6 +1436,55 @@ function updateUI() {
   } else {
     openAuthModal();
   }
+}
+
+/**************************************************
+ * УДАЛИТЬ ВСЕ МОДАЛКИ
+ **************************************************/
+function removeAllModals() {
+  const modals = document.querySelectorAll(".modal");
+  modals.forEach((m) => m.remove());
+}
+
+/**************************************************
+ * СПРЯТАТЬ ГЛАВНУЮ UI (для мерчанта)
+ **************************************************/
+function hideMainUI() {
+  const balanceDisplay = document.getElementById("balanceDisplay");
+  if (balanceDisplay) balanceDisplay.style.display = "none";
+  const mineContainer = document.getElementById("mineContainer");
+  if (mineContainer) mineContainer.style.display = "none";
+  const actionContainer = document.getElementById("actionButtonsContainer");
+  if (actionContainer) actionContainer.remove();
+}
+
+/**************************************************
+ * ПАРСИНГ QR (требуется реализация сканера)
+ **************************************************/
+function startUniversalQRScanner(videoElement, onResultCallback) {
+  // Заглушка. Здесь должен быть код инициализации QR-сканера,
+  // который после считывания вызывает onResultCallback(decodedString).
+  // В реальном проекте используйте, например, jsQR или ZXing.
+  console.log("QR Scanner started (stub).");
+}
+
+function parseMerchantQRData(qrString) {
+  // Пример QR: guga://merchantId=MERCH123&amount=12.34&purpose=Some%20Text
+  const obj = { merchantId: null, amount: 0, purpose: "" };
+  try {
+    if (!qrString.startsWith("guga://")) return obj;
+    const query = qrString.replace("guga://", "");
+    const parts = query.split("&");
+    for (const p of parts) {
+      const [key, val] = p.split("=");
+      if (key === "merchantId") obj.merchantId = val;
+      if (key === "amount") obj.amount = parseFloat(val);
+      if (key === "purpose") obj.purpose = decodeURIComponent(val);
+    }
+  } catch (e) {
+    console.error("parseMerchantQRData error:", e);
+  }
+  return obj;
 }
 
 /**************************************************
