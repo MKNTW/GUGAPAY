@@ -514,11 +514,11 @@ function openAuthModal() {
       ">
 
         <!-- Логотип или заголовок (примерно по центру) -->
-        <h2 style="text-align:center; margin:0; font-family:sans-serif;"></h2>
+        <h2 style="text-align:center; margin:0; font-family:sans-serif;">GUGACOIN</h2>
 
         <!-- Блок Входа -->
         <div id="loginSection" style="display:flex; flex-direction:column; gap:8px;">
-          <h4 style="margin:0; text-align:center;">Вход</h4>
+          <h4 style="margin:0; text-align:center;"></h4>
           <input 
             type="text" 
             id="loginInput" 
@@ -564,7 +564,7 @@ function openAuthModal() {
 
         <!-- Блок Регистрации (изначально скрыт) -->
         <div id="registerSection" style="display:none; flex-direction:column; gap:8px;">
-          <h4 style="margin:0; text-align:center;">Регистрация</h4>
+          <h4 style="margin:0; text-align:center;"></h4>
           <input 
             type="text" 
             id="regLogin" 
