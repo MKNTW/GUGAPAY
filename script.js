@@ -716,7 +716,6 @@ async function fetchUserData() {
 /**************************************************
  * МАЙНИНГ
  **************************************************/
-let pendingMinedCoins = 0; // Нет localStorage
 
 function mineCoins() {
   pendingMinedCoins += 0.00001;
