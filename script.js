@@ -939,6 +939,8 @@ function openExchangeModal(horizontalSwitch) {
       <div style="background:rgb(247, 247, 247); border-radius:10px; 
                   padding:10px; max-width:600px; margin:20px auto;">
         
+        <!-- Удалили <p id="currentRateDisplay">Курс: --</p>, чтобы использовать только currentRateText -->
+
         <div style="display:flex;justify-content:center;gap:10px;align-items:center;margin-top:20px;">
           <div style="flex:1;text-align:center;">
             <p id="fromLabel">
@@ -981,8 +983,9 @@ function openExchangeModal(horizontalSwitch) {
 
   loadBalanceAndExchangeRate()
     .then(() => {
-      updateCurrentRateDisplay();
-      drawExchangeChart(); // Построим график и обновим инфо
+      // Вместо updateCurrentRateDisplay() (которая тоже обновляет currentRateText) –
+      // сразу строим график, там тоже вызывается updateCurrentRateDisplay().
+      drawExchangeChart(); 
       document.getElementById("btnPerformExchange").onclick = () => {
         handleExchange(currentExchangeDirection);
       };
@@ -1008,7 +1011,6 @@ function updateExchange() {
       document.getElementById("toAmount").value = formatBalance(result, 5);
     }
   } else {
-    // Если пусто/0/некорректно => "0.00" / "0.00000"
     if (currentExchangeDirection === "coin_to_rub") {
       document.getElementById("toAmount").value = "0.00";
     } else {
@@ -1111,7 +1113,9 @@ async function loadBalanceAndExchangeRate() {
     const rateData = await rateResp.json();
     if (rateData.success && rateData.rates?.length) {
       currentExchangeRate = parseFloat(rateData.rates[0].exchange_rate);
+      // После получения курса сразу рисуем график:
       drawExchangeChart(rateData.rates);
+      // И обновляем надпись «1 ₲ = ...»:
       updateCurrentRateDisplay();
     }
   } catch (err) {
@@ -1120,18 +1124,13 @@ async function loadBalanceAndExchangeRate() {
 }
 
 function updateCurrentRateDisplay() {
+  // Убираем обращения к #currentRateDisplay
+  // Пишем только в currentRateText (блок над графиком)
+  const currentRateText = document.getElementById("currentRateText");
   if (!currentExchangeRate) {
-    document.getElementById("currentRateDisplay").textContent = "--";
-    // Обновим «Текущий курс» сверху слева, если нужно
-    const currentRateText = document.getElementById("currentRateText");
     if (currentRateText) currentRateText.textContent = "1 ₲ = --";
     return;
   }
-  document.getElementById("currentRateDisplay").textContent =
-    "1 ₲ = " + formatBalance(currentExchangeRate, 2) + " ₽";
-
-  // Обновим «Текущий курс» сверху слева
-  const currentRateText = document.getElementById("currentRateText");
   if (currentRateText) {
     currentRateText.textContent = "1 ₲ = " + formatBalance(currentExchangeRate, 2) + " ₽";
   }
@@ -1154,8 +1153,6 @@ function drawExchangeChart(rates) {
   const dataPoints = sorted.map((r) => parseFloat(r.exchange_rate));
 
   // Рассчитываем изменение за период (между первым и последним)
-  // Предположим, что самый первый в sorted — это "24 часа назад",
-  // а последний — "текущий". Тогда:
   const firstRate = dataPoints[0];
   const lastRate = dataPoints[dataPoints.length - 1];
   const diff = lastRate - firstRate;
@@ -1167,13 +1164,13 @@ function drawExchangeChart(rates) {
   // Обновляем стрелку, цвет и текст
   if (diff > 0) {
     rateChangeArrow.textContent = "↑";
-    rateChangeArrow.style.color = "rgb(75, 168, 87)"; // зелёный
+    rateChangeArrow.style.color = "rgb(75, 168, 87)";
     rateChangePercent.textContent = `+${percentChange.toFixed(2)}%`;
     rateChangePercent.style.color = "rgb(75, 168, 87)";
     rateChangeRub.textContent = `+${diff.toFixed(2)}₽`;
   } else if (diff < 0) {
     rateChangeArrow.textContent = "↓";
-    rateChangeArrow.style.color = "rgb(210, 27, 27)"; // красный
+    rateChangeArrow.style.color = "rgb(210, 27, 27)";
     rateChangePercent.textContent = `${percentChange.toFixed(2)}%`;
     rateChangePercent.style.color = "rgb(210, 27, 27)";
     rateChangeRub.textContent = `${diff.toFixed(2)}₽`;
@@ -1186,7 +1183,7 @@ function drawExchangeChart(rates) {
     rateChangeRub.textContent = "+0.00₽";
   }
 
-  // Построение графика Chart.js
+  // Рисуем график (Chart.js)
   const ctx = document.getElementById("exchangeChart").getContext("2d");
   exchangeChartInstance = new Chart(ctx, {
     type: 'line',
@@ -1232,7 +1229,6 @@ function drawExchangeChart(rates) {
     }
   });
 }
-
 
 /**************************************************
  * ИСТОРИЯ (без кнопки закрытия, без радиуса)
