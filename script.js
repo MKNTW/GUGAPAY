@@ -500,47 +500,159 @@ function openAuthModal() {
   createModal(
     "authModal",
     `
-      <h2 style="text-align:center;">GugaCoin</h2>
-      <div style="display:flex;flex-direction:column;gap:12px;">
-        <div id="loginSection">
-          <h4>Вход</h4>
-          <input type="text" id="loginInput" placeholder="Логин" style="padding:8px;font-size:16px;width:100%;">
-          <input type="password" id="passwordInput" placeholder="Пароль" style="padding:8px;font-size:16px;width:100%;margin-top:8px;">
-          <button id="loginSubmitBtn" style="padding:10px;margin-top:8px;">Войти</button>
+      <!-- Контейнер с общим светлым фоном и скруглёнными краями -->
+      <div style="
+        background:#f7f7f7;
+        border-radius:20px;
+        padding:20px;
+        max-width:400px;
+        margin:40px auto 0 auto;
+        box-shadow:0 2px 5px rgba(0,0,0,0.1);
+        display:flex;
+        flex-direction:column;
+        gap:16px;
+      ">
+
+        <!-- Логотип или заголовок (примерно по центру) -->
+        <h2 style="text-align:center; margin:0; font-family:sans-serif;">GugaCoin</h2>
+
+        <!-- Блок Входа -->
+        <div id="loginSection" style="display:flex; flex-direction:column; gap:8px;">
+          <h4 style="margin:0; text-align:center;">Вход</h4>
+          <input 
+            type="text" 
+            id="loginInput" 
+            placeholder="Логин" 
+            style="
+              padding:10px;
+              font-size:16px;
+              width:100%;
+              border:none;
+              border-radius:8px;
+              outline:none;
+            "
+          >
+          <input 
+            type="password" 
+            id="passwordInput" 
+            placeholder="Пароль" 
+            style="
+              padding:10px;
+              font-size:16px;
+              width:100%;
+              border:none;
+              border-radius:8px;
+              outline:none;
+            "
+          >
+          <button 
+            id="loginSubmitBtn" 
+            style="
+              padding:10px;
+              margin-top:4px;
+              border:none;
+              border-radius:8px;
+              font-size:16px;
+              background:#000;
+              color:#fff;
+              cursor:pointer;
+            "
+          >
+            Войти
+          </button>
         </div>
-        <div id="registerSection" style="display:none;">
-          <h4>Регистрация</h4>
-          <input type="text" id="regLogin" placeholder="Логин" style="padding:8px;font-size:16px;width:100%;">
-          <input type="password" id="regPassword" placeholder="Пароль" style="padding:8px;font-size:16px;width:100%;margin-top:8px;">
-          <button id="registerSubmitBtn" style="padding:10px;margin-top:8px;">Зарегистрироваться</button>
+
+        <!-- Блок Регистрации (изначально скрыт) -->
+        <div id="registerSection" style="display:none; flex-direction:column; gap:8px;">
+          <h4 style="margin:0; text-align:center;">Регистрация</h4>
+          <input 
+            type="text" 
+            id="regLogin" 
+            placeholder="Логин" 
+            style="
+              padding:10px;
+              font-size:16px;
+              width:100%;
+              border:none;
+              border-radius:8px;
+              outline:none;
+            "
+          >
+          <input 
+            type="password" 
+            id="regPassword" 
+            placeholder="Пароль" 
+            style="
+              padding:10px;
+              font-size:16px;
+              width:100%;
+              border:none;
+              border-radius:8px;
+              outline:none;
+            "
+          >
+          <button 
+            id="registerSubmitBtn" 
+            style="
+              padding:10px;
+              margin-top:4px;
+              border:none;
+              border-radius:8px;
+              font-size:16px;
+              background:#000;
+              color:#fff;
+              cursor:pointer;
+            "
+          >
+            Зарегистрироваться
+          </button>
         </div>
-        <button id="toggleAuthBtn" style="margin-top:10px;">Войти/Зарегистрироваться</button>
+
+        <!-- Кнопка переключения между "Вход" / "Регистрация" -->
+        <button 
+          id="toggleAuthBtn"
+          style="
+            margin-top:10px;
+            border:none;
+            border-radius:8px;
+            font-size:14px;
+            padding:8px;
+            background:#eee;
+            cursor:pointer;
+          "
+        >
+          Войти / Зарегистрироваться
+        </button>
       </div>
     `,
     {
       showCloseBtn: false,
       cornerTopMargin: 0,
-      cornerTopRadius: 0,
+      cornerTopRadius: 0,  // у родительского окна убраны скругления сверху,
+                           // т.к. внутри мы используем собственный скруглённый контейнер
       hasVerticalScroll: true,
       defaultFromBottom: true,
-      noRadiusByDefault: true // убираем скругление
+      noRadiusByDefault: true
     }
   );
 
+  // Подключаем обработчики:
   document.getElementById("loginSubmitBtn").addEventListener("click", login);
   document.getElementById("registerSubmitBtn").addEventListener("click", register);
   document.getElementById("toggleAuthBtn").addEventListener("click", () => {
     const loginSection = document.getElementById("loginSection");
     const registerSection = document.getElementById("registerSection");
     if (loginSection.style.display === "none") {
-      loginSection.style.display = "block";
+      loginSection.style.display = "flex";
       registerSection.style.display = "none";
     } else {
       loginSection.style.display = "none";
-      registerSection.style.display = "block";
+      registerSection.style.display = "flex";
     }
   });
-  document.getElementById("loginSection").style.display = "block";
+
+  // Изначально показываем блок "Вход", а "Регистрация" скрыта
+  document.getElementById("loginSection").style.display = "flex";
   document.getElementById("registerSection").style.display = "none";
 }
 
