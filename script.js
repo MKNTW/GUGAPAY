@@ -514,7 +514,7 @@ function openAuthModal() {
       ">
 
         <!-- Логотип или заголовок (примерно по центру) -->
-        <h2 style="text-align:center; margin:0; font-family:sans-serif;">GugaCoin</h2>
+        <h2 style="text-align:center; margin:0; font-family:sans-serif;"></h2>
 
         <!-- Блок Входа -->
         <div id="loginSection" style="display:flex; flex-direction:column; gap:8px;">
