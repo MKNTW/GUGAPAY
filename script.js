@@ -1688,6 +1688,120 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+/**************************************************
+ * УВЕДОМЛЕНИЯ (TOASTS)
+ **************************************************/
+const notificationStyle = document.createElement("style");
+notificationStyle.textContent = `
+  #notificationContainer {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 9999999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-end;
+  }
+
+  .notification {
+    background: #fff;
+    color: #333;
+    border: 1px solid #ddd;
+    padding: 10px 14px;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    position: relative;
+    min-width: 200px;
+    max-width: 300px;
+    word-break: break-word;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: sans-serif;
+    font-size: 14px;
+  }
+
+  .notification-success {
+    border-color: #c3e6cb;
+    background-color: #d4edda;
+    color: #155724;
+  }
+
+  .notification-error {
+    border-color: #f5c6cb;
+    background-color: #f8d7da;
+    color: #721c24;
+  }
+
+  .notification-info {
+    border-color: #bee5eb;
+    background-color: #d1ecf1;
+    color: #0c5460;
+  }
+
+  .notification-close {
+    background: none;
+    border: none;
+    color: currentColor;
+    font-size: 18px;
+    cursor: pointer;
+    margin-left: 10px;
+  }
+`;
+document.head.appendChild(notificationStyle);
+
+// Контейнер для всех уведомлений
+const notificationContainer = document.createElement("div");
+notificationContainer.id = "notificationContainer";
+document.body.appendChild(notificationContainer);
+
+/**
+ * Функция для показа уведомления.
+ * @param {string} message Текст уведомления.
+ * @param {'success'|'error'|'info'} [type='info'] Тип уведомления (цвет).
+ * @param {number} [duration=5000] Время автозакрытия (мс). Если 0 — не закрывать автоматически.
+ */
+function showNotification(message, type = "info", duration = 5000) {
+  const notif = document.createElement("div");
+  notif.classList.add("notification");
+  if (type === "success") {
+    notif.classList.add("notification-success");
+  } else if (type === "error") {
+    notif.classList.add("notification-error");
+  } else {
+    notif.classList.add("notification-info");
+  }
+
+  // Текст
+  const textEl = document.createElement("div");
+  textEl.style.flex = "1";
+  textEl.textContent = message;
+
+  // Кнопка "закрыть"
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "notification-close";
+  closeBtn.innerHTML = "&times;";
+  closeBtn.addEventListener("click", () => {
+    if (notif.parentNode === notificationContainer) {
+      notificationContainer.removeChild(notif);
+    }
+  });
+
+  notif.appendChild(textEl);
+  notif.appendChild(closeBtn);
+  notificationContainer.appendChild(notif);
+
+  // Автоудаление
+  if (duration && duration > 0) {
+    setTimeout(() => {
+      if (notif.parentNode === notificationContainer) {
+        notificationContainer.removeChild(notif);
+      }
+    }, duration);
+  }
+}
+
 window.addEventListener("beforeunload", () => {
   if (pendingMinedCoins > 0) {
     flushMinedCoins();
