@@ -955,13 +955,19 @@ function openPayQRModal() {
 
   const videoEl = document.getElementById("opPayVideo");
   startUniversalQRScanner(videoEl, (rawValue) => {
-    document.getElementById("payQRModal")?.remove();
     const parsed = parseMerchantQRData(rawValue);
     if (!parsed.merchantId) {
       alert("❌ Неверный QR. Нет merchantId.");
       return;
     }
+    // Сначала создаём окно подтверждения
     confirmPayMerchantModal(parsed);
+
+    // А теперь закрываем окно сканера
+    // Можно сделать сразу или с небольшим задержанием
+    setTimeout(() => {
+      document.getElementById("payQRModal")?.remove();
+    }, 500);
   });
 }
 
@@ -1836,43 +1842,36 @@ function startUniversalQRScanner(videoElement, onResultCallback) {
     return;
   }
 
-  // Запрашиваем доступ к камере (задняя/внешняя, если есть)
   navigator.mediaDevices
     .getUserMedia({ video: { facingMode: "environment" } })
     .then((stream) => {
-      // Привязываем поток к <video>
       videoElement.srcObject = stream;
-      videoElement.setAttribute("playsinline", true); // нужно для iOS/Safari
+      videoElement.setAttribute("playsinline", true); // нужно для iOS
       videoElement.play();
 
-      // Создаём "скрытый" <canvas>, чтобы кадр за кадром читать пиксели
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
 
-      // Рекурсивная функция, которая будет считывать QR
+      let alreadyScanned = false; // флаг, чтобы не обрабатывать повторно
+
       function tick() {
-        if (videoElement.readyState === videoElement.HAVE_ENOUGH_DATA) {
-          // Приводим canvas к размеру видеокадра
+        if (!alreadyScanned && videoElement.readyState === videoElement.HAVE_ENOUGH_DATA) {
           canvas.width = videoElement.videoWidth;
           canvas.height = videoElement.videoHeight;
-          // Рисуем текущее изображение с видео на canvas
           ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-          // Получаем пиксели
           const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-          // Декодируем через jsQR
           const code = jsQR(imageData.data, canvas.width, canvas.height);
+
           if (code) {
             // Успешно распознали QR
-            stopStream(stream);   // останавливаем камеру
-            onResultCallback(code.data); // вызываем колбэк с содержимым QR
-            return;               // выходим, чтобы не продолжать сканирование
+            alreadyScanned = true;      // ставим флаг
+            stopStream(stream);         // останавливаем камеру
+            onResultCallback(code.data); // вызываем колбэк
+            return;
           }
         }
-        // Если не распознали, вызываем снова (анимационный цикл)
         requestAnimationFrame(tick);
       }
-
       requestAnimationFrame(tick);
     })
     .catch((err) => {
@@ -1880,7 +1879,6 @@ function startUniversalQRScanner(videoElement, onResultCallback) {
     });
 }
 
-// Вспомогательная функция остановки видеопотока
 function stopStream(stream) {
   if (stream) {
     stream.getTracks().forEach((track) => track.stop());
