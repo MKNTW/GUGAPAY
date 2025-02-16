@@ -1334,7 +1334,7 @@ function displayTransactionHistory(transactions) {
           "???"
         }`;
         amountSign = "-";
-        color = "rgb(210, 27, 27)"; // красный
+        color = "rgb(0 0 0)"; // красный
 
       } else if (tx.from_user_id === currentUserId) {
         // Списание (отправили кому-то)
@@ -1342,7 +1342,7 @@ function displayTransactionHistory(transactions) {
         titleText = "Отправлено";
         detailsText = `Кому: ${tx.to_user_id}`;
         amountSign = "-";
-        color = "rgb(210, 27, 27)"; // красный
+        color = "rgb(0 0 0)"; // красный
 
       } else if (tx.to_user_id === currentUserId) {
         // Пополнение (получили)
@@ -1364,7 +1364,7 @@ function displayTransactionHistory(transactions) {
           color = "rgb(75, 168, 87)"; // зелёный
         } else {
           amountSign = "-";
-          color = "rgb(210, 27, 27)"; // красный
+          color = "rgb(0 0 0)"; // красный
         }
 
       } else {
