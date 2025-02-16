@@ -716,45 +716,31 @@ async function fetchUserData() {
 /**************************************************
  * МАЙНИНГ
  **************************************************/
+let pendingMinedCoins = 0; // Нет localStorage
+
 function mineCoins() {
-  let localBalance = parseFloat(localStorage.getItem("localBalance")) || 0;
-  localBalance += 0.00001;
-  localStorage.setItem("localBalance", localBalance.toFixed(5));
-  updateBalanceDisplay(localBalance);
-
-  let pending = parseFloat(localStorage.getItem("pendingMinedCoins")) || 0;
-  pending += 0.00001;
-  localStorage.setItem("pendingMinedCoins", pending.toFixed(5));
-
-  if (mineTimer) clearTimeout(mineTimer);
-  mineTimer = setTimeout(() => {
-    flushMinedCoins();
-  }, 1500);
-}
-
-function updateBalanceDisplay(num) {
-  const balanceVal = document.getElementById("balanceValue");
-  if (balanceVal) {
-    balanceVal.textContent = formatBalance(num, 5) + " ₲";
-  }
+  pendingMinedCoins += 0.00001;
+  console.log("Mined: ", pendingMinedCoins);
 }
 
 async function flushMinedCoins() {
-  const pmc = parseFloat(localStorage.getItem("pendingMinedCoins")) || 0;
-  if (!currentUserId || pmc <= 0) return;
+  if (pendingMinedCoins <= 0) return;
   try {
     const resp = await fetch(`${API_URL}/update`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount: pmc }),
+      body: JSON.stringify({ amount: pendingMinedCoins }),
     });
     if (resp.ok) {
-      localStorage.setItem("pendingMinedCoins", "0");
-      fetchUserData();
+      // Сервер подтверждает успех
+      pendingMinedCoins = 0;
+      console.log("Coins flushed successfully");
+    } else {
+      console.error("Server refused flush");
     }
-  } catch (err) {
-    console.error("flushMinedCoins error:", err);
+  } catch (e) {
+    console.error("flushMinedCoins error:", e);
   }
 }
 
