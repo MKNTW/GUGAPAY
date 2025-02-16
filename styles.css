@@ -377,7 +377,7 @@ body {
 ========================================= */
 @media (max-width: 600px) {
   #balanceValue {
-    font-size: 28px;
+    font-size: 30px;
   }
   #userIdDisplay {
     font-size: 14px;
