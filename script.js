@@ -912,38 +912,46 @@ function openExchangeModal(horizontalSwitch) {
     "exchangeModal",
     `
       <h3 style="text-align:center;">Обменять</h3>
-      <div style="max-width:600px;margin:0 auto;">
-        <canvas id="exchangeChart" style="width:100%;max-height:200px;"></canvas>
+
+      <!-- Контейнер для графика -->
+      <div style="max-width:600px; margin:0 auto; background:rgb(247, 247, 247); 
+                  padding:10px; border-radius:10px;">
+        <canvas id="exchangeChart" style="width:100%; max-height:200px;"></canvas>
       </div>
-      <p id="currentRateDisplay" style="text-align:center;margin:10px 0;">Курс: --</p>
-      <div style="display:flex;justify-content:center;gap:10px;align-items:center;margin-top:20px;">
-        <div style="flex:1;text-align:center;">
-          <p id="fromLabel">
-            <img src="15.png" alt="GUGA" style="width:25px;vertical-align:middle;"> GUGA
-          </p>
-          <input type="number" id="amountInput" placeholder="0.00" style="width:100%;padding:8px;" oninput="updateExchange()">
-          <p id="balanceInfo" style="font-size:14px;color:#666;">0.00000 ₲</p>
+
+      <!-- Отдельный контейнер для полей обмена -->
+      <div style="background:rgb(247, 247, 247); border-radius:10px; 
+                  padding:10px; max-width:600px; margin:20px auto;">
+        <p id="currentRateDisplay" style="text-align:center;margin:10px 0;">Курс: --</p>
+        <div style="display:flex;justify-content:center;gap:10px;align-items:center;margin-top:20px;">
+          <div style="flex:1;text-align:center;">
+            <p id="fromLabel">
+              <img src="15.png" alt="GUGA" style="width:25px;vertical-align:middle;"> GUGA
+            </p>
+            <input type="number" id="amountInput" placeholder="0.00" style="width:100%;padding:8px;" oninput="updateExchange()">
+            <p id="balanceInfo" style="font-size:14px;color:#666;">0.00000 ₲</p>
+          </div>
+          <button id="swapBtn" style="padding:10px;border:none;background:none;cursor:pointer;font-size:24px;">⇄</button>
+          <div style="flex:1;text-align:center;">
+            <p id="toLabel">
+              <img src="18.png" alt="RUB" style="width:25px;vertical-align:middle;"> RUB
+            </p>
+            <input type="text" id="toAmount" disabled style="width:100%;padding:8px;">
+            <p id="toBalanceInfo" style="font-size:14px;color:#666;">0.00 ₽</p>
+          </div>
         </div>
-        <button id="swapBtn" style="padding:10px;border:none;background:none;cursor:pointer;font-size:24px;">⇄</button>
-        <div style="flex:1;text-align:center;">
-          <p id="toLabel">
-            <img src="18.png" alt="RUB" style="width:25px;vertical-align:middle;"> RUB
-          </p>
-          <input type="text" id="toAmount" disabled style="width:100%;padding:8px;">
-          <p id="toBalanceInfo" style="font-size:14px;color:#666;">0.00 ₽</p>
+        <div style="text-align:center;margin-top:20px;">
+          <button id="btnPerformExchange" style="padding:10px;">Обменять</button>
         </div>
-      </div>
-      <div style="text-align:center;margin-top:20px;">
-        <button id="btnPerformExchange" style="padding:10px;">Обменять</button>
       </div>
     `,
     {
-      showCloseBtn: false, // нет кнопки X
+      showCloseBtn: false,
       cornerTopMargin: 0,
       cornerTopRadius: 0,
       hasVerticalScroll: true,
       defaultFromBottom: true,
-      noRadiusByDefault: true,  // убираем радиус
+      noRadiusByDefault: true,
       horizontalSwitch: !!horizontalSwitch
     }
   );
@@ -1245,9 +1253,11 @@ function displayTransactionHistory(transactions) {
       let amountSign = "";
       let amountValue = formatBalance(tx.amount, 5);
 
-      let color = "#000"; // всё чёрное
+      // По умолчанию чёрный, но далее перекрашиваем в зависимости от типа
+      let color = "#000";
 
       if (tx.type === "merchant_payment") {
+        // Оплата по QR
         iconSrc = "92.png";
         titleText = "Оплата по QR";
         detailsText = `Мерчант: ${
@@ -1256,25 +1266,41 @@ function displayTransactionHistory(transactions) {
           "???"
         }`;
         amountSign = "-";
+        color = "rgb(210, 27, 27)"; // красный
+
       } else if (tx.from_user_id === currentUserId) {
+        // Списание (отправили кому-то)
         iconSrc = "67.png";
         titleText = "Отправлено";
         detailsText = `Кому: ${tx.to_user_id}`;
         amountSign = "-";
+        color = "rgb(210, 27, 27)"; // красный
+
       } else if (tx.to_user_id === currentUserId) {
+        // Пополнение (получили)
         iconSrc = "66.png";
         titleText = "Получено";
         detailsText = `От кого: ${tx.from_user_id}`;
         amountSign = "+";
+        color = "rgb(75, 168, 87)"; // зелёный
+
       } else if (tx.type === "exchange") {
+        // Обмен
         iconSrc = "67.png";
         titleText = "Обмен";
         detailsText = `Направление: ${
           tx.direction === "rub_to_coin" ? "Рубли → Монеты" : "Монеты → Рубли"
         }`;
-        amountSign = tx.direction === "rub_to_coin" ? "+" : "-";
-        amountValue = formatBalance(tx.amount, 5);
+        if (tx.direction === "rub_to_coin") {
+          amountSign = "+";
+          color = "rgb(75, 168, 87)"; // зелёный
+        } else {
+          amountSign = "-";
+          color = "rgb(210, 27, 27)"; // красный
+        }
+
       } else {
+        // Прочие случаи
         iconSrc = "67.png";
         titleText = "Операция";
         detailsText = "Детали не указаны";
