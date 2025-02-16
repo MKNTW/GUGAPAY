@@ -1457,7 +1457,7 @@ function displayTransactionHistory(transactions) {
         titleText = "Получено";
         detailsText = `От кого: ${tx.from_user_id}`;
         amountSign = "+";
-        color = "rgb(0 202 72)"; // зелёный
+        color = "rgb(25 150 70)"; // зелёный
 
       } else if (tx.type === "exchange") {
         // Обмен
@@ -1468,7 +1468,7 @@ function displayTransactionHistory(transactions) {
         }`;
         if (tx.direction === "rub_to_coin") {
           amountSign = "+";
-          color = "rgb(0 202 72)"; // зелёный
+          color = "rgb(25 150 70)"; // зелёный
         } else {
           amountSign = "-";
           color = "rgb(0 0 0)"; // красный
