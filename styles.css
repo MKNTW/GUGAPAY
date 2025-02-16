@@ -293,11 +293,12 @@ body {
 ========================================= */
 .modal-content h3,
 .modal-content h4 {
-  font-size: 20px;
+  font-size: 1.5em;
   font-weight: 600;
   color: #000;
   text-align: center;
-  margin: 10px 0;
+  margin: 19.92px 0;
+  margin-bottom: 100px;
 }
 
 .modal-content label {
