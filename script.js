@@ -938,7 +938,7 @@ function openExchangeModal(horizontalSwitch) {
       <!-- Отдельный контейнер для полей обмена -->
       <div style="background:rgb(247, 247, 247); border-radius:10px; 
                   padding:10px; max-width:600px; margin:20px auto;">
-        <p id="currentRateDisplay" style="text-align:center;margin:10px 0;">Курс: --</p>
+        
         <div style="display:flex;justify-content:center;gap:10px;align-items:center;margin-top:20px;">
           <div style="flex:1;text-align:center;">
             <p id="fromLabel">
