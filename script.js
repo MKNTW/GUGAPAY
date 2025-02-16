@@ -926,7 +926,7 @@ function openExchangeModal(horizontalSwitch) {
   createModal(
     "exchangeModal",
     `
-      <h3 style="text-align:center;">Обмен</h3>
+      <h3 style="text-align:center;">Обменять</h3>
       <div style="max-width:600px;margin:0 auto;">
         <canvas id="exchangeChart" style="width:100%;max-height:200px;"></canvas>
       </div>
@@ -1112,11 +1112,11 @@ async function loadBalanceAndExchangeRate() {
 
 function updateCurrentRateDisplay() {
   if (!currentExchangeRate) {
-    document.getElementById("currentRateDisplay").textContent = "Курс: --";
+    document.getElementById("currentRateDisplay").textContent = "--";
     return;
   }
   document.getElementById("currentRateDisplay").textContent =
-    "Курс: 1 ₲ = " + formatBalance(currentExchangeRate, 2) + " ₽";
+    "1 ₲ = " + formatBalance(currentExchangeRate, 2) + " ₽";
 }
 
 function drawExchangeChart(rates) {
