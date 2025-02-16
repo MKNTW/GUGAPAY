@@ -39,8 +39,8 @@ app.use(cors({
 
 // Rate limiting для критичных endpoint’ов (логин, регистрация, мерчант-логин)
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 минут
-  max: 100, // максимум 100 запросов с одного IP
+  windowMs: 60 * 60 * 1000, // 15 минут
+  max: 1000, // максимум 100 запросов с одного IP
   message: 'Слишком много запросов с этого IP, попробуйте позже.'
 });
 app.use(['/login', '/register', '/merchantLogin'], authLimiter);
@@ -73,7 +73,7 @@ app.post('/logout', (req, res) => {
 
 // Тестовый endpoint
 app.get('/', (req, res) => {
-  res.send('GugaCoin backend server with enhanced security and HTTP-only cookie authentication.');
+  res.send('GugaCoin backend server.');
 });
 
 /* ========================
@@ -454,9 +454,12 @@ app.get('/transactions', verifyToken, async (req, res) => {
     } else {
       return res.status(400).json({ success: false, error: 'Неверная роль для получения транзакций' });
     }
+    // Сортировка по убыванию времени и выбор последних 20 операций
     allTransactions.sort((a, b) => new Date(b.display_time) - new Date(a.display_time));
-    console.log('Transactions:', allTransactions);
-    res.json({ success: true, transactions: allTransactions });
+    const last20Transactions = allTransactions.slice(0, 20);
+
+    console.log('Последние 20 транзакций:', last20Transactions);
+    res.json({ success: true, transactions: last20Transactions });
   } catch (err) {
     console.error('[transactions] Ошибка:', err);
     res.status(500).json({ success: false, error: 'Ошибка при получении истории' });
@@ -758,7 +761,7 @@ app.post('/exchange', verifyToken, async (req, res) => {
     }
     const newExchangeRate = newReserveRub / newReserveCoin;
     if (newExchangeRate < 0.01) {
-      return res.status(400).json({ success: false, error: 'Обмен невозможен: курс не может опуститься ниже 0.1' });
+      return res.status(400).json({ success: false, error: 'Обмен невозможен: курс не может опуститься ниже 0.01' });
     }
     const { error: updatePoolError } = await supabase
       .from('liquidity_pool')
