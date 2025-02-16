@@ -742,17 +742,12 @@ function createMainUI() {
 
   // Баланс / Майнинг
   const balanceDisplay = document.getElementById("balanceDisplay");
-  if (balanceDisplay) balanceDisplay.style.display = "block";
+  if (balanceDisplay) {
+    balanceDisplay.style.display = "block";
+  }
   const mineContainer = document.getElementById("mineContainer");
   if (mineContainer) {
-    mineContainer.style.display = "block";
-    mineContainer.style.width = "220px";
-    mineContainer.style.height = "220px";
-    const mineBtn = document.getElementById("mineBtn");
-    if (mineBtn) {
-      mineBtn.style.width = "100%";
-      mineBtn.style.height = "100%";
-    }
+    mineContainer.style.display = "none";
   }
 
   // Кнопки "Перевести" / "Оплата"
