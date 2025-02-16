@@ -60,7 +60,7 @@ globalStyle.textContent = `
     animation: slideToTop 0.3s ease forwards;
   }
 
-  /*===== ГОРИЗОНТАЛЬНЫЕ АНИМАЦИИ ДЛЯ ПЕРЕКЛЮЧЕНИЯ =====*/
+  /*===== ГОРИЗОНТАЛЬНЫЕ АНИМАЦИИ ДЛЯ ПЕРЕКЛЮЧЕНИЯ (БЕЗ ПАУЗЫ) =====*/
   @keyframes slideInRight {
     0%   { transform: translateX(100%); }
     100% { transform: translateX(0); }
@@ -98,8 +98,12 @@ document.head.appendChild(globalStyle);
 /**************************************************
  * УТИЛИТЫ
  **************************************************/
-function formatBalance(num) {
-  return parseFloat(num).toFixed(5);
+function formatBalance(num, decimals = 5) {
+  const parsed = parseFloat(num);
+  if (isNaN(parsed)) {
+    return (0).toFixed(decimals); // Если некорректно -> "0.00000"
+  }
+  return parsed.toFixed(decimals);
 }
 
 function showGlobalLoading() {
@@ -144,7 +148,7 @@ function closeModalWithAnimation(modalId) {
 }
 
 /**************************************************
- * ФУНКЦИЯ "ЗАКРЫТЬ ПРОФИЛЬ НАВЕРХ"
+ * "ЗАКРЫТЬ ПРОФИЛЬ НАВЕРХ"
  **************************************************/
 function closeProfileToTop(modalId) {
   const modalEl = document.getElementById(modalId);
@@ -176,48 +180,49 @@ function closeProfileToTop(modalId) {
 }
 
 /**************************************************
- * ГОРИЗОНТАЛЬНОЕ ПЕРЕКЛЮЧЕНИЕ (БЕЗ ПАУЗЫ) МЕЖДУ "ИСТОРИЯ" И "ОБМЕН"
+ * ГОРИЗОНТАЛЬНОЕ ПЕРЕКЛЮЧЕНИЕ (ОДНОВРЕМЕННО) 
+ * БЕЗ СЕРОЙ ПЕЛЕНЫ СВЕРХУ
  **************************************************/
 function switchHistoryExchange(oldId, newModalFn, direction) {
-  // direction может быть "toExchange" или "toHistory".
-  // oldId: "historyModal" или "exchangeModal".
   const oldModal = document.getElementById(oldId);
   if (!oldModal) {
-    // Если почему-то не найдено — просто открыть новое
     removeAllModals();
     newModalFn();
     return;
   }
-
   const oldContent = oldModal.querySelector(".modal-content");
 
-  // Создаём новую модалку (пока без удаления старой):
-  newModalFn(); // создастся "historyModal" или "exchangeModal"
+  // 1) Создаём новую модалку "в фоне", но убираем у неё overlay 
+  //    (чтобы не было дополнительной "серы пелены").
+  //    Сразу после создания тоже выставим newModal.style.background = 'transparent'
+  //    до окончания анимации.
+  newModalFn(true); // Доп.параметр (horizontalSwitch=true), см. ниже.
 
-  // Находим новосозданную модалку:
   const newId = direction === "toExchange" ? "exchangeModal" : "historyModal";
   const newModal = document.getElementById(newId);
   if (!newModal) return;
-
   const newContent = newModal.querySelector(".modal-content");
 
-  // Ставим одинаковые стили "растянутого" окна, чтобы анимация была "окно к окну":
-  oldModal.style.zIndex = "100002"; // чуть выше
-  newModal.style.zIndex = "100001"; // чуть ниже
-  // Оба видны, сейчас старое окно — сверху.
+  // Ставим у нового modal.background в "transparent", убираем overlay.
+  newModal.style.background = "transparent";
+  const newOverlay = newModal.querySelector("div:nth-child(1)");
+  if (newOverlay) {
+    newOverlay.style.background = "transparent";
+    newOverlay.style.pointerEvents = "none"; // чтобы клики сквозь
+  }
 
-  // Настраиваем анимации:
+  // 2) Повышаем zIndex старого окна, чтобы оно было "сверху".
+  oldModal.style.zIndex = "100002";
+  newModal.style.zIndex = "100001";
+
+  // 3) Запускаем анимации одновременно:
   if (direction === "toExchange") {
-    // С Истории -> в Обмен:
-    // История уходит влево, Обмен въезжает справа
     oldContent.classList.remove("modal-slide-in-left", "modal-slide-in-right");
     oldContent.classList.add("modal-slide-out-left");
-    newContent.classList.remove("modal-slide-up"); // убираем стандарт
-    newContent.classList.remove("modal-slide-in-left", "modal-slide-in-right"); // на всякий
+    newContent.classList.remove("modal-slide-up");
+    newContent.classList.remove("modal-slide-in-left", "modal-slide-in-right");
     newContent.classList.add("modal-slide-in-right");
   } else {
-    // С Обмена -> в Историю:
-    // Обмен уходит вправо, История въезжает слева
     oldContent.classList.remove("modal-slide-in-left", "modal-slide-in-right");
     oldContent.classList.add("modal-slide-out-right");
     newContent.classList.remove("modal-slide-up");
@@ -225,31 +230,40 @@ function switchHistoryExchange(oldId, newModalFn, direction) {
     newContent.classList.add("modal-slide-in-left");
   }
 
-  // Когда старая анимация завершится — удаляем старую модалку:
+  // 4) Когда старая анимация завершилась — убираем старую модалку, 
+  //    а у новой возвращаем "затемнение" overlay
   oldContent.addEventListener(
     "animationend",
     () => {
       oldModal.remove();
-      // Новое окно уже на месте, без "пробела" между.
+      // Возвращаем overlay для нового:
+      newModal.style.background = "rgba(0,0,0,0.5)";
+      if (newOverlay) {
+        newOverlay.style.background = "transparent"; 
+        // Или поставить rgba(0,0,0,0.5), если хотите затемнение. 
+        // Но при переключении это может быть не нужно. 
+        // Можно вообще оставить прозрачным, если нужно.
+        newOverlay.style.pointerEvents = "auto";
+      }
     },
     { once: true }
   );
 }
 
 /**************************************************
- * СОЗДАНИЕ / ОТКРЫТИЕ МОДАЛЬНЫХ ОКОН
+ * СОЗДАНИЕ / ОТКРЫТИЕ МОДАЛОК 
  **************************************************/
 /**
  * createModal(id, innerHtml, {
- *   showCloseBtn,        // bool
- *   cornerTopMargin,     // px
- *   cornerTopRadius,     // px
- *   hasVerticalScroll,   // bool (overflow-y)
- *   profileFromTop,      // bool (slideFromTop анимация)
- *   defaultFromBottom,   // bool (slideUp анимация) — по умолчанию true
+ *   showCloseBtn,      
+ *   cornerTopMargin,   
+ *   cornerTopRadius,   
+ *   hasVerticalScroll, 
+ *   profileFromTop,    
+ *   defaultFromBottom, 
+ *   horizontalSwitch,  
+ *   noRadiusByDefault  // если true, убираем радиус у модалки
  * })
- *
- * Крестик: по центру внутри (display:flex;align-items:center;justify-content:center;).
  */
 function createModal(
   id,
@@ -261,51 +275,51 @@ function createModal(
     hasVerticalScroll = true,
     profileFromTop = false,
     defaultFromBottom = true,
+    horizontalSwitch = false,
+    noRadiusByDefault = false,
   } = {}
 ) {
-  // Удаляем старое, если есть
+  // Удаляем старый, если есть
   const old = document.getElementById(id);
   if (old) old.remove();
 
   const modal = document.createElement("div");
   modal.id = id;
   modal.className = "modal";
-  modal.style.zIndex = "100000"; // ниже возможных переключений
+  modal.style.zIndex = "100000";
   modal.style.position = "fixed";
   modal.style.top = "0";
   modal.style.left = "0";
   modal.style.width = "100%";
   modal.style.height = "100%";
+  // По умолчанию делаем фон (затемнение), 
+  // но при горизонтальном переключении можем временно ставить transparent (выше).
   modal.style.background = "rgba(0,0,0,0.5)";
   modal.style.display = "flex";
   modal.style.flexDirection = "column";
   modal.style.justifyContent = "flex-start";
   modal.style.alignItems = "stretch";
 
+  // overlay
   const overlay = document.createElement("div");
   overlay.style.position = "absolute";
   overlay.style.top = "0";
   overlay.style.left = "0";
   overlay.style.width = "100%";
   overlay.style.height = "100%";
+  overlay.style.background = "rgba(0,0,0,0)"; // внутри modal, уже есть общий фон
 
-  const contentDiv = document.createElement("div");
-  // Выбираем анимацию при появлении:
-  // 1) slideFromTop (профиль)
-  // 2) slideUp (по умолчанию, если defaultFromBottom=true)
-  // 3) или никакой, если не указано.
+  // Определяем анимацию открытия:
   let openAnim = "";
   if (profileFromTop) {
     openAnim = "modal-slide-from-top";
   } else if (defaultFromBottom) {
     openAnim = "modal-slide-up";
   }
-  if (openAnim) {
-    contentDiv.className = `modal-content ${openAnim}`;
-  } else {
-    contentDiv.className = "modal-content";
-  }
+  // (horizontalSwitch) — управляется switchHistoryExchange()
 
+  const contentDiv = document.createElement("div");
+  contentDiv.className = "modal-content" + (openAnim ? ` ${openAnim}` : "");
   contentDiv.style.marginTop = `${cornerTopMargin}px`;
   contentDiv.style.width = "100%";
   contentDiv.style.height = `calc(100% - ${cornerTopMargin}px)`;
@@ -315,11 +329,16 @@ function createModal(
   contentDiv.style.position = "relative";
   contentDiv.style.padding = "20px";
 
-  // Скруглим только верхние углы?
-  if (cornerTopRadius > 0) {
+  // Если "noRadiusByDefault" = true => убираем радиус.
+  // Иначе используем cornerTopRadius
+  if (noRadiusByDefault) {
+    contentDiv.style.borderRadius = "0";
+  } else if (cornerTopRadius > 0) {
+    // Модалки "Перевести" и "Оплата" оставляем радиус, как просили
     contentDiv.style.borderRadius = `${cornerTopRadius}px ${cornerTopRadius}px 0 0`;
   }
 
+  // closeBtn
   let closeBtnHtml = "";
   if (showCloseBtn) {
     closeBtnHtml = `
@@ -347,7 +366,7 @@ function createModal(
   modal.appendChild(contentDiv);
   document.body.appendChild(modal);
 
-  // Закрытие по overlay (клик вне окна — убираем модалку)
+  // Закрытие по overlay
   overlay.addEventListener("click", (e) => {
     if (e.target === overlay) {
       modal.remove();
@@ -359,11 +378,9 @@ function createModal(
     const cbtn = contentDiv.querySelector(".close-btn");
     if (cbtn) {
       cbtn.addEventListener("click", () => {
-        // Если это профиль (profileModal), закрываем наверх:
         if (id === "profileModal") {
           closeProfileToTop(id);
         } else {
-          // Иначе закрыть вниз
           closeModalWithAnimation(id);
         }
       });
@@ -403,7 +420,7 @@ async function login() {
         alert("❌ Ваш аккаунт заблокирован");
         return;
       }
-      // Попробуем мерчант-вход:
+      // Пробуем мерчант
       const merchResp = await fetch(`${API_URL}/merchantLogin`, {
         method: "POST",
         credentials: "include",
@@ -474,7 +491,7 @@ async function logout() {
 }
 
 /**************************************************
- * ОКНО АВТОРИЗАЦИИ (AUTHMODAL)
+ * ОКНО АВТОРИЗАЦИИ
  **************************************************/
 function openAuthModal() {
   hideMainUI();
@@ -506,6 +523,7 @@ function openAuthModal() {
       cornerTopRadius: 0,
       hasVerticalScroll: true,
       defaultFromBottom: true,
+      noRadiusByDefault: true // убираем скругление
     }
   );
 
@@ -527,10 +545,9 @@ function openAuthModal() {
 }
 
 /**************************************************
- * ГЛАВНЫЙ ЭКРАН: createMainUI()
+ * ГЛАВНЫЙ ЭКРАН
  **************************************************/
 function createMainUI() {
-  // Если merchantId не задан, значит пользователь.
   if (!currentMerchantId && !document.getElementById("profileIcon")) {
     const profileIcon = document.createElement("img");
     profileIcon.id = "profileIcon";
@@ -547,7 +564,6 @@ function createMainUI() {
     profileIcon.addEventListener("click", openProfileModal);
   }
 
-  // bottomBar
   if (!document.getElementById("bottomBar")) {
     const bottomBar = document.createElement("div");
     bottomBar.id = "bottomBar";
@@ -559,9 +575,9 @@ function createMainUI() {
     bottomBar.style.display = "flex";
     bottomBar.style.justifyContent = "space-around";
     bottomBar.style.alignItems = "center";
-    bottomBar.style.padding = "10px 0";
+    bottomBar.style.padding = "0px"; // убран padding
     bottomBar.style.boxShadow = "0 -2px 5px rgba(0,0,0,0.1)";
-    bottomBar.style.zIndex = "999999"; // всегда выше модалок
+    bottomBar.style.zIndex = "999999";
 
     bottomBar.innerHTML = `
       <button id="btnMain" style="padding:10px;border:none;background:none;">
@@ -579,7 +595,7 @@ function createMainUI() {
     `;
     document.body.appendChild(bottomBar);
 
-    // "Главная" — закрыть историю/обмен (вниз)
+    // "Главная" => закрыть "История"/"Обмен" (анимация вниз)
     document.getElementById("btnMain").addEventListener("click", () => {
       if (document.getElementById("historyModal")) {
         closeModalWithAnimation("historyModal");
@@ -591,32 +607,30 @@ function createMainUI() {
 
     // "История"
     document.getElementById("historyBtn").addEventListener("click", () => {
-      // Если открыт "exchangeModal" — переключаемся
       if (document.getElementById("exchangeModal")) {
-        switchHistoryExchange("exchangeModal", () => openHistoryModal(), "toHistory");
+        // Переключение: "Обмен" -> "История"
+        switchHistoryExchange("exchangeModal", () => openHistoryModal(true), "toHistory");
       } else {
         removeAllModals();
-        openHistoryModal();
+        openHistoryModal(false);
       }
     });
 
     // "Обмен"
     document.getElementById("exchangeBtn").addEventListener("click", () => {
-      // Если открыт "historyModal" — переключаемся
       if (document.getElementById("historyModal")) {
-        switchHistoryExchange("historyModal", () => openExchangeModal(), "toExchange");
+        // Переключение: "История" -> "Обмен"
+        switchHistoryExchange("historyModal", () => openExchangeModal(true), "toExchange");
       } else {
         removeAllModals();
-        openExchangeModal();
+        openExchangeModal(false);
       }
     });
   }
 
-  // Показываем блоки баланса / майнинга (если уже есть в HTML)
+  // Баланс / Майнинг
   const balanceDisplay = document.getElementById("balanceDisplay");
-  if (balanceDisplay) {
-    balanceDisplay.style.display = "block";
-  }
+  if (balanceDisplay) balanceDisplay.style.display = "block";
   const mineContainer = document.getElementById("mineContainer");
   if (mineContainer) {
     mineContainer.style.display = "block";
@@ -629,7 +643,7 @@ function createMainUI() {
     }
   }
 
-  // КНОПКИ «ПЕРЕВОД» И «ОПЛАТА ПО QR» (Вернули)
+  // Кнопки "Перевести" / "Оплата"
   if (!document.getElementById("actionButtonsContainer")) {
     const container = document.createElement("div");
     container.id = "actionButtonsContainer";
@@ -664,14 +678,13 @@ function createMainUI() {
     });
   }
 
-  // Обновляем инфо пользователя
   fetchUserData();
   clearInterval(updateInterval);
   updateInterval = setInterval(fetchUserData, 2000);
 }
 
 /**************************************************
- * ПОЛУЧЕНИЕ ДАННЫХ ПОЛЬЗОВАТЕЛЯ
+ * ПОЛЬЗОВАТЕЛЬ
  **************************************************/
 async function fetchUserData() {
   try {
@@ -684,7 +697,7 @@ async function fetchUserData() {
 
       const balanceValue = document.getElementById("balanceValue");
       if (balanceValue) {
-        balanceValue.textContent = coinBalance.toFixed(5) + " ₲";
+        balanceValue.textContent = formatBalance(coinBalance, 5) + " ₲";
       }
       const userIdEl = document.getElementById("userIdDisplay");
       if (userIdEl) {
@@ -692,7 +705,7 @@ async function fetchUserData() {
       }
       const rubBalanceInfo = document.getElementById("rubBalanceInfo");
       if (rubBalanceInfo) {
-        rubBalanceInfo.textContent = rubBalance.toFixed(2) + " ₽";
+        rubBalanceInfo.textContent = formatBalance(rubBalance, 2) + " ₽";
       }
     }
   } catch (err) {
@@ -722,7 +735,7 @@ function mineCoins() {
 function updateBalanceDisplay(num) {
   const balanceVal = document.getElementById("balanceValue");
   if (balanceVal) {
-    balanceVal.textContent = num.toFixed(5) + " ₲";
+    balanceVal.textContent = formatBalance(num, 5) + " ₲";
   }
 }
 
@@ -746,7 +759,7 @@ async function flushMinedCoins() {
 }
 
 /**************************************************
- * ОКНО "ПРОФИЛЬ" (открывается сверху, закрывается наверх)
+ * ПРОФИЛЬ
  **************************************************/
 function openProfileModal() {
   createModal(
@@ -760,15 +773,16 @@ function openProfileModal() {
       cornerTopMargin: 0,
       cornerTopRadius: 0,
       hasVerticalScroll: true,
-      profileFromTop: true,    // открытие "сверху вниз"
-      defaultFromBottom: false // убираем анимацию снизу
+      profileFromTop: true,
+      defaultFromBottom: false,
+      noRadiusByDefault: true
     }
   );
   document.getElementById("profileLogoutBtn").onclick = logout;
 }
 
 /**************************************************
- * ОКНО "ПЕРЕВОД"
+ * ПЕРЕВОД (здесь оставляем радиус) 
  **************************************************/
 function openTransferModal() {
   createModal(
@@ -786,14 +800,14 @@ function openTransferModal() {
     {
       showCloseBtn: true,
       cornerTopMargin: 50,
-      cornerTopRadius: 20,
+      cornerTopRadius: 20,   // радиус
       hasVerticalScroll: true,
-      defaultFromBottom: true
+      defaultFromBottom: true,
+      noRadiusByDefault: false
     }
   );
 
-  const sendBtn = document.getElementById("sendTransferBtn");
-  sendBtn.onclick = async () => {
+  document.getElementById("sendTransferBtn").onclick = async () => {
     if (!currentUserId) return;
     const toUser = document.getElementById("toUserIdInput")?.value;
     const amount = parseFloat(document.getElementById("transferAmountInput")?.value);
@@ -827,7 +841,7 @@ function openTransferModal() {
 }
 
 /**************************************************
- * ОКНО "ОПЛАТА ПО QR"
+ * ОПЛАТА ПО QR (также оставляем радиус)
  **************************************************/
 function openPayQRModal() {
   createModal(
@@ -839,9 +853,10 @@ function openPayQRModal() {
     {
       showCloseBtn: true,
       cornerTopMargin: 50,
-      cornerTopRadius: 20,
+      cornerTopRadius: 20,  // радиус
       hasVerticalScroll: true,
-      defaultFromBottom: true
+      defaultFromBottom: true,
+      noRadiusByDefault: false
     }
   );
 
@@ -863,16 +878,17 @@ function confirmPayMerchantModal({ merchantId, amount, purpose }) {
     `
       <h3 style="text-align:center;">Подтверждение оплаты</h3>
       <p>Мерчант: ${merchantId}</p>
-      <p>Сумма: ${amount} ₲</p>
+      <p>Сумма: ${formatBalance(amount, 5)} ₲</p>
       <p>Назначение: ${purpose}</p>
       <button id="confirmPayBtn" style="padding:10px;margin-top:10px;">Оплатить</button>
     `,
     {
       showCloseBtn: true,
       cornerTopMargin: 50,
-      cornerTopRadius: 20,
+      cornerTopRadius: 20, // радиус
       hasVerticalScroll: true,
-      defaultFromBottom: true
+      defaultFromBottom: true,
+      noRadiusByDefault: false
     }
   );
 
@@ -900,12 +916,12 @@ function confirmPayMerchantModal({ merchantId, amount, purpose }) {
 }
 
 /**************************************************
- * ОБМЕН (без кнопки закрытия)
+ * ОБМЕН (без кнопки закрытия, без радиуса)
  **************************************************/
 let currentExchangeDirection = "coin_to_rub";
 let currentExchangeRate = 0;
 
-function openExchangeModal() {
+function openExchangeModal(horizontalSwitch) {
   showGlobalLoading();
   createModal(
     "exchangeModal",
@@ -937,11 +953,13 @@ function openExchangeModal() {
       </div>
     `,
     {
-      showCloseBtn: false, // нет кнопки закрытия
+      showCloseBtn: false, // нет кнопки X
       cornerTopMargin: 0,
       cornerTopRadius: 0,
       hasVerticalScroll: true,
-      defaultFromBottom: true
+      defaultFromBottom: true,
+      noRadiusByDefault: true,  // убираем радиус
+      horizontalSwitch: !!horizontalSwitch
     }
   );
 
@@ -969,17 +987,24 @@ function openExchangeModal() {
 }
 
 function updateExchange() {
-  const amount = parseFloat(document.getElementById("amountInput").value);
-  if (isNaN(amount) || !currentExchangeRate) {
-    document.getElementById("toAmount").value = "";
-    return;
-  }
-  if (currentExchangeDirection === "coin_to_rub") {
-    const result = amount * currentExchangeRate;
-    document.getElementById("toAmount").value = result.toFixed(2);
+  const amountInputVal = document.getElementById("amountInput").value.trim();
+  const amount = parseFloat(amountInputVal);
+  let result = 0;
+  if (!isNaN(amount) && amount > 0 && currentExchangeRate) {
+    if (currentExchangeDirection === "coin_to_rub") {
+      result = amount * currentExchangeRate;
+      document.getElementById("toAmount").value = formatBalance(result, 2);
+    } else {
+      result = amount / currentExchangeRate;
+      document.getElementById("toAmount").value = formatBalance(result, 5);
+    }
   } else {
-    const result = amount / currentExchangeRate;
-    document.getElementById("toAmount").value = result.toFixed(5);
+    // Если пусто / 0 / некорректно => "0.00" / "0.00000"
+    if (currentExchangeDirection === "coin_to_rub") {
+      document.getElementById("toAmount").value = "0.00";
+    } else {
+      document.getElementById("toAmount").value = "0.00000";
+    }
   }
 }
 
@@ -988,7 +1013,11 @@ function swapCurrencies() {
     currentExchangeDirection === "coin_to_rub" ? "rub_to_coin" : "coin_to_rub";
   updateCurrencyLabels();
   document.getElementById("amountInput").value = "";
-  document.getElementById("toAmount").value = "";
+  if (currentExchangeDirection === "coin_to_rub") {
+    document.getElementById("toAmount").value = "0.00";
+  } else {
+    document.getElementById("toAmount").value = "0.00000";
+  }
   loadBalanceAndExchangeRate();
 }
 
@@ -1005,8 +1034,8 @@ function updateCurrencyLabels() {
 }
 
 async function handleExchange(direction) {
-  const amount = parseFloat(document.getElementById("amountInput").value);
-  if (isNaN(amount) || amount <= 0) {
+  const amountVal = parseFloat(document.getElementById("amountInput").value);
+  if (isNaN(amountVal) || amountVal <= 0) {
     alert("Введите корректную сумму");
     return;
   }
@@ -1020,15 +1049,15 @@ async function handleExchange(direction) {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ direction, amount }),
+      body: JSON.stringify({ direction, amount: amountVal }),
     });
     const data = await resp.json();
     if (data.success) {
       let msg = "";
       if (direction === "rub_to_coin") {
-        msg = `${amount} ₽ → ${parseFloat(data.exchanged_amount).toFixed(5)} ₲`;
+        msg = `${formatBalance(amountVal, 2)} ₽ → ${formatBalance(data.exchanged_amount, 5)} ₲`;
       } else {
-        msg = `${amount} ₲ → ${parseFloat(data.exchanged_amount).toFixed(2)} ₽`;
+        msg = `${formatBalance(amountVal, 5)} ₲ → ${formatBalance(data.exchanged_amount, 2)} ₽`;
       }
       alert("✅ Обмен выполнен! " + msg);
       lastDirection = direction;
@@ -1052,14 +1081,14 @@ async function loadBalanceAndExchangeRate() {
     if (userData.success && userData.user) {
       if (currentExchangeDirection === "coin_to_rub") {
         document.getElementById("balanceInfo").textContent =
-          (userData.user.balance || 0).toFixed(5) + " ₲";
+          formatBalance(userData.user.balance, 5) + " ₲";
         document.getElementById("toBalanceInfo").textContent =
-          (userData.user.rub_balance || 0).toFixed(2) + " ₽";
+          formatBalance(userData.user.rub_balance, 2) + " ₽";
       } else {
         document.getElementById("balanceInfo").textContent =
-          (userData.user.rub_balance || 0).toFixed(2) + " ₽";
+          formatBalance(userData.user.rub_balance, 2) + " ₽";
         document.getElementById("toBalanceInfo").textContent =
-          (userData.user.balance || 0).toFixed(5) + " ₲";
+          formatBalance(userData.user.balance, 5) + " ₲";
       }
     }
   } catch (err) {
@@ -1087,7 +1116,7 @@ function updateCurrentRateDisplay() {
     return;
   }
   document.getElementById("currentRateDisplay").textContent =
-    "Курс: 1 ₲ = " + currentExchangeRate.toFixed(2) + " ₽";
+    "Курс: 1 ₲ = " + formatBalance(currentExchangeRate, 2) + " ₽";
 }
 
 function drawExchangeChart(rates) {
@@ -1100,9 +1129,9 @@ function drawExchangeChart(rates) {
   const labels = sorted.map((r) => {
     const d = new Date(r.created_at);
     return (
-      d.getHours().toString().padStart(2, "0") +
+      String(d.getHours()).padStart(2, "0") +
       ":" +
-      d.getMinutes().toString().padStart(2, "0")
+      String(d.getMinutes()).padStart(2, "0")
     );
   });
   const dataPoints = sorted.map((r) => parseFloat(r.exchange_rate));
@@ -1140,9 +1169,9 @@ function drawExchangeChart(rates) {
 }
 
 /**************************************************
- * ОКНО "ИСТОРИЯ" (без кнопки закрытия)
+ * ИСТОРИЯ (без кнопки закрытия, без радиуса)
  **************************************************/
-function openHistoryModal() {
+function openHistoryModal(horizontalSwitch) {
   createModal(
     "historyModal",
     `
@@ -1152,11 +1181,13 @@ function openHistoryModal() {
       </div>
     `,
     {
-      showCloseBtn: false, // нет кнопки закрытия
+      showCloseBtn: false, 
       cornerTopMargin: 0,
       cornerTopRadius: 0,
       hasVerticalScroll: true,
-      defaultFromBottom: true
+      defaultFromBottom: true,
+      noRadiusByDefault: true,
+      horizontalSwitch: !!horizontalSwitch
     }
   );
   fetchTransactionHistory();
@@ -1220,18 +1251,15 @@ function displayTransactionHistory(transactions) {
     dateItem.appendChild(dateHeader);
 
     groups[dateStr].forEach((tx) => {
-      const timeStr = new Date(tx.client_time || tx.created_at).toLocaleTimeString(
-        "ru-RU"
-      );
+      const timeStr = new Date(tx.client_time || tx.created_at).toLocaleTimeString("ru-RU");
 
       let iconSrc = "";
       let titleText = "";
       let detailsText = "";
       let amountSign = "";
-      let amountValue = formatBalance(tx.amount || 0);
+      let amountValue = formatBalance(tx.amount, 5);
 
-      // всё чёрное
-      let color = "#000";
+      let color = "#000"; // всё чёрное
 
       if (tx.type === "merchant_payment") {
         iconSrc = "90.png";
@@ -1259,7 +1287,7 @@ function displayTransactionHistory(transactions) {
           tx.direction === "rub_to_coin" ? "Рубли → Монеты" : "Монеты → Рубли"
         }`;
         amountSign = tx.direction === "rub_to_coin" ? "+" : "-";
-        amountValue = formatBalance(tx.amount);
+        amountValue = formatBalance(tx.amount, 5);
       } else {
         iconSrc = "67.png";
         titleText = "Операция";
@@ -1348,7 +1376,7 @@ function getDateLabel(dateObj) {
 }
 
 /**************************************************
- * МЕРЧАНТСКИЙ ИНТЕРФЕЙС
+ * МЕРЧАНТ
  **************************************************/
 async function openMerchantUI() {
   if (!currentMerchantId) {
@@ -1415,14 +1443,12 @@ async function fetchMerchantInfo() {
 async function fetchMerchantBalance() {
   if (!currentMerchantId) return;
   try {
-    const resp = await fetch(
-      `${API_URL}/merchantBalance?merchantId=${currentMerchantId}`,
-      { credentials: "include" }
-    );
+    const resp = await fetch(`${API_URL}/merchantBalance?merchantId=${currentMerchantId}`, {
+      credentials: "include",
+    });
     const data = await resp.json();
     if (data.success) {
-      document.getElementById("merchantBalanceValue").textContent =
-        parseFloat(data.balance).toFixed(5);
+      document.getElementById("merchantBalanceValue").textContent = formatBalance(data.balance, 5);
     }
   } catch (err) {
     console.error("fetchMerchantBalance:", err);
@@ -1445,9 +1471,10 @@ function openOneTimeQRModal() {
     {
       showCloseBtn: true,
       cornerTopMargin: 50,
-      cornerTopRadius: 20,
+      cornerTopRadius: 20,  // хотим радиус
       hasVerticalScroll: true,
-      defaultFromBottom: true
+      defaultFromBottom: true,
+      noRadiusByDefault: false
     }
   );
 
@@ -1467,7 +1494,8 @@ function calcRubEquivalent() {
   const coinVal = parseFloat(document.getElementById("qrAmountInput").value) || 0;
   const rubMultiplier = 1 + currentHalvingStep * 0.02;
   const rubVal = coinVal * rubMultiplier;
-  document.getElementById("qrRubEquivalent").textContent = "≈ " + rubVal.toFixed(2) + " RUB";
+  document.getElementById("qrRubEquivalent").textContent =
+    "≈ " + formatBalance(rubVal, 2) + " RUB";
 }
 
 function createMerchantQR(amount, purpose) {
@@ -1478,14 +1506,15 @@ function createMerchantQR(amount, purpose) {
     "merchantQRModal",
     `
       <div id="merchantQRModalContainer"></div>
-      <p style="margin-top:10px;">Запрашиваемая сумма: ${amount} ₲</p>
+      <p style="margin-top:10px;">Запрашиваемая сумма: ${formatBalance(amount, 5)} ₲</p>
     `,
     {
       showCloseBtn: true,
       cornerTopMargin: 50,
-      cornerTopRadius: 20,
+      cornerTopRadius: 20, // радиус
       hasVerticalScroll: true,
-      defaultFromBottom: true
+      defaultFromBottom: true,
+      noRadiusByDefault: false
     }
   );
   if (typeof QRCode === "function") {
@@ -1500,8 +1529,7 @@ function createMerchantQR(amount, purpose) {
       });
     }
   } else {
-    document.getElementById("merchantQRModalContainer").textContent =
-      "QR data: " + qrData;
+    document.getElementById("merchantQRModalContainer").textContent = "QR data: " + qrData;
   }
   monitorPayment(qrData);
 }
@@ -1543,9 +1571,10 @@ function openMerchantTransferModal() {
     {
       showCloseBtn: true,
       cornerTopMargin: 50,
-      cornerTopRadius: 20,
+      cornerTopRadius: 20, // радиус
       hasVerticalScroll: true,
-      defaultFromBottom: true
+      defaultFromBottom: true,
+      noRadiusByDefault: false
     }
   );
 
@@ -1614,7 +1643,6 @@ function hideMainUI() {
  * ПАРСИНГ QR + ЗАПРОС КАМЕРЫ
  **************************************************/
 function startUniversalQRScanner(videoElement, onResultCallback) {
-  // Запрашиваем доступ к камере:
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     alert("Камера не поддерживается вашим браузером");
     return;
@@ -1624,11 +1652,10 @@ function startUniversalQRScanner(videoElement, onResultCallback) {
     .then((stream) => {
       videoElement.srcObject = stream;
       videoElement.play();
-      // Здесь можно внедрить JS-библиотеку для декодирования QR.
-      // Для демонстрации можно вручную вызвать onResultCallback(...) через timeout.
+      // Здесь вы можете внедрить логику чтения QR.
       /*
       setTimeout(() => {
-         onResultCallback("guga://merchantId=MERCH-DEMO&amount=12.34&purpose=TestPayment");
+         onResultCallback("guga://merchantId=TEST1&amount=5.6789&purpose=Demonstration");
       }, 5000);
       */
     })
@@ -1638,7 +1665,6 @@ function startUniversalQRScanner(videoElement, onResultCallback) {
 }
 
 function parseMerchantQRData(qrString) {
-  // Пример QR: guga://merchantId=MERCH123&amount=12.34&purpose=Some%20Text
   const obj = { merchantId: null, amount: 0, purpose: "" };
   try {
     if (!qrString.startsWith("guga://")) return obj;
@@ -1660,7 +1686,6 @@ function parseMerchantQRData(qrString) {
  * DOMContentLoaded
  **************************************************/
 document.addEventListener("DOMContentLoaded", () => {
-  // Пытаемся получить данные о пользователе
   fetchUserData().then(() => {
     if (currentMerchantId) {
       openMerchantUI();
