@@ -1575,32 +1575,65 @@ async function openMerchantUI() {
       return;
     }
   }
+
+  // Скрываем/удаляем предыдущий UI, если надо
   hideMainUI();
   removeAllModals();
-  document.getElementById("merchantInterface")?.remove();
 
-  const div = document.createElement("div");
-  div.id = "merchantInterface";
-  div.style.display = "flex";
-  div.style.flexDirection = "column";
-  div.style.alignItems = "center";
-  div.style.marginTop = "80px";
-  div.innerHTML = `
-    <h2>Кабинет мерчанта</h2>
-    <p>Мерчант: <strong>${currentMerchantId}</strong></p>
-    <p>Баланс: <span id="merchantBalanceValue">0.00000</span> ₲</p>
-    <div style="display:flex;gap:10px;margin-top:20px;">
-      <button id="merchantCreateQRBtn">Создать QR</button>
-      <button id="merchantTransferBtn">Перевести</button>
-      <button id="merchantLogoutBtn">Выйти</button>
-    </div>
-  `;
-  document.body.appendChild(div);
+  // Создаём модальное окно — стилизуем как окно авторизации
+  createModal(
+    "merchantUIModal",
+    `
+      <!-- Аналогичная обёртка, как и у окна авторизации -->
+      <div style="
+        background:#f7f7f7;
+        border-radius:20px;
+        padding:20px;
+        max-width:400px;
+        margin:40px auto 0 auto;
+        box-shadow:0 2px 5px rgba(0,0,0,0.1);
+        display:flex;
+        flex-direction:column;
+        gap:16px;
+        align-items:center;
+      ">
 
+        <h2 style="margin:0;">Кабинет мерчанта</h2>
+        <p>Мерчант: <strong>${currentMerchantId}</strong></p>
+        <p>Баланс: <span id="merchantBalanceValue">0.00000</span> ₲</p>
+
+        <div style="display:flex; gap:10px; margin-top:20px;">
+          <button id="merchantCreateQRBtn" 
+                  style="padding:10px; border:none; border-radius:8px; cursor:pointer; background:#000; color:#fff;">
+            Создать QR
+          </button>
+          <button id="merchantTransferBtn" 
+                  style="padding:10px; border:none; border-radius:8px; cursor:pointer; background:#000; color:#fff;">
+            Перевести
+          </button>
+          <button id="merchantLogoutBtn"
+                  style="padding:10px; border:none; border-radius:8px; cursor:pointer; background:#000; color:#fff;">
+            Выйти
+          </button>
+        </div>
+      </div>
+    `,
+    {
+      showCloseBtn: false,          // нет креста в углу
+      cornerTopMargin: 0,
+      cornerTopRadius: 0,
+      hasVerticalScroll: true,
+      defaultFromBottom: true,
+      noRadiusByDefault: true
+    }
+  );
+
+  // Навешиваем события на кнопки
   document.getElementById("merchantCreateQRBtn").onclick = openOneTimeQRModal;
   document.getElementById("merchantTransferBtn").onclick = openMerchantTransferModal;
   document.getElementById("merchantLogoutBtn").onclick = logout;
 
+  // Загружаем баланс мерчанта
   fetchMerchantData();
 }
 
@@ -1681,48 +1714,86 @@ function openOneTimeQRModal() {
 
 function calcRubEquivalent() {
   const coinVal = parseFloat(document.getElementById("qrAmountInput").value) || 0;
-  const rubMultiplier = 1 + currentHalvingStep * 0.02;
-  const rubVal = coinVal * rubMultiplier;
+  if (!currentExchangeRate) {
+    document.getElementById("qrRubEquivalent").textContent = "≈ 0.00 RUB";
+    return;
+  }
+  const rubVal = coinVal * currentExchangeRate;
   document.getElementById("qrRubEquivalent").textContent =
     "≈ " + formatBalance(rubVal, 2) + " RUB";
 }
+
 
 function createMerchantQR(amount, purpose) {
   const qrData = `guga://merchantId=${currentMerchantId}&amount=${amount}&purpose=${encodeURIComponent(
     purpose
   )}`;
+
+  // Аналогично стилизуем окно
   createModal(
     "merchantQRModal",
     `
-      <div id="merchantQRModalContainer"></div>
-      <p style="margin-top:10px;">Запрашиваемая сумма: ${formatBalance(amount, 5)} ₲</p>
+      <!-- Обёртка, чтобы было похоже на auth-стиль -->
+      <div style="
+        background:#f7f7f7;
+        border-radius:20px;
+        padding:20px;
+        max-width:400px;
+        margin:0 auto;
+        box-shadow:0 2px 5px rgba(0,0,0,0.1);
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+      ">
+
+        <!-- Контейнер для самого QR -->
+        <div id="merchantQRModalContainer"
+             style="display:flex; justify-content:center; margin-bottom:10px;">
+        </div>
+
+        <!-- Сумма и Назначение -->
+        <p style="margin-top:10px;">
+          Запрашиваемая сумма: <strong>${formatBalance(amount, 5)} ₲</strong>
+        </p>
+        <p style="margin:0;">
+          Назначение: <strong>${purpose}</strong>
+        </p>
+      </div>
     `,
     {
       showCloseBtn: true,
       cornerTopMargin: 50,
-      cornerTopRadius: 20, // радиус
+      cornerTopRadius: 20,
       hasVerticalScroll: true,
       defaultFromBottom: true,
       noRadiusByDefault: false
     }
   );
+
+  // Генерируем QR (350×350)
   if (typeof QRCode === "function") {
     const container = document.getElementById("merchantQRModalContainer");
     if (container) {
       const qrElem = document.createElement("div");
       container.appendChild(qrElem);
+
       new QRCode(qrElem, {
         text: qrData,
-        width: 220,
-        height: 220,
+        width: 350,
+        height: 350,
       });
     }
   } else {
-    document.getElementById("merchantQRModalContainer").textContent = "QR data: " + qrData;
+    // Если вдруг нет QRCode()
+    const cont = document.getElementById("merchantQRModalContainer");
+    if (cont) {
+      cont.textContent = "QR data: " + qrData;
+    }
   }
+
+  // Запускаем мониторинг оплаты
   monitorPayment(qrData);
 }
-
 function monitorPayment(qrData) {
   const timer = setInterval(async () => {
     try {
