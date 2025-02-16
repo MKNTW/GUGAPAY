@@ -1028,7 +1028,7 @@ function openExchangeModal(horizontalSwitch) {
         <div style="position:absolute; top:10px; left:10px; display:flex; flex-direction:column; gap:4px;">
           <!-- Текущий курс -->
           <div id="currentRateText" style="font-size:24px; font-weight:bold;">
-            1 ₲ = --
+            --
           </div>
           <!-- Стрелка, проценты, разница в рублях -->
           <div style="display:flex; align-items:center; gap:12px;">
@@ -1235,11 +1235,11 @@ function updateCurrentRateDisplay() {
   // Пишем только в currentRateText (блок над графиком)
   const currentRateText = document.getElementById("currentRateText");
   if (!currentExchangeRate) {
-    if (currentRateText) currentRateText.textContent = "1 ₲ = --";
+    if (currentRateText) currentRateText.textContent = "--";
     return;
   }
   if (currentRateText) {
-    currentRateText.textContent = "1 ₲ = " + formatBalance(currentExchangeRate, 2) + " ₽";
+    currentRateText.textContent = "" + formatBalance(currentExchangeRate, 2) + " ₽";
   }
 }
 
