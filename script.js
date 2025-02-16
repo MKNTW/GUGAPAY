@@ -1318,8 +1318,8 @@ function displayTransactionHistory(transactions) {
       const iconImg = document.createElement("img");
       iconImg.src = iconSrc;
       iconImg.alt = "icon";
-      iconImg.style.width = "24px";
-      iconImg.style.height = "24px";
+      iconImg.style.width = "35px";
+      iconImg.style.height = "35px";
       leftDiv.appendChild(iconImg);
 
       const centerDiv = document.createElement("div");
