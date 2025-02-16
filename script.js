@@ -1714,15 +1714,14 @@ function openOneTimeQRModal() {
 
 function calcRubEquivalent() {
   const coinVal = parseFloat(document.getElementById("qrAmountInput").value) || 0;
-  if (!currentExchangeRate) {
-    document.getElementById("qrRubEquivalent").textContent = "≈ 0.00 RUB";
+  if (!currentExchangeRate || isNaN(currentExchangeRate)) {
+    document.getElementById("qrRubEquivalent").textContent = "Курс не доступен";
     return;
   }
   const rubVal = coinVal * currentExchangeRate;
   document.getElementById("qrRubEquivalent").textContent =
     "≈ " + formatBalance(rubVal, 2) + " RUB";
 }
-
 
 function createMerchantQR(amount, purpose) {
   const qrData = `guga://merchantId=${currentMerchantId}&amount=${amount}&purpose=${encodeURIComponent(
