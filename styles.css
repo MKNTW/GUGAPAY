@@ -378,6 +378,7 @@ body {
 @media (max-width: 600px) {
   #balanceValue {
     font-size: 30px;
+    margin-top: 25px;
   }
   #userIdDisplay {
     font-size: 14px;
