@@ -658,11 +658,11 @@ function createMainUI() {
 
     container.innerHTML = `
       <button id="transferBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;">
-        <img src="81.png" style="width:25px;height:25px;">
+        <img src="81.png" style="width:35px;height:35px;">
         Перевести
       </button>
       <button id="payQRBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;">
-        <img src="90.png" style="width:25px;height:25px;">
+        <img src="90.png" style="width:35px;height:35px;">
         Оплата
       </button>
     `;
