@@ -1155,11 +1155,11 @@ function drawExchangeChart(rates) {
     options: {
       scales: {
         x: {
-          display: true,
+          display: false,
           grid: { display: false, drawBorder: false },
         },
         y: {
-          display: false,
+          display: true,
           grid: { display: false, drawBorder: false },
         },
       },
@@ -1262,7 +1262,7 @@ function displayTransactionHistory(transactions) {
       let color = "#000"; // всё чёрное
 
       if (tx.type === "merchant_payment") {
-        iconSrc = "90.png";
+        iconSrc = "92.png";
         titleText = "Оплата по QR";
         detailsText = `Мерчант: ${
           tx.merchant_id ||
