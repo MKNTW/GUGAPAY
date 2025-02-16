@@ -552,11 +552,11 @@ function createMainUI() {
     const profileIcon = document.createElement("img");
     profileIcon.id = "profileIcon";
     profileIcon.src = "68.png";
-    profileIcon.style.width = "45px";
-    profileIcon.style.height = "45px";
+    profileIcon.style.width = "40px";
+    profileIcon.style.height = "40px";
     profileIcon.style.position = "fixed";
-    profileIcon.style.top = "15px";
-    profileIcon.style.right = "15px";
+    profileIcon.style.top = "10px";
+    profileIcon.style.right = "10px";
     profileIcon.style.cursor = "pointer";
     profileIcon.style.zIndex = "90000";
     document.body.appendChild(profileIcon);
@@ -661,7 +661,7 @@ function createMainUI() {
         <img src="81.png" style="width:35px;height:35px;">
         Перевести
       </button>
-      <button id="payQRBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;">
+      <button id="payQRBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;margin-top: -5px;">
         <img src="90.png" style="width:40px;height:40px;">
         Оплата
       </button>
@@ -1145,7 +1145,7 @@ function drawExchangeChart(rates) {
         {
           label: "Курс",
           data: dataPoints,
-          borderColor: "green",
+          borderColor: "black",
           fill: false,
           tension: 0.4,
           pointRadius: 0,
@@ -1159,7 +1159,7 @@ function drawExchangeChart(rates) {
           grid: { display: false, drawBorder: false },
         },
         y: {
-          display: true,
+          display: false,
           grid: { display: false, drawBorder: false },
         },
       },
