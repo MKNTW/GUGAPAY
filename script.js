@@ -663,7 +663,7 @@ function createMainUI() {
       </button>
       <button id="payQRBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;">
         <img src="90.png" style="width:25px;height:25px;">
-        Оплата по QR
+        Оплата
       </button>
     `;
     document.body.appendChild(container);
