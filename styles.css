@@ -268,7 +268,7 @@ body {
   position: relative;
   width: 100%;
   max-width: 600px; /* если нужно ограничить ширину */
-  margin: 40px auto 0 auto; /* отступ сверху 40px */
+  margin: 0px auto 0 auto; /* отступ сверху 40px */
   height: calc(100% - 40px); /* занимаем оставшуюся высоту */
   background-color: #fff;
   overflow-y: auto; /* прокрутка */
