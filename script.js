@@ -747,6 +747,7 @@ function createMainUI() {
   }
   const mineContainer = document.getElementById("mineContainer");
   if (mineContainer) {
+    // Скрываем кнопку майнинга
     mineContainer.style.display = "none";
   }
 
@@ -824,7 +825,6 @@ async function fetchUserData() {
 /**************************************************
  * МАЙНИНГ
  **************************************************/
-
 function mineCoins() {
   pendingMinedCoins += 0.00001;
   console.log("Mined: ", pendingMinedCoins);
@@ -963,8 +963,7 @@ function openPayQRModal() {
     // Сначала создаём окно подтверждения
     confirmPayMerchantModal(parsed);
 
-    // А теперь закрываем окно сканера
-    // Можно сделать сразу или с небольшим задержанием
+    // А теперь закрываем окно сканера (через небольшую паузу, чтобы не конфликтовать с анимацией)
     setTimeout(() => {
       document.getElementById("payQRModal")?.remove();
     }, 500);
@@ -1053,8 +1052,6 @@ function openExchangeModal(horizontalSwitch) {
       <div style="background:rgb(247, 247, 247); border-radius:10px; 
                   padding:10px; max-width:600px; margin:20px auto;">
         
-        <!-- Удалили <p id="currentRateDisplay">Курс: --</p>, чтобы использовать только currentRateText -->
-
         <div style="display:flex;justify-content:center;gap:10px;align-items:center;margin-top:20px;">
           <div style="flex:1;text-align:center;">
             <p id="fromLabel">
@@ -1097,8 +1094,6 @@ function openExchangeModal(horizontalSwitch) {
 
   loadBalanceAndExchangeRate()
     .then(() => {
-      // Вместо updateCurrentRateDisplay() (которая тоже обновляет currentRateText) –
-      // сразу строим график, там тоже вызывается updateCurrentRateDisplay().
       drawExchangeChart(); 
       document.getElementById("btnPerformExchange").onclick = () => {
         handleExchange(currentExchangeDirection);
@@ -1435,7 +1430,7 @@ function displayTransactionHistory(transactions) {
       let amountSign = "";
       let amountValue = formatBalance(tx.amount, 5);
 
-      // По умолчанию чёрный, но далее перекрашиваем в зависимости от типа
+      // По умолчанию чёрный
       let color = "#000";
 
       if (tx.type === "merchant_payment") {
@@ -1448,7 +1443,7 @@ function displayTransactionHistory(transactions) {
           "???"
         }`;
         amountSign = "-";
-        color = "rgb(0 0 0)"; // красный
+        color = "rgb(0 0 0)"; // или красный
 
       } else if (tx.from_user_id === currentUserId) {
         // Списание (отправили кому-то)
@@ -1456,7 +1451,7 @@ function displayTransactionHistory(transactions) {
         titleText = "Отправлено";
         detailsText = `Кому: ${tx.to_user_id}`;
         amountSign = "-";
-        color = "rgb(0 0 0)"; // красный
+        color = "rgb(0 0 0)"; // или красный
 
       } else if (tx.to_user_id === currentUserId) {
         // Пополнение (получили)
@@ -1478,7 +1473,7 @@ function displayTransactionHistory(transactions) {
           color = "rgb(25 150 70)"; // зелёный
         } else {
           amountSign = "-";
-          color = "rgb(0 0 0)"; // красный
+          color = "rgb(0 0 0)"; // или красный
         }
 
       } else {
@@ -1883,6 +1878,24 @@ function stopStream(stream) {
   if (stream) {
     stream.getTracks().forEach((track) => track.stop());
   }
+}
+
+function parseMerchantQRData(qrString) {
+  const obj = { merchantId: null, amount: 0, purpose: "" };
+  try {
+    if (!qrString.startsWith("guga://")) return obj;
+    const query = qrString.replace("guga://", "");
+    const parts = query.split("&");
+    for (const p of parts) {
+      const [key, val] = p.split("=");
+      if (key === "merchantId") obj.merchantId = val;
+      if (key === "amount") obj.amount = parseFloat(val);
+      if (key === "purpose") obj.purpose = decodeURIComponent(val);
+    }
+  } catch (e) {
+    console.error("parseMerchantQRData error:", e);
+  }
+  return obj;
 }
 
 /**************************************************
