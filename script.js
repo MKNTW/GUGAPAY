@@ -1175,7 +1175,7 @@ function openHistoryModal(horizontalSwitch) {
   createModal(
     "historyModal",
     `
-      <h2 style="text-align:center;">История операций</h2>
+      <h2 style="text-align:center;">История</h2>
       <div>
         <ul id="transactionList" style="padding:0;list-style:none;margin:0;"></ul>
       </div>
