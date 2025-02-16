@@ -920,19 +920,19 @@ function openExchangeModal(horizontalSwitch) {
         <!-- Блок с «Текущий курс», стрелкой и процентом -->
         <div style="position:absolute; top:10px; left:10px; display:flex; flex-direction:column; gap:4px;">
           <!-- Текущий курс -->
-          <div id="currentRateText" style="font-size:16px; font-weight:bold;">
+          <div id="currentRateText" style="font-size:24px; font-weight:bold;">
             1 ₲ = --
           </div>
           <!-- Стрелка, проценты, разница в рублях -->
           <div style="display:flex; align-items:center; gap:8px;">
-            <span id="rateChangeArrow" style="font-size:16px;">↑</span>
-            <span id="rateChangePercent" style="font-size:16px;">+0.00%</span>
-            <span id="rateChangeRub" style="font-size:16px; color:#000;">+0.00₽</span>
+            <span id="rateChangeArrow" style="font-size:18px;margin-bottom: 6px;">↑</span>
+            <span id="rateChangePercent" style="font-size:18px;">+0.00%</span>
+            <span id="rateChangeRub" style="font-size:18px; color:#000;">+0.00₽</span>
           </div>
         </div>
 
         <!-- Canvas для графика -->
-        <canvas id="exchangeChart" style="width:100%; max-height:200px; margin-top:40px;"></canvas>
+        <canvas id="exchangeChart" style="width:100%; max-height:200px; margin-top:70px;"></canvas>
       </div>
 
       <!-- Отдельный контейнер для полей обмена -->
