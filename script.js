@@ -101,7 +101,7 @@ document.head.appendChild(globalStyle);
 function formatBalance(num, decimals = 5) {
   const parsed = parseFloat(num);
   if (isNaN(parsed)) {
-    return (0).toFixed(decimals); // Если некорректно -> "0.00000"
+    return (0).toFixed(decimals);
   }
   return parsed.toFixed(decimals);
 }
@@ -699,10 +699,6 @@ async function fetchUserData() {
       if (balanceValue) {
         balanceValue.textContent = formatBalance(coinBalance, 5) + " ₲";
       }
-      const userIdEl = document.getElementById("userIdDisplay");
-      if (userIdEl) {
-        userIdEl.textContent = "ID: " + currentUserId;
-      }
       const rubBalanceInfo = document.getElementById("rubBalanceInfo");
       if (rubBalanceInfo) {
         rubBalanceInfo.textContent = formatBalance(rubBalance, 2) + " ₽";
@@ -718,29 +714,34 @@ async function fetchUserData() {
  **************************************************/
 
 function mineCoins() {
-  pendingMinedCoins += 0.00001;
-  console.log("Mined: ", pendingMinedCoins);
-}
+  // Показываем глобальную "крутилку"
+  showGlobalLoading();
 
-async function flushMinedCoins() {
-  if (pendingMinedCoins <= 0) return;
-  try {
-    const resp = await fetch(`${API_URL}/update`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount: pendingMinedCoins }),
+  // Отправляем запрос на сервер
+  fetch(`${API_URL}/mine`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ step: 0.00001 }) 
+    // тут, например, указываем, что хотим "приплюсовать" 0.00001
+  })
+    .then(resp => resp.json())
+    .then(data => {
+      if (data.success) {
+        // Обновляем данные пользователя, чтобы сразу увидеть новый баланс
+        fetchUserData();
+      } else {
+        console.error("Ошибка майнинга:", data.error);
+        alert("Ошибка майнинга: " + data.error);
+      }
+    })
+    .catch(err => {
+      console.error("Сетевая ошибка при майнинге:", err);
+    })
+    .finally(() => {
+      // Прячем "крутилку"
+      hideGlobalLoading();
     });
-    if (resp.ok) {
-      // Сервер подтверждает успех
-      pendingMinedCoins = 0;
-      console.log("Coins flushed successfully");
-    } else {
-      console.error("Server refused flush");
-    }
-  } catch (e) {
-    console.error("flushMinedCoins error:", e);
-  }
 }
 
 /**************************************************
