@@ -16,78 +16,81 @@ let cycleCount = 0;
 let exchangeChartInstance = null;
 
 /**************************************************
- * CSS АНИМАЦИИ (slideUp / slideDown / swap-rotate) + новые
+ * CSS АНИМАЦИИ
  **************************************************/
 const globalStyle = document.createElement("style");
 globalStyle.textContent = `
-  /* Открытие (снизу вверх) - было */
+  /*===== СТАРЫЕ АНИМАЦИИ: СНИЗУ, СВЕРХУ, SWAP-ROTATE =====*/
   @keyframes slideUp {
-    0% {
-      transform: translateY(100%);
-    }
-    100% {
-      transform: translateY(0);
-    }
+    0%   { transform: translateY(100%); }
+    100% { transform: translateY(0); }
   }
   .modal-slide-up {
     animation: slideUp 0.3s ease forwards;
   }
 
-  /* Закрытие (сверху вниз) - было */
   @keyframes slideDown {
-    0% {
-      transform: translateY(0);
-    }
-    100% {
-      transform: translateY(100%);
-    }
+    0%   { transform: translateY(0); }
+    100% { transform: translateY(100%); }
   }
   .modal-slide-down {
     animation: slideDown 0.3s ease forwards;
   }
 
-  /* Вращение swapBtn */
   .swap-rotate {
     transition: transform 0.3s ease;
     transform: rotate(360deg);
   }
 
-  /* Новая анимация "сверху вниз" (для ПРОФИЛЯ) */
+  /*===== ОТКРЫТИЕ ПРОФИЛЯ "СВЕРХУ ВНИЗ" =====*/
   @keyframes slideFromTop {
-    0% {
-      transform: translateY(-100%);
-    }
-    100% {
-      transform: translateY(0);
-    }
+    0%   { transform: translateY(-100%); }
+    100% { transform: translateY(0); }
   }
   .modal-slide-from-top {
     animation: slideFromTop 0.3s ease forwards;
   }
 
-  /* Горизонтальные анимации (лево-право) для переключения между модалками "История" / "Обмен" */
+  /*===== ЗАКРЫТИЕ ПРОФИЛЯ "К ВЕРХУ" =====*/
+  @keyframes slideToTop {
+    0%   { transform: translateY(0); }
+    100% { transform: translateY(-100%); }
+  }
+  .modal-slide-to-top {
+    animation: slideToTop 0.3s ease forwards;
+  }
+
+  /*===== ГОРИЗОНТАЛЬНЫЕ АНИМАЦИИ ДЛЯ ПЕРЕКЛЮЧЕНИЯ =====*/
+  @keyframes slideInRight {
+    0%   { transform: translateX(100%); }
+    100% { transform: translateX(0); }
+  }
+  .modal-slide-in-right {
+    animation: slideInRight 0.3s ease forwards;
+  }
+
   @keyframes slideOutLeft {
-    0% {
-      transform: translateX(0);
-    }
-    100% {
-      transform: translateX(-100%);
-    }
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
   }
   .modal-slide-out-left {
     animation: slideOutLeft 0.3s ease forwards;
   }
 
-  @keyframes slideInRight {
-    0% {
-      transform: translateX(100%);
-    }
-    100% {
-      transform: translateX(0);
-    }
+  @keyframes slideInLeft {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(0); }
   }
-  .modal-slide-in-right {
-    animation: slideInRight 0.3s ease forwards;
+  .modal-slide-in-left {
+    animation: slideInLeft 0.3s ease forwards;
+  }
+
+  @keyframes slideOutRight {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(100%); }
+  }
+  .modal-slide-out-right {
+    animation: slideOutRight 0.3s ease forwards;
   }
 `;
 document.head.appendChild(globalStyle);
@@ -109,7 +112,7 @@ function hideGlobalLoading() {
 }
 
 /**************************************************
- * ФУНКЦИЯ ЗАКРЫТИЯ МОДАЛОК "СВЕРХУ ВНИЗ"
+ * АНИМАЦИЯ ЗАКРЫТИЯ ВНИЗ (ДЛЯ "ГЛАВНАЯ" / ОСТАЛЬНОГО)
  **************************************************/
 function closeModalWithAnimation(modalId) {
   const modalEl = document.getElementById(modalId);
@@ -119,10 +122,18 @@ function closeModalWithAnimation(modalId) {
     modalEl.remove();
     return;
   }
-  // Убираем slide-up/slideFromTop и т.п., добавляем slide-down (закрытие вниз)
-  content.classList.remove("modal-slide-up", "modal-slide-from-top", "modal-slide-in-right");
+  // Убираем все предыдущие классы открытия:
+  content.classList.remove(
+    "modal-slide-up",
+    "modal-slide-from-top",
+    "modal-slide-in-right",
+    "modal-slide-in-left",
+    "modal-slide-out-left",
+    "modal-slide-out-right",
+    "modal-slide-to-top"
+  );
+  // Добавляем slide-down (закрытие вниз):
   content.classList.add("modal-slide-down");
-  // По окончании анимации — remove
   content.addEventListener(
     "animationend",
     () => {
@@ -133,30 +144,93 @@ function closeModalWithAnimation(modalId) {
 }
 
 /**************************************************
- * "ПЕРЕКЛЮЧЕНИЕ" МЕЖДУ "ИСТОРИЯ" И "ОБМЕН" (горизонтальная анимация)
+ * ФУНКЦИЯ "ЗАКРЫТЬ ПРОФИЛЬ НАВЕРХ"
  **************************************************/
-function switchBetweenHistoryAndExchange(currentModalId, newModalFn) {
-  // currentModalId: "historyModal" или "exchangeModal"
-  const oldModal = document.getElementById(currentModalId);
+function closeProfileToTop(modalId) {
+  const modalEl = document.getElementById(modalId);
+  if (!modalEl) return;
+  const content = modalEl.querySelector(".modal-content");
+  if (!content) {
+    modalEl.remove();
+    return;
+  }
+  // Убираем все классы:
+  content.classList.remove(
+    "modal-slide-up",
+    "modal-slide-down",
+    "modal-slide-from-top",
+    "modal-slide-in-right",
+    "modal-slide-in-left",
+    "modal-slide-out-left",
+    "modal-slide-out-right"
+  );
+  // Добавляем slideToTop:
+  content.classList.add("modal-slide-to-top");
+  content.addEventListener(
+    "animationend",
+    () => {
+      modalEl.remove();
+    },
+    { once: true }
+  );
+}
+
+/**************************************************
+ * ГОРИЗОНТАЛЬНОЕ ПЕРЕКЛЮЧЕНИЕ (БЕЗ ПАУЗЫ) МЕЖДУ "ИСТОРИЯ" И "ОБМЕН"
+ **************************************************/
+function switchHistoryExchange(oldId, newModalFn, direction) {
+  // direction может быть "toExchange" или "toHistory".
+  // oldId: "historyModal" или "exchangeModal".
+  const oldModal = document.getElementById(oldId);
   if (!oldModal) {
-    // Если почему-то не найдено — просто открыть новую
+    // Если почему-то не найдено — просто открыть новое
     removeAllModals();
     newModalFn();
     return;
   }
 
-  // Старому задаём класс ухода влево
   const oldContent = oldModal.querySelector(".modal-content");
-  oldContent.classList.remove("modal-slide-up", "modal-slide-down", "modal-slide-from-top", "modal-slide-in-right");
-  oldContent.classList.add("modal-slide-out-left");
 
-  // После ухода старого — удаляем
+  // Создаём новую модалку (пока без удаления старой):
+  newModalFn(); // создастся "historyModal" или "exchangeModal"
+
+  // Находим новосозданную модалку:
+  const newId = direction === "toExchange" ? "exchangeModal" : "historyModal";
+  const newModal = document.getElementById(newId);
+  if (!newModal) return;
+
+  const newContent = newModal.querySelector(".modal-content");
+
+  // Ставим одинаковые стили "растянутого" окна, чтобы анимация была "окно к окну":
+  oldModal.style.zIndex = "100002"; // чуть выше
+  newModal.style.zIndex = "100001"; // чуть ниже
+  // Оба видны, сейчас старое окно — сверху.
+
+  // Настраиваем анимации:
+  if (direction === "toExchange") {
+    // С Истории -> в Обмен:
+    // История уходит влево, Обмен въезжает справа
+    oldContent.classList.remove("modal-slide-in-left", "modal-slide-in-right");
+    oldContent.classList.add("modal-slide-out-left");
+    newContent.classList.remove("modal-slide-up"); // убираем стандарт
+    newContent.classList.remove("modal-slide-in-left", "modal-slide-in-right"); // на всякий
+    newContent.classList.add("modal-slide-in-right");
+  } else {
+    // С Обмена -> в Историю:
+    // Обмен уходит вправо, История въезжает слева
+    oldContent.classList.remove("modal-slide-in-left", "modal-slide-in-right");
+    oldContent.classList.add("modal-slide-out-right");
+    newContent.classList.remove("modal-slide-up");
+    newContent.classList.remove("modal-slide-in-left", "modal-slide-in-right");
+    newContent.classList.add("modal-slide-in-left");
+  }
+
+  // Когда старая анимация завершится — удаляем старую модалку:
   oldContent.addEventListener(
     "animationend",
     () => {
       oldModal.remove();
-      // Затем открываем новую модалку, но сразу с анимацией "slideInRight"
-      newModalFn(true); // передаём флаг, что это "горизонтальное переключение"
+      // Новое окно уже на месте, без "пробела" между.
     },
     { once: true }
   );
@@ -167,15 +241,15 @@ function switchBetweenHistoryAndExchange(currentModalId, newModalFn) {
  **************************************************/
 /**
  * createModal(id, innerHtml, {
- *   showCloseBtn,         // bool
- *   cornerTopMargin,      // px
- *   cornerTopRadius,      // px (только верхние углы)
- *   hasVerticalScroll,    // bool (overflow-y: auto|hidden)
- *   horizontalSwitch      // bool (если true, используем анимацию slideInRight при открытии)
- *   profileFromTop        // bool (если true, анимация сверху вниз)
+ *   showCloseBtn,        // bool
+ *   cornerTopMargin,     // px
+ *   cornerTopRadius,     // px
+ *   hasVerticalScroll,   // bool (overflow-y)
+ *   profileFromTop,      // bool (slideFromTop анимация)
+ *   defaultFromBottom,   // bool (slideUp анимация) — по умолчанию true
  * })
  *
- * Внимание: крестик теперь в центре (align-items:center; justify-content:center;).
+ * Крестик: по центру внутри (display:flex;align-items:center;justify-content:center;).
  */
 function createModal(
   id,
@@ -185,8 +259,8 @@ function createModal(
     cornerTopMargin = 0,
     cornerTopRadius = 0,
     hasVerticalScroll = true,
-    horizontalSwitch = false,  // для анимации "справа налево"
-    profileFromTop = false,    // для анимации "сверху вниз"
+    profileFromTop = false,
+    defaultFromBottom = true,
   } = {}
 ) {
   // Удаляем старое, если есть
@@ -196,8 +270,7 @@ function createModal(
   const modal = document.createElement("div");
   modal.id = id;
   modal.className = "modal";
-  // zIndex ниже bottomBar
-  modal.style.zIndex = "99999";
+  modal.style.zIndex = "100000"; // ниже возможных переключений
   modal.style.position = "fixed";
   modal.style.top = "0";
   modal.style.left = "0";
@@ -217,17 +290,22 @@ function createModal(
   overlay.style.height = "100%";
 
   const contentDiv = document.createElement("div");
-  // Выбираем класс анимации при открытии:
-  //  1) "modal-slide-from-top"  (профиль)
-  //  2) "modal-slide-in-right"  (переключение между окнами)
-  //  3) иначе "modal-slide-up"  (по умолчанию снизу вверх)
-  let openAnim = "modal-slide-up";
+  // Выбираем анимацию при появлении:
+  // 1) slideFromTop (профиль)
+  // 2) slideUp (по умолчанию, если defaultFromBottom=true)
+  // 3) или никакой, если не указано.
+  let openAnim = "";
   if (profileFromTop) {
     openAnim = "modal-slide-from-top";
-  } else if (horizontalSwitch) {
-    openAnim = "modal-slide-in-right";
+  } else if (defaultFromBottom) {
+    openAnim = "modal-slide-up";
   }
-  contentDiv.className = `modal-content ${openAnim}`;
+  if (openAnim) {
+    contentDiv.className = `modal-content ${openAnim}`;
+  } else {
+    contentDiv.className = "modal-content";
+  }
+
   contentDiv.style.marginTop = `${cornerTopMargin}px`;
   contentDiv.style.width = "100%";
   contentDiv.style.height = `calc(100% - ${cornerTopMargin}px)`;
@@ -240,13 +318,10 @@ function createModal(
   // Скруглим только верхние углы?
   if (cornerTopRadius > 0) {
     contentDiv.style.borderRadius = `${cornerTopRadius}px ${cornerTopRadius}px 0 0`;
-  } else {
-    contentDiv.style.borderRadius = "0";
   }
 
   let closeBtnHtml = "";
   if (showCloseBtn) {
-    // Кнопка закрытия (крест) - по центру внутри 30x30
     closeBtnHtml = `
       <button class="close-btn" style="
         position:absolute;
@@ -272,7 +347,7 @@ function createModal(
   modal.appendChild(contentDiv);
   document.body.appendChild(modal);
 
-  // Закрытие по overlay
+  // Закрытие по overlay (клик вне окна — убираем модалку)
   overlay.addEventListener("click", (e) => {
     if (e.target === overlay) {
       modal.remove();
@@ -284,7 +359,13 @@ function createModal(
     const cbtn = contentDiv.querySelector(".close-btn");
     if (cbtn) {
       cbtn.addEventListener("click", () => {
-        modal.remove();
+        // Если это профиль (profileModal), закрываем наверх:
+        if (id === "profileModal") {
+          closeProfileToTop(id);
+        } else {
+          // Иначе закрыть вниз
+          closeModalWithAnimation(id);
+        }
       });
     }
   }
@@ -293,7 +374,7 @@ function createModal(
 }
 
 /**************************************************
- * АВТОРИЗАЦИЯ / РЕГИСТРАЦИЯ / ЛОГИКА
+ * АВТОРИЗАЦИЯ / РЕГИСТРАЦИЯ
  **************************************************/
 async function login() {
   const loginVal = document.getElementById("loginInput")?.value;
@@ -424,6 +505,7 @@ function openAuthModal() {
       cornerTopMargin: 0,
       cornerTopRadius: 0,
       hasVerticalScroll: true,
+      defaultFromBottom: true,
     }
   );
 
@@ -497,7 +579,7 @@ function createMainUI() {
     `;
     document.body.appendChild(bottomBar);
 
-    // при нажатии на "Главная" — закрываем history/exchange вниз
+    // "Главная" — закрыть историю/обмен (вниз)
     document.getElementById("btnMain").addEventListener("click", () => {
       if (document.getElementById("historyModal")) {
         closeModalWithAnimation("historyModal");
@@ -509,33 +591,28 @@ function createMainUI() {
 
     // "История"
     document.getElementById("historyBtn").addEventListener("click", () => {
-      // Если уже открыт "exchangeModal", переключаемся с анимацией
+      // Если открыт "exchangeModal" — переключаемся
       if (document.getElementById("exchangeModal")) {
-        switchBetweenHistoryAndExchange("exchangeModal", (horizontal) => {
-          openHistoryModal(horizontal);
-        });
+        switchHistoryExchange("exchangeModal", () => openHistoryModal(), "toHistory");
       } else {
-        // Закрываем все прежде чем открыть
         removeAllModals();
-        openHistoryModal(false);
+        openHistoryModal();
       }
     });
 
-    // "Обменять"
+    // "Обмен"
     document.getElementById("exchangeBtn").addEventListener("click", () => {
-      // Если уже открыт "historyModal", переключаемся с анимацией
+      // Если открыт "historyModal" — переключаемся
       if (document.getElementById("historyModal")) {
-        switchBetweenHistoryAndExchange("historyModal", (horizontal) => {
-          openExchangeModal(horizontal);
-        });
+        switchHistoryExchange("historyModal", () => openExchangeModal(), "toExchange");
       } else {
         removeAllModals();
-        openExchangeModal(false);
+        openExchangeModal();
       }
     });
   }
 
-  // Показываем блоки баланса / майнинга
+  // Показываем блоки баланса / майнинга (если уже есть в HTML)
   const balanceDisplay = document.getElementById("balanceDisplay");
   if (balanceDisplay) {
     balanceDisplay.style.display = "block";
@@ -552,6 +629,42 @@ function createMainUI() {
     }
   }
 
+  // КНОПКИ «ПЕРЕВОД» И «ОПЛАТА ПО QR» (Вернули)
+  if (!document.getElementById("actionButtonsContainer")) {
+    const container = document.createElement("div");
+    container.id = "actionButtonsContainer";
+    container.style.position = "fixed";
+    container.style.top = "180px";
+    container.style.left = "50%";
+    container.style.transform = "translateX(-50%)";
+    container.style.display = "flex";
+    container.style.flexDirection = "row";
+    container.style.gap = "16px";
+    container.style.zIndex = "90000";
+
+    container.innerHTML = `
+      <button id="transferBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <img src="81.png" style="width:25px;height:25px;">
+        Перевести
+      </button>
+      <button id="payQRBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <img src="90.png" style="width:25px;height:25px;">
+        Оплата по QR
+      </button>
+    `;
+    document.body.appendChild(container);
+
+    document.getElementById("transferBtn").addEventListener("click", () => {
+      removeAllModals();
+      openTransferModal();
+    });
+    document.getElementById("payQRBtn").addEventListener("click", () => {
+      removeAllModals();
+      openPayQRModal();
+    });
+  }
+
+  // Обновляем инфо пользователя
   fetchUserData();
   clearInterval(updateInterval);
   updateInterval = setInterval(fetchUserData, 2000);
@@ -633,7 +746,7 @@ async function flushMinedCoins() {
 }
 
 /**************************************************
- * ОКНО "ПРОФИЛЬ" — теперь открывается "сверху вниз"
+ * ОКНО "ПРОФИЛЬ" (открывается сверху, закрывается наверх)
  **************************************************/
 function openProfileModal() {
   createModal(
@@ -647,7 +760,8 @@ function openProfileModal() {
       cornerTopMargin: 0,
       cornerTopRadius: 0,
       hasVerticalScroll: true,
-      profileFromTop: true, // ключ для анимации slideFromTop
+      profileFromTop: true,    // открытие "сверху вниз"
+      defaultFromBottom: false // убираем анимацию снизу
     }
   );
   document.getElementById("profileLogoutBtn").onclick = logout;
@@ -674,6 +788,7 @@ function openTransferModal() {
       cornerTopMargin: 50,
       cornerTopRadius: 20,
       hasVerticalScroll: true,
+      defaultFromBottom: true
     }
   );
 
@@ -712,7 +827,7 @@ function openTransferModal() {
 }
 
 /**************************************************
- * ОКНО "ОПЛАТА ПО QR" 
+ * ОКНО "ОПЛАТА ПО QR"
  **************************************************/
 function openPayQRModal() {
   createModal(
@@ -726,6 +841,7 @@ function openPayQRModal() {
       cornerTopMargin: 50,
       cornerTopRadius: 20,
       hasVerticalScroll: true,
+      defaultFromBottom: true
     }
   );
 
@@ -756,6 +872,7 @@ function confirmPayMerchantModal({ merchantId, amount, purpose }) {
       cornerTopMargin: 50,
       cornerTopRadius: 20,
       hasVerticalScroll: true,
+      defaultFromBottom: true
     }
   );
 
@@ -783,16 +900,12 @@ function confirmPayMerchantModal({ merchantId, amount, purpose }) {
 }
 
 /**************************************************
- * ОБМЕН
+ * ОБМЕН (без кнопки закрытия)
  **************************************************/
 let currentExchangeDirection = "coin_to_rub";
 let currentExchangeRate = 0;
 
-/**
- * Добавляем параметр horizontalSwitch
- * если true => окно "въезжает" справа (slideInRight)
- */
-async function openExchangeModal(horizontalSwitch = false) {
+function openExchangeModal() {
   showGlobalLoading();
   createModal(
     "exchangeModal",
@@ -828,7 +941,7 @@ async function openExchangeModal(horizontalSwitch = false) {
       cornerTopMargin: 0,
       cornerTopRadius: 0,
       hasVerticalScroll: true,
-      horizontalSwitch, // флаг, если мы переключаемся слева направо
+      defaultFromBottom: true
     }
   );
 
@@ -839,18 +952,20 @@ async function openExchangeModal(horizontalSwitch = false) {
     swapCurrencies();
   });
 
-  try {
-    await loadBalanceAndExchangeRate();
-    updateCurrentRateDisplay();
-    drawExchangeChart();
-    document.getElementById("btnPerformExchange").onclick = () => {
-      handleExchange(currentExchangeDirection);
-    };
-  } catch (err) {
-    console.error("openExchangeModal error:", err);
-  } finally {
-    hideGlobalLoading();
-  }
+  loadBalanceAndExchangeRate()
+    .then(() => {
+      updateCurrentRateDisplay();
+      drawExchangeChart();
+      document.getElementById("btnPerformExchange").onclick = () => {
+        handleExchange(currentExchangeDirection);
+      };
+    })
+    .catch((err) => {
+      console.error("openExchangeModal error:", err);
+    })
+    .finally(() => {
+      hideGlobalLoading();
+    });
 }
 
 function updateExchange() {
@@ -882,10 +997,10 @@ function updateCurrencyLabels() {
   const toLabel = document.getElementById("toLabel");
   if (currentExchangeDirection === "coin_to_rub") {
     fromLabel.innerHTML = `<img src="15.png" alt="GUGA" style="width:25px;vertical-align:middle;"> GUGA`;
-    toLabel.innerHTML = `<img src="18.png" alt="RUB" style="width:25px;vertical-align:middle;"> RUB`;
+    toLabel.innerHTML   = `<img src="18.png" alt="RUB" style="width:25px;vertical-align:middle;"> RUB`;
   } else {
     fromLabel.innerHTML = `<img src="18.png" alt="RUB" style="width:25px;vertical-align:middle;"> RUB`;
-    toLabel.innerHTML = `<img src="15.png" alt="GUGA" style="width:25px;vertical-align:middle;"> GUGA`;
+    toLabel.innerHTML   = `<img src="15.png" alt="GUGA" style="width:25px;vertical-align:middle;"> GUGA`;
   }
 }
 
@@ -1025,9 +1140,9 @@ function drawExchangeChart(rates) {
 }
 
 /**************************************************
- * ОКНО "ИСТОРИЯ" — без кнопки закрытия
+ * ОКНО "ИСТОРИЯ" (без кнопки закрытия)
  **************************************************/
-function openHistoryModal(horizontalSwitch = false) {
+function openHistoryModal() {
   createModal(
     "historyModal",
     `
@@ -1041,7 +1156,7 @@ function openHistoryModal(horizontalSwitch = false) {
       cornerTopMargin: 0,
       cornerTopRadius: 0,
       hasVerticalScroll: true,
-      horizontalSwitch, // чтобы анимировалось "справа налево", если переключаемся
+      defaultFromBottom: true
     }
   );
   fetchTransactionHistory();
@@ -1067,9 +1182,6 @@ async function fetchTransactionHistory() {
   }
 }
 
-/**************************************************
- * displayTransactionHistory + getDateLabel
- **************************************************/
 function displayTransactionHistory(transactions) {
   const list = document.getElementById("transactionList");
   if (!list) return;
@@ -1118,7 +1230,7 @@ function displayTransactionHistory(transactions) {
       let amountSign = "";
       let amountValue = formatBalance(tx.amount || 0);
 
-      // всё чёрное:
+      // всё чёрное
       let color = "#000";
 
       if (tx.type === "merchant_payment") {
@@ -1204,7 +1316,7 @@ function displayTransactionHistory(transactions) {
 
       const amountEl = document.createElement("div");
       amountEl.style.fontWeight = "bold";
-      amountEl.style.color = color; 
+      amountEl.style.color = color;
       amountEl.textContent = `${amountSign} ${amountValue} ₲`;
 
       const timeEl = document.createElement("div");
@@ -1335,6 +1447,7 @@ function openOneTimeQRModal() {
       cornerTopMargin: 50,
       cornerTopRadius: 20,
       hasVerticalScroll: true,
+      defaultFromBottom: true
     }
   );
 
@@ -1372,6 +1485,7 @@ function createMerchantQR(amount, purpose) {
       cornerTopMargin: 50,
       cornerTopRadius: 20,
       hasVerticalScroll: true,
+      defaultFromBottom: true
     }
   );
   if (typeof QRCode === "function") {
@@ -1431,6 +1545,7 @@ function openMerchantTransferModal() {
       cornerTopMargin: 50,
       cornerTopRadius: 20,
       hasVerticalScroll: true,
+      defaultFromBottom: true
     }
   );
 
@@ -1499,7 +1614,7 @@ function hideMainUI() {
  * ПАРСИНГ QR + ЗАПРОС КАМЕРЫ
  **************************************************/
 function startUniversalQRScanner(videoElement, onResultCallback) {
-  // При открытии окна «Оплата по QR» запрашиваем доступ к камере:
+  // Запрашиваем доступ к камере:
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     alert("Камера не поддерживается вашим браузером");
     return;
@@ -1509,12 +1624,13 @@ function startUniversalQRScanner(videoElement, onResultCallback) {
     .then((stream) => {
       videoElement.srcObject = stream;
       videoElement.play();
-      // Здесь вы можете добавить логику декодирования QR и при успешном считывании —
-      // вызывать onResultCallback(decodedString).
-      // Демонстрационная задержка 5с:
-      /* setTimeout(() => {
-         onResultCallback("guga://merchantId=MERCH1&amount=9.99&purpose=TestPay");
-      }, 5000); */
+      // Здесь можно внедрить JS-библиотеку для декодирования QR.
+      // Для демонстрации можно вручную вызвать onResultCallback(...) через timeout.
+      /*
+      setTimeout(() => {
+         onResultCallback("guga://merchantId=MERCH-DEMO&amount=12.34&purpose=TestPayment");
+      }, 5000);
+      */
     })
     .catch((err) => {
       alert("Доступ к камере отклонён: " + err);
