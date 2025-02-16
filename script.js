@@ -913,10 +913,26 @@ function openExchangeModal(horizontalSwitch) {
     `
       <h3 style="text-align:center;">Обменять</h3>
 
-      <!-- Контейнер для графика -->
+      <!-- Контейнер для графика с position:relative, чтобы разместить курс и стрелку сверху слева -->
       <div style="max-width:600px; margin:0 auto; background:rgb(247, 247, 247); 
-                  padding:10px; border-radius:10px;">
-        <canvas id="exchangeChart" style="width:100%; max-height:200px;"></canvas>
+                  padding:10px; border-radius:10px; position:relative;">
+
+        <!-- Блок с «Текущий курс», стрелкой и процентом -->
+        <div style="position:absolute; top:10px; left:10px; display:flex; flex-direction:column; gap:4px;">
+          <!-- Текущий курс -->
+          <div id="currentRateText" style="font-size:16px; font-weight:bold;">
+            1 ₲ = --
+          </div>
+          <!-- Стрелка, проценты, разница в рублях -->
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span id="rateChangeArrow" style="font-size:16px;">↑</span>
+            <span id="rateChangePercent" style="font-size:16px;">+0.00%</span>
+            <span id="rateChangeRub" style="font-size:16px; color:#000;">+0.00₽</span>
+          </div>
+        </div>
+
+        <!-- Canvas для графика -->
+        <canvas id="exchangeChart" style="width:100%; max-height:200px; margin-top:40px;"></canvas>
       </div>
 
       <!-- Отдельный контейнер для полей обмена -->
@@ -966,7 +982,7 @@ function openExchangeModal(horizontalSwitch) {
   loadBalanceAndExchangeRate()
     .then(() => {
       updateCurrentRateDisplay();
-      drawExchangeChart();
+      drawExchangeChart(); // Построим график и обновим инфо
       document.getElementById("btnPerformExchange").onclick = () => {
         handleExchange(currentExchangeDirection);
       };
@@ -992,7 +1008,7 @@ function updateExchange() {
       document.getElementById("toAmount").value = formatBalance(result, 5);
     }
   } else {
-    // Если пусто / 0 / некорректно => "0.00" / "0.00000"
+    // Если пусто/0/некорректно => "0.00" / "0.00000"
     if (currentExchangeDirection === "coin_to_rub") {
       document.getElementById("toAmount").value = "0.00";
     } else {
@@ -1106,10 +1122,19 @@ async function loadBalanceAndExchangeRate() {
 function updateCurrentRateDisplay() {
   if (!currentExchangeRate) {
     document.getElementById("currentRateDisplay").textContent = "--";
+    // Обновим «Текущий курс» сверху слева, если нужно
+    const currentRateText = document.getElementById("currentRateText");
+    if (currentRateText) currentRateText.textContent = "1 ₲ = --";
     return;
   }
   document.getElementById("currentRateDisplay").textContent =
     "1 ₲ = " + formatBalance(currentExchangeRate, 2) + " ₽";
+
+  // Обновим «Текущий курс» сверху слева
+  const currentRateText = document.getElementById("currentRateText");
+  if (currentRateText) {
+    currentRateText.textContent = "1 ₲ = " + formatBalance(currentExchangeRate, 2) + " ₽";
+  }
 }
 
 function drawExchangeChart(rates) {
@@ -1122,13 +1147,46 @@ function drawExchangeChart(rates) {
   const labels = sorted.map((r) => {
     const d = new Date(r.created_at);
     return (
-      String(d.getHours()).padStart(2, "0") +
-      ":" +
+      String(d.getHours()).padStart(2, "0") + ":" + 
       String(d.getMinutes()).padStart(2, "0")
     );
   });
   const dataPoints = sorted.map((r) => parseFloat(r.exchange_rate));
 
+  // Рассчитываем изменение за период (между первым и последним)
+  // Предположим, что самый первый в sorted — это "24 часа назад",
+  // а последний — "текущий". Тогда:
+  const firstRate = dataPoints[0];
+  const lastRate = dataPoints[dataPoints.length - 1];
+  const diff = lastRate - firstRate;
+  const percentChange = (diff / firstRate) * 100;
+  const rateChangeArrow = document.getElementById("rateChangeArrow");
+  const rateChangePercent = document.getElementById("rateChangePercent");
+  const rateChangeRub = document.getElementById("rateChangeRub");
+
+  // Обновляем стрелку, цвет и текст
+  if (diff > 0) {
+    rateChangeArrow.textContent = "↑";
+    rateChangeArrow.style.color = "rgb(75, 168, 87)"; // зелёный
+    rateChangePercent.textContent = `+${percentChange.toFixed(2)}%`;
+    rateChangePercent.style.color = "rgb(75, 168, 87)";
+    rateChangeRub.textContent = `+${diff.toFixed(2)}₽`;
+  } else if (diff < 0) {
+    rateChangeArrow.textContent = "↓";
+    rateChangeArrow.style.color = "rgb(210, 27, 27)"; // красный
+    rateChangePercent.textContent = `${percentChange.toFixed(2)}%`;
+    rateChangePercent.style.color = "rgb(210, 27, 27)";
+    rateChangeRub.textContent = `${diff.toFixed(2)}₽`;
+  } else {
+    // diff == 0
+    rateChangeArrow.textContent = "→";
+    rateChangeArrow.style.color = "#444";
+    rateChangePercent.textContent = "+0.00%";
+    rateChangePercent.style.color = "#444";
+    rateChangeRub.textContent = "+0.00₽";
+  }
+
+  // Построение графика Chart.js
   const ctx = document.getElementById("exchangeChart").getContext("2d");
   exchangeChartInstance = new Chart(ctx, {
     type: 'line',
@@ -1148,12 +1206,25 @@ function drawExchangeChart(rates) {
       layout: { padding: 0 },
       scales: {
         x: {
-          grid: { display: false, drawBorder: false, drawTicks: false, borderColor: 'transparent', borderWidth: 0 },
+          grid: {
+            display: false,
+            drawBorder: false,
+            drawTicks: false,
+            borderColor: 'transparent',
+            borderWidth: 0
+          },
           ticks: { display: false }
         },
         y: {
           position: 'right',
-          grid: { display: true, drawBorder: false, drawTicks: false, borderColor: 'transparent', borderWidth: 0, color: 'rgba(0,0,0,0.1)' },
+          grid: {
+            display: true,
+            drawBorder: false,
+            drawTicks: false,
+            borderColor: 'transparent',
+            borderWidth: 0,
+            color: 'rgba(0,0,0,0.1)'
+          },
           ticks: { beginAtZero: false }
         }
       },
@@ -1161,6 +1232,7 @@ function drawExchangeChart(rates) {
     }
   });
 }
+
 
 /**************************************************
  * ИСТОРИЯ (без кнопки закрытия, без радиуса)
