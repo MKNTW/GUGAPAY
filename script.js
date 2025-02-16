@@ -1828,46 +1828,63 @@ function hideMainUI() {
 }
 
 /**************************************************
- * ПАРСИНГ QR + ЗАПРОС КАМЕРЫ
+ * ПАРСИНГ QR + ЗАПРОС КАМЕРЫ (И ДЕКОДИРОВАНИЕ)
  **************************************************/
 function startUniversalQRScanner(videoElement, onResultCallback) {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     alert("Камера не поддерживается вашим браузером");
     return;
   }
+
+  // Запрашиваем доступ к камере (задняя/внешняя, если есть)
   navigator.mediaDevices
     .getUserMedia({ video: { facingMode: "environment" } })
     .then((stream) => {
+      // Привязываем поток к <video>
       videoElement.srcObject = stream;
+      videoElement.setAttribute("playsinline", true); // нужно для iOS/Safari
       videoElement.play();
-      // Здесь вы можете внедрить логику чтения QR.
-      /*
-      setTimeout(() => {
-         onResultCallback("guga://merchantId=TEST1&amount=5.6789&purpose=Demonstration");
-      }, 5000);
-      */
+
+      // Создаём "скрытый" <canvas>, чтобы кадр за кадром читать пиксели
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      // Рекурсивная функция, которая будет считывать QR
+      function tick() {
+        if (videoElement.readyState === videoElement.HAVE_ENOUGH_DATA) {
+          // Приводим canvas к размеру видеокадра
+          canvas.width = videoElement.videoWidth;
+          canvas.height = videoElement.videoHeight;
+          // Рисуем текущее изображение с видео на canvas
+          ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+          // Получаем пиксели
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+          // Декодируем через jsQR
+          const code = jsQR(imageData.data, canvas.width, canvas.height);
+          if (code) {
+            // Успешно распознали QR
+            stopStream(stream);   // останавливаем камеру
+            onResultCallback(code.data); // вызываем колбэк с содержимым QR
+            return;               // выходим, чтобы не продолжать сканирование
+          }
+        }
+        // Если не распознали, вызываем снова (анимационный цикл)
+        requestAnimationFrame(tick);
+      }
+
+      requestAnimationFrame(tick);
     })
     .catch((err) => {
       alert("Доступ к камере отклонён: " + err);
     });
 }
 
-function parseMerchantQRData(qrString) {
-  const obj = { merchantId: null, amount: 0, purpose: "" };
-  try {
-    if (!qrString.startsWith("guga://")) return obj;
-    const query = qrString.replace("guga://", "");
-    const parts = query.split("&");
-    for (const p of parts) {
-      const [key, val] = p.split("=");
-      if (key === "merchantId") obj.merchantId = val;
-      if (key === "amount") obj.amount = parseFloat(val);
-      if (key === "purpose") obj.purpose = decodeURIComponent(val);
-    }
-  } catch (e) {
-    console.error("parseMerchantQRData error:", e);
+// Вспомогательная функция остановки видеопотока
+function stopStream(stream) {
+  if (stream) {
+    stream.getTracks().forEach((track) => track.stop());
   }
-  return obj;
 }
 
 /**************************************************
