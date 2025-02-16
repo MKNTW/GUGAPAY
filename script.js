@@ -925,9 +925,9 @@ function openExchangeModal(horizontalSwitch) {
           </div>
           <!-- Стрелка, проценты, разница в рублях -->
           <div style="display:flex; align-items:center; gap:8px;">
-            <span id="rateChangeArrow" style="font-size:18px;margin-bottom: 6px;">↑</span>
-            <span id="rateChangePercent" style="font-size:18px;">+0.00%</span>
-            <span id="rateChangeRub" style="font-size:18px; color:#000;">+0.00₽</span>
+            <span id="rateChangeArrow" style="font-size:16px;">↑</span>
+            <span id="rateChangePercent" style="font-size:16px;">+0.00%</span>
+            <span id="rateChangeRub" style="font-size:16px; color:#000;">+0.00₽</span>
           </div>
         </div>
 
