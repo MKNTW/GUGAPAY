@@ -762,7 +762,7 @@ function createMainUI() {
     container.style.flexDirection = "row";
     container.style.gap = "16px";
     container.style.zIndex = "90000";
-    container.style.margin-top = "25px";
+    container.style.margintop = "25px";
 
     container.innerHTML = `
       <button id="transferBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;">
