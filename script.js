@@ -799,7 +799,54 @@ function createMainUI() {
     </div>
   `;
   document.body.appendChild(priceBox);
-  
+
+  // Баланс / Майнинг
+  const balanceDisplay = document.getElementById("balanceDisplay");
+  if (balanceDisplay) {
+    balanceDisplay.style.display = "block";
+  }
+  const mineContainer = document.getElementById("mineContainer");
+  if (mineContainer) {
+    // Скрываем кнопку майнинга
+    mineContainer.style.display = "none";
+  }
+
+  // Кнопки "Перевести" / "Оплата"
+  if (!document.getElementById("actionButtonsContainer")) {
+    const container = document.createElement("div");
+    container.id = "actionButtonsContainer";
+    container.style.position = "fixed";
+    container.style.top = "180px";
+    container.style.left = "50%";
+    container.style.transform = "translateX(-50%)";
+    container.style.display = "flex";
+    container.style.flexDirection = "row";
+    container.style.gap = "16px";
+    container.style.zIndex = "90000";
+    container.style.margintop = "25px";
+
+    container.innerHTML = `
+      <button id="transferBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <img src="81.png" style="width:35px;height:35px;">
+        Перевести
+      </button>
+      <button id="payQRBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;margin-top: -5px;">
+        <img src="90.png" style="width:40px;height:40px;">
+        Оплатить
+      </button>
+    `;
+    document.body.appendChild(container);
+
+    document.getElementById("transferBtn").addEventListener("click", () => {
+      removeAllModals();
+      openTransferModal();
+    });
+    document.getElementById("payQRBtn").addEventListener("click", () => {
+      removeAllModals();
+      openPayQRModal();
+    });
+  }
+
   fetchUserData();
   clearInterval(updateInterval);
   updateInterval = setInterval(fetchUserData, 2000);
