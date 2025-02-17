@@ -740,53 +740,66 @@ function createMainUI() {
     });
   }
 
-  // Баланс / Майнинг
-  const balanceDisplay = document.getElementById("balanceDisplay");
-  if (balanceDisplay) {
-    balanceDisplay.style.display = "block";
-  }
-  const mineContainer = document.getElementById("mineContainer");
-  if (mineContainer) {
-    // Скрываем кнопку майнинга
-    mineContainer.style.display = "none";
-  }
+  // Новый блок с балансом, курсом и графиком
+  const balanceBox = document.createElement("div");
+  balanceBox.style.backgroundColor = "#b3e0ff"; // светло голубой фон
+  balanceBox.style.borderRadius = "20px";
+  balanceBox.style.padding = "20px";
+  balanceBox.style.marginTop = "40px";
+  balanceBox.style.marginLeft = "20px";
+  balanceBox.style.maxWidth = "600px";
+  balanceBox.style.position = "relative";
+  balanceBox.style.marginBottom = "20px";
 
-  // Кнопки "Перевести" / "Оплата"
-  if (!document.getElementById("actionButtonsContainer")) {
-    const container = document.createElement("div");
-    container.id = "actionButtonsContainer";
-    container.style.position = "fixed";
-    container.style.top = "180px";
-    container.style.left = "50%";
-    container.style.transform = "translateX(-50%)";
-    container.style.display = "flex";
-    container.style.flexDirection = "row";
-    container.style.gap = "16px";
-    container.style.zIndex = "90000";
-    container.style.margintop = "25px";
+  balanceBox.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 20px;">
+      <img src="15.png" style="width:40px; height:40px;">
+      <div>
+        <h3 style="margin: 0;">${formatBalance(coinBalance, 5)} ₲</h3>
+        <p style="margin: 0;">GugaCoin</p>
+      </div>
+      <div style="position: absolute; right: 10px; top: 10px; text-align: right;">
+        <p style="font-size: 14px;">+0.00%</p>
+        <p style="font-size: 16px; font-weight: bold;">+0.00₽</p>
+      </div>
+    </div>
+    <div style="margin-top: 20px;">
+      <p style="text-align: center;">Текущий курс</p>
+      <p style="text-align: center; font-size: 14px; color: #666;">1 ₲ = 0.00 ₽</p>
+      <canvas id="exchangeChart" style="width: 100%; height: 200px;"></canvas>
+    </div>
+  `;
+  document.body.appendChild(balanceBox);
 
-    container.innerHTML = `
-      <button id="transferBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;">
-        <img src="81.png" style="width:35px;height:35px;">
-        Перевести
-      </button>
-      <button id="payQRBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;margin-top: -5px;">
-        <img src="90.png" style="width:40px;height:40px;">
-        Оплатить
-      </button>
-    `;
-    document.body.appendChild(container);
+  // Новый блок с ценой и эквивалентом
+  const priceBox = document.createElement("div");
+  priceBox.style.backgroundColor = "#f0f0f0"; // светло серый фон
+  priceBox.style.borderRadius = "20px";
+  priceBox.style.padding = "20px";
+  priceBox.style.maxWidth = "600px";
+  priceBox.style.position = "relative";
+  priceBox.style.marginBottom = "20px";
 
-    document.getElementById("transferBtn").addEventListener("click", () => {
-      removeAllModals();
-      openTransferModal();
-    });
-    document.getElementById("payQRBtn").addEventListener("click", () => {
-      removeAllModals();
-      openPayQRModal();
-    });
-  }
-
+  priceBox.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 20px;">
+      <img src="15.png" style="width:40px; height:40px;">
+      <div>
+        <h3 style="margin: 0;">GugaCoin</h3>
+        <p style="font-size: 14px; color: #666;">Текущая цена: 0.00₲</p>
+        <p style="font-size: 14px; color: #666;">+0.00% (Изменение)</p>
+      </div>
+      <div style="position: absolute; right: 10px; top: 10px; text-align: right;">
+        <h3 style="font-size: 16px; font-weight: bold;">Баланс: 0.00 ₲</h3>
+        <p style="font-size: 14px;">Эквивалент: 0.00 ₽</p>
+      </div>
+    </div>
+    <div style="margin-top: 20px;">
+      <p style="text-align: center;">1 ₽ = 0.00₲</p>
+      <canvas id="exchangeRateChart" style="width: 100%; height: 200px;"></canvas>
+    </div>
+  `;
+  document.body.appendChild(priceBox);
+  
   fetchUserData();
   clearInterval(updateInterval);
   updateInterval = setInterval(fetchUserData, 2000);
