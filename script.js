@@ -660,7 +660,6 @@ function openAuthModal() {
  * ГЛАВНЫЙ ЭКРАН
  **************************************************/
 function createMainUI() {
-  // Создаем иконку профиля, если она еще не существует
   if (!currentMerchantId && !document.getElementById("profileIcon")) {
     const profileIcon = document.createElement("img");
     profileIcon.id = "profileIcon";
@@ -677,7 +676,6 @@ function createMainUI() {
     profileIcon.addEventListener("click", openProfileModal);
   }
 
-  // Создаем нижнюю панель навигации, если она еще не существует
   if (!document.getElementById("bottomBar")) {
     const bottomBar = document.createElement("div");
     bottomBar.id = "bottomBar";
@@ -709,7 +707,7 @@ function createMainUI() {
     `;
     document.body.appendChild(bottomBar);
 
-    // Действия для кнопок
+    // "Главная" => закрыть "История"/"Обмен" (анимация вниз)
     document.getElementById("btnMain").addEventListener("click", () => {
       if (document.getElementById("historyModal")) {
         closeModalWithAnimation("historyModal");
@@ -719,8 +717,10 @@ function createMainUI() {
       }
     });
 
+    // "История"
     document.getElementById("historyBtn").addEventListener("click", () => {
       if (document.getElementById("exchangeModal")) {
+        // Переключение: "Обмен" -> "История"
         switchHistoryExchange("exchangeModal", () => openHistoryModal(true), "toHistory");
       } else {
         removeAllModals();
@@ -728,8 +728,10 @@ function createMainUI() {
       }
     });
 
+    // "Обмен"
     document.getElementById("exchangeBtn").addEventListener("click", () => {
       if (document.getElementById("historyModal")) {
+        // Переключение: "История" -> "Обмен"
         switchHistoryExchange("historyModal", () => openExchangeModal(true), "toExchange");
       } else {
         removeAllModals();
@@ -738,77 +740,6 @@ function createMainUI() {
     });
   }
 
-  // Блок баланса с графиком и курсом
-  const balanceBox = document.createElement("div");
-  balanceBox.style.backgroundColor = "#b3e0ff"; // светло голубой фон
-  balanceBox.style.borderRadius = "20px";
-  balanceBox.style.padding = "20px";
-  balanceBox.style.marginTop = "60px"; // отступ сверху
-  balanceBox.style.marginLeft = "20px";
-  balanceBox.style.maxWidth = "600px";
-  balanceBox.style.position = "relative";
-  balanceBox.style.marginBottom = "20px";
-
-  // Пример данных (можно заменить динамическими данными)
-  const coinBalance = 1000; // Пример баланса
-  const coinPrice = 0.5; // Пример цены
-  const priceChange = "+5.00%";
-  const priceChangeRub = "+50.00₽";
-
-  balanceBox.innerHTML = `
-    <div style="display: flex; align-items: center; gap: 20px;">
-      <img src="15.png" style="width:40px; height:40px;">
-      <div>
-        <h3 style="margin: 0;">${formatBalance(coinBalance, 5)} ₲</h3>
-        <p style="margin: 0;">GugaCoin</p>
-      </div>
-      <div style="position: absolute; right: 10px; top: 10px; text-align: right;">
-        <p style="font-size: 14px;">${priceChange}</p>
-        <p style="font-size: 16px; font-weight: bold;">${priceChangeRub}</p>
-      </div>
-    </div>
-    <div style="margin-top: 20px;">
-      <p style="text-align: center;">Текущий курс</p>
-      <p style="text-align: center; font-size: 14px; color: #666;">1 ₲ = 0.00 ₽</p>
-      <canvas id="exchangeChart" style="width: 100%; height: 200px;"></canvas>
-    </div>
-  `;
-  document.body.appendChild(balanceBox);
-
-  // Блок с ценой и эквивалентом
-  const priceBox = document.createElement("div");
-  priceBox.style.backgroundColor = "#f0f0f0"; // светло серый фон
-  priceBox.style.borderRadius = "20px";
-  priceBox.style.padding = "20px";
-  priceBox.style.maxWidth = "600px";
-  priceBox.style.position = "relative";
-  priceBox.style.marginBottom = "20px";
-
-  // Пример данных (можно заменить динамическими данными)
-  const rubBalance = 500; // Пример рублевого эквивалента
-  const rubChange = "-3.00%";
-  const rubChangeRub = "-15.00₽";
-
-  priceBox.innerHTML = `
-    <div style="display: flex; align-items: center; gap: 20px;">
-      <img src="15.png" style="width:40px; height:40px;">
-      <div>
-        <h3 style="margin: 0;">GugaCoin</h3>
-        <p style="font-size: 14px; color: #666;">Текущая цена: ${coinPrice}₲</p>
-        <p style="font-size: 14px; color: #666;">${rubChange} (Изменение)</p>
-      </div>
-      <div style="position: absolute; right: 10px; top: 10px; text-align: right;">
-        <h3 style="font-size: 16px; font-weight: bold;">Баланс: ${formatBalance(coinBalance, 5)} ₲</h3>
-        <p style="font-size: 14px;">Эквивалент: ${formatBalance(rubBalance, 2)} ₽</p>
-      </div>
-    </div>
-    <div style="margin-top: 20px;">
-      <p style="text-align: center;">1 ₽ = 0.00₲</p>
-      <canvas id="exchangeRateChart" style="width: 100%; height: 200px;"></canvas>
-    </div>
-  `;
-  document.body.appendChild(priceBox);
-
   // Баланс / Майнинг
   const balanceDisplay = document.getElementById("balanceDisplay");
   if (balanceDisplay) {
@@ -816,6 +747,7 @@ function createMainUI() {
   }
   const mineContainer = document.getElementById("mineContainer");
   if (mineContainer) {
+    // Скрываем кнопку майнинга
     mineContainer.style.display = "none";
   }
 
