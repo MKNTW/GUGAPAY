@@ -932,12 +932,18 @@ async function flushMinedCoins() {
 /**************************************************
  * ПРОФИЛЬ
  **************************************************/
+// Изменённая функция openProfileModal:
 function openProfileModal() {
   createModal(
     "profileModal",
     `
       <h3 style="text-align:center;">Профиль</h3>
-      <button id="profileLogoutBtn" style="padding:10px;margin-top:20px;">Выйти из аккаунта</button>
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+         <button id="bindTelegramBtn" style="padding:10px; border:none; border-radius:8px; background:#007bff; color:#fff; cursor:pointer;">
+           Привязать Telegram
+         </button>
+         <button id="profileLogoutBtn" style="padding:10px; margin-top:10px;">Выйти из аккаунта</button>
+      </div>
     `,
     {
       showCloseBtn: true,
@@ -950,6 +956,80 @@ function openProfileModal() {
     }
   );
   document.getElementById("profileLogoutBtn").onclick = logout;
+  document.getElementById("bindTelegramBtn").addEventListener("click", openBindTelegramModal);
+}
+
+// Новая функция для открытия окна привязки Telegram:
+function openBindTelegramModal() {
+  createModal(
+    "bindTelegramModal",
+    `
+      <h3 style="text-align:center;">Привязка Telegram</h3>
+      <p style="text-align:center;">Запросите код для привязки вашего Telegram-аккаунта.</p>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+         <button id="requestBindTelegramBtn" style="padding:10px; border:none; border-radius:8px; background:#007bff; color:#fff; cursor:pointer;">
+           Запросить код
+         </button>
+         <input type="text" id="bindTelegramCodeInput" placeholder="Введите код" style="padding:10px; border:1px solid #ccc; border-radius:8px; font-size:16px;"/>
+         <button id="checkBindTelegramBtn" style="padding:10px; border:none; border-radius:8px; background:#28a745; color:#fff; cursor:pointer;">
+           Проверить привязку
+         </button>
+      </div>
+    `,
+    {
+      showCloseBtn: true,
+      cornerTopMargin: 50,
+      cornerTopRadius: 20,
+      hasVerticalScroll: false,
+      defaultFromBottom: true,
+      noRadiusByDefault: false
+    }
+  );
+  
+  // При запросе кода просим ввести логин (или используйте глобально сохранённое значение)
+  document.getElementById("requestBindTelegramBtn").addEventListener("click", async () => {
+    const loginName = prompt("Введите ваш логин для запроса кода привязки Telegram:");
+    if (!loginName) return alert("Введите логин.");
+    try {
+      const resp = await fetch(`${API_URL}/telegram/request-code`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ forRegistration: true, username: loginName })
+      });
+      const data = await resp.json();
+      if (resp.ok && data.success) {
+        alert("Код сгенерирован. Пожалуйста, проверьте ваш Telegram.");
+      } else {
+        alert("Ошибка запроса кода: " + data.error);
+      }
+    } catch (err) {
+      console.error("Ошибка запроса кода:", err);
+      alert("Ошибка запроса кода.");
+    }
+  });
+  
+  // Проверка привязки — ввод кода из поля
+  document.getElementById("checkBindTelegramBtn").addEventListener("click", async () => {
+    const loginName = prompt("Введите ваш логин для проверки привязки Telegram:");
+    if (!loginName) return alert("Введите логин.");
+    try {
+      const resp = await fetch(`${API_URL}/telegram/check-bound?username=${encodeURIComponent(loginName)}`, {
+        method: "GET",
+        credentials: "include"
+      });
+      const data = await resp.json();
+      if (resp.ok && data.success) {
+        alert("Telegram успешно привязан!");
+        document.getElementById("bindTelegramModal")?.remove();
+      } else {
+        alert("Проверка привязки не пройдена: " + data.error);
+      }
+    } catch (err) {
+      console.error("Ошибка проверки привязки:", err);
+      alert("Ошибка проверки привязки.");
+    }
+  });
 }
 
 /**************************************************
