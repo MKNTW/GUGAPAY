@@ -404,7 +404,7 @@ async function login() {
   try {
     const resp = await fetch(`${API_URL}/login`, {
       method: "POST",
-      credentials: "include", // обязательно передаём cookie
+      credentials: "include", // cookie с токеном будут отправлены
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: loginVal, password: passVal }),
     });
@@ -451,6 +451,11 @@ async function register() {
     alert("❌ Введите логин и пароль");
     return;
   }
+  // Если Telegram не привязан, не даем отправлять форму регистрации
+  if (!window.isTelegramBound) {
+    alert("❌ Сначала привяжите свой Telegram аккаунт");
+    return;
+  }
   showGlobalLoading();
   try {
     const resp = await fetch(`${API_URL}/register`, {
@@ -492,20 +497,31 @@ async function logout() {
 }
 
 /**
- * Функция для запроса одноразового кода для привязки аккаунта Telegram.
- * После успешного запроса сервер сохранит код в базе,
- * а пользователь должен отправить его нашему Telegram‑боту.
+ * Функция для запроса одноразового кода для привязки Telegram.
+ * Мы отправляем флаг forRegistration, чтобы сервер мог обработать вызов без токена (или иным образом).
  */
 async function bindTelegramAccount() {
   try {
     const resp = await fetch(`${API_URL}/telegram/request-code`, {
       method: "POST",
-      credentials: "include", // обязательно, чтобы отправить cookie с токеном
-      headers: { "Content-Type": "application/json" }
+      credentials: "include", // Передаем cookie, если они есть
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ forRegistration: true })
     });
     const data = await resp.json();
     if (resp.ok && data.success) {
-      alert("Код сгенерирован. Отправьте его нашему Telegram-боту для привязки аккаунта.");
+      // Устанавливаем глобальный флаг, что Telegram привязан
+      window.isTelegramBound = true;
+      // Разблокируем кнопку регистрации
+      const regBtn = document.getElementById("registerSubmitBtn");
+      if (regBtn) regBtn.disabled = false;
+      // Обновляем текст кнопки привязки
+      const bindBtn = document.getElementById("bindTelegramBtn");
+      if (bindBtn) {
+        bindBtn.textContent = "Telegram привязан";
+        bindBtn.disabled = true;
+      }
+      alert("Telegram успешно привязан! Теперь можно зарегистрироваться.");
     } else {
       alert(`Ошибка привязки Telegram: ${data.error}`);
     }
@@ -525,7 +541,6 @@ function openAuthModal() {
   createModal(
     "authModal",
     `
-      <!-- Контейнер с общим светлым фоном и скруглёнными краями -->
       <div style="
         background:#f7f7f7;
         border-radius:20px;
@@ -544,9 +559,7 @@ function openAuthModal() {
           <h4 style="margin:0; text-align:center;">Вход</h4>
           <input type="text" id="loginInput" placeholder="Логин" style="padding:10px; font-size:16px; width:100%; border:none; border-radius:8px; outline:none;">
           <input type="password" id="passwordInput" placeholder="Пароль" style="padding:10px; font-size:16px; width:100%; border:none; border-radius:8px; outline:none;">
-          <button id="loginSubmitBtn" style="padding:10px; margin-top:4px; border:none; border-radius:8px; font-size:16px; background:#000; color:#fff; cursor:pointer;">
-            Войти
-          </button>
+          <button id="loginSubmitBtn" style="padding:10px; margin-top:4px; border:none; border-radius:8px; font-size:16px; background:#000; color:#fff; cursor:pointer;">Войти</button>
         </div>
 
         <!-- Блок Регистрации (изначально скрыт) -->
@@ -554,12 +567,15 @@ function openAuthModal() {
           <h4 style="margin:0; text-align:center;">Регистрация</h4>
           <input type="text" id="regLogin" placeholder="Логин" style="padding:10px; font-size:16px; width:100%; border:none; border-radius:8px; outline:none;">
           <input type="password" id="regPassword" placeholder="Пароль" style="padding:10px; font-size:16px; width:100%; border:none; border-radius:8px; outline:none;">
-          <button id="registerSubmitBtn" style="padding:10px; margin-top:4px; border:none; border-radius:8px; font-size:16px; background:#000; color:#fff; cursor:pointer;">
+          <button id="bindTelegramBtn" style="padding:10px; margin-top:4px; border:none; border-radius:8px; font-size:16px; background:#007bff; color:#fff; cursor:pointer;">
+            Привязать Telegram
+          </button>
+          <button id="registerSubmitBtn" style="padding:10px; margin-top:4px; border:none; border-radius:8px; font-size:16px; background:#000; color:#fff; cursor:pointer;" disabled>
             Зарегистрироваться
           </button>
         </div>
 
-        <!-- Кнопка переключения между "Вход" / "Регистрация" -->
+        <!-- Кнопка переключения между "Вход" и "Регистрация" -->
         <button id="toggleAuthBtn" style="margin-top:10px; border:none; border-radius:8px; font-size:14px; padding:8px; background:#eee; cursor:pointer;">
           Войти / Зарегистрироваться
         </button>
@@ -587,42 +603,24 @@ function openAuthModal() {
     } else {
       loginSection.style.display = "none";
       registerSection.style.display = "flex";
+      // При переключении в регистрацию сбрасываем флаг привязки
+      window.isTelegramBound = false;
+      // Отключаем кнопку регистрации и возвращаем текст кнопки привязки
+      const regBtn = document.getElementById("registerSubmitBtn");
+      if (regBtn) regBtn.disabled = true;
+      const bindBtn = document.getElementById("bindTelegramBtn");
+      if (bindBtn) {
+        bindBtn.textContent = "Привязать Telegram";
+        bindBtn.disabled = false;
+      }
     }
   });
+
+  document.getElementById("bindTelegramBtn").addEventListener("click", bindTelegramAccount);
 
   // Изначально показываем блок "Вход"
   document.getElementById("loginSection").style.display = "flex";
   document.getElementById("registerSection").style.display = "none";
-}
-
-/**************************************************
- * ОКНО ПРОФИЛЯ
- **************************************************/
-function openProfileModal() {
-  // Создаем модальное окно профиля с кнопкой для привязки Telegram.
-  createModal(
-    "profileModal",
-    `
-      <h3 style="text-align:center;">Профиль</h3>
-      <button id="profileLogoutBtn" style="padding:10px;margin-top:20px;">Выйти из аккаунта</button>
-      <div style="margin-top:20px; text-align:center;">
-        <button id="bindTelegramProfileBtn" style="padding:10px;border:none;background:#007bff;color:#fff;border-radius:8px;cursor:pointer;">
-          Привязать Telegram
-        </button>
-      </div>
-    `,
-    {
-      showCloseBtn: true,
-      cornerTopMargin: 0,
-      cornerTopRadius: 0,
-      hasVerticalScroll: true,
-      profileFromTop: true,
-      defaultFromBottom: false,
-      noRadiusByDefault: true
-    }
-  );
-  document.getElementById("profileLogoutBtn").onclick = logout;
-  document.getElementById("bindTelegramProfileBtn").addEventListener("click", bindTelegramAccount);
 }
 
 /**************************************************
