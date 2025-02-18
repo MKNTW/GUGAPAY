@@ -976,10 +976,13 @@ app.get('/telegram/check-bound', async (req, res) => {
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text ? msg.text.trim() : '';
+
+  // Если текст не состоит ровно из 6 цифр, отправляем инструкцию
   if (!/^\d{6}$/.test(text)) {
     bot.sendMessage(chatId, 'Пожалуйста, отправьте корректный код подтверждения (6 цифр).');
     return;
   }
+
   const nowISO = new Date().toISOString();
   const { data, error } = await supabase
     .from('telegram_verifications')
@@ -987,6 +990,7 @@ bot.on('message', async (msg) => {
     .eq('code', text)
     .eq('used', false)
     .gt('expires_at', nowISO);
+
   if (error) {
     console.error('Ошибка запроса в telegram_verifications:', error);
     bot.sendMessage(chatId, 'Произошла ошибка. Попробуйте ещё раз.');
@@ -996,8 +1000,11 @@ bot.on('message', async (msg) => {
     bot.sendMessage(chatId, 'Неверный или просроченный код.');
     return;
   }
+
   const verification = data[0];
   const userId = verification.user_id;
+
+  // Обновляем запись в telegram_verifications
   const { error: updateError } = await supabase
     .from('telegram_verifications')
     .update({ used: true, telegram_chat_id: chatId })
@@ -1007,15 +1014,42 @@ bot.on('message', async (msg) => {
     bot.sendMessage(chatId, 'Ошибка обновления данных. Попробуйте ещё раз.');
     return;
   }
-  const { error: updateUserError } = await supabase
-    .from('users')
-    .update({ telegram_id: chatId })
-    .eq('user_id', userId);
-  if (updateUserError) {
-    console.error('Ошибка обновления пользователя (telegram_id):', updateUserError);
+
+  // Пытаемся обновить поле telegram_id в таблице users с повторными попытками, если необходимо
+  const MAX_RETRIES = 3;
+  let updated = false;
+  for (let i = 0; i < MAX_RETRIES && !updated; i++) {
+    const { error: updateUserError } = await supabase
+      .from('users')
+      .update({ telegram_id: chatId })
+      .eq('user_id', userId);
+    if (updateUserError) {
+      console.error(`Попытка ${i+1}: Ошибка обновления пользователя (telegram_id):`, updateUserError);
+    } else {
+      // Проверяем, обновилось ли поле
+      const { data: userRecord, error: selErr } = await supabase
+        .from('users')
+        .select('telegram_id')
+        .eq('user_id', userId)
+        .single();
+      if (selErr) {
+        console.error(`Попытка ${i+1}: Ошибка при выборе пользователя:`, selErr);
+      } else if (userRecord && userRecord.telegram_id) {
+        updated = true;
+        break;
+      }
+    }
+    // Если обновление не удалось, ждем 500 мс перед следующей попыткой
+    if (!updated && i < MAX_RETRIES - 1) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  }
+
+  if (!updated) {
     bot.sendMessage(chatId, 'Ошибка обновления пользователя. Попробуйте ещё раз.');
     return;
   }
+
   bot.sendMessage(chatId, 'Ваш Telegram успешно привязан к аккаунту!');
 });
 
