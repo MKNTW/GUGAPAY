@@ -13,7 +13,6 @@ require('dotenv').config();
 
 // Инициализация Telegram-бота
 const TelegramBot = require('node-telegram-bot-api');
-// Используем предоставленный токен (можно также положить его в .env файл)
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '7889374104:AAHF4Lv7RjcFVl6n4D2dBMCJT0KGPz51kg8';
 if (!TELEGRAM_BOT_TOKEN) {
   console.error('Ошибка: TELEGRAM_BOT_TOKEN не установлен');
@@ -31,8 +30,6 @@ if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
   console.error('[Supabase] Ошибка: отсутствует SUPABASE_URL или SUPABASE_KEY');
   process.exit(1);
 }
-
-// Инициализация Supabase-клиента
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 // Middleware
@@ -40,20 +37,19 @@ app.use(helmet());
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-  origin: ['https://mkntw.ru'], // Замените на URL вашего сайта
+  origin: ['https://mkntw.ru'],
   credentials: true,
   optionsSuccessStatus: 200
 }));
 
-// Rate limiting для критичных endpoint’ов
 const authLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 час
+  windowMs: 60 * 60 * 1000,
   max: 1000,
   message: 'Слишком много запросов с этого IP, попробуйте позже.'
 });
 app.use(['/login', '/register', '/merchantLogin'], authLimiter);
 
-// Middleware для проверки JWT-токена
+// Middleware для проверки JWT
 function verifyToken(req, res, next) {
   const token = req.cookies.token;
   if (!token) {
@@ -68,7 +64,7 @@ function verifyToken(req, res, next) {
   });
 }
 
-// Endpoint для выхода (logout)
+// Endpoint logout
 app.post('/logout', (req, res) => {
   res.clearCookie('token', {
     httpOnly: true,
@@ -248,10 +244,10 @@ app.post('/update', verifyToken, async (req, res) => {
       .eq('user_id', userId)
       .single();
     if (!userData) {
-      return res.status(404).json({ success: false, error: 'пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
     if (userData.blocked === 1) {
-      return res.status(403).json({ success: false, error: 'аккаунт заблокирован' });
+      return res.status(403).json({ success: false, error: 'Аккаунт заблокирован' });
     }
 
     const newBalance = parseFloat(userData.balance || 0) + amount;
@@ -260,7 +256,7 @@ app.post('/update', verifyToken, async (req, res) => {
       .update({ balance: newBalance.toFixed(5) })
       .eq('user_id', userId);
     if (updateErr) {
-      return res.status(500).json({ success: false, error: 'не удалось обновить баланс' });
+      return res.status(500).json({ success: false, error: 'Не удалось обновить баланс' });
     }
 
     const { data: halvingData } = await supabase
@@ -285,7 +281,7 @@ app.post('/update', verifyToken, async (req, res) => {
 });
 
 /* ========================
-   5) GET /user (получить данные пользователя)
+   5) GET /user
 ======================== */
 app.get('/user', verifyToken, async (req, res) => {
   try {
@@ -299,10 +295,10 @@ app.get('/user', verifyToken, async (req, res) => {
       .eq('user_id', userId)
       .single();
     if (!userData) {
-      return res.status(404).json({ success: false, error: 'пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
     if (userData.blocked === 1) {
-      return res.status(403).json({ success: false, error: 'пользователь заблокирован' });
+      return res.status(403).json({ success: false, error: 'Пользователь заблокирован' });
     }
 
     let halvingStep = 0;
@@ -313,13 +309,7 @@ app.get('/user', verifyToken, async (req, res) => {
     if (halvingData && halvingData.length > 0) {
       halvingStep = halvingData[0].halving_step;
     }
-    res.json({
-      success: true,
-      user: {
-        ...userData,
-        halvingStep
-      }
-    });
+    res.json({ success: true, user: { ...userData, halvingStep } });
   } catch (err) {
     console.error('[get /user] Ошибка:', err);
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
@@ -379,12 +369,7 @@ app.post('/transfer', verifyToken, async (req, res) => {
       .eq('user_id', toUserId);
     const { error: insertError } = await supabase
       .from('transactions')
-      .insert([{
-        from_user_id: fromUserId,
-        to_user_id: toUserId,
-        amount,
-        type: 'sent'
-      }]);
+      .insert([{ from_user_id: fromUserId, to_user_id: toUserId, amount, type: 'sent' }]);
     if (insertError) {
       console.error('Ошибка вставки транзакции:', insertError);
       return res.status(500).json({ success: false, error: 'Ошибка записи транзакции' });
@@ -398,7 +383,7 @@ app.post('/transfer', verifyToken, async (req, res) => {
 });
 
 /* ========================
-   7) GET /transactions (история операций)
+   7) GET /transactions
 ======================== */
 app.get('/transactions', verifyToken, async (req, res) => {
   try {
@@ -520,12 +505,7 @@ app.post('/merchantTransfer', verifyToken, async (req, res) => {
       .eq('user_id', toUserId);
     const { error: insertError } = await supabase
       .from('transactions')
-      .insert([{
-        from_user_id: 'MERCHANT:' + merchantId,
-        to_user_id: toUserId,
-        amount,
-        type: 'received'
-      }]);
+      .insert([{ from_user_id: 'MERCHANT:' + merchantId, to_user_id: toUserId, amount, type: 'received' }]);
     if (insertError) {
       console.error('Ошибка вставки транзакции (merchantTransfer):', insertError);
       return res.status(500).json({ success: false, error: 'Ошибка записи транзакции' });
@@ -601,12 +581,7 @@ app.post('/payMerchantOneTime', verifyToken, async (req, res) => {
       
     const { error: insertError } = await supabase
       .from('transactions')
-      .insert([{
-        from_user_id: userId,
-        to_user_id: 'MERCHANT:' + merchantId,
-        amount,
-        type: 'merchant_payment'
-      }]);
+      .insert([{ from_user_id: userId, to_user_id: 'MERCHANT:' + merchantId, amount, type: 'merchant_payment' }]);
     if (insertError) {
       console.error('Ошибка вставки транзакции для мерчанта:', insertError);
       return res.status(500).json({ success: false, error: 'Ошибка записи транзакции' });
@@ -614,12 +589,7 @@ app.post('/payMerchantOneTime', verifyToken, async (req, res) => {
     
     await supabase
       .from('merchant_payments')
-      .insert([{
-        user_id: userId,
-        merchant_id: merchantId,
-        amount: merchantAmount,
-        purpose
-      }]);
+      .insert([{ user_id: userId, merchant_id: merchantId, amount: merchantAmount, purpose }]);
       
     console.log(`[payMerchantOneTime] user=${userId} => merchant=${merchantId}, amount=${amount}, merchantGets=${merchantAmount}`);
     res.json({ success: true });
@@ -877,11 +847,7 @@ app.post('/cloudtips/callback', async (req, res) => {
 
     const { error: insertErr } = await supabase
       .from('cloudtips_transactions')
-      .insert([{
-        order_id: orderId,
-        user_id: userId,
-        rub_amount: amount
-      }]);
+      .insert([{ order_id, user_id: userId, rub_amount: amount }]);
     if (insertErr) {
       console.error('Ошибка записи cloudtips_transactions:', insertErr);
       return res.status(500).json({ success: false, error: 'Ошибка записи транзакции' });
@@ -916,7 +882,6 @@ app.get('/merchant/info', verifyToken, async (req, res) => {
 
 /* ========================
    14) НОВЫЙ ENDPOINT: POST /telegram/request-code
-   Генерация одноразового кода для привязки Telegram
 ======================== */
 app.post('/telegram/request-code', async (req, res) => {
   try {
@@ -927,10 +892,9 @@ app.post('/telegram/request-code', async (req, res) => {
       if (!username) {
         return res.status(400).json({ success: false, error: 'Username обязателен для регистрации' });
       }
-      // Используем временный идентификатор для регистрации
       userId = "temp_" + username;
     } else {
-      // Обычный режим: пользователь должен быть залогинен и иметь JWT в cookie.
+      // Обычный режим: пользователь должен быть залогинен
       const token = req.cookies.token;
       if (!token) {
         return res.status(401).json({ success: false, error: 'Отсутствует токен авторизации' });
@@ -946,17 +910,15 @@ app.post('/telegram/request-code', async (req, res) => {
       }
     }
 
-    // Удаляем старые неиспользованные коды для данного userId
     await supabase
       .from('telegram_verifications')
       .delete()
       .eq('user_id', userId)
       .eq('used', false);
 
-    // Генерируем 6-значный код
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + 10 * 60 * 1000); // 10 минут
+    const expiresAt = new Date(now.getTime() + 10 * 60 * 1000);
 
     const { error } = await supabase
       .from('telegram_verifications')
@@ -973,7 +935,6 @@ app.post('/telegram/request-code', async (req, res) => {
     }
 
     if (req.body.forRegistration) {
-      // Возвращаем только поле code для режима регистрации
       return res.json({ success: true, code });
     } else {
       return res.json({ success: true, message: 'Код сгенерирован. Отправьте его нашему Telegram-боту.' });
@@ -985,13 +946,43 @@ app.post('/telegram/request-code', async (req, res) => {
 });
 
 /* ========================
-   15) Обработка входящих сообщений Telegram-бота
+   15) GET /telegram/check-bound
+======================== */
+app.get('/telegram/check-bound', async (req, res) => {
+  try {
+    const { username } = req.query;
+    if (!username) {
+      return res.status(400).json({ success: false, error: 'Username обязателен' });
+    }
+    const userId = "temp_" + username;
+    const { data, error } = await supabase
+      .from('telegram_verifications')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('used', true)
+      .limit(1);
+    if (error) {
+      console.error('Ошибка проверки привязки:', error);
+      return res.status(500).json({ success: false, error: 'Ошибка проверки привязки' });
+    }
+    if (data && data.length > 0) {
+      return res.json({ success: true, message: 'Telegram привязан', data: data[0] });
+    } else {
+      return res.status(400).json({ success: false, error: 'Telegram не привязан' });
+    }
+  } catch (err) {
+    console.error('Ошибка в /telegram/check-bound:', err);
+    res.status(500).json({ success: false, error: 'Ошибка сервера' });
+  }
+});
+
+/* ========================
+   16) Обработка входящих сообщений Telegram-бота
 ======================== */
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text ? msg.text.trim() : '';
 
-  // Если текст не состоит ровно из 6 цифр, отправляем инструкцию
   if (!/^\d{6}$/.test(text)) {
     bot.sendMessage(chatId, 'Пожалуйста, отправьте корректный код подтверждения (6 цифр).');
     return;
