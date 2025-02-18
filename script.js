@@ -462,6 +462,7 @@ async function register() {
     const data = await resp.json();
     if (resp.ok && data.success) {
       alert(`✅ Аккаунт создан! Ваш userId: ${data.userId}`);
+      // После успешной регистрации сразу вызываем логин
       await login();
     } else {
       alert(`❌ Ошибка регистрации: ${data.error}`);
@@ -488,6 +489,30 @@ async function logout() {
   removeAllModals();
   hideMainUI();
   openAuthModal();
+}
+
+/**
+ * Функция для запроса одноразового кода для привязки аккаунта Telegram.
+ * При успешном запросе сервер сгенерирует код и сохранит его в базе.
+ * Пользователь должен затем отправить этот код нашему Telegram-боту.
+ */
+async function bindTelegramAccount() {
+  try {
+    const resp = await fetch(`${API_URL}/telegram/request-code`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" }
+    });
+    const data = await resp.json();
+    if (resp.ok && data.success) {
+      alert("Код сгенерирован. Отправьте его нашему Telegram-боту для привязки аккаунта.");
+    } else {
+      alert(`Ошибка привязки Telegram: ${data.error}`);
+    }
+  } catch (err) {
+    console.error("Ошибка привязки Telegram:", err);
+    alert("Ошибка привязки Telegram.");
+  }
 }
 
 /**************************************************
@@ -606,6 +631,21 @@ function openAuthModal() {
           >
             Зарегистрироваться
           </button>
+          <button 
+            id="bindTelegramBtn" 
+            style="
+              padding:10px;
+              margin-top:4px;
+              border:none;
+              border-radius:8px;
+              font-size:16px;
+              background:#007bff;
+              color:#fff;
+              cursor:pointer;
+            "
+          >
+            Привязать Telegram
+          </button>
         </div>
 
         <!-- Кнопка переключения между "Вход" / "Регистрация" -->
@@ -628,8 +668,7 @@ function openAuthModal() {
     {
       showCloseBtn: false,
       cornerTopMargin: 0,
-      cornerTopRadius: 0,  // у родительского окна убраны скругления сверху,
-                           // т.к. внутри мы используем собственный скруглённый контейнер
+      cornerTopRadius: 0,
       hasVerticalScroll: true,
       defaultFromBottom: true,
       noRadiusByDefault: true
@@ -650,6 +689,8 @@ function openAuthModal() {
       registerSection.style.display = "flex";
     }
   });
+  // Обработчик для привязки Telegram в блоке регистрации
+  document.getElementById("bindTelegramBtn").addEventListener("click", bindTelegramAccount);
 
   // Изначально показываем блок "Вход", а "Регистрация" скрыта
   document.getElementById("loginSection").style.display = "flex";
