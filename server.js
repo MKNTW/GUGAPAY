@@ -1038,6 +1038,38 @@ bot.on('message', async (msg) => {
   bot.sendMessage(chatId, 'Ваш Telegram успешно привязан к аккаунту!');
 });
 
+
+
+// Новый endpoint для проверки привязки Telegram в режиме регистрации
+// Клиент передаёт query параметр username (тот, что введён в поле регистрации)
+app.get('/telegram/check-bound', async (req, res) => {
+  try {
+    const { username } = req.query;
+    if (!username) {
+      return res.status(400).json({ success: false, error: 'Username обязателен' });
+    }
+    const userId = "temp_" + username;
+    const { data, error } = await supabase
+      .from('telegram_verifications')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('used', true)
+      .limit(1);
+    if (error) {
+      console.error('Ошибка проверки привязки:', error);
+      return res.status(500).json({ success: false, error: 'Ошибка проверки привязки' });
+    }
+    if (data && data.length > 0) {
+      return res.json({ success: true, message: 'Telegram привязан' });
+    } else {
+      return res.status(400).json({ success: false, error: 'Telegram не привязан' });
+    }
+  } catch (err) {
+    console.error('Ошибка в /telegram/check-bound:', err);
+    res.status(500).json({ success: false, error: 'Ошибка сервера' });
+  }
+});
+
 /* ========================
    Запуск сервера
 ======================== */
