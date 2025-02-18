@@ -404,23 +404,22 @@ async function requestTelegramCodeForRegistration() {
     alert("❌ Введите логин для запроса кода");
     return;
   }
-  // Генерация 6-значного кода на клиенте
-  const generatedCode = Math.floor(100000 + Math.random() * 900000).toString();
   try {
     const resp = await fetch(`${API_URL}/telegram/request-code`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      // Передаём сгенерированный код в теле запроса
-      body: JSON.stringify({ forRegistration: true, username, code: generatedCode })
+      body: JSON.stringify({ forRegistration: true, username })
     });
     const data = await resp.json();
-    console.log("Ответ от /telegram/request-code:", data);
     if (resp.ok && data.success) {
-      const codeDisplayElem = document.getElementById("telegramCodeDisplay");
-      // Отображаем сгенерированный код на странице
-      codeDisplayElem.textContent = "Ваш код: " + generatedCode;
-      alert("Код сгенерирован и отправлен в Telegram. Проверьте ваш Telegram-бот для подтверждения.");
+      // Если сервер вернул поле code, отображаем именно его
+      if (data.code) {
+        document.getElementById("telegramCodeDisplay").textContent = "Ваш код: " + data.code;
+      } else {
+        document.getElementById("telegramCodeDisplay").textContent = "Код сгенерирован. Отправьте его нашему Telegram-боту.";
+      }
+      alert("Код сгенерирован. Отправьте его нашему Telegram-боту и затем нажмите 'Проверить привязку'.");
     } else {
       alert(`Ошибка запроса кода: ${data.error}`);
     }
@@ -935,6 +934,33 @@ async function flushMinedCoins() {
  * ПРОФИЛЬ
  **************************************************/
 // Изменённая функция openProfileModal:
+function openProfileModal() {
+  createModal(
+    "profileModal",
+    `
+      <h3 style="text-align:center;">Профиль</h3>
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+         <button id="bindTelegramBtn" style="padding:10px; border:none; border-radius:8px; background:#007bff; color:#fff; cursor:pointer;">
+           Привязать Telegram
+         </button>
+         <button id="profileLogoutBtn" style="padding:10px; margin-top:10px;">Выйти из аккаунта</button>
+      </div>
+    `,
+    {
+      showCloseBtn: true,
+      cornerTopMargin: 0,
+      cornerTopRadius: 0,
+      hasVerticalScroll: true,
+      profileFromTop: true,
+      defaultFromBottom: false,
+      noRadiusByDefault: true
+    }
+  );
+  document.getElementById("profileLogoutBtn").onclick = logout;
+  document.getElementById("bindTelegramBtn").addEventListener("click", openBindTelegramModal);
+}
+
+// Новая функция для открытия окна привязки Telegram:
 function openBindTelegramModal() {
   createModal(
     "bindTelegramModal",
@@ -945,7 +971,6 @@ function openBindTelegramModal() {
          <button id="requestBindTelegramBtn" style="padding:10px; border:none; border-radius:8px; background:#007bff; color:#fff; cursor:pointer;">
            Запросить код
          </button>
-         <div id="bindTelegramCodeDisplay" style="text-align:center; font-size:20px; font-weight:bold;"></div>
          <input type="text" id="bindTelegramCodeInput" placeholder="Введите код" style="padding:10px; border:1px solid #ccc; border-radius:8px; font-size:16px;"/>
          <button id="checkBindTelegramBtn" style="padding:10px; border:none; border-radius:8px; background:#28a745; color:#fff; cursor:pointer;">
            Проверить привязку
@@ -962,28 +987,20 @@ function openBindTelegramModal() {
     }
   );
   
-  // Генерация кода на клиенте и отправка на сервер
+  // Используем currentUserName вместо prompt
   document.getElementById("requestBindTelegramBtn").addEventListener("click", async () => {
     const loginName = currentUserName;
     if (!loginName) return alert("Логин не найден, перезагрузите страницу.");
-    // Генерируем 6-значный код
-    const generatedCode = Math.floor(100000 + Math.random() * 900000).toString();
     try {
       const resp = await fetch(`${API_URL}/telegram/request-code`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        // Отправляем сгенерированный код вместе с логином; forRegistration: false для привязки уже существующего аккаунта
-        body: JSON.stringify({ forRegistration: false, username: loginName, code: generatedCode })
+        body: JSON.stringify({ forRegistration: true, username: loginName })
       });
       const data = await resp.json();
       if (resp.ok && data.success) {
-        // Отображаем сгенерированный код
-        const codeDisplayElem = document.getElementById("bindTelegramCodeDisplay");
-        if (codeDisplayElem) {
-          codeDisplayElem.textContent = "Ваш код: " + generatedCode;
-        }
-        alert("Код сгенерирован и отправлен через Telegram-бота. Проверьте ваш Telegram.");
+        alert("Код сгенерирован. Пожалуйста, проверьте ваш Telegram.");
       } else {
         alert("Ошибка запроса кода: " + data.error);
       }
@@ -993,7 +1010,6 @@ function openBindTelegramModal() {
     }
   });
   
-  // Проверка привязки без запроса логина через prompt (используем currentUserName)
   document.getElementById("checkBindTelegramBtn").addEventListener("click", async () => {
     const loginName = currentUserName;
     if (!loginName) return alert("Логин не найден, перезагрузите страницу.");
@@ -1014,34 +1030,6 @@ function openBindTelegramModal() {
       alert("Ошибка проверки привязки.");
     }
   });
-}
-
-// Изменение в fetchUserData: сохраняем логин пользователя
-async function fetchUserData() {
-  try {
-    const resp = await fetch(`${API_URL}/user`, { credentials: "include" });
-    const data = await resp.json();
-    if (data.success && data.user) {
-      currentUserId = data.user.user_id;
-      currentUserName = data.user.username; // Сохраняем логин
-      const coinBalance = data.user.balance || 0;
-      const rubBalance = data.user.rub_balance || 0;
-      const balanceValue = document.getElementById("balanceValue");
-      if (balanceValue) {
-        balanceValue.textContent = formatBalance(coinBalance, 5) + " ₲";
-      }
-      const userIdEl = document.getElementById("userIdDisplay");
-      if (userIdEl) {
-        userIdEl.textContent = "ID: " + currentUserId;
-      }
-      const rubBalanceInfo = document.getElementById("rubBalanceInfo");
-      if (rubBalanceInfo) {
-        rubBalanceInfo.textContent = formatBalance(rubBalance, 2) + " ₽";
-      }
-    }
-  } catch (err) {
-    console.error("fetchUserData error:", err);
-  }
 }
 
 /**************************************************
