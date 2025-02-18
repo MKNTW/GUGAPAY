@@ -991,7 +991,7 @@ app.get('/telegram/check-bound', async (req, res) => {
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text ? msg.text.trim() : '';
-  
+
   // Проверка на формат 6-значного кода
   if (!/^\d{6}$/.test(text)) {
     bot.sendMessage(chatId, 'Пожалуйста, отправьте корректный код подтверждения (6 цифр).');
