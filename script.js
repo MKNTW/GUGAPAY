@@ -407,13 +407,13 @@ async function requestTelegramCodeForRegistration() {
   try {
     const resp = await fetch(`${API_URL}/telegram/request-code`, {
       method: "POST",
-      credentials: "include", // для передачи cookie (если есть)
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ forRegistration: true, username })
     });
     const data = await resp.json();
     if (resp.ok && data.success) {
-      // Если сервер возвращает код, отображаем его в поле (только для тестирования!)
+      // Если сервер вернул поле code, отображаем именно его
       if (data.code) {
         document.getElementById("telegramCodeDisplay").textContent = "Ваш код: " + data.code;
       } else {
