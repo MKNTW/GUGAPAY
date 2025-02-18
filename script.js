@@ -879,6 +879,7 @@ async function fetchUserData() {
     const data = await resp.json();
     if (data.success && data.user) {
       currentUserId = data.user.user_id;
+      currentUserName = data.user.username;  // Сохраняем логин пользователя
       const coinBalance = data.user.balance || 0;
       const rubBalance = data.user.rub_balance || 0;
 
@@ -986,10 +987,10 @@ function openBindTelegramModal() {
     }
   );
   
-  // При запросе кода просим ввести логин (или используйте глобально сохранённое значение)
+  // Используем currentUserName вместо prompt
   document.getElementById("requestBindTelegramBtn").addEventListener("click", async () => {
-    const loginName = prompt("Введите ваш логин для запроса кода привязки Telegram:");
-    if (!loginName) return alert("Введите логин.");
+    const loginName = currentUserName;
+    if (!loginName) return alert("Логин не найден, перезагрузите страницу.");
     try {
       const resp = await fetch(`${API_URL}/telegram/request-code`, {
         method: "POST",
@@ -1009,10 +1010,9 @@ function openBindTelegramModal() {
     }
   });
   
-  // Проверка привязки — ввод кода из поля
   document.getElementById("checkBindTelegramBtn").addEventListener("click", async () => {
-    const loginName = prompt("Введите ваш логин для проверки привязки Telegram:");
-    if (!loginName) return alert("Введите логин.");
+    const loginName = currentUserName;
+    if (!loginName) return alert("Логин не найден, перезагрузите страницу.");
     try {
       const resp = await fetch(`${API_URL}/telegram/check-bound?username=${encodeURIComponent(loginName)}`, {
         method: "GET",
