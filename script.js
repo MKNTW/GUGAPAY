@@ -404,7 +404,7 @@ async function login() {
   try {
     const resp = await fetch(`${API_URL}/login`, {
       method: "POST",
-      credentials: "include", // cookie с токеном будут отправлены
+      credentials: "include", // передаем cookie с токеном
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: loginVal, password: passVal }),
     });
@@ -420,7 +420,7 @@ async function login() {
         alert("❌ Ваш аккаунт заблокирован");
         return;
       }
-      // Пробуем мерчант
+      // Пробуем мерчанта
       const merchResp = await fetch(`${API_URL}/merchantLogin`, {
         method: "POST",
         credentials: "include",
@@ -451,7 +451,7 @@ async function register() {
     alert("❌ Введите логин и пароль");
     return;
   }
-  // Если Telegram не привязан, не даем отправлять форму регистрации
+  // Если Telegram не привязан, регистрация недоступна
   if (!window.isTelegramBound) {
     alert("❌ Сначала привяжите свой Telegram аккаунт");
     return;
@@ -497,25 +497,29 @@ async function logout() {
 }
 
 /**
- * Функция для запроса одноразового кода для привязки Telegram.
- * Мы отправляем флаг forRegistration, чтобы сервер мог обработать вызов без токена (или иным образом).
+ * Функция для привязки Telegram через одноразовый код.
+ * В режиме регистрации пользователь ещё не залогинен, поэтому мы передаём флаг forRegistration и его логин.
  */
 async function bindTelegramAccount() {
   try {
+    const username = document.getElementById("regLogin").value;
+    if (!username) {
+      alert("❌ Введите логин в поле регистрации");
+      return;
+    }
     const resp = await fetch(`${API_URL}/telegram/request-code`, {
       method: "POST",
-      credentials: "include", // Передаем cookie, если они есть
+      credentials: "include", // в режиме forRegistration сервер не будет требовать JWT
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ forRegistration: true })
+      body: JSON.stringify({ forRegistration: true, username })
     });
     const data = await resp.json();
     if (resp.ok && data.success) {
-      // Устанавливаем глобальный флаг, что Telegram привязан
       window.isTelegramBound = true;
       // Разблокируем кнопку регистрации
       const regBtn = document.getElementById("registerSubmitBtn");
       if (regBtn) regBtn.disabled = false;
-      // Обновляем текст кнопки привязки
+      // Изменяем внешний вид кнопки привязки
       const bindBtn = document.getElementById("bindTelegramBtn");
       if (bindBtn) {
         bindBtn.textContent = "Telegram привязан";
@@ -603,9 +607,8 @@ function openAuthModal() {
     } else {
       loginSection.style.display = "none";
       registerSection.style.display = "flex";
-      // При переключении в регистрацию сбрасываем флаг привязки
+      // Сброс флага привязки Telegram при переключении в режим регистрации
       window.isTelegramBound = false;
-      // Отключаем кнопку регистрации и возвращаем текст кнопки привязки
       const regBtn = document.getElementById("registerSubmitBtn");
       if (regBtn) regBtn.disabled = true;
       const bindBtn = document.getElementById("bindTelegramBtn");
