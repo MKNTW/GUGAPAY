@@ -131,9 +131,11 @@ app.post('/register', async (req, res) => {
       }]);
 
     // Отправка кода в Telegram пользователю через бот
+    // Здесь отправляем код на userId (это может быть временный идентификатор)
     bot.sendMessage(userId, `Ваш код для привязки: ${verificationCode}`);
 
-    res.json({ success: true, message: 'Пожалуйста, подтвердите ваш Telegram через код, отправленный в Telegram' });
+    // Возвращаем userId, чтобы фронтенд мог отобразить его (например, в alert)
+    res.json({ success: true, message: 'Пожалуйста, подтвердите ваш Telegram через код, отправленный в Telegram', userId });
   } catch (err) {
     console.error('[register] Ошибка:', err);
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
@@ -175,17 +177,7 @@ app.post('/login', async (req, res) => {
       return res.status(401).json({ success: false, error: 'Неверные данные пользователя' });
     }
 
-    // Проверяем, привязан ли Telegram
-    const { data: telegramData } = await supabase
-      .from('telegram_users')
-      .select('*')
-      .eq('user_id', data.user_id)
-      .single();
-
-    if (!telegramData || !telegramData.verified) {
-      return res.status(403).json({ success: false, error: 'Пожалуйста, привяжите Telegram к вашему аккаунту' });
-    }
-
+    // Теперь пользователь может войти даже если Telegram не привязан.
     const token = jwt.sign({ userId: data.user_id, role: 'user' }, JWT_SECRET, { expiresIn: '1h' });
     res.cookie('token', token, {
       httpOnly: true,
@@ -991,7 +983,7 @@ app.get('/telegram/check-bound', async (req, res) => {
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text ? msg.text.trim() : '';
-
+  
   // Проверка на формат 6-значного кода
   if (!/^\d{6}$/.test(text)) {
     bot.sendMessage(chatId, 'Пожалуйста, отправьте корректный код подтверждения (6 цифр).');
@@ -1014,9 +1006,8 @@ bot.on('message', async (msg) => {
   const verification = data[0];
   const userId = verification.user_id;
 
-  // Получаем данные о пользователе из Telegram
-  const userInfo = msg.from;  // Данные пользователя из сообщения (msg.from)
-
+  // Получаем данные о пользователе из Telegram (msg.from)
+  const userInfo = msg.from;
   const { first_name, last_name, username, language_code, is_bot } = userInfo;
 
   // Обновляем статус кода и привязываем Telegram
@@ -1039,7 +1030,7 @@ bot.on('message', async (msg) => {
       verified: true
     }]);
 
-  // Обновление пользователя с ID телеграма
+  // Обновляем поле telegram_id в таблице users
   await supabase
     .from('users')
     .update({ telegram_id: chatId })
