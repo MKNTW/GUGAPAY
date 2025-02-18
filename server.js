@@ -918,14 +918,36 @@ app.get('/merchant/info', verifyToken, async (req, res) => {
    14) НОВЫЙ ENDPOINT: POST /telegram/request-code
    Генерация одноразового кода для привязки Telegram
 ======================== */
-app.post('/telegram/request-code', verifyToken, async (req, res) => {
+app.post('/telegram/request-code', async (req, res) => {
   try {
-    if (req.user.role !== 'user') {
-      return res.status(403).json({ success: false, error: 'Доступ запрещён' });
+    let userId;
+    if (req.body.forRegistration) {
+      // Режим регистрации: пользователь ещё не залогинен
+      const { username } = req.body;
+      if (!username) {
+        return res.status(400).json({ success: false, error: 'Username обязателен для регистрации' });
+      }
+      // Для регистрации используем временный идентификатор, основанный на username.
+      // Позже, при регистрации, можно сопоставить и обновить настоящий user_id.
+      userId = "temp_" + username;
+    } else {
+      // Обычный режим: пользователь должен быть залогинен и иметь JWT в cookie.
+      const token = req.cookies.token;
+      if (!token) {
+        return res.status(401).json({ success: false, error: 'Отсутствует токен авторизации' });
+      }
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        if (decoded.role !== 'user') {
+          return res.status(403).json({ success: false, error: 'Доступ запрещён' });
+        }
+        userId = decoded.userId;
+      } catch (err) {
+        return res.status(401).json({ success: false, error: 'Неверный токен' });
+      }
     }
-    const userId = req.user.userId;
 
-    // Удаляем старые неиспользованные коды
+    // Удаляем старые неиспользованные коды для этого userId
     await supabase
       .from('telegram_verifications')
       .delete()
