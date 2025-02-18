@@ -610,8 +610,8 @@ function openAuthModal() {
               Проверить привязку
             </button>
           </div>
-          <!-- Поле для отображения кода -->
-          <div id="telegramCodeDisplay" style="padding:8px; border:1px solid #ccc; border-radius:8px; text-align:center; font-size:14px; color:#333;"></div>
+          <!-- Поле для отображения кода (только код, крупно) -->
+          <div id="telegramCodeDisplay" style="padding:12px; border:1px solid #ccc; border-radius:8px; text-align:center; font-size:24px; font-weight:bold; color:#333;"></div>
           <button id="registerSubmitBtn" style="padding:10px; margin-top:4px; border:none; border-radius:8px; font-size:16px; background:#000; color:#fff; cursor:pointer;" disabled>
             Зарегистрироваться
           </button>
@@ -633,7 +633,6 @@ function openAuthModal() {
     }
   );
 
-  // Обработчики
   document.getElementById("loginSubmitBtn").addEventListener("click", login);
   document.getElementById("registerSubmitBtn").addEventListener("click", register);
   document.getElementById("toggleAuthBtn").addEventListener("click", () => {
@@ -645,7 +644,7 @@ function openAuthModal() {
     } else {
       loginSection.style.display = "none";
       registerSection.style.display = "flex";
-      // Сброс флага привязки Telegram
+      // Сброс привязки Telegram
       window.isTelegramBound = false;
       const regBtn = document.getElementById("registerSubmitBtn");
       if (regBtn) regBtn.disabled = true;
@@ -654,18 +653,85 @@ function openAuthModal() {
         bindBtn.textContent = "Запросить код";
         bindBtn.disabled = false;
       }
-      // Очищаем поле с кодом
       const codeDisplay = document.getElementById("telegramCodeDisplay");
       if (codeDisplay) codeDisplay.textContent = "";
     }
   });
-
+  
   document.getElementById("requestTelegramBtn").addEventListener("click", requestTelegramCodeForRegistration);
   document.getElementById("checkTelegramBtn").addEventListener("click", checkTelegramBoundForRegistration);
 
   // Изначально показываем блок "Вход"
   document.getElementById("loginSection").style.display = "flex";
   document.getElementById("registerSection").style.display = "none";
+}
+
+/**
+ * Функция запроса кода для привязки Telegram в режиме регистрации.
+ * Сервер возвращает объект { success: true, code: "123456" } для тестирования.
+ * Код отображается в поле с id "telegramCodeDisplay" (только цифры, крупный шрифт).
+ */
+async function requestTelegramCodeForRegistration() {
+  const username = document.getElementById("regLogin").value;
+  if (!username) {
+    alert("❌ Введите логин для запроса кода");
+    return;
+  }
+  try {
+    const resp = await fetch(`${API_URL}/telegram/request-code`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ forRegistration: true, username })
+    });
+    const data = await resp.json();
+    console.log("Ответ от /telegram/request-code:", data);
+    if (resp.ok && data.success) {
+      const codeDisplayElem = document.getElementById("telegramCodeDisplay");
+      if (data.code) {
+        codeDisplayElem.textContent = data.code;
+      } else {
+        codeDisplayElem.textContent = "";
+      }
+      alert("Код сгенерирован. Отправьте его нашему Telegram-боту и затем нажмите 'Проверить привязку'.");
+    } else {
+      alert(`Ошибка запроса кода: ${data.error}`);
+    }
+  } catch (err) {
+    console.error("Ошибка запроса кода Telegram:", err);
+    alert("Ошибка запроса кода Telegram.");
+  }
+}
+
+/**
+ * Функция проверки привязки Telegram в режиме регистрации.
+ * Если проверка проходит успешно, активируется кнопка регистрации.
+ */
+async function checkTelegramBoundForRegistration() {
+  const username = document.getElementById("regLogin").value;
+  if (!username) {
+    alert("❌ Введите логин для проверки привязки");
+    return;
+  }
+  try {
+    const resp = await fetch(`${API_URL}/telegram/check-bound?username=${encodeURIComponent(username)}`, {
+      method: "GET",
+      credentials: "include"
+    });
+    const data = await resp.json();
+    console.log("Ответ от /telegram/check-bound:", data);
+    if (resp.ok && data.success) {
+      window.isTelegramBound = true;
+      const regBtn = document.getElementById("registerSubmitBtn");
+      if (regBtn) regBtn.disabled = false;
+      alert("Telegram успешно привязан! Теперь можно завершить регистрацию.");
+    } else {
+      alert(`Проверка привязки не пройдена: ${data.error}`);
+    }
+  } catch (err) {
+    console.error("Ошибка проверки привязки Telegram:", err);
+    alert("Ошибка проверки привязки Telegram.");
+  }
 }
 
 /**************************************************
