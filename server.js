@@ -922,16 +922,12 @@ app.post('/telegram/request-code', async (req, res) => {
   try {
     let userId;
     if (req.body.forRegistration) {
-      // Режим регистрации: пользователь ещё не залогинен
       const { username } = req.body;
       if (!username) {
         return res.status(400).json({ success: false, error: 'Username обязателен для регистрации' });
       }
-      // Для регистрации используем временный идентификатор, основанный на username.
-      // Позже, при регистрации, можно сопоставить и обновить настоящий user_id.
       userId = "temp_" + username;
     } else {
-      // Обычный режим: пользователь должен быть залогинен и иметь JWT в cookie.
       const token = req.cookies.token;
       if (!token) {
         return res.status(401).json({ success: false, error: 'Отсутствует токен авторизации' });
@@ -947,17 +943,15 @@ app.post('/telegram/request-code', async (req, res) => {
       }
     }
 
-    // Удаляем старые неиспользованные коды для этого userId
     await supabase
       .from('telegram_verifications')
       .delete()
       .eq('user_id', userId)
       .eq('used', false);
 
-    // Генерируем 6-значный код
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + 10 * 60 * 1000); // 10 минут
+    const expiresAt = new Date(now.getTime() + 10 * 60 * 1000);
 
     const { error } = await supabase
       .from('telegram_verifications')
@@ -973,8 +967,11 @@ app.post('/telegram/request-code', async (req, res) => {
       return res.status(500).json({ success: false, error: 'Ошибка сохранения кода' });
     }
 
-    // В production код лучше не возвращать клиенту
-    return res.json({ success: true, message: 'Код сгенерирован. Отправьте его нашему Telegram-боту.' });
+    if (req.body.forRegistration) {
+      return res.json({ success: true, code });
+    } else {
+      return res.json({ success: true, message: 'Код сгенерирован. Отправьте его нашему Telegram-боту.' });
+    }
   } catch (err) {
     console.error('Ошибка /telegram/request-code:', err);
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
