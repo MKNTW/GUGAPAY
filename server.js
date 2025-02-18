@@ -159,16 +159,52 @@ app.post('/login', async (req, res) => {
       .select('*')
       .eq('username', username)
       .single();
+
     if (supabaseError || !data) {
       return res.status(401).json({ success: false, error: 'Неверные данные пользователя' });
     }
     if (data.blocked === 1) {
-      return res.status(403).json({ success: false, error: 'аккаунт заблокирован' });
+      return res.status(403).json({ success: false, error: 'Аккаунт заблокирован' });
     }
+
     const isPassOk = await bcrypt.compare(password, data.password);
     if (!isPassOk) {
       return res.status(401).json({ success: false, error: 'Неверные данные пользователя' });
     }
+
+    // Если у пользователя не заполнено telegram_id, пробуем обновить его из таблицы telegram_verifications
+    if (!data.telegram_id) {
+      // Попробуем сначала найти запись с постоянным user_id
+      let { data: verData, error: verError } = await supabase
+        .from('telegram_verifications')
+        .select('telegram_chat_id')
+        .eq('user_id', data.user_id)
+        .eq('used', true)
+        .limit(1);
+      if (verError || !verData || verData.length === 0) {
+        // Если не найдено, пробуем по временной записи: "temp_" + username
+        ({ data: verData, error: verError } = await supabase
+          .from('telegram_verifications')
+          .select('telegram_chat_id')
+          .eq('user_id', "temp_" + data.username)
+          .eq('used', true)
+          .limit(1));
+      }
+      if (!verError && verData && verData.length > 0 && verData[0].telegram_chat_id) {
+        const telegramId = verData[0].telegram_chat_id;
+        const { error: updateErr } = await supabase
+          .from('users')
+          .update({ telegram_id: telegramId })
+          .eq('user_id', data.user_id);
+        if (!updateErr) {
+          data.telegram_id = telegramId;
+          console.log("Обновлен telegram_id для пользователя", data.user_id, ":", telegramId);
+        } else {
+          console.error("Ошибка обновления telegram_id:", updateErr);
+        }
+      }
+    }
+
     const token = jwt.sign({ userId: data.user_id, role: 'user' }, JWT_SECRET, { expiresIn: '1h' });
     const env = process.env.NODE_ENV || 'development';
     res.cookie('token', token, {
@@ -178,7 +214,7 @@ app.post('/login', async (req, res) => {
       maxAge: 3600000
     });
     console.log('[Login] Пользователь вошёл:', username, ' userId=', data.user_id);
-    res.json({ success: true, message: 'Пользователь успешно авторизован' });
+    res.json({ success: true, message: 'Пользователь успешно авторизован', user: data });
   } catch (err) {
     console.error('[login] Ошибка:', err);
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
