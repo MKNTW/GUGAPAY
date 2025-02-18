@@ -404,7 +404,7 @@ async function login() {
   try {
     const resp = await fetch(`${API_URL}/login`, {
       method: "POST",
-      credentials: "include",
+      credentials: "include", // обязательно передаём cookie
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: loginVal, password: passVal }),
     });
@@ -462,7 +462,7 @@ async function register() {
     const data = await resp.json();
     if (resp.ok && data.success) {
       alert(`✅ Аккаунт создан! Ваш userId: ${data.userId}`);
-      // После успешной регистрации сразу вызываем логин
+      // После успешной регистрации сразу авторизуем пользователя
       await login();
     } else {
       alert(`❌ Ошибка регистрации: ${data.error}`);
@@ -493,14 +493,14 @@ async function logout() {
 
 /**
  * Функция для запроса одноразового кода для привязки аккаунта Telegram.
- * При успешном запросе сервер сгенерирует код и сохранит его в базе.
- * Пользователь должен затем отправить этот код нашему Telegram-боту.
+ * После успешного запроса сервер сохранит код в базе,
+ * а пользователь должен отправить его нашему Telegram‑боту.
  */
 async function bindTelegramAccount() {
   try {
     const resp = await fetch(`${API_URL}/telegram/request-code`, {
       method: "POST",
-      credentials: "include",
+      credentials: "include", // обязательно, чтобы отправить cookie с токеном
       headers: { "Content-Type": "application/json" }
     });
     const data = await resp.json();
@@ -537,130 +537,30 @@ function openAuthModal() {
         flex-direction:column;
         gap:16px;
       ">
-
-        <!-- Логотип или заголовок (примерно по центру) -->
         <h2 style="text-align:center; margin:0;">GUGACOIN</h2>
 
         <!-- Блок Входа -->
         <div id="loginSection" style="display:flex; flex-direction:column; gap:8px;">
-          <h4 style="margin:0; text-align:center;"></h4>
-          <input 
-            type="text" 
-            id="loginInput" 
-            placeholder="Логин" 
-            style="
-              padding:10px;
-              font-size:16px;
-              width:100%;
-              border:none;
-              border-radius:8px;
-              outline:none;
-            "
-          >
-          <input 
-            type="password" 
-            id="passwordInput" 
-            placeholder="Пароль" 
-            style="
-              padding:10px;
-              font-size:16px;
-              width:100%;
-              border:none;
-              border-radius:8px;
-              outline:none;
-            "
-          >
-          <button 
-            id="loginSubmitBtn" 
-            style="
-              padding:10px;
-              margin-top:4px;
-              border:none;
-              border-radius:8px;
-              font-size:16px;
-              background:#000;
-              color:#fff;
-              cursor:pointer;
-            "
-          >
+          <h4 style="margin:0; text-align:center;">Вход</h4>
+          <input type="text" id="loginInput" placeholder="Логин" style="padding:10px; font-size:16px; width:100%; border:none; border-radius:8px; outline:none;">
+          <input type="password" id="passwordInput" placeholder="Пароль" style="padding:10px; font-size:16px; width:100%; border:none; border-radius:8px; outline:none;">
+          <button id="loginSubmitBtn" style="padding:10px; margin-top:4px; border:none; border-radius:8px; font-size:16px; background:#000; color:#fff; cursor:pointer;">
             Войти
           </button>
         </div>
 
         <!-- Блок Регистрации (изначально скрыт) -->
         <div id="registerSection" style="display:none; flex-direction:column; gap:8px;">
-          <h4 style="margin:0; text-align:center;"></h4>
-          <input 
-            type="text" 
-            id="regLogin" 
-            placeholder="Логин" 
-            style="
-              padding:10px;
-              font-size:16px;
-              width:100%;
-              border:none;
-              border-radius:8px;
-              outline:none;
-            "
-          >
-          <input 
-            type="password" 
-            id="regPassword" 
-            placeholder="Пароль" 
-            style="
-              padding:10px;
-              font-size:16px;
-              width:100%;
-              border:none;
-              border-radius:8px;
-              outline:none;
-            "
-          >
-          <button 
-            id="registerSubmitBtn" 
-            style="
-              padding:10px;
-              margin-top:4px;
-              border:none;
-              border-radius:8px;
-              font-size:16px;
-              background:#000;
-              color:#fff;
-              cursor:pointer;
-            "
-          >
+          <h4 style="margin:0; text-align:center;">Регистрация</h4>
+          <input type="text" id="regLogin" placeholder="Логин" style="padding:10px; font-size:16px; width:100%; border:none; border-radius:8px; outline:none;">
+          <input type="password" id="regPassword" placeholder="Пароль" style="padding:10px; font-size:16px; width:100%; border:none; border-radius:8px; outline:none;">
+          <button id="registerSubmitBtn" style="padding:10px; margin-top:4px; border:none; border-radius:8px; font-size:16px; background:#000; color:#fff; cursor:pointer;">
             Зарегистрироваться
-          </button>
-          <button 
-            id="bindTelegramBtn" 
-            style="
-              padding:10px;
-              margin-top:4px;
-              border:none;
-              border-radius:8px;
-              font-size:16px;
-              background:#007bff;
-              color:#fff;
-              cursor:pointer;
-            "
-          >
-            Привязать Telegram
           </button>
         </div>
 
         <!-- Кнопка переключения между "Вход" / "Регистрация" -->
-        <button 
-          id="toggleAuthBtn"
-          style="
-            margin-top:10px;
-            border:none;
-            border-radius:8px;
-            font-size:14px;
-            padding:8px;
-            background:#eee;
-            cursor:pointer;
-          "
-        >
+        <button id="toggleAuthBtn" style="margin-top:10px; border:none; border-radius:8px; font-size:14px; padding:8px; background:#eee; cursor:pointer;">
           Войти / Зарегистрироваться
         </button>
       </div>
@@ -675,7 +575,7 @@ function openAuthModal() {
     }
   );
 
-  // Подключаем обработчики:
+  // Обработчики
   document.getElementById("loginSubmitBtn").addEventListener("click", login);
   document.getElementById("registerSubmitBtn").addEventListener("click", register);
   document.getElementById("toggleAuthBtn").addEventListener("click", () => {
@@ -689,12 +589,40 @@ function openAuthModal() {
       registerSection.style.display = "flex";
     }
   });
-  // Обработчик для привязки Telegram в блоке регистрации
-  document.getElementById("bindTelegramBtn").addEventListener("click", bindTelegramAccount);
 
-  // Изначально показываем блок "Вход", а "Регистрация" скрыта
+  // Изначально показываем блок "Вход"
   document.getElementById("loginSection").style.display = "flex";
   document.getElementById("registerSection").style.display = "none";
+}
+
+/**************************************************
+ * ОКНО ПРОФИЛЯ
+ **************************************************/
+function openProfileModal() {
+  // Создаем модальное окно профиля с кнопкой для привязки Telegram.
+  createModal(
+    "profileModal",
+    `
+      <h3 style="text-align:center;">Профиль</h3>
+      <button id="profileLogoutBtn" style="padding:10px;margin-top:20px;">Выйти из аккаунта</button>
+      <div style="margin-top:20px; text-align:center;">
+        <button id="bindTelegramProfileBtn" style="padding:10px;border:none;background:#007bff;color:#fff;border-radius:8px;cursor:pointer;">
+          Привязать Telegram
+        </button>
+      </div>
+    `,
+    {
+      showCloseBtn: true,
+      cornerTopMargin: 0,
+      cornerTopRadius: 0,
+      hasVerticalScroll: true,
+      profileFromTop: true,
+      defaultFromBottom: false,
+      noRadiusByDefault: true
+    }
+  );
+  document.getElementById("profileLogoutBtn").onclick = logout;
+  document.getElementById("bindTelegramProfileBtn").addEventListener("click", bindTelegramAccount);
 }
 
 /**************************************************
