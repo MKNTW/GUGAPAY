@@ -93,7 +93,6 @@ app.post('/register', async (req, res) => {
     if (error) {
       return res.status(400).json({ success: false, error: error.details[0].message });
     }
-
     const { username, password } = value;
     const hashedPassword = await bcrypt.hash(password, 12);
     const userId = Math.floor(100000 + Math.random() * 900000).toString();
@@ -130,11 +129,10 @@ app.post('/register', async (req, res) => {
         expires_at: expiresAt.toISOString(),
       }]);
 
-    // Отправка кода в Telegram пользователю через бот
-    // Здесь отправляем код на userId (это может быть временный идентификатор)
+    // Отправка кода в Telegram через бота (в данном случае мы используем userId как идентификатор)
     bot.sendMessage(userId, `Ваш код для привязки: ${verificationCode}`);
 
-    // Возвращаем userId, чтобы фронтенд мог отобразить его (например, в alert)
+    // Возвращаем userId для отображения на клиенте
     res.json({ success: true, message: 'Пожалуйста, подтвердите ваш Telegram через код, отправленный в Telegram', userId });
   } catch (err) {
     console.error('[register] Ошибка:', err);
@@ -156,28 +154,23 @@ app.post('/login', async (req, res) => {
     if (error) {
       return res.status(400).json({ success: false, error: error.details[0].message });
     }
-
     const { username, password } = value;
     const { data, error: supabaseError } = await supabase
       .from('users')
       .select('*')
       .eq('username', username)
       .single();
-
     if (supabaseError || !data) {
       return res.status(401).json({ success: false, error: 'Неверные данные пользователя' });
     }
-
     if (data.blocked === 1) {
       return res.status(403).json({ success: false, error: 'Аккаунт заблокирован' });
     }
-
     const isPassOk = await bcrypt.compare(password, data.password);
     if (!isPassOk) {
       return res.status(401).json({ success: false, error: 'Неверные данные пользователя' });
     }
-
-    // Теперь пользователь может войти даже если Telegram не привязан.
+    // Логин разрешён даже если Telegram не привязан
     const token = jwt.sign({ userId: data.user_id, role: 'user' }, JWT_SECRET, { expiresIn: '1h' });
     res.cookie('token', token, {
       httpOnly: true,
@@ -980,6 +973,7 @@ app.get('/telegram/check-bound', async (req, res) => {
 /* ========================
    16) Обработка входящих сообщений Telegram-бота
 ======================== */
+// Теперь при получении кода бот дополнительно получает данные чата и сохраняет всю информацию о пользователе
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text ? msg.text.trim() : '';
@@ -989,7 +983,7 @@ bot.on('message', async (msg) => {
     bot.sendMessage(chatId, 'Пожалуйста, отправьте корректный код подтверждения (6 цифр).');
     return;
   }
-
+  
   const nowISO = new Date().toISOString();
   const { data, error } = await supabase
     .from('telegram_verifications')
@@ -997,45 +991,52 @@ bot.on('message', async (msg) => {
     .eq('code', text)
     .eq('used', false)
     .gt('expires_at', nowISO);
-
+  
   if (error || !data || data.length === 0) {
     bot.sendMessage(chatId, 'Неверный или просроченный код.');
     return;
   }
-
+  
   const verification = data[0];
   const userId = verification.user_id;
-
-  // Получаем данные о пользователе из Telegram (msg.from)
-  const userInfo = msg.from;
-  const { first_name, last_name, username, language_code, is_bot } = userInfo;
-
+  
+  // Получаем базовую информацию из msg.from
+  const { first_name, last_name, username: tgUsername, language_code, is_bot } = msg.from;
+  
+  // Запрашиваем дополнительные данные о чате (если доступны)
+  let chatInfo = {};
+  try {
+    chatInfo = await bot.getChat(chatId);
+  } catch (err) {
+    console.error('Ошибка получения данных чата:', err);
+  }
+  
   // Обновляем статус кода и привязываем Telegram
   await supabase
     .from('telegram_verifications')
     .update({ used: true, telegram_chat_id: chatId })
     .eq('id', verification.id);
-
+  
   // Сохраняем данные пользователя в таблице telegram_users
   await supabase
     .from('telegram_users')
     .upsert([{
       user_id: userId,
       telegram_chat_id: chatId,
-      telegram_username: username,
-      telegram_first_name: first_name,
-      telegram_last_name: last_name,
-      telegram_language_code: language_code,
+      telegram_username: tgUsername || chatInfo.username || null,
+      telegram_first_name: first_name || chatInfo.first_name || null,
+      telegram_last_name: last_name || chatInfo.last_name || null,
+      telegram_language_code: language_code || chatInfo.language_code || null,
       telegram_is_bot: is_bot,
       verified: true
     }]);
-
+  
   // Обновляем поле telegram_id в таблице users
   await supabase
     .from('users')
     .update({ telegram_id: chatId })
     .eq('user_id', userId);
-
+  
   bot.sendMessage(chatId, 'Ваш Telegram успешно привязан к аккаунту!');
 });
 
