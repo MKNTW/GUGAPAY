@@ -64,7 +64,7 @@ function verifyToken(req, res, next) {
   });
 }
 
-// Endpoint logout
+// Endpoint для выхода (logout)
 app.post('/logout', (req, res) => {
   res.clearCookie('token', {
     httpOnly: true,
@@ -97,6 +97,7 @@ app.post('/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 12);
     const userId = Math.floor(100000 + Math.random() * 900000).toString();
 
+    // Вставляем нового пользователя
     const { error: supabaseError } = await supabase
       .from('users')
       .insert([{
@@ -107,12 +108,27 @@ app.post('/register', async (req, res) => {
         rub_balance: 0,
         blocked: 0
       }]);
-
     if (supabaseError) {
       if (supabaseError.message.includes('unique')) {
         return res.status(409).json({ success: false, error: 'такой логин уже существует' });
       }
       return res.status(500).json({ success: false, error: supabaseError.message });
+    }
+
+    // Если для этого логина (temp_user) существует запись в telegram_verifications с used=true,
+    // обновляем поле telegram_id в новой записи пользователя.
+    const tempUserId = "temp_" + username;
+    const { data: verData, error: verError } = await supabase
+      .from('telegram_verifications')
+      .select('telegram_chat_id')
+      .eq('user_id', tempUserId)
+      .eq('used', true)
+      .limit(1);
+    if (!verError && verData && verData.length > 0 && verData[0].telegram_chat_id) {
+      await supabase
+        .from('users')
+        .update({ telegram_id: verData[0].telegram_chat_id })
+        .eq('user_id', userId);
     }
 
     console.log('[Регистрация] Новый пользователь:', username, ' userId=', userId);
@@ -143,19 +159,16 @@ app.post('/login', async (req, res) => {
       .select('*')
       .eq('username', username)
       .single();
-
     if (supabaseError || !data) {
       return res.status(401).json({ success: false, error: 'Неверные данные пользователя' });
     }
     if (data.blocked === 1) {
       return res.status(403).json({ success: false, error: 'аккаунт заблокирован' });
     }
-
     const isPassOk = await bcrypt.compare(password, data.password);
     if (!isPassOk) {
       return res.status(401).json({ success: false, error: 'Неверные данные пользователя' });
     }
-
     const token = jwt.sign({ userId: data.user_id, role: 'user' }, JWT_SECRET, { expiresIn: '1h' });
     const env = process.env.NODE_ENV || 'development';
     res.cookie('token', token, {
@@ -192,19 +205,16 @@ app.post('/merchantLogin', async (req, res) => {
       .select('*')
       .eq('merchant_login', username)
       .single();
-
     if (supabaseError || !data) {
       return res.status(401).json({ success: false, error: 'Неверные данные пользователя' });
     }
     if (data.blocked === 1) {
       return res.status(403).json({ success: false, error: 'Аккаунт заблокирован' });
     }
-
     const isPassOk = await bcrypt.compare(password, data.merchant_password);
     if (!isPassOk) {
       return res.status(401).json({ success: false, error: 'Неверные данные пользователя' });
     }
-
     const token = jwt.sign({ merchantId: data.merchant_id, role: 'merchant' }, JWT_SECRET, { expiresIn: '24h' });
     res.cookie('token', token, {
       httpOnly: true,
@@ -249,7 +259,6 @@ app.post('/update', verifyToken, async (req, res) => {
     if (userData.blocked === 1) {
       return res.status(403).json({ success: false, error: 'Аккаунт заблокирован' });
     }
-
     const newBalance = parseFloat(userData.balance || 0) + amount;
     const { error: updateErr } = await supabase
       .from('users')
@@ -258,7 +267,6 @@ app.post('/update', verifyToken, async (req, res) => {
     if (updateErr) {
       return res.status(500).json({ success: false, error: 'Не удалось обновить баланс' });
     }
-
     const { data: halvingData } = await supabase
       .from('halving')
       .select('*')
@@ -271,7 +279,6 @@ app.post('/update', verifyToken, async (req, res) => {
     await supabase
       .from('halving')
       .upsert([{ id: 1, total_mined: totalMined, halving_step: halvingStep }]);
-
     console.log('[Mining] userId=', userId, ' +', amount, ' =>', newBalance);
     res.json({ success: true, balance: newBalance.toFixed(5), halvingStep });
   } catch (err) {
@@ -300,7 +307,6 @@ app.get('/user', verifyToken, async (req, res) => {
     if (userData.blocked === 1) {
       return res.status(403).json({ success: false, error: 'Пользователь заблокирован' });
     }
-
     let halvingStep = 0;
     const { data: halvingData } = await supabase
       .from('halving')
@@ -440,7 +446,6 @@ app.get('/transactions', verifyToken, async (req, res) => {
     }
     allTransactions.sort((a, b) => new Date(b.display_time) - new Date(a.display_time));
     const last20Transactions = allTransactions.slice(0, 20);
-
     console.log('Последние 20 транзакций:', last20Transactions);
     res.json({ success: true, transactions: last20Transactions });
   } catch (err) {
@@ -821,7 +826,6 @@ app.post('/cloudtips/callback', async (req, res) => {
       return res.status(400).json({ success: false, error: 'userId не найден в комментарии' });
     }
     const userId = match[1];
-
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('*')
@@ -833,10 +837,8 @@ app.post('/cloudtips/callback', async (req, res) => {
     if (user.blocked === 1) {
       return res.status(403).json({ success: false, error: 'Пользователь заблокирован' });
     }
-
     const currentRubBalance = parseFloat(user.rub_balance || 0);
     const newRubBalance = (currentRubBalance + parseFloat(amount)).toFixed(2);
-
     const { error: updateErr } = await supabase
       .from('users')
       .update({ rub_balance: newRubBalance })
@@ -844,7 +846,6 @@ app.post('/cloudtips/callback', async (req, res) => {
     if (updateErr) {
       return res.status(500).json({ success: false, error: 'Не удалось обновить баланс' });
     }
-
     const { error: insertErr } = await supabase
       .from('cloudtips_transactions')
       .insert([{ order_id, user_id: userId, rub_amount: amount }]);
@@ -852,7 +853,6 @@ app.post('/cloudtips/callback', async (req, res) => {
       console.error('Ошибка записи cloudtips_transactions:', insertErr);
       return res.status(500).json({ success: false, error: 'Ошибка записи транзакции' });
     }
-
     console.log(`[CloudtipsCallback] user=${userId}, amount=${amount}, orderId=${orderId}`);
     res.json({ success: true, newRubBalance });
   } catch (err) {
@@ -881,20 +881,18 @@ app.get('/merchant/info', verifyToken, async (req, res) => {
 });
 
 /* ========================
-   14) НОВЫЙ ENDPOINT: POST /telegram/request-code
+   14) POST /telegram/request-code
 ======================== */
 app.post('/telegram/request-code', async (req, res) => {
   try {
     let userId;
     if (req.body.forRegistration) {
-      // Режим регистрации: пользователь ещё не залогинен
       const { username } = req.body;
       if (!username) {
         return res.status(400).json({ success: false, error: 'Username обязателен для регистрации' });
       }
       userId = "temp_" + username;
     } else {
-      // Обычный режим: пользователь должен быть залогинен
       const token = req.cookies.token;
       if (!token) {
         return res.status(401).json({ success: false, error: 'Отсутствует токен авторизации' });
@@ -909,17 +907,14 @@ app.post('/telegram/request-code', async (req, res) => {
         return res.status(401).json({ success: false, error: 'Неверный токен' });
       }
     }
-
     await supabase
       .from('telegram_verifications')
       .delete()
       .eq('user_id', userId)
       .eq('used', false);
-
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 10 * 60 * 1000);
-
     const { error } = await supabase
       .from('telegram_verifications')
       .insert([{
@@ -933,7 +928,6 @@ app.post('/telegram/request-code', async (req, res) => {
       console.error('Ошибка вставки записи telegram_verifications:', error);
       return res.status(500).json({ success: false, error: 'Ошибка сохранения кода' });
     }
-
     if (req.body.forRegistration) {
       return res.json({ success: true, code });
     } else {
@@ -982,12 +976,10 @@ app.get('/telegram/check-bound', async (req, res) => {
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text ? msg.text.trim() : '';
-
   if (!/^\d{6}$/.test(text)) {
     bot.sendMessage(chatId, 'Пожалуйста, отправьте корректный код подтверждения (6 цифр).');
     return;
   }
-
   const nowISO = new Date().toISOString();
   const { data, error } = await supabase
     .from('telegram_verifications')
@@ -995,7 +987,6 @@ bot.on('message', async (msg) => {
     .eq('code', text)
     .eq('used', false)
     .gt('expires_at', nowISO);
-
   if (error) {
     console.error('Ошибка запроса в telegram_verifications:', error);
     bot.sendMessage(chatId, 'Произошла ошибка. Попробуйте ещё раз.');
@@ -1005,10 +996,8 @@ bot.on('message', async (msg) => {
     bot.sendMessage(chatId, 'Неверный или просроченный код.');
     return;
   }
-
   const verification = data[0];
   const userId = verification.user_id;
-
   const { error: updateError } = await supabase
     .from('telegram_verifications')
     .update({ used: true, telegram_chat_id: chatId })
@@ -1018,7 +1007,6 @@ bot.on('message', async (msg) => {
     bot.sendMessage(chatId, 'Ошибка обновления данных. Попробуйте ещё раз.');
     return;
   }
-
   const { error: updateUserError } = await supabase
     .from('users')
     .update({ telegram_id: chatId })
@@ -1028,7 +1016,6 @@ bot.on('message', async (msg) => {
     bot.sendMessage(chatId, 'Ошибка обновления пользователя. Попробуйте ещё раз.');
     return;
   }
-
   bot.sendMessage(chatId, 'Ваш Telegram успешно привязан к аккаунту!');
 });
 
