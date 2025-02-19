@@ -7,23 +7,61 @@
   <link rel="icon" href="15.png" type="image/jpeg">
   <link rel="stylesheet" href="styles.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1"></script>
+  <script async src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
-  <div id="balanceDisplay" style="display:none;">
-    <div id="balanceValue">0.00000 ₲</div>
-    <div id="userIdDisplay"></div> <!-- ID появится здесь -->
-</div>
-  <div id="mineContainer" class="hidden">
-    <img id="mineBtn" src="15.png" alt="Майнить">
+  <div id="telegramData" style="display:none;">
+    <div id="telegramInfo"></div>
   </div>
+
   <div id="loadingIndicator" class="loading-indicator hidden">
-  <img src="25.gif" alt="Загрузка..." />
- </div>
+    <img src="25.gif" alt="Загрузка..." />
+  </div>
+
+  <script>
+    // Инициализация Telegram Web App
+    window.Telegram.WebApp.init();
+
+    // Получение информации о пользователе из Telegram
+    const user = window.Telegram.WebApp.initDataUnsafe;
+
+    // Отображаем информацию о пользователе (можно скрыть в реальном приложении)
+    document.getElementById('telegramInfo').textContent = JSON.stringify(user);
+
+    // Включаем кнопку регистрации / привязки с Telegram
+    const bindTelegramBtn = document.getElementById('bindTelegramBtn');
+    bindTelegramBtn.addEventListener('click', () => {
+      const telegramData = {
+        userId: user.id,
+        username: user.username,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        photoUrl: user.photo_url
+      };
+
+      // Отправка данных на сервер для регистрации / привязки
+      fetch('/bindTelegram', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(telegramData),
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert("Телеграм успешно привязан!");
+        } else {
+          alert("Ошибка привязки Telegram: " + data.error);
+        }
+      })
+      .catch(error => {
+        console.error('Ошибка при привязке Telegram:', error);
+        alert("Ошибка при привязке Telegram.");
+      });
+    });
+  </script>
+
   <script src="script.js"></script>
 </body>
 </html>
