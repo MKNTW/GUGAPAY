@@ -1091,6 +1091,29 @@ app.post('/bindTelegram', async (req, res) => {
   }
 });
 
+app.post('/bindTelegram', async (req, res) => {
+  const { userId, username, firstName, lastName, photoUrl } = req.body;
+
+  // Здесь сохраняем данные в вашей базе данных
+  // Например, с использованием Supabase или другой базы данных
+  const { data, error } = await supabase
+    .from('users')
+    .update({
+      telegram_user_id: userId,
+      telegram_username: username,
+      telegram_first_name: firstName,
+      telegram_last_name: lastName,
+      telegram_photo_url: photoUrl
+    })
+    .eq('user_id', currentUserId); // или по другому идентификатору пользователя
+
+  if (error) {
+    return res.status(500).json({ success: false, error: 'Ошибка при привязке Telegram' });
+  }
+
+  res.json({ success: true });
+});
+
 /* ========================
    Запуск сервера
 ======================== */
