@@ -18,6 +18,14 @@
     <img src="25.gif" alt="Загрузка..." />
   </div>
 
+  <!-- Основной контент -->
+  <div id="content">
+    <!-- Кнопка привязки Telegram -->
+    <button id="bindTelegramBtn" style="padding:10px; border:none; border-radius:8px; background:#007bff; color:#fff; cursor:pointer;">
+      Привязать Telegram
+    </button>
+  </div>
+
   <script>
     // Инициализация Telegram Web App
     window.Telegram.WebApp.init();
@@ -28,7 +36,7 @@
     // Отображаем информацию о пользователе (можно скрыть в реальном приложении)
     document.getElementById('telegramInfo').textContent = JSON.stringify(user);
 
-    // Включаем кнопку регистрации / привязки с Telegram
+    // Включаем кнопку привязки с Telegram
     const bindTelegramBtn = document.getElementById('bindTelegramBtn');
     bindTelegramBtn.addEventListener('click', () => {
       const telegramData = {
