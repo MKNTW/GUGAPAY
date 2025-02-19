@@ -11,7 +11,7 @@ const Joi = require('joi');
 const env = process.env.NODE_ENV || 'development';
 require('dotenv').config();
 
-// Инициализация Telegram-бота
+// Инициализация Telegram-бота (оставляем, если он используется для других задач)
 const TelegramBot = require('node-telegram-bot-api');
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '7889374104:AAHF4Lv7RjcFVl6n4D2dBMCJT0KGPz51kg8';
 if (!TELEGRAM_BOT_TOKEN) {
@@ -116,24 +116,7 @@ app.post('/register', async (req, res) => {
       return res.status(500).json({ success: false, error: supabaseError.message });
     }
 
-    // Генерация кода для привязки Telegram
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);  // Код действует 10 минут
-
-    await supabase
-      .from('telegram_verifications')
-      .insert([{
-        user_id: userId,
-        code: verificationCode,
-        used: false,
-        expires_at: expiresAt.toISOString(),
-      }]);
-
-    // Отправка кода в Telegram через бота (в данном случае мы используем userId как идентификатор)
-    bot.sendMessage(userId, `Ваш код для привязки: ${verificationCode}`);
-
-    // Возвращаем userId для отображения на клиенте
-    res.json({ success: true, message: 'Пожалуйста, подтвердите ваш Telegram через код, отправленный в Telegram', userId });
+    res.json({ success: true, message: 'Пользователь успешно зарегистрирован', userId });
   } catch (err) {
     console.error('[register] Ошибка:', err);
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
@@ -881,237 +864,66 @@ app.get('/merchant/info', verifyToken, async (req, res) => {
 });
 
 /* ========================
-   14) POST /telegram/request-code
+   17) Эндпоинт для привязки Telegram-аккаунта
 ======================== */
-app.post('/telegram/request-code', async (req, res) => {
-  try {
-    let userId;
-    if (req.body.forRegistration) {
-      const { username } = req.body;
-      if (!username) {
-        return res.status(400).json({ success: false, error: 'Username обязателен для регистрации' });
-      }
-      userId = "temp_" + username;
-    } else {
-      const token = req.cookies.token;
-      if (!token) {
-        return res.status(401).json({ success: false, error: 'Отсутствует токен авторизации' });
-      }
-      try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        if (decoded.role !== 'user') {
-          return res.status(403).json({ success: false, error: 'Доступ запрещён' });
-        }
-        userId = decoded.userId;
-      } catch (err) {
-        return res.status(401).json({ success: false, error: 'Неверный токен' });
-      }
-    }
-    await supabase
-      .from('telegram_verifications')
-      .delete()
-      .eq('user_id', userId)
-      .eq('used', false);
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const now = new Date();
-    const expiresAt = new Date(now.getTime() + 10 * 60 * 1000);
-    const { error } = await supabase
-      .from('telegram_verifications')
-      .insert([{
-        user_id: userId,
-        code,
-        used: false,
-        created_at: now.toISOString(),
-        expires_at: expiresAt.toISOString()
-      }]);
-    if (error) {
-      console.error('Ошибка вставки записи telegram_verifications:', error);
-      return res.status(500).json({ success: false, error: 'Ошибка сохранения кода' });
-    }
-    if (req.body.forRegistration) {
-      return res.json({ success: true, code });
-    } else {
-      return res.json({ success: true, message: 'Код сгенерирован. Отправьте его нашему Telegram-боту.' });
-    }
-  } catch (err) {
-    console.error('Ошибка /telegram/request-code:', err);
-    res.status(500).json({ success: false, error: 'Ошибка сервера' });
-  }
-});
-
-/* ========================
-   15) GET /telegram/check-bound
-======================== */
-app.get('/telegram/check-bound', async (req, res) => {
-  try {
-    const { username } = req.query;
-    if (!username) {
-      return res.status(400).json({ success: false, error: 'Username обязателен' });
-    }
-    const userId = "temp_" + username;
-    const { data, error } = await supabase
-      .from('telegram_verifications')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('used', true)
-      .limit(1);
-    if (error) {
-      console.error('Ошибка проверки привязки:', error);
-      return res.status(500).json({ success: false, error: 'Ошибка проверки привязки' });
-    }
-    if (data && data.length > 0) {
-      return res.json({ success: true, message: 'Telegram привязан', data: data[0] });
-    } else {
-      return res.status(400).json({ success: false, error: 'Telegram не привязан' });
-    }
-  } catch (err) {
-    console.error('Ошибка в /telegram/check-bound:', err);
-    res.status(500).json({ success: false, error: 'Ошибка сервера' });
-  }
-});
-
-/* ========================
-   16) Обработка входящих сообщений Telegram-бота
-======================== */
-// Теперь при получении кода бот дополнительно получает данные чата и сохраняет всю информацию о пользователе
-bot.on('message', async (msg) => {
-  const chatId = msg.chat.id;
-  const text = msg.text ? msg.text.trim() : '';
-  
-  // Проверка на формат 6-значного кода
-  if (!/^\d{6}$/.test(text)) {
-    bot.sendMessage(chatId, 'Пожалуйста, отправьте корректный код подтверждения (6 цифр).');
-    return;
-  }
-  
-  const nowISO = new Date().toISOString();
-  const { data, error } = await supabase
-    .from('telegram_verifications')
-    .select('*')
-    .eq('code', text)
-    .eq('used', false)
-    .gt('expires_at', nowISO);
-  
-  if (error || !data || data.length === 0) {
-    bot.sendMessage(chatId, 'Неверный или просроченный код.');
-    return;
-  }
-  
-  const verification = data[0];
-  const userId = verification.user_id;
-  
-  // Получаем базовую информацию из msg.from
-  const { first_name, last_name, username: tgUsername, language_code, is_bot } = msg.from;
-  
-  // Запрашиваем дополнительные данные о чате (если доступны)
-  let chatInfo = {};
-  try {
-    chatInfo = await bot.getChat(chatId);
-  } catch (err) {
-    console.error('Ошибка получения данных чата:', err);
-  }
-  
-  // Обновляем статус кода и привязываем Telegram
-  await supabase
-    .from('telegram_verifications')
-    .update({ used: true, telegram_chat_id: chatId })
-    .eq('id', verification.id);
-  
-  // Сохраняем данные пользователя в таблице telegram_users
-  await supabase
-    .from('telegram_users')
-    .upsert([{
-      user_id: userId,
-      telegram_chat_id: chatId,
-      telegram_username: tgUsername || chatInfo.username || null,
-      telegram_first_name: first_name || chatInfo.first_name || null,
-      telegram_last_name: last_name || chatInfo.last_name || null,
-      telegram_language_code: language_code || chatInfo.language_code || null,
-      telegram_is_bot: is_bot,
-      verified: true
-    }]);
-  
-  // Обновляем поле telegram_id в таблице users
-  await supabase
-    .from('users')
-    .update({ telegram_id: chatId })
-    .eq('user_id', userId);
-  
-  bot.sendMessage(chatId, 'Ваш Telegram успешно привязан к аккаунту!');
-});
-
-/* ========================
-   17) Путь для привязки Telegram-аккаунта
-======================== */
-
+// Новый эндпоинт: если пользователь уже авторизован, обновляем его данные,
+// иначе создаём нового пользователя с данными из Telegram.
 app.post('/bindTelegram', async (req, res) => {
   const { userId, username, firstName, lastName, photoUrl } = req.body;
-
-  // Проверка, если Telegram-аккаунт уже привязан
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('telegram_user_id', userId)
-    .single();
-
-  if (error && error.code !== 'PGRST100') {
-    return res.status(500).json({ success: false, error: 'Ошибка поиска в базе данных' });
-  }
-
-  // Если пользователь уже зарегистрирован, привязываем Telegram
-  if (data) {
-    return res.status(200).json({ success: true, message: 'Telegram уже привязан' });
-  }
-
-  // Если пользователь не найден, создаём нового пользователя в базе
+  let currentUser;
   try {
-    const { data: newUser, error: insertError } = await supabase
-      .from('users')
-      .insert([
-        {
-          telegram_user_id: userId,
-          username: username,
-          first_name: firstName,
-          last_name: lastName,
-          photo_url: photoUrl,
-          balance: 0,
-          rub_balance: 0,
-        }
-      ]);
+    if (req.cookies.token) {
+      const decoded = jwt.verify(req.cookies.token, JWT_SECRET);
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('user_id', decoded.userId)
+        .single();
+      if (!error && data) {
+        currentUser = data;
+      }
+    }
+  } catch (err) {
+    console.error("Ошибка проверки токена:", err);
+  }
 
+  if (currentUser) {
+    // Обновляем запись пользователя, привязываем данные Telegram
+    const { error } = await supabase
+      .from('users')
+      .update({
+        telegram_user_id: userId,
+        telegram_username: username,
+        telegram_first_name: firstName,
+        telegram_last_name: lastName,
+        telegram_photo_url: photoUrl
+      })
+      .eq('user_id', currentUser.user_id);
+    if (error) {
+      return res.status(500).json({ success: false, error: 'Ошибка при привязке Telegram' });
+    }
+    return res.json({ success: true, message: 'Telegram успешно привязан к аккаунту' });
+  } else {
+    // Пользователь не авторизован, создаём новую запись
+    const newUserId = Math.floor(100000 + Math.random() * 900000).toString();
+    const { error: insertError } = await supabase
+      .from('users')
+      .insert([{
+        user_id: newUserId,
+        telegram_user_id: userId,
+        telegram_username: username,
+        telegram_first_name: firstName,
+        telegram_last_name: lastName,
+        telegram_photo_url: photoUrl,
+        balance: 0,
+        rub_balance: 0,
+        blocked: 0
+      }]);
     if (insertError) {
       return res.status(500).json({ success: false, error: insertError.message });
     }
-
-    // Возвращаем успешный ответ
-    return res.status(200).json({ success: true, message: 'Telegram успешно привязан!' });
-  } catch (err) {
-    console.error('Ошибка при привязке Telegram:', err);
-    return res.status(500).json({ success: false, error: 'Ошибка при привязке Telegram' });
+    return res.json({ success: true, message: 'Telegram успешно привязан, создан новый аккаунт', userId: newUserId });
   }
-});
-
-app.post('/bindTelegram', async (req, res) => {
-  const { userId, username, firstName, lastName, photoUrl } = req.body;
-
-  // Здесь сохраняем данные в вашей базе данных
-  // Например, с использованием Supabase или другой базы данных
-  const { data, error } = await supabase
-    .from('users')
-    .update({
-      telegram_user_id: userId,
-      telegram_username: username,
-      telegram_first_name: firstName,
-      telegram_last_name: lastName,
-      telegram_photo_url: photoUrl
-    })
-    .eq('user_id', currentUserId); // или по другому идентификатору пользователя
-
-  if (error) {
-    return res.status(500).json({ success: false, error: 'Ошибка при привязке Telegram' });
-  }
-
-  res.json({ success: true });
 });
 
 /* ========================
