@@ -1041,6 +1041,57 @@ bot.on('message', async (msg) => {
 });
 
 /* ========================
+   17) Путь для привязки Telegram-аккаунта
+======================== */
+
+app.post('/bindTelegram', async (req, res) => {
+  const { userId, username, firstName, lastName, photoUrl } = req.body;
+
+  // Проверка, если Telegram-аккаунт уже привязан
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('telegram_user_id', userId)
+    .single();
+
+  if (error && error.code !== 'PGRST100') {
+    return res.status(500).json({ success: false, error: 'Ошибка поиска в базе данных' });
+  }
+
+  // Если пользователь уже зарегистрирован, привязываем Telegram
+  if (data) {
+    return res.status(200).json({ success: true, message: 'Telegram уже привязан' });
+  }
+
+  // Если пользователь не найден, создаём нового пользователя в базе
+  try {
+    const { data: newUser, error: insertError } = await supabase
+      .from('users')
+      .insert([
+        {
+          telegram_user_id: userId,
+          username: username,
+          first_name: firstName,
+          last_name: lastName,
+          photo_url: photoUrl,
+          balance: 0,
+          rub_balance: 0,
+        }
+      ]);
+
+    if (insertError) {
+      return res.status(500).json({ success: false, error: insertError.message });
+    }
+
+    // Возвращаем успешный ответ
+    return res.status(200).json({ success: true, message: 'Telegram успешно привязан!' });
+  } catch (err) {
+    console.error('Ошибка при привязке Telegram:', err);
+    return res.status(500).json({ success: false, error: 'Ошибка при привязке Telegram' });
+  }
+});
+
+/* ========================
    Запуск сервера
 ======================== */
 app.listen(port, '0.0.0.0', () => {
