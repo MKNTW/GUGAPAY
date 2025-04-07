@@ -393,75 +393,6 @@ function createModal(
 /**************************************************
  * АВТОРИЗАЦИЯ / РЕГИСТРАЦИЯ
  **************************************************/
-/**
- * Функция для запроса одноразового кода для привязки Telegram в режиме регистрации.
- * Отправляем { forRegistration: true, username } в тело запроса.
- * Если сервер возвращает код (для тестирования), он отображается в поле.
- */
-async function requestTelegramCodeForRegistration() {
-  const username = document.getElementById("regLogin").value;
-  if (!username) {
-    alert("❌ Введите логин для запроса кода");
-    return;
-  }
-  try {
-    const resp = await fetch(`${API_URL}/telegram/request-code`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ forRegistration: true, username })
-    });
-    const data = await resp.json();
-    if (resp.ok && data.success) {
-      // Если сервер вернул поле code, отображаем именно его
-      if (data.code) {
-        document.getElementById("telegramCodeDisplay").textContent = "Ваш код: " + data.code;
-      } else {
-        document.getElementById("telegramCodeDisplay").textContent = "Код сгенерирован. Отправьте его нашему Telegram-боту.";
-      }
-      alert("Код сгенерирован. Отправьте его нашему Telegram-боту и затем нажмите 'Проверить привязку'.");
-    } else {
-      alert(`Ошибка запроса кода: ${data.error}`);
-    }
-  } catch (err) {
-    console.error("Ошибка запроса кода Telegram:", err);
-    alert("Ошибка запроса кода Telegram.");
-  }
-}
-
-/**
- * Функция для проверки привязки Telegram в режиме регистрации.
- * Отправляем GET-запрос на endpoint /telegram/check-bound с параметром username.
- * Если проверка успешна, устанавливаем флаг и разблокируем кнопку регистрации.
- */
-async function checkTelegramBoundForRegistration() {
-  const username = document.getElementById("regLogin").value;
-  if (!username) {
-    alert("❌ Введите логин для проверки привязки");
-    return;
-  }
-  try {
-    const resp = await fetch(`${API_URL}/telegram/check-bound?username=${encodeURIComponent(username)}`, {
-      method: "GET",
-      credentials: "include"
-    });
-    const data = await resp.json();
-    if (resp.ok && data.success) {
-      window.isTelegramBound = true;
-      const regBtn = document.getElementById("registerSubmitBtn");
-      if (regBtn) regBtn.disabled = false;
-      alert("Telegram успешно привязан! Теперь можно завершить регистрацию.");
-    } else {
-      alert(`Проверка привязки не пройдена: ${data.error}`);
-    }
-  } catch (err) {
-    console.error("Ошибка проверки привязки Telegram:", err);
-    alert("Ошибка проверки привязки Telegram.");
-  }
-}
-
-/* Пример функций login, register, logout, openAuthModal остаются почти без изменений */
-
 async function login() {
   const loginVal = document.getElementById("loginInput")?.value;
   const passVal = document.getElementById("passwordInput")?.value;
@@ -473,7 +404,7 @@ async function login() {
   try {
     const resp = await fetch(`${API_URL}/login`, {
       method: "POST",
-      credentials: "include", // передаем cookie с токеном
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: loginVal, password: passVal }),
     });
@@ -489,7 +420,7 @@ async function login() {
         alert("❌ Ваш аккаунт заблокирован");
         return;
       }
-      // Пробуем мерчанта
+      // Пробуем мерчант
       const merchResp = await fetch(`${API_URL}/merchantLogin`, {
         method: "POST",
         credentials: "include",
@@ -518,11 +449,6 @@ async function register() {
   const passVal = document.getElementById("regPassword")?.value;
   if (!loginVal || !passVal) {
     alert("❌ Введите логин и пароль");
-    return;
-  }
-  // Если Telegram не привязан, регистрация недоступна
-  if (!window.isTelegramBound) {
-    alert("❌ Сначала привяжите свой Telegram аккаунт");
     return;
   }
   showGlobalLoading();
@@ -574,6 +500,7 @@ function openAuthModal() {
   createModal(
     "authModal",
     `
+      <!-- Контейнер с общим светлым фоном и скруглёнными краями -->
       <div style="
         background:#f7f7f7;
         border-radius:20px;
@@ -585,40 +512,115 @@ function openAuthModal() {
         flex-direction:column;
         gap:16px;
       ">
+
+        <!-- Логотип или заголовок (примерно по центру) -->
         <h2 style="text-align:center; margin:0;">GUGACOIN</h2>
 
         <!-- Блок Входа -->
         <div id="loginSection" style="display:flex; flex-direction:column; gap:8px;">
-          <h4 style="margin:0; text-align:center;">Вход</h4>
-          <input type="text" id="loginInput" placeholder="Логин" style="padding:10px; font-size:16px; width:100%; border:none; border-radius:8px; outline:none;">
-          <input type="password" id="passwordInput" placeholder="Пароль" style="padding:10px; font-size:16px; width:100%; border:none; border-radius:8px; outline:none;">
-          <button id="loginSubmitBtn" style="padding:10px; margin-top:4px; border:none; border-radius:8px; font-size:16px; background:#000; color:#fff; cursor:pointer;">
+          <h4 style="margin:0; text-align:center;"></h4>
+          <input 
+            type="text" 
+            id="loginInput" 
+            placeholder="Логин" 
+            style="
+              padding:10px;
+              font-size:16px;
+              width:100%;
+              border:none;
+              border-radius:8px;
+              outline:none;
+            "
+          >
+          <input 
+            type="password" 
+            id="passwordInput" 
+            placeholder="Пароль" 
+            style="
+              padding:10px;
+              font-size:16px;
+              width:100%;
+              border:none;
+              border-radius:8px;
+              outline:none;
+            "
+          >
+          <button 
+            id="loginSubmitBtn" 
+            style="
+              padding:10px;
+              margin-top:4px;
+              border:none;
+              border-radius:8px;
+              font-size:16px;
+              background:#000;
+              color:#fff;
+              cursor:pointer;
+            "
+          >
             Войти
           </button>
         </div>
 
         <!-- Блок Регистрации (изначально скрыт) -->
         <div id="registerSection" style="display:none; flex-direction:column; gap:8px;">
-          <h4 style="margin:0; text-align:center;">Регистрация</h4>
-          <input type="text" id="regLogin" placeholder="Логин" style="padding:10px; font-size:16px; width:100%; border:none; border-radius:8px; outline:none;">
-          <input type="password" id="regPassword" placeholder="Пароль" style="padding:10px; font-size:16px; width:100%; border:none; border-radius:8px; outline:none;">
-          <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button id="requestTelegramBtn" style="flex:1 1 auto; padding:10px; border:none; border-radius:8px; font-size:16px; background:#007bff; color:#fff; cursor:pointer;">
-              Запросить код
-            </button>
-            <button id="checkTelegramBtn" style="flex:1 1 auto; padding:10px; border:none; border-radius:8px; font-size:16px; background:#28a745; color:#fff; cursor:pointer;">
-              Проверить привязку
-            </button>
-          </div>
-          <!-- Поле для отображения кода (только код, крупно) -->
-          <div id="telegramCodeDisplay" style="padding:12px; border:1px solid #ccc; border-radius:8px; text-align:center; font-size:24px; font-weight:bold; color:#333;"></div>
-          <button id="registerSubmitBtn" style="padding:10px; margin-top:4px; border:none; border-radius:8px; font-size:16px; background:#000; color:#fff; cursor:pointer;" disabled>
+          <h4 style="margin:0; text-align:center;"></h4>
+          <input 
+            type="text" 
+            id="regLogin" 
+            placeholder="Логин" 
+            style="
+              padding:10px;
+              font-size:16px;
+              width:100%;
+              border:none;
+              border-radius:8px;
+              outline:none;
+            "
+          >
+          <input 
+            type="password" 
+            id="regPassword" 
+            placeholder="Пароль" 
+            style="
+              padding:10px;
+              font-size:16px;
+              width:100%;
+              border:none;
+              border-radius:8px;
+              outline:none;
+            "
+          >
+          <button 
+            id="registerSubmitBtn" 
+            style="
+              padding:10px;
+              margin-top:4px;
+              border:none;
+              border-radius:8px;
+              font-size:16px;
+              background:#000;
+              color:#fff;
+              cursor:pointer;
+            "
+          >
             Зарегистрироваться
           </button>
         </div>
 
-        <!-- Кнопка переключения между "Вход" и "Регистрация" -->
-        <button id="toggleAuthBtn" style="margin-top:10px; border:none; border-radius:8px; font-size:14px; padding:8px; background:#eee; cursor:pointer;">
+        <!-- Кнопка переключения между "Вход" / "Регистрация" -->
+        <button 
+          id="toggleAuthBtn"
+          style="
+            margin-top:10px;
+            border:none;
+            border-radius:8px;
+            font-size:14px;
+            padding:8px;
+            background:#eee;
+            cursor:pointer;
+          "
+        >
           Войти / Зарегистрироваться
         </button>
       </div>
@@ -626,13 +628,15 @@ function openAuthModal() {
     {
       showCloseBtn: false,
       cornerTopMargin: 0,
-      cornerTopRadius: 0,
+      cornerTopRadius: 0,  // у родительского окна убраны скругления сверху,
+                           // т.к. внутри мы используем собственный скруглённый контейнер
       hasVerticalScroll: true,
       defaultFromBottom: true,
       noRadiusByDefault: true
     }
   );
 
+  // Подключаем обработчики:
   document.getElementById("loginSubmitBtn").addEventListener("click", login);
   document.getElementById("registerSubmitBtn").addEventListener("click", register);
   document.getElementById("toggleAuthBtn").addEventListener("click", () => {
@@ -644,94 +648,12 @@ function openAuthModal() {
     } else {
       loginSection.style.display = "none";
       registerSection.style.display = "flex";
-      // Сброс привязки Telegram
-      window.isTelegramBound = false;
-      const regBtn = document.getElementById("registerSubmitBtn");
-      if (regBtn) regBtn.disabled = true;
-      const bindBtn = document.getElementById("requestTelegramBtn");
-      if (bindBtn) {
-        bindBtn.textContent = "Запросить код";
-        bindBtn.disabled = false;
-      }
-      const codeDisplay = document.getElementById("telegramCodeDisplay");
-      if (codeDisplay) codeDisplay.textContent = "";
     }
   });
-  
-  document.getElementById("requestTelegramBtn").addEventListener("click", requestTelegramCodeForRegistration);
-  document.getElementById("checkTelegramBtn").addEventListener("click", checkTelegramBoundForRegistration);
 
-  // Изначально показываем блок "Вход"
+  // Изначально показываем блок "Вход", а "Регистрация" скрыта
   document.getElementById("loginSection").style.display = "flex";
   document.getElementById("registerSection").style.display = "none";
-}
-
-/**
- * Функция запроса кода для привязки Telegram в режиме регистрации.
- * Сервер возвращает объект { success: true, code: "123456" } для тестирования.
- * Код отображается в поле с id "telegramCodeDisplay" (только цифры, крупный шрифт).
- */
-async function requestTelegramCodeForRegistration() {
-  const username = document.getElementById("regLogin").value;
-  if (!username) {
-    alert("❌ Введите логин для запроса кода");
-    return;
-  }
-  try {
-    const resp = await fetch(`${API_URL}/telegram/request-code`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ forRegistration: true, username })
-    });
-    const data = await resp.json();
-    console.log("Ответ от /telegram/request-code:", data);
-    if (resp.ok && data.success) {
-      const codeDisplayElem = document.getElementById("telegramCodeDisplay");
-      if (data.code) {
-        codeDisplayElem.textContent = data.code;
-      } else {
-        codeDisplayElem.textContent = "";
-      }
-      alert("Код сгенерирован. Отправьте его нашему Telegram-боту и затем нажмите 'Проверить привязку'.");
-    } else {
-      alert(`Ошибка запроса кода: ${data.error}`);
-    }
-  } catch (err) {
-    console.error("Ошибка запроса кода Telegram:", err);
-    alert("Ошибка запроса кода Telegram.");
-  }
-}
-
-/**
- * Функция проверки привязки Telegram в режиме регистрации.
- * Если проверка проходит успешно, активируется кнопка регистрации.
- */
-async function checkTelegramBoundForRegistration() {
-  const username = document.getElementById("regLogin").value;
-  if (!username) {
-    alert("❌ Введите логин для проверки привязки");
-    return;
-  }
-  try {
-    const resp = await fetch(`${API_URL}/telegram/check-bound?username=${encodeURIComponent(username)}`, {
-      method: "GET",
-      credentials: "include"
-    });
-    const data = await resp.json();
-    console.log("Ответ от /telegram/check-bound:", data);
-    if (resp.ok && data.success) {
-      window.isTelegramBound = true;
-      const regBtn = document.getElementById("registerSubmitBtn");
-      if (regBtn) regBtn.disabled = false;
-      alert("Telegram успешно привязан! Теперь можно завершить регистрацию.");
-    } else {
-      alert(`Проверка привязки не пройдена: ${data.error}`);
-    }
-  } catch (err) {
-    console.error("Ошибка проверки привязки Telegram:", err);
-    alert("Ошибка проверки привязки Telegram.");
-  }
 }
 
 /**************************************************
