@@ -979,6 +979,69 @@ app.post('/auth/telegram', async (req, res) => {
 });
 
 
+
+// Функция генерации уникального 6-значного ID
+async function generateUniqueUserId() {
+  let userId;
+  let isUnique = false;
+  
+  while (!isUnique) {
+    // Генерируем 6-значное число
+    userId = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Проверяем уникальность в базе
+    const { data } = await supabase
+      .from('users')
+      .select('user_id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (!data) isUnique = true;
+  }
+  
+  return userId;
+}
+
+// Эндпоинт для авторизации через Telegram
+app.post('/auth/telegram', async (req, res) => {
+  try {
+    const { telegramId, firstName, username, photoUrl } = req.body;
+
+    // Генерируем уникальный ID
+    const userId = await generateUniqueUserId();
+
+    // Создаем пользователя
+    const { error } = await supabase.from('users').insert([{
+      user_id: userId,
+      telegram_id: telegramId,
+      username: username || `tg_${telegramId}`,
+      first_name: firstName,
+      photo_url: photoUrl,
+      balance: 0,
+      rub_balance: 0,
+      blocked: false,
+      password: null
+    }]);
+
+    if (error) throw error;
+
+    // Возвращаем данные
+    res.json({
+      success: true,
+      userId,
+      balance: 0
+    });
+
+  } catch (error) {
+    console.error('Telegram auth error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Internal server error' 
+    });
+  }
+});
+
+
 /* ========================
    Запуск сервера
 ======================== */
