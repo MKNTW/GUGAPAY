@@ -918,76 +918,78 @@ app.post('/auth/telegram', async (req, res) => {
   const { telegramId, firstName, username, photoUrl } = req.body;
 
   if (!telegramId) {
-    return res.status(400).json({ success: false, error: "Нет Telegram ID" });
+    return res.status(400).json({ 
+      success: false, 
+      error: "Telegram ID is required" 
+    });
   }
 
   try {
-    // Поиск пользователя по Telegram ID
-    const { data: user, error: userError } = await supabase
+    // Поиск пользователя
+    const { data: user, error } = await supabase
       .from('users')
       .select('*')
       .eq('telegram_id', telegramId)
-      .single();
+      .maybeSingle();
 
-    if (userError && userError.code !== 'PGRST116') {
-      // PGRST116 означает "Single row was not found", что нормально при отсутствии пользователя, поэтому игнорируем эту ошибку
-      return res.status(500).json({ success: false, error: 'Ошибка при поиске пользователя' });
+    let userId;
+    if (error && error.code !== 'PGRST116') {
+      throw error;
     }
 
+    // Создание нового пользователя
     if (!user) {
-      // Если пользователь не найден — создаём нового
-      const { data: newUser, error: insertError } = await supabase
+      const newUser = {
+        user_id: uuidv4(),
+        telegram_id: telegramId,
+        username: username || `user_${telegramId}`,
+        first_name: firstName || '',
+        photo_url: photoUrl || '',
+        balance: 0.0,
+        rub_balance: 0.0,
+        blocked: false
+      };
+
+      const { error: insertError } = await supabase
         .from('users')
-        .insert([
-          {
-            telegram_id: telegramId,
-            username,
-            first_name: firstName,
-            photo_url: photoUrl,
-            balance: 0
-          }
-        ])
-        .single();
+        .insert([newUser]);
 
-      if (insertError) {
-        return res.status(500).json({ success: false, error: 'Ошибка при создании пользователя' });
-      }
-
-      const token = jwt.sign({ userId: newUser.id, role: 'user' }, JWT_SECRET, { expiresIn: '1h' });
-      res.cookie('token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'none',
-        maxAge: 3600000
-      });
-
-      return res.json({
-        success: true,
-        message: 'Пользователь успешно создан и авторизован',
-        userId: newUser.id,
-        balance: newUser.balance
-      });
+      if (insertError) throw insertError;
+      userId = newUser.user_id;
+    } else {
+      userId = user.user_id;
     }
 
-    // Если пользователь найден, просто авторизуем его
-    const token = jwt.sign({ userId: user.id, role: 'user' }, JWT_SECRET, { expiresIn: '1h' });
+    // Генерация токена
+    const token = jwt.sign(
+      { userId, role: 'user' }, 
+      config.jwtSecret, 
+      { expiresIn: '24h' }
+    );
+
+    // Установка куки
     res.cookie('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: config.env === 'production',
       sameSite: 'none',
-      maxAge: 3600000
+      maxAge: 86400000 // 24 часа
     });
+
     return res.json({
       success: true,
-      message: 'Пользователь успешно авторизован',
-      userId: user.id,
-      balance: user.balance
+      userId,
+      balance: user?.balance || 0
     });
-  } catch (err) {
-    console.error("Ошибка Telegram авторизации:", err);
-    res.status(500).json({ success: false, error: "Ошибка сервера" });
+
+  } catch (error) {
+    console.error('Telegram auth error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
   }
 });
+
 
 /* ========================
    Запуск сервера
