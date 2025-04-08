@@ -882,8 +882,9 @@ app.get('/merchant/info', verifyToken, async (req, res) => {
    18) Эндпоинт для привязки Telegram-аккаунта 2
 ======================== */
 
+// Endpoint для авторизации через Telegram
 app.post('/auth/telegram', async (req, res) => {
-  const { telegramId, first_name, username, photo_url } = req.body;
+  const { telegramId, firstName, username, photoUrl } = req.body;
 
   if (!telegramId) {
     return res.status(400).json({ success: false, error: "Нет Telegram ID" });
@@ -891,22 +892,63 @@ app.post('/auth/telegram', async (req, res) => {
 
   try {
     // Поиск пользователя по Telegram ID
-    let user = await db.get("SELECT * FROM users WHERE telegram_id = ?", [telegramId]);
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('telegram_id', telegramId)
+      .single();
+
+    if (userError && userError.code !== 'PGRST116') {
+      // PGRST116 означает "Single row was not found", что нормально при отсутствии пользователя, поэтому игнорируем эту ошибку
+      return res.status(500).json({ success: false, error: 'Ошибка при поиске пользователя' });
+    }
 
     if (!user) {
       // Если пользователь не найден — создаём нового
-      const initialBalance = 0;
-      await db.run(
-        "INSERT INTO users (telegram_id, username, first_name, photo_url, balance) VALUES (?, ?, ?, ?, ?)",
-        [telegramId, username, first_name, photo_url, initialBalance]
-      );
+      const { data: newUser, error: insertError } = await supabase
+        .from('users')
+        .insert([
+          {
+            telegram_id: telegramId,
+            username,
+            first_name: firstName,
+            photo_url: photoUrl,
+            balance: 0
+          }
+        ])
+        .single();
 
-      // Получаем только что созданного пользователя
-      user = await db.get("SELECT * FROM users WHERE telegram_id = ?", [telegramId]);
+      if (insertError) {
+        return res.status(500).json({ success: false, error: 'Ошибка при создании пользователя' });
+      }
+
+      const token = jwt.sign({ userId: newUser.id, role: 'user' }, JWT_SECRET, { expiresIn: '1h' });
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'none',
+        maxAge: 3600000
+      });
+
+      return res.json({
+        success: true,
+        message: 'Пользователь успешно создан и авторизован',
+        userId: newUser.id,
+        balance: newUser.balance
+      });
     }
 
-    res.json({
+    // Если пользователь найден, просто авторизуем его
+    const token = jwt.sign({ userId: user.id, role: 'user' }, JWT_SECRET, { expiresIn: '1h' });
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'none',
+      maxAge: 3600000
+    });
+    return res.json({
       success: true,
+      message: 'Пользователь успешно авторизован',
       userId: user.id,
       balance: user.balance
     });
