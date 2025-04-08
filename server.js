@@ -918,15 +918,8 @@ app.get('/', (req, res) => {
 app.post('/auth/telegram', async (req, res) => {
   const { telegramId, firstName, username, photoUrl } = req.body;
 
-  if (!telegramId) {
-    return res.status(400).json({ 
-      success: false, 
-      error: "Требуется ID Telegram" 
-    });
-  }
-
   try {
-    // Ищем пользователя по telegram_id
+    // Поиск пользователя по telegram_id
     const { data: user, error } = await supabase
       .from('users')
       .select('*')
@@ -936,20 +929,18 @@ app.post('/auth/telegram', async (req, res) => {
     let userId;
     if (error && error.code !== 'PGRST116') throw error;
 
-    // Создаем нового пользователя
+    // Создание нового пользователя БЕЗ ПАРОЛЯ
     if (!user) {
-      const randomPassword = crypto.randomBytes(16).toString('hex');
-      
       const newUser = {
         user_id: uuidv4(),
         telegram_id: telegramId,
-        username: username || `tg_user_${telegramId}`,
+        username: username || `tg_${telegramId}`,
         first_name: firstName || '',
         photo_url: photoUrl || '',
-        password: await bcrypt.hash(randomPassword, 12), // Пароль для совместимости
-        balance: 0.0,
-        rub_balance: 0.0,
-        blocked: false
+        balance: 0,
+        rub_balance: 0,
+        blocked: false,
+        password: null // Пароль не требуется
       };
 
       const { error: insertError } = await supabase
@@ -962,31 +953,27 @@ app.post('/auth/telegram', async (req, res) => {
       userId = user.user_id;
     }
 
-    // Генерируем токен без проверки пароля
+    // Генерация токена
     const token = jwt.sign(
-      { userId, role: 'user', authType: 'telegram' }, 
-      config.jwtSecret, 
+      { userId, role: 'user', authType: 'telegram' },
+      process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
 
     res.cookie('token', token, {
       httpOnly: true,
-      secure: config.env === 'production',
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'none',
       maxAge: 86400000
     });
 
-    return res.json({
-      success: true,
-      userId,
-      authType: 'telegram'
-    });
+    res.json({ success: true, userId });
 
   } catch (error) {
-    console.error('Ошибка авторизации через Telegram:', error);
-    return res.status(500).json({
-      success: false,
-      error: 'Ошибка сервера'
+    console.error('Telegram auth error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Internal server error' 
     });
   }
 });
