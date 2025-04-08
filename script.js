@@ -583,34 +583,47 @@ function openAuthModal() {
     container.appendChild(telegramBtn);
 
     telegramBtn.addEventListener("click", async () => {
-      const tgUser = Telegram.WebApp.initDataUnsafe.user;
+      try {
+        showGlobalLoading();
+        
+        // Инициализация Telegram WebApp
+        Telegram.WebApp.ready();
+        const tgUser = Telegram.WebApp.initDataUnsafe?.user;
 
-      if (!tgUser || !tgUser.id) {
-        alert("Ошибка: Telegram пользователь не обнаружен.");
-        return;
-      }
+        if (!tgUser?.id) {
+          throw new Error("Telegram user data not available");
+        }
 
-      const response = await fetch("/auth/telegram", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          telegramId: tgUser.id,
-          first_name: tgUser.first_name,
-          username: tgUser.username,
-          photo_url: tgUser.photo_url
-        })
-      });
+        const response = await fetch("/auth/telegram", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            telegramId: tgUser.id,
+            first_name: tgUser.first_name,
+            username: tgUser.username,
+            photo_url: tgUser.photo_url
+          })
+        });
 
-      const result = await response.json();
+        const result = await response.json();
 
-      if (result.success) {
-        document.getElementById("balanceValue").textContent = `${result.balance} ₲`;
-        document.getElementById("userIdDisplay").textContent = `ID: ${result.userId}`;
-        document.getElementById("balanceDisplay").style.display = "block";
-        closeModal(); // Закрываем окно авторизации
-        alert("Успешный вход через Telegram!");
-      } else {
-        alert("Ошибка входа через Telegram.");
+        if (!response.ok) {
+          throw new Error(result.error || "Unknown error");
+        }
+
+        // Обновление интерфейса
+        document.getElementById("authModal")?.remove();
+        currentUserId = result.userId;
+        await fetchUserData();
+        createMainUI();
+        updateUI();
+
+      } catch (err) {
+        console.error("Telegram auth error:", err);
+        alert(`Ошибка авторизации: ${err.message}`);
+      } finally {
+        hideGlobalLoading();
       }
     });
   }
