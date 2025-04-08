@@ -1055,7 +1055,7 @@ function openExchangeModal(horizontalSwitch) {
         <div style="display:flex;justify-content:center;gap:10px;align-items:center;margin-top:20px;">
           <div style="flex:1;text-align:center;">
             <p id="fromLabel">
-              <img src="15.png" alt="GUGA" style="width:25px;vertical-align:middle;"> GUGA
+              <img src="photo/15.png" alt="GUGA" style="width:25px;vertical-align:middle;"> GUGA
             </p>
             <input type="number" id="amountInput" placeholder="0.00" style="width:100%;padding:8px;" oninput="updateExchange()">
             <p id="balanceInfo" style="font-size:14px;color:#666;">0.00000 ₲</p>
@@ -1063,7 +1063,7 @@ function openExchangeModal(horizontalSwitch) {
           <button id="swapBtn" style="padding:10px;border:none;background:none;cursor:pointer;font-size:24px;">⇄</button>
           <div style="flex:1;text-align:center;">
             <p id="toLabel">
-              <img src="18.png" alt="RUB" style="width:25px;vertical-align:middle;"> RUB
+              <img src="photo/18.png" alt="RUB" style="width:25px;vertical-align:middle;"> RUB
             </p>
             <input type="text" id="toAmount" disabled style="width:100%;padding:8px;">
             <p id="toBalanceInfo" style="font-size:14px;color:#666;">0.00 ₽</p>
@@ -1435,7 +1435,7 @@ function displayTransactionHistory(transactions) {
 
       if (tx.type === "merchant_payment") {
         // Оплата по QR
-        iconSrc = "92.png";
+        iconSrc = "photo/92.png";
         titleText = "Оплата по QR";
         detailsText = `Мерчант: ${
           tx.merchant_id ||
@@ -1447,7 +1447,7 @@ function displayTransactionHistory(transactions) {
 
       } else if (tx.from_user_id === currentUserId) {
         // Списание (отправили кому-то)
-        iconSrc = "67.png";
+        iconSrc = "photo/67.png";
         titleText = "Отправлено";
         detailsText = `Кому: ${tx.to_user_id}`;
         amountSign = "-";
@@ -1455,7 +1455,7 @@ function displayTransactionHistory(transactions) {
 
       } else if (tx.to_user_id === currentUserId) {
         // Пополнение (получили)
-        iconSrc = "66.png";
+        iconSrc = "photo/66.png";
         titleText = "Получено";
         detailsText = `От кого: ${tx.from_user_id}`;
         amountSign = "+";
@@ -1463,7 +1463,7 @@ function displayTransactionHistory(transactions) {
 
       } else if (tx.type === "exchange") {
         // Обмен
-        iconSrc = "67.png";
+        iconSrc = "photo/67.png";
         titleText = "Обмен";
         detailsText = `Направление: ${
           tx.direction === "rub_to_coin" ? "Рубли → Монеты" : "Монеты → Рубли"
@@ -1478,7 +1478,7 @@ function displayTransactionHistory(transactions) {
 
       } else {
         // Прочие случаи
-        iconSrc = "67.png";
+        iconSrc = "photo/67.png";
         titleText = "Операция";
         detailsText = "Детали не указаны";
       }
