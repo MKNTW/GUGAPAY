@@ -9,6 +9,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Joi = require('joi');
 const env = process.env.NODE_ENV || 'development';
+const { v4: uuidv4 } = require('uuid');
 require('dotenv').config();
 
 // Инициализация Telegram-бота (оставляем, если он используется для других задач)
