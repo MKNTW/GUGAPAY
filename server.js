@@ -911,111 +911,39 @@ app.get('/', (req, res) => {
 });
 
 /* ========================
-   18) Эндпоинт для привязки Telegram-аккаунта 2
+   Единый эндпоинт для Telegram Auth
 ======================== */
-
-// Endpoint для авторизации через Telegram
-app.post('/auth/telegram', async (req, res) => {
-  const { telegramId, firstName, username, photoUrl } = req.body;
-
-  try {
-    // Поиск пользователя по telegram_id
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('telegram_id', telegramId)
-      .maybeSingle();
-
-    let userId;
-    if (error && error.code !== 'PGRST116') throw error;
-
-    // Создание нового пользователя БЕЗ ПАРОЛЯ
-    if (!user) {
-      const newUser = {
-        user_id: uuidv4(),
-        telegram_id: telegramId,
-        username: username || `tg_${telegramId}`,
-        first_name: firstName || '',
-        photo_url: photoUrl || '',
-        balance: 0,
-        rub_balance: 0,
-        blocked: false,
-        password: null // Пароль не требуется
-      };
-
-      const { error: insertError } = await supabase
-        .from('users')
-        .insert([newUser]);
-
-      if (insertError) throw insertError;
-      userId = newUser.user_id;
-    } else {
-      userId = user.user_id;
-    }
-
-    // Генерация токена
-    const token = jwt.sign(
-      { userId, role: 'user', authType: 'telegram' },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'none',
-      maxAge: 86400000
-    });
-
-    res.json({ success: true, userId });
-
-  } catch (error) {
-    console.error('Telegram auth error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Internal server error' 
-    });
-  }
-});
-
-
-
-// Функция генерации уникального 6-значного ID
-async function generateUniqueUserId() {
-  let userId;
+async function generateSixDigitId() {
+  let id;
   let isUnique = false;
   
+  // Генерация 6-значного числа с проверкой уникальности
   while (!isUnique) {
-    // Генерируем 6-значное число
-    userId = Math.floor(100000 + Math.random() * 900000).toString();
-    
-    // Проверяем уникальность в базе
+    id = Math.floor(100000 + Math.random() * 900000).toString(); // Всегда 6 цифр
     const { data } = await supabase
       .from('users')
       .select('user_id')
-      .eq('user_id', userId)
+      .eq('user_id', id)
       .maybeSingle();
-
+      
     if (!data) isUnique = true;
   }
-  
-  return userId;
+  return id;
 }
 
-// Эндпоинт для авторизации через Telegram
 app.post('/auth/telegram', async (req, res) => {
   try {
     const { telegramId, firstName, username, photoUrl } = req.body;
 
-    // Генерируем уникальный ID
-    const userId = await generateUniqueUserId();
+    // Генерация 6-значного ID
+    const userId = await generateSixDigitId();
 
-    // Создаем пользователя
+    // Создание пользователя
     const { error } = await supabase.from('users').insert([{
       user_id: userId,
       telegram_id: telegramId,
-      username: username || `tg_${telegramId}`,
-      first_name: firstName,
+      username: username?.substring(0, 20) || `tg_${telegramId.substring(0, 14)}`, // Ограничение длины
+      first_name: firstName?.substring(0, 30),
       photo_url: photoUrl,
       balance: 0,
       rub_balance: 0,
@@ -1023,13 +951,31 @@ app.post('/auth/telegram', async (req, res) => {
       password: null
     }]);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Database error' 
+      });
+    }
 
-    // Возвращаем данные
+    // Генерация токена
+    const token = jwt.sign(
+      { userId, role: 'user' },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 86400000
+    });
+
     res.json({
       success: true,
-      userId,
-      balance: 0
+      userId: userId.toString().padStart(6, '0') // Гарантируем 6 цифр
     });
 
   } catch (error) {
