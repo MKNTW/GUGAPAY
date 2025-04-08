@@ -562,6 +562,62 @@ function openAuthModal() {
           </button>
         </div>
 
+        // Проверка наличия Telegram API
+if (window.Telegram && window.Telegram.WebApp) {
+  // Создаём кнопку
+  const telegramBtn = document.createElement("button");
+  telegramBtn.id = "telegramLoginBtn";
+  telegramBtn.textContent = "Войти через Telegram";
+
+  // Добавим стили (можно адаптировать под CSS-классы)
+  telegramBtn.style.backgroundColor = "#0088cc";
+  telegramBtn.style.color = "white";
+  telegramBtn.style.border = "none";
+  telegramBtn.style.padding = "10px 20px";
+  telegramBtn.style.fontSize = "16px";
+  telegramBtn.style.borderRadius = "8px";
+  telegramBtn.style.cursor = "pointer";
+  telegramBtn.style.marginTop = "10px";
+
+  // Найдём контейнер, куда вставить кнопку (например, под обычной кнопкой входа)
+  const authContainer = document.querySelector("#authContainer") || document.body;
+
+  // Вставим кнопку после последнего элемента в контейнере
+  authContainer.appendChild(telegramBtn);
+
+  // Обработчик клика
+  telegramBtn.addEventListener("click", async () => {
+    const tgUser = Telegram.WebApp.initDataUnsafe.user;
+
+    if (!tgUser || !tgUser.id) {
+      alert("Ошибка: Telegram пользователь не обнаружен.");
+      return;
+    }
+
+    const response = await fetch("/auth/telegram", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        telegramId: tgUser.id,
+        first_name: tgUser.first_name,
+        username: tgUser.username,
+        photo_url: tgUser.photo_url
+      })
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      document.getElementById("balanceValue").textContent = `${result.balance} ₲`;
+      document.getElementById("userIdDisplay").textContent = `ID: ${result.userId}`;
+      document.getElementById("balanceDisplay").style.display = "block";
+      alert("Успешный вход через Telegram!");
+    } else {
+      alert("Ошибка входа через Telegram.");
+    }
+  });
+}
+
         <!-- Блок Регистрации (изначально скрыт) -->
         <div id="registerSection" style="display:none; flex-direction:column; gap:8px;">
           <h4 style="margin:0; text-align:center;"></h4>
