@@ -911,21 +911,41 @@ app.get('/', (req, res) => {
 });
 
 /* ========================
-   Единый эндпоинт для Telegram Auth
+   Вспомогательные функции
+======================== */
+async function generateSixDigitId() {
+  let id;
+  let isUnique = false;
+  
+  while (!isUnique) {
+    id = Math.floor(100000 + Math.random() * 900000).toString();
+    const { data } = await supabase
+      .from('users')
+      .select('user_id')
+      .eq('user_id', id)
+      .maybeSingle();
+      
+    if (!data) isUnique = true;
+  }
+  return id;
+}
+
+/* ========================
+   Эндпоинт Telegram Auth
 ======================== */
 app.post('/auth/telegram', async (req, res) => {
   try {
     const { telegramId, firstName, username, photoUrl } = req.body;
 
-    // 1. Поиск существующего пользователя по telegram_id
+    // Поиск существующего пользователя
     const { data: existingUser } = await supabase
       .from('users')
       .select('*')
       .eq('telegram_id', telegramId)
       .maybeSingle();
 
-    // 2. Если пользователь найден - логиним
     if (existingUser) {
+      // Логин существующего пользователя
       const token = jwt.sign(
         { userId: existingUser.user_id, role: 'user' },
         process.env.JWT_SECRET,
@@ -946,28 +966,29 @@ app.post('/auth/telegram', async (req, res) => {
       });
     }
 
-    // 3. Если пользователь не найден - регистрируем
-    const generateUsername = async (baseName) => {
-      let candidate = baseName?.substring(0, 15) || `user_${Math.random().toString(36).substr(2, 5)}`;
+    // Регистрация нового пользователя
+    const userId = await generateSixDigitId(); // Теперь функция определена
+    
+    // Генератор уникального имени пользователя
+    const generateUniqueUsername = async (base) => {
+      let candidate = (base || `user${Date.now()}`).substring(0, 15);
       let counter = 1;
-
+      
       while (true) {
         const { data } = await supabase
           .from('users')
           .select('username')
           .eq('username', candidate)
           .maybeSingle();
-
+          
         if (!data) return candidate;
-        
-        candidate = `${baseName}_${counter}`.substring(0, 15);
-        counter++;
+        candidate = `${base}_${counter++}`.substring(0, 15);
       }
     };
 
-    const userId = await generateSixDigitId();
-    const uniqueUsername = await generateUsername(username || firstName);
+    const uniqueUsername = await generateUniqueUsername(username || firstName);
 
+    // Создание записи пользователя
     const { error } = await supabase.from('users').insert([{
       user_id: userId,
       telegram_id: telegramId,
@@ -984,11 +1005,11 @@ app.post('/auth/telegram', async (req, res) => {
       console.error('Supabase error:', error);
       return res.status(500).json({ 
         success: false, 
-        error: 'Registration failed' 
+        error: 'Ошибка регистрации' 
       });
     }
 
-    // Генерация токена для нового пользователя
+    // Генерация токена
     const token = jwt.sign(
       { userId, role: 'user' },
       process.env.JWT_SECRET,
@@ -1004,7 +1025,7 @@ app.post('/auth/telegram', async (req, res) => {
 
     res.json({
       success: true,
-      userId: userId.toString().padStart(6, '0'),
+      userId: userId,
       isNewUser: true
     });
 
@@ -1012,7 +1033,7 @@ app.post('/auth/telegram', async (req, res) => {
     console.error('Telegram auth error:', error);
     res.status(500).json({ 
       success: false, 
-      error: 'Internal server error' 
+      error: 'Внутренняя ошибка сервера' 
     });
   }
 });
