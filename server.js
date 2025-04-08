@@ -863,68 +863,6 @@ app.get('/merchant/info', verifyToken, async (req, res) => {
   res.json({ success: true, merchant: merchantData });
 });
 
-/* ========================
-   17) Эндпоинт для привязки Telegram-аккаунта 1
-======================== */
-// Новый эндпоинт: если пользователь уже авторизован, обновляем его данные,
-// иначе создаём нового пользователя с данными из Telegram.
-app.post('/bindTelegram', async (req, res) => {
-  const { userId, username, firstName, lastName, photoUrl } = req.body;
-  let currentUser;
-  try {
-    if (req.cookies.token) {
-      const decoded = jwt.verify(req.cookies.token, JWT_SECRET);
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('user_id', decoded.userId)
-        .single();
-      if (!error && data) {
-        currentUser = data;
-      }
-    }
-  } catch (err) {
-    console.error("Ошибка проверки токена:", err);
-  }
-
-  if (currentUser) {
-    // Обновляем запись пользователя, привязываем данные Telegram
-    const { error } = await supabase
-      .from('users')
-      .update({
-        telegram_user_id: userId,
-        telegram_username: username,
-        telegram_first_name: firstName,
-        telegram_last_name: lastName,
-        telegram_photo_url: photoUrl
-      })
-      .eq('user_id', currentUser.user_id);
-    if (error) {
-      return res.status(500).json({ success: false, error: 'Ошибка при привязке Telegram' });
-    }
-    return res.json({ success: true, message: 'Telegram успешно привязан к аккаунту' });
-  } else {
-    // Пользователь не авторизован, создаём новую запись
-    const newUserId = Math.floor(100000 + Math.random() * 900000).toString();
-    const { error: insertError } = await supabase
-      .from('users')
-      .insert([{
-        user_id: newUserId,
-        telegram_user_id: userId,
-        telegram_username: username,
-        telegram_first_name: firstName,
-        telegram_last_name: lastName,
-        telegram_photo_url: photoUrl,
-        balance: 0,
-        rub_balance: 0,
-        blocked: 0
-      }]);
-    if (insertError) {
-      return res.status(500).json({ success: false, error: insertError.message });
-    }
-    return res.json({ success: true, message: 'Telegram успешно привязан, создан новый аккаунт', userId: newUserId });
-  }
-});
 
 /* ========================
    18) Эндпоинт для привязки Telegram-аккаунта 2
