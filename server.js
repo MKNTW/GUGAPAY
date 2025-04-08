@@ -864,7 +864,7 @@ app.get('/merchant/info', verifyToken, async (req, res) => {
 });
 
 /* ========================
-   17) Эндпоинт для привязки Telegram-аккаунта
+   17) Эндпоинт для привязки Telegram-аккаунта 1
 ======================== */
 // Новый эндпоинт: если пользователь уже авторизован, обновляем его данные,
 // иначе создаём нового пользователя с данными из Telegram.
@@ -923,6 +923,44 @@ app.post('/bindTelegram', async (req, res) => {
       return res.status(500).json({ success: false, error: insertError.message });
     }
     return res.json({ success: true, message: 'Telegram успешно привязан, создан новый аккаунт', userId: newUserId });
+  }
+});
+
+/* ========================
+   18) Эндпоинт для привязки Telegram-аккаунта 2
+======================== */
+
+app.post('/auth/telegram', async (req, res) => {
+  const { telegramId, first_name, username, photo_url } = req.body;
+
+  if (!telegramId) {
+    return res.status(400).json({ success: false, error: "Нет Telegram ID" });
+  }
+
+  try {
+    // Поиск пользователя по Telegram ID
+    let user = await db.get("SELECT * FROM users WHERE telegram_id = ?", [telegramId]);
+
+    if (!user) {
+      // Если пользователь не найден — создаём нового
+      const initialBalance = 0;
+      await db.run(
+        "INSERT INTO users (telegram_id, username, first_name, photo_url, balance) VALUES (?, ?, ?, ?, ?)",
+        [telegramId, username, first_name, photo_url, initialBalance]
+      );
+
+      // Получаем только что созданного пользователя
+      user = await db.get("SELECT * FROM users WHERE telegram_id = ?", [telegramId]);
+    }
+
+    res.json({
+      success: true,
+      userId: user.id,
+      balance: user.balance
+    });
+  } catch (err) {
+    console.error("Ошибка Telegram авторизации:", err);
+    res.status(500).json({ success: false, error: "Ошибка сервера" });
   }
 });
 
