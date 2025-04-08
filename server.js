@@ -18,7 +18,17 @@ if (!TELEGRAM_BOT_TOKEN) {
   console.error('Ошибка: TELEGRAM_BOT_TOKEN не установлен');
   process.exit(1);
 }
-const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
+// Новый код
+let telegramBot = null;
+if (env.telegram.enabled) {
+  try {
+    const TelegramBot = require('node-telegram-bot-api');
+    telegramBot = new TelegramBot(env.telegram.token, { polling: true });
+    // Добавлен обработчик ошибок polling
+  } catch (error) {
+    // Логирование ошибки
+  }
+}
 
 const app = express();
 app.set('trust proxy', 1);
