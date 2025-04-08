@@ -924,34 +924,50 @@ app.post('/auth/telegram', async (req, res) => {
       .eq('telegram_id', telegramId)
       .maybeSingle();
 
-    // Если пользователь уже существует - возвращаем его
+    // 2. Если пользователь найден - логиним
     if (existingUser) {
-      const token = generateToken(existingUser.user_id);
-      return res.json({ success: true, userId: existingUser.user_id, token });
+      const token = jwt.sign(
+        { userId: existingUser.user_id, role: 'user' },
+        process.env.JWT_SECRET,
+        { expiresIn: '24h' }
+      );
+
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 86400000
+      });
+
+      return res.json({
+        success: true,
+        userId: existingUser.user_id,
+        isNewUser: false
+      });
     }
 
-    // 2. Генерация уникального username
-    let baseUsername = username?.replace(/[^a-zA-Z0-9_]/g, '_').substring(0, 15) || `user_${telegramId.substring(0, 10)}`;
-    let uniqueUsername = baseUsername;
-    let counter = 1;
+    // 3. Если пользователь не найден - регистрируем
+    const generateUsername = async (baseName) => {
+      let candidate = baseName?.substring(0, 15) || `user_${Math.random().toString(36).substr(2, 5)}`;
+      let counter = 1;
 
-    // Проверка уникальности username
-    while (true) {
-      const { data: userExists } = await supabase
-        .from('users')
-        .select('username')
-        .eq('username', uniqueUsername)
-        .maybeSingle();
+      while (true) {
+        const { data } = await supabase
+          .from('users')
+          .select('username')
+          .eq('username', candidate)
+          .maybeSingle();
 
-      if (!userExists) break;
+        if (!data) return candidate;
+        
+        candidate = `${baseName}_${counter}`.substring(0, 15);
+        counter++;
+      }
+    };
 
-      uniqueUsername = `${baseUsername}_${counter}`;
-      counter++;
-    }
-
-    // 3. Создание нового пользователя
     const userId = await generateSixDigitId();
-    
+    const uniqueUsername = await generateUsername(username || firstName);
+
     const { error } = await supabase.from('users').insert([{
       user_id: userId,
       telegram_id: telegramId,
@@ -964,36 +980,42 @@ app.post('/auth/telegram', async (req, res) => {
       password: null
     }]);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Registration failed' 
+      });
+    }
 
-    // 4. Генерация токена
-    const token = generateToken(userId);
+    // Генерация токена для нового пользователя
+    const token = jwt.sign(
+      { userId, role: 'user' },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 86400000
+    });
 
     res.json({
       success: true,
-      userId,
-      username: uniqueUsername,
-      token
+      userId: userId.toString().padStart(6, '0'),
+      isNewUser: true
     });
 
   } catch (error) {
     console.error('Telegram auth error:', error);
     res.status(500).json({ 
       success: false, 
-      error: error.code === '23505' 
-        ? 'Username already exists. Please try again.' 
-        : 'Internal server error' 
+      error: 'Internal server error' 
     });
   }
 });
-
-function generateToken(userId) {
-  return jwt.sign(
-    { userId, role: 'user' },
-    process.env.JWT_SECRET,
-    { expiresIn: '24h' }
-  );
-}
 
 
 /* ========================
