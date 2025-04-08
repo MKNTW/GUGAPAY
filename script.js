@@ -513,51 +513,74 @@ function openAuthModal() {
       ">
         <h2 style="text-align:center; margin:0;">GUGACOIN</h2>
 
-        <!-- Основные элементы формы остаются без изменений -->
-        <!-- ... -->
+        <!-- Вход -->
+        <div id="loginSection" style="display:flex; flex-direction:column; gap:8px;">
+          <input type="text" id="loginInput" placeholder="Логин">
+          <input type="password" id="passwordInput" placeholder="Пароль">
+          <button id="loginSubmitBtn">Войти</button>
+        </div>
 
-        <!-- Контейнер для Telegram кнопки -->
-        <div id="telegramBtnContainer" 
-             style="text-align:center; margin-top:10px; padding:10px;">
-          <div style="color:#666; font-size:14px; margin-bottom:8px;">
-            Или войти через
-          </div>
+        <!-- Регистрация -->
+        <div id="registerSection" style="display:none; flex-direction:column; gap:8px;">
+          <input type="text" id="regLogin" placeholder="Логин">
+          <input type="password" id="regPassword" placeholder="Пароль">
+          <button id="registerSubmitBtn">Зарегистрироваться</button>
+        </div>
+
+        <!-- Переключатель -->
+        <button id="toggleAuthBtn">Войти / Зарегистрироваться</button>
+
+        <!-- Кнопка Telegram -->
+        <div id="telegramBtnContainer" style="margin-top:15px;">
+          <div style="text-align:center; color:#666; margin-bottom:8px;">Или</div>
         </div>
       </div>
     `,
-    { /* Конфигурация модального окна */ }
+    {
+      showCloseBtn: false,
+      cornerTopMargin: 0,
+      cornerTopRadius: 0,
+      hasVerticalScroll: true,
+      defaultFromBottom: true,
+      noRadiusByDefault: true
+    }
   );
 
-  // Обработчики для обычной авторизации
-  // ...
+  // Обработчики стандартной авторизации
+  document.getElementById("loginSubmitBtn").addEventListener("click", login);
+  document.getElementById("registerSubmitBtn").addEventListener("click", register);
+  document.getElementById("toggleAuthBtn").addEventListener("click", toggleAuthForms);
 
   // Добавляем кнопку Telegram
   if (window.Telegram?.WebApp) {
     const telegramBtn = document.createElement("button");
     telegramBtn.innerHTML = `
-      <img src="telegram-icon.svg" 
-           style="width:20px; vertical-align:middle; margin-right:8px;">
-      Продолжить с Telegram
+      <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" 
+           style="height:20px; margin-right:10px;">
+      Войти через Telegram
     `;
 
     // Стилизация кнопки
     Object.assign(telegramBtn.style, {
+      width: "100%",
+      padding: "12px",
       backgroundColor: "#0088cc",
       color: "white",
-      padding: "12px 24px",
-      borderRadius: "8px",
       border: "none",
+      borderRadius: "8px",
       cursor: "pointer",
-      width: "100%",
-      fontSize: "16px"
+      fontSize: "16px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
     });
 
-    // Обработчик клика
+    // Обработчик авторизации через Telegram
     telegramBtn.addEventListener("click", async () => {
       try {
         showGlobalLoading();
         
-        // 1. Получаем данные пользователя Telegram
+        // 1. Получаем данные пользователя
         Telegram.WebApp.ready();
         const tgUser = Telegram.WebApp.initDataUnsafe?.user;
         
@@ -579,32 +602,34 @@ function openAuthModal() {
         });
 
         // 3. Обрабатываем ответ
-        const result = await response.json();
-        
         if (!response.ok) {
-          throw new Error(result.error || "Ошибка сервера");
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Ошибка сервера");
         }
 
-        // 4. Обновляем интерфейс
-        currentUserId = result.userId;
+        // 4. Закрываем модалку и обновляем интерфейс
         document.getElementById("authModal")?.remove();
-        
-        await fetchUserData(); // Загрузка данных пользователя
-        createMainUI();       // Создание основного интерфейса
-        updateUI();           // Обновление всех элементов
-        
-        // 5. Показываем уведомление
-        showNotification(`Добро пожаловать, ${tgUser.first_name || "пользователь"}!`, "success");
+        await fetchUserData();
+        createMainUI();
+        updateUI();
 
       } catch (err) {
-        console.error("Ошибка авторизации:", err);
-        showNotification(err.message, "error");
+        console.error("Ошибка авторизации через Telegram:", err);
+        alert(err.message);
       } finally {
         hideGlobalLoading();
       }
     });
 
     document.getElementById("telegramBtnContainer").appendChild(telegramBtn);
+  }
+
+  // Вспомогательные функции
+  function toggleAuthForms() {
+    const loginSection = document.getElementById("loginSection");
+    const registerSection = document.getElementById("registerSection");
+    loginSection.style.display = loginSection.style.display === "none" ? "flex" : "none";
+    registerSection.style.display = registerSection.style.display === "none" ? "flex" : "none";
   }
 }
 
