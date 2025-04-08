@@ -500,7 +500,6 @@ function openAuthModal() {
   createModal(
     "authModal",
     `
-      <!-- Контейнер с общим светлым фоном и скруглёнными краями -->
       <div style="
         background:#f7f7f7;
         border-radius:20px;
@@ -512,205 +511,111 @@ function openAuthModal() {
         flex-direction:column;
         gap:16px;
       ">
-
-        <!-- Логотип или заголовок (примерно по центру) -->
         <h2 style="text-align:center; margin:0;">GUGACOIN</h2>
 
-        <!-- Блок Входа -->
+        <!-- Вход -->
         <div id="loginSection" style="display:flex; flex-direction:column; gap:8px;">
           <h4 style="margin:0; text-align:center;"></h4>
-          <input 
-            type="text" 
-            id="loginInput" 
-            placeholder="Логин" 
-            style="
-              padding:10px;
-              font-size:16px;
-              width:100%;
-              border:none;
-              border-radius:8px;
-              outline:none;
-            "
-          >
-          <input 
-            type="password" 
-            id="passwordInput" 
-            placeholder="Пароль" 
-            style="
-              padding:10px;
-              font-size:16px;
-              width:100%;
-              border:none;
-              border-radius:8px;
-              outline:none;
-            "
-          >
-          <button 
-            id="loginSubmitBtn" 
-            style="
-              padding:10px;
-              margin-top:4px;
-              border:none;
-              border-radius:8px;
-              font-size:16px;
-              background:#000;
-              color:#fff;
-              cursor:pointer;
-            "
-          >
+          <input type="text" id="loginInput" placeholder="Логин" style="padding:10px; font-size:16px; width:100%; border:none; border-radius:8px; outline:none;">
+          <input type="password" id="passwordInput" placeholder="Пароль" style="padding:10px; font-size:16px; width:100%; border:none; border-radius:8px; outline:none;">
+          <button id="loginSubmitBtn" style="padding:10px; margin-top:4px; border:none; border-radius:8px; font-size:16px; background:#000; color:#fff; cursor:pointer;">
             Войти
           </button>
         </div>
 
-        // Проверка наличия Telegram API
-if (window.Telegram && window.Telegram.WebApp) {
-  // Создаём кнопку
-  const telegramBtn = document.createElement("button");
-  telegramBtn.id = "telegramLoginBtn";
-  telegramBtn.textContent = "Войти через Telegram";
-
-  // Добавим стили (можно адаптировать под CSS-классы)
-  telegramBtn.style.backgroundColor = "#0088cc";
-  telegramBtn.style.color = "white";
-  telegramBtn.style.border = "none";
-  telegramBtn.style.padding = "10px 20px";
-  telegramBtn.style.fontSize = "16px";
-  telegramBtn.style.borderRadius = "8px";
-  telegramBtn.style.cursor = "pointer";
-  telegramBtn.style.marginTop = "10px";
-
-  // Найдём контейнер, куда вставить кнопку (например, под обычной кнопкой входа)
-  const authContainer = document.querySelector("#authContainer") || document.body;
-
-  // Вставим кнопку после последнего элемента в контейнере
-  authContainer.appendChild(telegramBtn);
-
-  // Обработчик клика
-  telegramBtn.addEventListener("click", async () => {
-    const tgUser = Telegram.WebApp.initDataUnsafe.user;
-
-    if (!tgUser || !tgUser.id) {
-      alert("Ошибка: Telegram пользователь не обнаружен.");
-      return;
-    }
-
-    const response = await fetch("/auth/telegram", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        telegramId: tgUser.id,
-        first_name: tgUser.first_name,
-        username: tgUser.username,
-        photo_url: tgUser.photo_url
-      })
-    });
-
-    const result = await response.json();
-
-    if (result.success) {
-      document.getElementById("balanceValue").textContent = `${result.balance} ₲`;
-      document.getElementById("userIdDisplay").textContent = `ID: ${result.userId}`;
-      document.getElementById("balanceDisplay").style.display = "block";
-      alert("Успешный вход через Telegram!");
-    } else {
-      alert("Ошибка входа через Telegram.");
-    }
-  });
-}
-
-        <!-- Блок Регистрации (изначально скрыт) -->
+        <!-- Регистрация -->
         <div id="registerSection" style="display:none; flex-direction:column; gap:8px;">
           <h4 style="margin:0; text-align:center;"></h4>
-          <input 
-            type="text" 
-            id="regLogin" 
-            placeholder="Логин" 
-            style="
-              padding:10px;
-              font-size:16px;
-              width:100%;
-              border:none;
-              border-radius:8px;
-              outline:none;
-            "
-          >
-          <input 
-            type="password" 
-            id="regPassword" 
-            placeholder="Пароль" 
-            style="
-              padding:10px;
-              font-size:16px;
-              width:100%;
-              border:none;
-              border-radius:8px;
-              outline:none;
-            "
-          >
-          <button 
-            id="registerSubmitBtn" 
-            style="
-              padding:10px;
-              margin-top:4px;
-              border:none;
-              border-radius:8px;
-              font-size:16px;
-              background:#000;
-              color:#fff;
-              cursor:pointer;
-            "
-          >
+          <input type="text" id="regLogin" placeholder="Логин" style="padding:10px; font-size:16px; width:100%; border:none; border-radius:8px; outline:none;">
+          <input type="password" id="regPassword" placeholder="Пароль" style="padding:10px; font-size:16px; width:100%; border:none; border-radius:8px; outline:none;">
+          <button id="registerSubmitBtn" style="padding:10px; margin-top:4px; border:none; border-radius:8px; font-size:16px; background:#000; color:#fff; cursor:pointer;">
             Зарегистрироваться
           </button>
         </div>
 
-        <!-- Кнопка переключения между "Вход" / "Регистрация" -->
-        <button 
-          id="toggleAuthBtn"
-          style="
-            margin-top:10px;
-            border:none;
-            border-radius:8px;
-            font-size:14px;
-            padding:8px;
-            background:#eee;
-            cursor:pointer;
-          "
-        >
+        <!-- Переключатель -->
+        <button id="toggleAuthBtn" style="margin-top:10px; border:none; border-radius:8px; font-size:14px; padding:8px; background:#eee; cursor:pointer;">
           Войти / Зарегистрироваться
         </button>
+
+        <!-- Контейнер для Telegram кнопки -->
+        <div id="telegramBtnContainer" style="text-align:center; margin-top:10px;"></div>
       </div>
     `,
     {
       showCloseBtn: false,
       cornerTopMargin: 0,
-      cornerTopRadius: 0,  // у родительского окна убраны скругления сверху,
-                           // т.к. внутри мы используем собственный скруглённый контейнер
+      cornerTopRadius: 0,
       hasVerticalScroll: true,
       defaultFromBottom: true,
       noRadiusByDefault: true
     }
   );
 
-  // Подключаем обработчики:
+  // Обработчики обычной авторизации
   document.getElementById("loginSubmitBtn").addEventListener("click", login);
   document.getElementById("registerSubmitBtn").addEventListener("click", register);
   document.getElementById("toggleAuthBtn").addEventListener("click", () => {
     const loginSection = document.getElementById("loginSection");
     const registerSection = document.getElementById("registerSection");
-    if (loginSection.style.display === "none") {
-      loginSection.style.display = "flex";
-      registerSection.style.display = "none";
-    } else {
-      loginSection.style.display = "none";
-      registerSection.style.display = "flex";
-    }
+    loginSection.style.display = loginSection.style.display === "none" ? "flex" : "none";
+    registerSection.style.display = registerSection.style.display === "none" ? "flex" : "none";
   });
 
-  // Изначально показываем блок "Вход", а "Регистрация" скрыта
-  document.getElementById("loginSection").style.display = "flex";
-  document.getElementById("registerSection").style.display = "none";
+  // Добавляем кнопку Telegram после создания окна
+  if (window.Telegram && window.Telegram.WebApp) {
+    const telegramBtn = document.createElement("button");
+    telegramBtn.id = "telegramLoginBtn";
+    telegramBtn.textContent = "Войти через Telegram";
+
+    // Стили кнопки
+    telegramBtn.style.backgroundColor = "#0088cc";
+    telegramBtn.style.color = "white";
+    telegramBtn.style.border = "none";
+    telegramBtn.style.padding = "10px 20px";
+    telegramBtn.style.fontSize = "16px";
+    telegramBtn.style.borderRadius = "8px";
+    telegramBtn.style.cursor = "pointer";
+    telegramBtn.style.marginTop = "10px";
+    telegramBtn.style.width = "100%";
+
+    const container = document.getElementById("telegramBtnContainer");
+    container.appendChild(telegramBtn);
+
+    telegramBtn.addEventListener("click", async () => {
+      const tgUser = Telegram.WebApp.initDataUnsafe.user;
+
+      if (!tgUser || !tgUser.id) {
+        alert("Ошибка: Telegram пользователь не обнаружен.");
+        return;
+      }
+
+      const response = await fetch("/auth/telegram", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          telegramId: tgUser.id,
+          first_name: tgUser.first_name,
+          username: tgUser.username,
+          photo_url: tgUser.photo_url
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        document.getElementById("balanceValue").textContent = `${result.balance} ₲`;
+        document.getElementById("userIdDisplay").textContent = `ID: ${result.userId}`;
+        document.getElementById("balanceDisplay").style.display = "block";
+        closeModal(); // Закрываем окно авторизации
+        alert("Успешный вход через Telegram!");
+      } else {
+        alert("Ошибка входа через Telegram.");
+      }
+    });
+  }
 }
+
 
 /**************************************************
  * ГЛАВНЫЙ ЭКРАН
