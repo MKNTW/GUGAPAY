@@ -13,20 +13,23 @@ require('dotenv').config();
 
 // Инициализация Telegram-бота (оставляем, если он используется для других задач)
 const TelegramBot = require('node-telegram-bot-api');
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '7889374104:AAHF4Lv7RjcFVl6n4D2dBMCJT0KGPz51kg8';
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || 'YOUR_TELEGRAM_BOT_TOKEN';
 if (!TELEGRAM_BOT_TOKEN) {
   console.error('Ошибка: TELEGRAM_BOT_TOKEN не установлен');
   process.exit(1);
 }
-// Новый код
+
 let telegramBot = null;
-if (env.telegram.enabled) {
+if (env.telegram && env.telegram.enabled) {
   try {
-    const TelegramBot = require('node-telegram-bot-api');
-    telegramBot = new TelegramBot(env.telegram.token, { polling: true });
+    telegramBot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
+
     // Добавлен обработчик ошибок polling
+    telegramBot.on('polling_error', (error) => {
+      console.error('[TelegramBot] polling_error:', error.code, error.message);
+    });
   } catch (error) {
-    // Логирование ошибки
+    console.error('[TelegramBot] Ошибка инициализации:', error);
   }
 }
 
@@ -88,6 +91,7 @@ app.post('/logout', (req, res) => {
 app.get('/', (req, res) => {
   res.send('GugaCoin backend server.');
 });
+
 
 /* ========================
    1) РЕГИСТРАЦИЯ ПОЛЬЗОВАТЕЛЯ
