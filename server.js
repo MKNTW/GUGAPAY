@@ -913,36 +913,49 @@ app.get('/', (req, res) => {
 /* ========================
    Единый эндпоинт для Telegram Auth
 ======================== */
-async function generateSixDigitId() {
-  let id;
-  let isUnique = false;
-  
-  // Генерация 6-значного числа с проверкой уникальности
-  while (!isUnique) {
-    id = Math.floor(100000 + Math.random() * 900000).toString(); // Всегда 6 цифр
-    const { data } = await supabase
-      .from('users')
-      .select('user_id')
-      .eq('user_id', id)
-      .maybeSingle();
-      
-    if (!data) isUnique = true;
-  }
-  return id;
-}
-
 app.post('/auth/telegram', async (req, res) => {
   try {
     const { telegramId, firstName, username, photoUrl } = req.body;
 
-    // Генерация 6-значного ID
-    const userId = await generateSixDigitId();
+    // 1. Поиск существующего пользователя по telegram_id
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('*')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
 
-    // Создание пользователя
+    // Если пользователь уже существует - возвращаем его
+    if (existingUser) {
+      const token = generateToken(existingUser.user_id);
+      return res.json({ success: true, userId: existingUser.user_id, token });
+    }
+
+    // 2. Генерация уникального username
+    let baseUsername = username?.replace(/[^a-zA-Z0-9_]/g, '_').substring(0, 15) || `user_${telegramId.substring(0, 10)}`;
+    let uniqueUsername = baseUsername;
+    let counter = 1;
+
+    // Проверка уникальности username
+    while (true) {
+      const { data: userExists } = await supabase
+        .from('users')
+        .select('username')
+        .eq('username', uniqueUsername)
+        .maybeSingle();
+
+      if (!userExists) break;
+
+      uniqueUsername = `${baseUsername}_${counter}`;
+      counter++;
+    }
+
+    // 3. Создание нового пользователя
+    const userId = await generateSixDigitId();
+    
     const { error } = await supabase.from('users').insert([{
       user_id: userId,
       telegram_id: telegramId,
-      username: username?.substring(0, 20) || `tg_${telegramId.substring(0, 14)}`, // Ограничение длины
+      username: uniqueUsername,
       first_name: firstName?.substring(0, 30),
       photo_url: photoUrl,
       balance: 0,
@@ -951,41 +964,36 @@ app.post('/auth/telegram', async (req, res) => {
       password: null
     }]);
 
-    if (error) {
-      console.error('Supabase error:', error);
-      return res.status(500).json({ 
-        success: false, 
-        error: 'Database error' 
-      });
-    }
+    if (error) throw error;
 
-    // Генерация токена
-    const token = jwt.sign(
-      { userId, role: 'user' },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 86400000
-    });
+    // 4. Генерация токена
+    const token = generateToken(userId);
 
     res.json({
       success: true,
-      userId: userId.toString().padStart(6, '0') // Гарантируем 6 цифр
+      userId,
+      username: uniqueUsername,
+      token
     });
 
   } catch (error) {
     console.error('Telegram auth error:', error);
     res.status(500).json({ 
       success: false, 
-      error: 'Internal server error' 
+      error: error.code === '23505' 
+        ? 'Username already exists. Please try again.' 
+        : 'Internal server error' 
     });
   }
 });
+
+function generateToken(userId) {
+  return jwt.sign(
+    { userId, role: 'user' },
+    process.env.JWT_SECRET,
+    { expiresIn: '24h' }
+  );
+}
 
 
 /* ========================
