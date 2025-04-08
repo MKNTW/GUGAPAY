@@ -920,12 +920,12 @@ app.post('/auth/telegram', async (req, res) => {
   if (!telegramId) {
     return res.status(400).json({ 
       success: false, 
-      error: "Telegram ID is required" 
+      error: "Требуется ID Telegram" 
     });
   }
 
   try {
-    // Поиск пользователя
+    // Ищем пользователя по telegram_id
     const { data: user, error } = await supabase
       .from('users')
       .select('*')
@@ -933,18 +933,19 @@ app.post('/auth/telegram', async (req, res) => {
       .maybeSingle();
 
     let userId;
-    if (error && error.code !== 'PGRST116') {
-      throw error;
-    }
+    if (error && error.code !== 'PGRST116') throw error;
 
-    // Создание нового пользователя
+    // Создаем нового пользователя
     if (!user) {
+      const randomPassword = crypto.randomBytes(16).toString('hex');
+      
       const newUser = {
         user_id: uuidv4(),
         telegram_id: telegramId,
-        username: username || `user_${telegramId}`,
+        username: username || `tg_user_${telegramId}`,
         first_name: firstName || '',
         photo_url: photoUrl || '',
+        password: await bcrypt.hash(randomPassword, 12), // Пароль для совместимости
         balance: 0.0,
         rub_balance: 0.0,
         blocked: false
@@ -960,32 +961,31 @@ app.post('/auth/telegram', async (req, res) => {
       userId = user.user_id;
     }
 
-    // Генерация токена
+    // Генерируем токен без проверки пароля
     const token = jwt.sign(
-      { userId, role: 'user' }, 
+      { userId, role: 'user', authType: 'telegram' }, 
       config.jwtSecret, 
       { expiresIn: '24h' }
     );
 
-    // Установка куки
     res.cookie('token', token, {
       httpOnly: true,
       secure: config.env === 'production',
       sameSite: 'none',
-      maxAge: 86400000 // 24 часа
+      maxAge: 86400000
     });
 
     return res.json({
       success: true,
       userId,
-      balance: user?.balance || 0
+      authType: 'telegram'
     });
 
   } catch (error) {
-    console.error('Telegram auth error:', error);
+    console.error('Ошибка авторизации через Telegram:', error);
     return res.status(500).json({
       success: false,
-      error: 'Internal server error'
+      error: 'Ошибка сервера'
     });
   }
 });
