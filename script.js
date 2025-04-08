@@ -663,7 +663,7 @@ function createMainUI() {
   if (!currentMerchantId && !document.getElementById("profileIcon")) {
     const profileIcon = document.createElement("img");
     profileIcon.id = "profileIcon";
-    profileIcon.src = "68.png";
+    profileIcon.src = "photo/68.png";
     profileIcon.style.width = "40px";
     profileIcon.style.height = "40px";
     profileIcon.style.position = "fixed";
@@ -693,15 +693,15 @@ function createMainUI() {
 
     bottomBar.innerHTML = `
       <button id="btnMain" style="padding:10px;border:none;background:none;">
-        <img src="69.png" style="width:30px;height:30px;display:block;margin:0 auto;">
+        <img src="photo/69.png" style="width:30px;height:30px;display:block;margin:0 auto;">
         Главная
       </button>
       <button id="historyBtn" style="padding:10px;border:none;background:none;">
-        <img src="70.png" style="width:30px;height:30px;display:block;margin:0 auto;">
+        <img src="photo/70.png" style="width:30px;height:30px;display:block;margin:0 auto;">
         История
       </button>
       <button id="exchangeBtn" style="padding:10px;border:none;background:none;">
-        <img src="71.png" style="width:30px;height:30px;display:block;margin:0 auto;">
+        <img src="photo/71.png" style="width:30px;height:30px;display:block;margin:0 auto;">
         Обменять
       </button>
     `;
@@ -767,11 +767,11 @@ function createMainUI() {
 
     container.innerHTML = `
       <button id="transferBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;">
-        <img src="81.png" style="width:35px;height:35px;">
+        <img src="photo/81.png" style="width:35px;height:35px;">
         Перевести
       </button>
       <button id="payQRBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;margin-top: -5px;">
-        <img src="90.png" style="width:40px;height:40px;">
+        <img src="photo/90.png" style="width:40px;height:40px;">
         Оплатить
       </button>
     `;
