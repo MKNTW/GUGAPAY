@@ -878,6 +878,37 @@ app.get('/merchant/info', verifyToken, async (req, res) => {
 });
 
 
+
+// Middleware для проверки JWT
+function verifyToken(req, res, next) {
+  const token = req.cookies.token;
+  if (!token) {
+    return res.status(401).json({ success: false, error: 'Отсутствует токен авторизации' });
+  }
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(403).json({ success: false, error: 'Неверный или просроченный токен' });
+    }
+    req.user = decoded;
+    next();
+  });
+}
+
+// Endpoint для выхода (logout)
+app.post('/logout', (req, res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'none'
+  });
+  res.json({ success: true, message: 'Вы вышли из системы' });
+});
+
+// Тестовый endpoint
+app.get('/', (req, res) => {
+  res.send('GugaCoin backend server.');
+});
+
 /* ========================
    18) Эндпоинт для привязки Telegram-аккаунта 2
 ======================== */
