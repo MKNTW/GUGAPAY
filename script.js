@@ -837,6 +837,15 @@ async function fetchUserData() {
       if (rubBalanceInfo) {
         rubBalanceInfo.textContent = formatBalance(rubBalance, 2) + " ₽";
       }
+      
+      const rubBalanceValue = document.getElementById("rubBalanceValue");
+      if (rubBalanceValue) {
+      rubBalanceValue.textContent = formatBalance(rubBalance, 2) + " ₽";
+      }
+      const gugaBalanceValue = document.getElementById("gugaBalanceValue");
+      if (gugaBalanceValue) {
+      gugaBalanceValue.textContent = formatBalance(coinBalance, 5) + " ₲";
+      }
     }
   } catch (err) {
     console.error("fetchUserData error:", err);
