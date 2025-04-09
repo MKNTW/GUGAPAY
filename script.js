@@ -783,7 +783,6 @@ function createMainUI() {
             <img src="photo/18.png" style="width: 30px; height: 30px;">
             <div>
               <div style="font-weight: 500;">RUB</div>
-              
             </div>
           </div>
           <div id="rubBalanceValue" style="font-weight: 500;">--</div>
@@ -795,12 +794,10 @@ function createMainUI() {
             <img src="photo/15.png" style="width: 30px; height: 30px;">
             <div>
               <div style="font-weight: 500;">GUGA</div>
-              <div style="font-size: 14px; color: #666;">Курс: 1₲ = <span id="currentRate">--</span>₽</div>
             </div>
           </div>
           <div>
             <div id="gugaBalanceValue" style="font-weight: 500;">--</div>
-            <div id="convertedGuga" style="font-size: 14px; color: #666;">--</div>
           </div>
         </div>
       </div>
