@@ -711,47 +711,12 @@ function createMainUI() {
     });
   }
 
-  // Кнопки "Перевести" и "Оплатить"
-  if (!document.getElementById("actionButtonsContainer")) {
-    const container = document.createElement("div");
-    container.id = "actionButtonsContainer";
-    container.style.position = "fixed";
-    container.style.top = "180px";
-    container.style.left = "50%";
-    container.style.transform = "translateX(-50%)";
-    container.style.display = "flex";
-    container.style.flexDirection = "row";
-    container.style.gap = "16px";
-    container.style.zIndex = "90000";
-
-    container.innerHTML = `
-      <button id="transferBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;">
-        <img src="photo/81.png" style="width:35px;height:35px;">
-        Перевести
-      </button>
-      <button id="payQRBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;margin-top: -5px;">
-        <img src="photo/90.png" style="width:40px;height:40px;">
-        Оплатить
-      </button>
-    `;
-    document.body.appendChild(container);
-
-    document.getElementById("transferBtn").addEventListener("click", () => {
-      removeAllModals();
-      openTransferModal();
-    });
-    document.getElementById("payQRBtn").addEventListener("click", () => {
-      removeAllModals();
-      openPayQRModal();
-    });
-  }
-
-  // Блоки балансов и ID
+  // Балансы RUB и GUGA
   if (!document.getElementById("balanceContainer")) {
     const balanceContainer = document.createElement("div");
     balanceContainer.id = "balanceContainer";
     balanceContainer.style.position = "fixed";
-    balanceContainer.style.top = "240px";
+    balanceContainer.style.top = "70px";
     balanceContainer.style.left = "50%";
     balanceContainer.style.transform = "translateX(-50%)";
     balanceContainer.style.width = "90%";
@@ -785,9 +750,6 @@ function createMainUI() {
             <div id="convertedGuga" style="font-size: 14px; color: #666;">--</div>
           </div>
         </div>
-      </div>
-      <div style="text-align: center; margin-top: 10px; font-size: 14px; color: #666;">
-        Ваш ID: <span id="userIdDisplay">--</span>
       </div>
     `;
     document.body.appendChild(balanceContainer);
