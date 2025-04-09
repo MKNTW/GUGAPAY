@@ -777,7 +777,7 @@ function createMainUI() {
     balanceContainer.style.zIndex = "89999";
 
     balanceContainer.innerHTML = `
-      <div style="background: #fff; border-radius: 15px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1)">
+      <div style="background: #fff; border-radius: 15px; padding: 15px; margin-bottom: 10px; margin-top: 50px; box-shadow: 0 2px 5px rgba(0,0,0,0.1)">
         <div style="display: flex; align-items: center; justify-content: space-between;">
           <div style="display: flex; align-items: center; gap: 10px;">
             <img src="photo/18.png" style="width: 30px; height: 30px;">
