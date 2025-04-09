@@ -786,7 +786,7 @@ function createMainUI() {
               <div id="rubBalance" style="font-size: 14px; color: #666;">--</div>
             </div>
           </div>
-          <div id="rubBalanceValue" style="font-weight: 500;">--</div>
+          <div id="toBalanceInfo" style="font-weight: 500;">--</div>
         </div>
       </div>
       <div style="background: #fff; border-radius: 15px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1)">
@@ -800,7 +800,7 @@ function createMainUI() {
           </div>
           <div>
             <div id="gugaBalanceValue" style="font-weight: 500;">--</div>
-            <div id="convertedGuga" style="font-size: 14px; color: #666;">--</div>
+            <div id="balanceValue" style="font-size: 14px; color: #666;">--</div>
           </div>
         </div>
       </div>
