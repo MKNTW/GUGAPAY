@@ -815,39 +815,65 @@ function createMainUI() {
  **************************************************/
 async function fetchUserData() {
   try {
-    const resp = await fetch(`${API_URL}/user`, { credentials: "include" });
-    const data = await resp.json();
-    if (data.success && data.user) {
-      currentUserId = data.user.user_id;
-      const coinBalance = data.user.balance || 0;
-      const rubBalance = data.user.rub_balance || 0;
+    // Получаем данные параллельно
+    const [userResp, ratesResp] = await Promise.all([
+      fetch(`${API_URL}/user`, { credentials: "include" }),
+      fetch(`${API_URL}/exchangeRates?limit=1`)
+    ]);
 
+    const userData = await userResp.json();
+    const ratesData = await ratesResp.json();
+
+    if (userData.success && userData.user) {
+      currentUserId = userData.user.user_id;
+      const coinBalance = userData.user.balance || 0;
+      const rubBalance = userData.user.rub_balance || 0;
+      const currentRate = ratesData.success && ratesData.rates.length 
+        ? parseFloat(ratesData.rates[0].exchange_rate) 
+        : 0;
+
+      // Старое отображение (оставляем для совместимости)
       const balanceValue = document.getElementById("balanceValue");
       if (balanceValue) {
-        balanceValue.textContent = formatBalance(coinBalance, 5) + " ₲";
+        // Новое значение: общий баланс в рублях
+        const totalRub = rubBalance + (coinBalance * currentRate);
+        balanceValue.textContent = `${formatBalance(totalRub, 2)} ₽`;
       }
+
       const userIdEl = document.getElementById("userIdDisplay");
       if (userIdEl) {
         userIdEl.textContent = "ID: " + currentUserId;
       }
+
+      // Обновляем RUB баланс (старая логика)
       const rubBalanceInfo = document.getElementById("rubBalanceInfo");
       if (rubBalanceInfo) {
-        rubBalanceInfo.textContent = formatBalance(rubBalance, 2) + " ₽";
+        rubBalanceInfo.textContent = `${formatBalance(rubBalance, 2)} ₽`;
       }
 
-      // Новое действие: Обновление балансов RUB и GUGA
-      const rubBalanceValue = document.getElementById("rubBalanceValue");
-      if (rubBalanceValue) {
-        rubBalanceValue.textContent = formatBalance(rubBalance, 2) + " ₽";
+      // Новые элементы для детализации
+      const gugaBalanceElement = document.getElementById("gugaBalanceValue");
+      if (gugaBalanceElement) {
+        gugaBalanceElement.textContent = `${formatBalance(coinBalance, 5)} ₲`;
       }
 
-      const gugaBalanceValue = document.getElementById("gugaBalanceValue");
-      if (gugaBalanceValue) {
-        gugaBalanceValue.textContent = formatBalance(coinBalance, 5) + " ₲";
+      const convertedBalanceElement = document.getElementById("convertedBalance");
+      if (convertedBalanceElement) {
+        convertedBalanceElement.textContent = `${formatBalance(coinBalance * currentRate, 2)} ₽`;
+      }
+
+      const rateDisplayElement = document.getElementById("currentRateDisplay");
+      if (rateDisplayElement) {
+        rateDisplayElement.textContent = formatBalance(currentRate, 2);
       }
     }
   } catch (err) {
     console.error("fetchUserData error:", err);
+    // Показываем ошибку в интерфейсе
+    const balanceValue = document.getElementById("balanceValue");
+    if (balanceValue) {
+      balanceValue.textContent = "Ошибка загрузки";
+    }
   }
 }
 
