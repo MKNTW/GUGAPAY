@@ -783,7 +783,7 @@ function createMainUI() {
             <img src="photo/18.png" style="width: 30px; height: 30px;">
             <div>
               <div style="font-weight: 500;">RUB</div>
-              <div id="rubBalance" style="font-size: 14px; color: #666;">--</div>
+              
             </div>
           </div>
           <div id="rubBalanceValue" style="font-weight: 500;">--</div>
