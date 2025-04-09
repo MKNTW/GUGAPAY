@@ -846,7 +846,7 @@ async function fetchUserData() {
       }
 
       // Обновляем RUB баланс (старая логика)
-      const rubBalanceInfo = document.getElementById("rubBalanceInfo");
+      const rubBalanceInfo = document.getElementById("rubBalanceValue");
       if (rubBalanceInfo) {
         rubBalanceInfo.textContent = `${formatBalance(rubBalance, 2)} ₽`;
       }
