@@ -1226,24 +1226,26 @@ async function handleExchange(direction) {
 
 async function loadBalanceAndExchangeRate() {
   try {
-    const userResp = await fetch(`${API_URL}/user`, { credentials: "include" });
-    const userData = await userResp.json();
-    if (userData.success && userData.user) {
-      if (currentExchangeDirection === "coin_to_rub") {
-        document.getElementById("balanceInfo").textContent =
-          formatBalance(userData.user.balance, 5) + " ₲";
-        document.getElementById("toBalanceInfo").textContent =
-          formatBalance(userData.user.rub_balance, 2) + " ₽";
-      } else {
-        document.getElementById("balanceInfo").textContent =
-          formatBalance(userData.user.rub_balance, 2) + " ₽";
-        document.getElementById("toBalanceInfo").textContent =
-          formatBalance(userData.user.balance, 5) + " ₲";
-      }
+  const rateResp = await fetch(`${API_URL}/exchangeRates?limit=50`, {
+    credentials: "include",
+  });
+  const rateData = await rateResp.json();
+  if (rateData.success && rateData.rates?.length) {
+    currentExchangeRate = parseFloat(rateData.rates[0].exchange_rate);
+
+    // Обновляем #currentRate
+    const currentRateElement = document.getElementById("currentRate");
+    if (currentRateElement) {
+      currentRateElement.textContent = formatBalance(currentExchangeRate, 2) + " ₽";
     }
-  } catch (err) {
-    console.error("loadBalanceAndExchangeRate user error:", err);
+
+    // Обновляем график и другой интерфейс
+    drawExchangeChart(rateData.rates);
+    updateCurrentRateDisplay();
   }
+} catch (err) {
+  console.error("loadBalanceAndExchangeRate rates error:", err);
+}
 
   try {
     const rateResp = await fetch(`${API_URL}/exchangeRates?limit=50`, {
