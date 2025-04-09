@@ -636,9 +636,6 @@ function openAuthModal() {
 /**************************************************
  * ГЛАВНЫЙ ЭКРАН
  **************************************************/
-/**************************************************
- * ГЛАВНЫЙ ЭКРАН
- **************************************************/
 function createMainUI() {
   if (!currentMerchantId && !document.getElementById("profileIcon")) {
     const profileIcon = document.createElement("img");
@@ -667,7 +664,7 @@ function createMainUI() {
     bottomBar.style.display = "flex";
     bottomBar.style.justifyContent = "space-around";
     bottomBar.style.alignItems = "center";
-    bottomBar.style.padding = "0px"; // убран padding
+    bottomBar.style.padding = "0px";
     bottomBar.style.boxShadow = "0 -2px 5px rgba(0,0,0,0.1)";
     bottomBar.style.zIndex = "999999";
 
@@ -687,20 +684,14 @@ function createMainUI() {
     `;
     document.body.appendChild(bottomBar);
 
-    // "Главная" => закрыть "История"/"Обмен" (анимация вниз)
+    // Обработчики событий
     document.getElementById("btnMain").addEventListener("click", () => {
-      if (document.getElementById("historyModal")) {
-        closeModalWithAnimation("historyModal");
-      }
-      if (document.getElementById("exchangeModal")) {
-        closeModalWithAnimation("exchangeModal");
-      }
+      if (document.getElementById("historyModal")) closeModalWithAnimation("historyModal");
+      if (document.getElementById("exchangeModal")) closeModalWithAnimation("exchangeModal");
     });
 
-    // "История"
     document.getElementById("historyBtn").addEventListener("click", () => {
       if (document.getElementById("exchangeModal")) {
-        // Переключение: "Обмен" -> "История"
         switchHistoryExchange("exchangeModal", () => openHistoryModal(true), "toHistory");
       } else {
         removeAllModals();
@@ -708,22 +699,14 @@ function createMainUI() {
       }
     });
 
-    // "Обмен"
     document.getElementById("exchangeBtn").addEventListener("click", () => {
       if (document.getElementById("historyModal")) {
-        // Переключение: "История" -> "Обмен"
         switchHistoryExchange("historyModal", () => openExchangeModal(true), "toExchange");
       } else {
         removeAllModals();
         openExchangeModal(false);
       }
     });
-  }
-
-  // Баланс / Майнинг
-  const balanceDisplay = document.getElementById("balanceDisplay");
-  if (balanceDisplay) {
-    balanceDisplay.style.display = "block";
   }
 
   // Кнопки "Перевести" / "Оплата"
@@ -738,7 +721,6 @@ function createMainUI() {
     container.style.flexDirection = "row";
     container.style.gap = "16px";
     container.style.zIndex = "90000";
-    container.style.margintop = "25px";
 
     container.innerHTML = `
       <button id="transferBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;">
@@ -760,6 +742,50 @@ function createMainUI() {
       removeAllModals();
       openPayQRModal();
     });
+  }
+
+  // Блоки балансов
+  if (!document.getElementById("balanceContainer")) {
+    const balanceContainer = document.createElement("div");
+    balanceContainer.id = "balanceContainer";
+    balanceContainer.style.position = "fixed";
+    balanceContainer.style.top = "240px";
+    balanceContainer.style.left = "50%";
+    balanceContainer.style.transform = "translateX(-50%)";
+    balanceContainer.style.width = "90%";
+    balanceContainer.style.maxWidth = "500px";
+    balanceContainer.style.zIndex = "89999";
+
+    balanceContainer.innerHTML = `
+      <div style="background: #fff; border-radius: 15px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1)">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <img src="photo/18.png" style="width: 30px; height: 30px;">
+            <div>
+              <div style="font-weight: 500;">RUB</div>
+              <div id="rubBalance" style="font-size: 14px; color: #666;">--</div>
+            </div>
+          </div>
+          <div id="rubBalanceValue" style="font-weight: 500;">--</div>
+        </div>
+      </div>
+      <div style="background: #fff; border-radius: 15px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1)">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <img src="photo/15.png" style="width: 30px; height: 30px;">
+            <div>
+              <div style="font-weight: 500;">GUGA</div>
+              <div style="font-size: 14px; color: #666;">Курс: 1₲ = <span id="currentRate">--</span>₽</div>
+            </div>
+          </div>
+          <div>
+            <div id="gugaBalanceValue" style="font-weight: 500;">--</div>
+            <div id="convertedGuga" style="font-size: 14px; color: #666;">--</div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(balanceContainer);
   }
 
   fetchUserData();
