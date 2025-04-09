@@ -872,7 +872,7 @@ async function fetchUserData() {
     // Показываем ошибку в интерфейсе
     const balanceValue = document.getElementById("balanceValue");
     if (balanceValue) {
-      balanceValue.textContent = "Ошибка загрузки";
+      balanceValue.textContent = "-- ₽";
     }
   }
 }
