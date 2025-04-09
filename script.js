@@ -636,99 +636,26 @@ function openAuthModal() {
 /**************************************************
  * ГЛАВНЫЙ ЭКРАН
  **************************************************/
+/**************************************************
+ * ГЛАВНЫЙ ЭКРАН
+ **************************************************/
 function createMainUI() {
-  // Профиль и балансы
-  if (!currentMerchantId && !document.getElementById("profileHeader")) {
-    const profileHeader = document.createElement("div");
-    profileHeader.id = "profileHeader";
-    profileHeader.style.position = "fixed";
-    profileHeader.style.top = "10px";
-    profileHeader.style.right = "10px";
-    profileHeader.style.display = "flex";
-    profileHeader.style.alignItems = "center";
-    profileHeader.style.gap = "10px";
-    profileHeader.style.zIndex = "90000";
-
-    // Аватар
+  if (!currentMerchantId && !document.getElementById("profileIcon")) {
     const profileIcon = document.createElement("img");
     profileIcon.id = "profileIcon";
     profileIcon.src = "photo/68.png";
     profileIcon.style.width = "40px";
     profileIcon.style.height = "40px";
-    profileIcon.style.borderRadius = "20px";
+    profileIcon.style.position = "fixed";
+    profileIcon.style.top = "10px";
+    profileIcon.style.right = "10px";
     profileIcon.style.cursor = "pointer";
-
-    // Имя пользователя
-    const userName = document.createElement("div");
-    userName.id = "userName";
-    userName.style.color = "#333";
-    userName.style.fontWeight = "500";
-
-    profileHeader.appendChild(profileIcon);
-    profileHeader.appendChild(userName);
-    document.body.appendChild(profileHeader);
+    profileIcon.style.zIndex = "90000";
+    document.body.appendChild(profileIcon);
 
     profileIcon.addEventListener("click", openProfileModal);
   }
 
-  // Блоки балансов
-  if (!document.getElementById("balanceContainer")) {
-    const balanceContainer = document.createElement("div");
-    balanceContainer.id = "balanceContainer";
-    balanceContainer.style.position = "fixed";
-    balanceContainer.style.top = "70px";
-    balanceContainer.style.left = "50%";
-    balanceContainer.style.transform = "translateX(-50%)";
-    balanceContainer.style.width = "90%";
-    balanceContainer.style.maxWidth = "500px";
-    balanceContainer.style.zIndex = "89999";
-
-    // Общий баланс
-    const totalBalance = document.createElement("div");
-    totalBalance.innerHTML = `
-      <div style="background: #fff; border-radius: 15px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1)">
-        <div style="font-size: 14px; color: #666; margin-bottom: 5px;">Общий баланс</div>
-        <div id="totalBalance" style="font-size: 24px; font-weight: bold;">--</div>
-      </div>
-    `;
-
-    // Блоки активов
-    const assets = `
-      <div style="background: #fff; border-radius: 15px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1)">
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <img src="photo/18.png" style="width: 30px; height: 30px;">
-            <div>
-              <div style="font-weight: 500;">RUB</div>
-              <div id="rubBalance" style="font-size: 14px; color: #666;">--</div>
-            </div>
-          </div>
-          <div id="rubBalanceValue" style="font-weight: 500;">--</div>
-        </div>
-      </div>
-      <div style="background: #fff; border-radius: 15px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1)">
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <img src="photo/15.png" style="width: 30px; height: 30px;">
-            <div>
-              <div style="font-weight: 500;">GUGA</div>
-              <div style="font-size: 14px; color: #666;">Курс: 1₲ = <span id="currentRate">--</span>₽</div>
-            </div>
-          </div>
-          <div>
-            <div id="gugaBalanceValue" style="font-weight: 500;">--</div>
-            <div id="convertedGuga" style="font-size: 14px; color: #666;">--</div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    balanceContainer.appendChild(totalBalance);
-    balanceContainer.innerHTML += assets;
-    document.body.appendChild(balanceContainer);
-  }
-
-  // Нижняя панель (без изменений)
   if (!document.getElementById("bottomBar")) {
     const bottomBar = document.createElement("div");
     bottomBar.id = "bottomBar";
@@ -740,7 +667,7 @@ function createMainUI() {
     bottomBar.style.display = "flex";
     bottomBar.style.justifyContent = "space-around";
     bottomBar.style.alignItems = "center";
-    bottomBar.style.padding = "0px";
+    bottomBar.style.padding = "0px"; // убран padding
     bottomBar.style.boxShadow = "0 -2px 5px rgba(0,0,0,0.1)";
     bottomBar.style.zIndex = "999999";
 
@@ -760,14 +687,20 @@ function createMainUI() {
     `;
     document.body.appendChild(bottomBar);
 
-    // Обработчики событий без изменений
+    // "Главная" => закрыть "История"/"Обмен" (анимация вниз)
     document.getElementById("btnMain").addEventListener("click", () => {
-      if (document.getElementById("historyModal")) closeModalWithAnimation("historyModal");
-      if (document.getElementById("exchangeModal")) closeModalWithAnimation("exchangeModal");
+      if (document.getElementById("historyModal")) {
+        closeModalWithAnimation("historyModal");
+      }
+      if (document.getElementById("exchangeModal")) {
+        closeModalWithAnimation("exchangeModal");
+      }
     });
 
+    // "История"
     document.getElementById("historyBtn").addEventListener("click", () => {
       if (document.getElementById("exchangeModal")) {
+        // Переключение: "Обмен" -> "История"
         switchHistoryExchange("exchangeModal", () => openHistoryModal(true), "toHistory");
       } else {
         removeAllModals();
@@ -775,8 +708,10 @@ function createMainUI() {
       }
     });
 
+    // "Обмен"
     document.getElementById("exchangeBtn").addEventListener("click", () => {
       if (document.getElementById("historyModal")) {
+        // Переключение: "История" -> "Обмен"
         switchHistoryExchange("historyModal", () => openExchangeModal(true), "toExchange");
       } else {
         removeAllModals();
@@ -785,47 +720,51 @@ function createMainUI() {
     });
   }
 
-  // Обновление данных
+  // Баланс / Майнинг
+  const balanceDisplay = document.getElementById("balanceDisplay");
+  if (balanceDisplay) {
+    balanceDisplay.style.display = "block";
+  }
+
+  // Кнопки "Перевести" / "Оплата"
+  if (!document.getElementById("actionButtonsContainer")) {
+    const container = document.createElement("div");
+    container.id = "actionButtonsContainer";
+    container.style.position = "fixed";
+    container.style.top = "180px";
+    container.style.left = "50%";
+    container.style.transform = "translateX(-50%)";
+    container.style.display = "flex";
+    container.style.flexDirection = "row";
+    container.style.gap = "16px";
+    container.style.zIndex = "90000";
+    container.style.margintop = "25px";
+
+    container.innerHTML = `
+      <button id="transferBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <img src="photo/81.png" style="width:35px;height:35px;">
+        Перевести
+      </button>
+      <button id="payQRBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;margin-top: -5px;">
+        <img src="photo/90.png" style="width:40px;height:40px;">
+        Оплатить
+      </button>
+    `;
+    document.body.appendChild(container);
+
+    document.getElementById("transferBtn").addEventListener("click", () => {
+      removeAllModals();
+      openTransferModal();
+    });
+    document.getElementById("payQRBtn").addEventListener("click", () => {
+      removeAllModals();
+      openPayQRModal();
+    });
+  }
+
   fetchUserData();
   clearInterval(updateInterval);
   updateInterval = setInterval(fetchUserData, 2000);
-}
-
-// В функцию fetchUserData добавляем обновление новых элементов
-async function fetchUserData() {
-  try {
-    const resp = await fetch(`${API_URL}/user`, { credentials: "include" });
-    const data = await resp.json();
-    if (data.success && data.user) {
-      currentUserId = data.user.user_id;
-      
-      // Обновляем имя пользователя
-      document.getElementById("userName").textContent = data.user.name || `User#${data.user.user_id.slice(-4)}`;
-      
-      // Обновляем балансы
-      const rub = parseFloat(data.user.rub_balance) || 0;
-      const guga = parseFloat(data.user.balance) || 0;
-      const rate = await getCurrentRate();
-      
-      document.getElementById("totalBalance").textContent = `${formatBalance(rub + (guga * rate), 2)} ₽`;
-      document.getElementById("rubBalanceValue").textContent = `${formatBalance(rub, 2)} ₽`;
-      document.getElementById("gugaBalanceValue").textContent = `${formatBalance(guga, 5)} ₲`;
-      document.getElementById("convertedGuga").textContent = `${formatBalance(guga * rate, 2)} ₽`;
-      document.getElementById("currentRate").textContent = formatBalance(rate, 2);
-    }
-  } catch (err) {
-    console.error("fetchUserData error:", err);
-  }
-}
-
-async function getCurrentRate() {
-  try {
-    const resp = await fetch(`${API_URL}/exchangeRates?limit=1`);
-    const data = await resp.json();
-    return data.rates[0]?.exchange_rate || 0;
-  } catch (err) {
-    return 0;
-  }
 }
 
 /**************************************************
