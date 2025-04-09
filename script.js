@@ -637,6 +637,7 @@ function openAuthModal() {
  * ГЛАВНЫЙ ЭКРАН
  **************************************************/
 function createMainUI() {
+  // Иконка профиля
   if (!currentMerchantId && !document.getElementById("profileIcon")) {
     const profileIcon = document.createElement("img");
     profileIcon.id = "profileIcon";
@@ -653,6 +654,7 @@ function createMainUI() {
     profileIcon.addEventListener("click", openProfileModal);
   }
 
+  // Нижняя панель навигации
   if (!document.getElementById("bottomBar")) {
     const bottomBar = document.createElement("div");
     bottomBar.id = "bottomBar";
@@ -684,7 +686,7 @@ function createMainUI() {
     `;
     document.body.appendChild(bottomBar);
 
-    // Обработчики событий
+    // Обработчики событий кнопок навигации
     document.getElementById("btnMain").addEventListener("click", () => {
       if (document.getElementById("historyModal")) closeModalWithAnimation("historyModal");
       if (document.getElementById("exchangeModal")) closeModalWithAnimation("exchangeModal");
@@ -709,7 +711,7 @@ function createMainUI() {
     });
   }
 
-  // Кнопки "Перевести" / "Оплата"
+  // Кнопки "Перевести" и "Оплатить"
   if (!document.getElementById("actionButtonsContainer")) {
     const container = document.createElement("div");
     container.id = "actionButtonsContainer";
@@ -744,7 +746,7 @@ function createMainUI() {
     });
   }
 
-  // Блоки балансов
+  // Блоки балансов и ID
   if (!document.getElementById("balanceContainer")) {
     const balanceContainer = document.createElement("div");
     balanceContainer.id = "balanceContainer";
@@ -784,10 +786,14 @@ function createMainUI() {
           </div>
         </div>
       </div>
+      <div style="text-align: center; margin-top: 10px; font-size: 14px; color: #666;">
+        Ваш ID: <span id="userIdDisplay">--</span>
+      </div>
     `;
     document.body.appendChild(balanceContainer);
   }
 
+  // Обновление интерфейса каждые 2 секунды
   fetchUserData();
   clearInterval(updateInterval);
   updateInterval = setInterval(fetchUserData, 2000);
