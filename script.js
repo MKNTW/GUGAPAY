@@ -819,13 +819,19 @@ async function fetchUserData() {
     const data = await resp.json();
     if (data.success && data.user) {
       currentUserId = data.user.user_id;
-      const coinBalance = data.user.balance || 0;
-      const rubBalance = data.user.rub_balance || 0;
+      const coinBalance = data.user.balance || 0; // Баланс в GUGA
+      const rubBalance = data.user.rub_balance || 0; // Баланс в RUB
 
+      // Рассчитываем общий баланс в рублях
+      const totalRub = rubBalance + (coinBalance * currentExchangeRate);
+
+      // Обновляем главный баланс в рублях
       const balanceValue = document.getElementById("balanceValue");
       if (balanceValue) {
-        balanceValue.textContent = formatBalance(coinBalance, 5) + " ₲";
+        balanceValue.textContent = formatBalance(totalRub, 2) + " ₽"; // Отображаем общий RUB
       }
+
+      // Обновляем другие элементы, если нужно
       const userIdEl = document.getElementById("userIdDisplay");
       if (userIdEl) {
         userIdEl.textContent = "ID: " + currentUserId;
@@ -833,15 +839,6 @@ async function fetchUserData() {
       const rubBalanceInfo = document.getElementById("rubBalanceInfo");
       if (rubBalanceInfo) {
         rubBalanceInfo.textContent = formatBalance(rubBalance, 2) + " ₽";
-      }
-      
-      const rubBalanceValue = document.getElementById("rubBalanceValue");
-      if (rubBalanceValue) {
-      rubBalanceValue.textContent = formatBalance(rubBalance, 2) + " ₽";
-      }
-      const gugaBalanceValue = document.getElementById("gugaBalanceValue");
-      if (gugaBalanceValue) {
-      gugaBalanceValue.textContent = formatBalance(coinBalance, 5) + " ₲";
       }
     }
   } catch (err) {
