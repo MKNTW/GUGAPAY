@@ -520,3 +520,47 @@ body {
   font-weight: bold;
   color: #333;
 }
+/* Верхняя часть экрана (красный фон) */
+.header {
+  background-color: red; /* Красный фон */
+  height: 100px; /* Высота верхней части, измените при необходимости */
+  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10;
+}
+
+/* Нижняя часть экрана */
+.main-content {
+  background-color: var(--current-color); /* Используем текущий цвет */
+  border-bottom-left-radius: 20px; /* Закругление углов вниз */
+  border-bottom-right-radius: 20px;
+  margin-top: 100px; /* Отступ для верхней части */
+  padding: 20px; /* Внутренние отступы */
+  min-height: calc(100vh - 100px); /* Покрытие оставшейся высоты экрана */
+  box-sizing: border-box;
+}
+
+/* Кнопки "Перести и оплатить" */
+.buttons-container {
+  display: flex;
+  justify-content: center;
+  gap: 10px; /* Расстояние между кнопками */
+  margin-top: 20px;
+}
+
+.buttons-container button {
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  background-color: var(--button-color); /* Цвет кнопки */
+  color: white; /* Цвет текста кнопки */
+  border-radius: 5px; /* Закругленные кнопки */
+  cursor: pointer;
+}
+
+.buttons-container button:hover {
+  background-color: darkred; /* Цвет при наведении */
+}
