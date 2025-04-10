@@ -154,9 +154,7 @@ function createModal(
     // Создаем контейнер для содержимого
     const contentDiv = document.createElement("div");
     contentDiv.className = "modal-content";
-    if (defaultFromBottom) {
-        contentDiv.classList.add("modal-slide-up");
-    }
+    
     contentDiv.style.width = "100%";
     contentDiv.style.maxWidth = "500px";
     contentDiv.style.marginTop = `${cornerTopMargin}px`;
