@@ -482,15 +482,6 @@ class ModalManager {
   }
 }
 
-// Экспорт синглтона
-export const modalManager = new ModalManager();
-
-// Использование:
-// modalManager.create('modal1', '<h1>Content</h1>', { 
-//   classes: 'custom-class',
-//   closeOnEsc: false
-// });
-
 /**************************************************
  * АВТОРИЗАЦИЯ И РЕГИСТРАЦИЯ
  **************************************************/
