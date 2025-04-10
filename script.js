@@ -465,40 +465,40 @@ function openAuthModal() {
   }
 }
 
-/**************************************************
- * ГЛАВНЫЙ ЭКРАН
- **************************************************/
 function createMainUI() {
   if (!currentMerchantId && !document.getElementById("profileIcon")) {
     const profileIcon = document.createElement("img");
     profileIcon.id = "profileIcon";
     profileIcon.src = "photo/68.png";
-    profileIcon.style.width = "40px";
-    profileIcon.style.height = "40px";
-    profileIcon.style.position = "fixed";
-    profileIcon.style.top = "10px";
-    profileIcon.style.right = "10px";
-    profileIcon.style.cursor = "pointer";
-    profileIcon.style.zIndex = "90000";
+    Object.assign(profileIcon.style, {
+      width: "40px",
+      height: "40px",
+      position: "fixed",
+      top: "10px",
+      right: "10px",
+      cursor: "pointer",
+      zIndex: "90000"
+    });
     document.body.appendChild(profileIcon);
-
     profileIcon.addEventListener("click", openProfileModal);
   }
 
   if (!document.getElementById("bottomBar")) {
     const bottomBar = document.createElement("div");
     bottomBar.id = "bottomBar";
-    bottomBar.style.position = "fixed";
-    bottomBar.style.bottom = "0";
-    bottomBar.style.left = "0";
-    bottomBar.style.width = "100%";
-    bottomBar.style.backgroundColor = "#fff";
-    bottomBar.style.display = "flex";
-    bottomBar.style.justifyContent = "space-around";
-    bottomBar.style.alignItems = "center";
-    bottomBar.style.paddingbottom = "20px";
-    bottomBar.style.boxShadow = "0 -2px 5px rgba(0,0,0,0.1)";
-    bottomBar.style.zIndex = "999999";
+    Object.assign(bottomBar.style, {
+      position: "fixed",
+      bottom: "0",
+      left: "0",
+      width: "100%",
+      backgroundColor: "#fff",
+      display: "flex",
+      justifyContent: "space-around",
+      alignItems: "center",
+      paddingBottom: "20px",
+      boxShadow: "0 -2px 5px rgba(0,0,0,0.1)",
+      zIndex: "999999"
+    });
 
     bottomBar.innerHTML = `
       <button id="btnMain" style="padding:10px;border:none;background:none;">
@@ -516,56 +516,49 @@ function createMainUI() {
     `;
     document.body.appendChild(bottomBar);
 
-    // "Главная" => закрыть "История"/"Обмен" (анимация вниз)
+    // Обработчики кнопок нижней панели
     document.getElementById("btnMain").addEventListener("click", () => {
-       removeAllModals(); // закрывает всё
+      removeAllModals();
     });
 
-    // "История"
-   document.getElementById("historyBtn").addEventListener("click", () => {
-  removeAllModals(); // закрыть другие окна
-  openHistoryModal(); // открыть нужное
-});
+    document.getElementById("historyBtn").addEventListener("click", () => {
+      removeAllModals();
+      openHistoryModal();
+    });
 
-
-    // "Обмен"
     document.getElementById("exchangeBtn").addEventListener("click", () => {
-  removeAllModals();
-  openExchangeModal();
-});
+      removeAllModals();
+      openExchangeModal();
+    });
+  }
 
-
-  // Баланс / Майнинг
   const balanceDisplay = document.getElementById("balanceDisplay");
-  if (balanceDisplay) {
-    balanceDisplay.style.display = "block";
-  }
-  const mineContainer = document.getElementById("mineContainer");
-  if (mineContainer) {
-    // Скрываем кнопку майнинга
-    mineContainer.style.display = "none";
-  }
+  if (balanceDisplay) balanceDisplay.style.display = "block";
 
-  // Кнопки "Перевести" / "Оплата"
+  const mineContainer = document.getElementById("mineContainer");
+  if (mineContainer) mineContainer.style.display = "none";
+
   if (!document.getElementById("actionButtonsContainer")) {
     const container = document.createElement("div");
     container.id = "actionButtonsContainer";
-    container.style.position = "fixed";
-    container.style.top = "180px";
-    container.style.left = "50%";
-    container.style.transform = "translateX(-50%)";
-    container.style.display = "flex";
-    container.style.flexDirection = "row";
-    container.style.gap = "16px";
-    container.style.zIndex = "90000";
-    container.style.margintop = "25px";
+    Object.assign(container.style, {
+      position: "fixed",
+      top: "180px",
+      left: "50%",
+      transform: "translateX(-50%)",
+      display: "flex",
+      flexDirection: "row",
+      gap: "16px",
+      zIndex: "90000",
+      marginTop: "25px"
+    });
 
     container.innerHTML = `
       <button id="transferBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;">
         <img src="photo/81.png" style="width:35px;height:35px;">
         Перевести
       </button>
-      <button id="payQRBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;margin-top: -5px;">
+      <button id="payQRBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:-5px;">
         <img src="photo/90.png" style="width:40px;height:40px;">
         Оплатить
       </button>
@@ -576,47 +569,43 @@ function createMainUI() {
       removeAllModals();
       openTransferModal();
     });
+
     document.getElementById("payQRBtn").addEventListener("click", () => {
       removeAllModals();
       openPayQRModal();
     });
   }
 
-  // Балансы RUB и GUGA
   if (!document.getElementById("balanceContainer")) {
     const balanceContainer = document.createElement("div");
     balanceContainer.id = "balanceContainer";
-    balanceContainer.style.position = "fixed";
-    balanceContainer.style.top = "260px"; // Размещаем ниже кнопок
-    balanceContainer.style.left = "50%";
-    balanceContainer.style.transform = "translateX(-50%)";
-    balanceContainer.style.width = "90%";
-    balanceContainer.style.maxWidth = "500px";
-    balanceContainer.style.zIndex = "89999";
+    Object.assign(balanceContainer.style, {
+      position: "fixed",
+      top: "260px",
+      left: "50%",
+      transform: "translateX(-50%)",
+      width: "90%",
+      maxWidth: "500px",
+      zIndex: "89999"
+    });
 
     balanceContainer.innerHTML = `
-      <div style="background: #fff; border-radius: 15px; padding: 15px; margin-bottom: 10px; margin-top: 50px; box-shadow: 0 2px 5px rgba(0,0,0,0.1)">
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <img src="photo/18.png" style="width: 30px; height: 30px;">
-            <div>
-              <div style="font-weight: 500;">RUB</div>
-            </div>
+      <div style="background:#fff;border-radius:15px;padding:15px;margin-bottom:10px;margin-top:50px;box-shadow:0 2px 5px rgba(0,0,0,0.1)">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <img src="photo/18.png" style="width:30px;height:30px;">
+            <div><div style="font-weight:500;">RUB</div></div>
           </div>
-          <div id="rubBalanceValue" style="font-weight: 500;">--</div>
+          <div id="rubBalanceValue" style="font-weight:500;">--</div>
         </div>
       </div>
-      <div style="background: #fff; border-radius: 15px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1)">
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <img src="photo/15.png" style="width: 30px; height: 30px;">
-            <div>
-              <div style="font-weight: 500;">GUGA</div>
-            </div>
+      <div style="background:#fff;border-radius:15px;padding:15px;box-shadow:0 2px 5px rgba(0,0,0,0.1)">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <img src="photo/15.png" style="width:30px;height:30px;">
+            <div><div style="font-weight:500;">GUGA</div></div>
           </div>
-          <div>
-            <div id="gugaBalanceValue" style="font-weight: 500;">--</div>
-          </div>
+          <div><div id="gugaBalanceValue" style="font-weight:500;">--</div></div>
         </div>
       </div>
     `;
@@ -627,6 +616,7 @@ function createMainUI() {
   clearInterval(updateInterval);
   updateInterval = setInterval(fetchUserData, 2000);
 }
+
 
 /**************************************************
  * ПОЛЬЗОВАТЕЛЬ
