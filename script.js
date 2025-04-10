@@ -47,86 +47,6 @@ appStyle.textContent = `
 document.head.appendChild(appStyle);
 
 /**************************************************
- * CSS АНИМАЦИИ
- **************************************************/
-const globalStyle = document.createElement("style");
-globalStyle.textContent = `
-  /*===== СТАРЫЕ АНИМАЦИИ: СНИЗУ, СВЕРХУ, SWAP-ROTATE =====*/
-  @keyframes slideUp {
-    0%   { transform: translateY(100%); }
-    100% { transform: translateY(0); }
-  }
-  .modal-slide-up {
-    animation: slideUp 0.3s ease forwards;
-  }
-
-  @keyframes slideDown {
-    0%   { transform: translateY(0); }
-    100% { transform: translateY(100%); }
-  }
-  .modal-slide-down {
-    animation: slideDown 0.3s ease forwards;
-  }
-
-  .swap-rotate {
-    transition: transform 0.3s ease;
-    transform: rotate(360deg);
-  }
-
-  /*===== ОТКРЫТИЕ ПРОФИЛЯ "СВЕРХУ ВНИЗ" =====*/
-  @keyframes slideFromTop {
-    0%   { transform: translateY(-100%); }
-    100% { transform: translateY(0); }
-  }
-  .modal-slide-from-top {
-    animation: slideFromTop 0.3s ease forwards;
-  }
-
-  /*===== ЗАКРЫТИЕ ПРОФИЛЯ "К ВЕРХУ" =====*/
-  @keyframes slideToTop {
-    0%   { transform: translateY(0); }
-    100% { transform: translateY(-100%); }
-  }
-  .modal-slide-to-top {
-    animation: slideToTop 0.3s ease forwards;
-  }
-
-  /*===== ГОРИЗОНТАЛЬНЫЕ АНИМАЦИИ ДЛЯ ПЕРЕКЛЮЧЕНИЯ (БЕЗ ПАУЗЫ) =====*/
-  @keyframes slideInRight {
-    0%   { transform: translateX(100%); }
-    100% { transform: translateX(0); }
-  }
-  .modal-slide-in-right {
-    animation: slideInRight 0.3s ease forwards;
-  }
-
-  @keyframes slideOutLeft {
-    0%   { transform: translateX(0); }
-    100% { transform: translateX(-100%); }
-  }
-  .modal-slide-out-left {
-    animation: slideOutLeft 0.3s ease forwards;
-  }
-
-  @keyframes slideInLeft {
-    0%   { transform: translateX(-100%); }
-    100% { transform: translateX(0); }
-  }
-  .modal-slide-in-left {
-    animation: slideInLeft 0.3s ease forwards;
-  }
-
-  @keyframes slideOutRight {
-    0%   { transform: translateX(0); }
-    100% { transform: translateX(100%); }
-  }
-  .modal-slide-out-right {
-    animation: slideOutRight 0.3s ease forwards;
-  }
-`;
-document.head.appendChild(globalStyle);
-
-/**************************************************
  * УТИЛИТЫ
  **************************************************/
 
@@ -179,9 +99,6 @@ function loadCSSStylesheet() {
 
 // Загружаем стили при загрузке страницы
 loadCSSStylesheet();
-
-
-
 
 /**************************************************
  * УНИВЕРСАЛЬНАЯ РАБОТА С МОДАЛКАМИ
