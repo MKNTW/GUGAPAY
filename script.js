@@ -98,22 +98,43 @@ document.head.appendChild(globalStyle);
 /**************************************************
  * УТИЛИТЫ
  **************************************************/
-function formatBalance(num, decimals = 5) {
-  const parsed = parseFloat(num);
-  if (isNaN(parsed)) {
-    return (0).toFixed(decimals); // Если некорректно -> "0.00000"
-  }
-  return parsed.toFixed(decimals);
+
+/**
+ * Форматирование чисел с заданным количеством знаков после запятой.
+ * @param {number|string} num Число для форматирования.
+ * @param {number} decimals Количество знаков после запятой.
+ * @param {string} defaultValue Значение по умолчанию, если ввод некорректен.
+ * @returns {string} Отформатированное число.
+ */
+function formatBalance(num, decimals = 5, defaultValue = "0.00000") {
+    const parsed = parseFloat(num);
+    return isNaN(parsed) ? defaultValue : parsed.toFixed(decimals);
 }
 
+/**
+ * Показывает глобальный индикатор загрузки.
+ */
 function showGlobalLoading() {
-  const loader = document.getElementById("loadingIndicator");
-  if (loader) loader.style.display = "flex";
+    if (!loadingIndicator) {
+        console.warn("Loading indicator element not found.");
+        return;
+    }
+    loadingIndicator.style.display = "flex";
 }
+
+/**
+ * Скрывает глобальный индикатор загрузки.
+ */
 function hideGlobalLoading() {
-  const loader = document.getElementById("loadingIndicator");
-  if (loader) loader.style.display = "none";
+    if (!loadingIndicator) {
+        console.warn("Loading indicator element not found.");
+        return;
+    }
+    loadingIndicator.style.display = "none";
 }
+
+// Кэширование элемента индикатора загрузки.
+const loadingIndicator = document.getElementById("loadingIndicator");
 
 /**************************************************
  * АНИМАЦИЯ ЗАКРЫТИЯ ВНИЗ (ДЛЯ "ГЛАВНАЯ" / ОСТАЛЬНОГО)
