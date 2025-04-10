@@ -465,6 +465,9 @@ function openAuthModal() {
   }
 }
 
+/**************************************************
+ * ГЛАВНЫЙ ЭКРАН
+ **************************************************/
 function createMainUI() {
   if (!currentMerchantId && !document.getElementById("profileIcon")) {
     const profileIcon = document.createElement("img");
@@ -481,6 +484,40 @@ function createMainUI() {
     });
     document.body.appendChild(profileIcon);
     profileIcon.addEventListener("click", openProfileModal);
+  }
+
+  if (!document.getElementById("user-info")) {
+    const userInfoContainer = document.createElement("div");
+    userInfoContainer.id = "user-info";
+    userInfoContainer.style.position = "fixed";
+    userInfoContainer.style.top = "10px";
+    userInfoContainer.style.left = "10px";
+    userInfoContainer.style.zIndex = "90001";
+    userInfoContainer.style.display = "flex";
+    userInfoContainer.style.flexDirection = "column";
+    userInfoContainer.style.alignItems = "flex-start";
+
+    const userPhoto = document.createElement("img");
+    userPhoto.className = "user-photo";
+    userPhoto.style.width = "40px";
+    userPhoto.style.height = "40px";
+    userPhoto.style.borderRadius = "50%";
+    userPhoto.style.marginBottom = "4px";
+
+    const userName = document.createElement("span");
+    userName.className = "user-name";
+    userName.style.fontWeight = "bold";
+    userName.style.color = "#333";
+
+    const userIdEl = document.createElement("span");
+    userIdEl.id = "userIdDisplay";
+    userIdEl.style.fontSize = "12px";
+    userIdEl.style.color = "#666";
+
+    userInfoContainer.appendChild(userPhoto);
+    userInfoContainer.appendChild(userName);
+    userInfoContainer.appendChild(userIdEl);
+    document.body.appendChild(userInfoContainer);
   }
 
   if (!document.getElementById("bottomBar")) {
@@ -516,7 +553,6 @@ function createMainUI() {
     `;
     document.body.appendChild(bottomBar);
 
-    // Обработчики кнопок нижней панели
     document.getElementById("btnMain").addEventListener("click", () => {
       removeAllModals();
     });
@@ -596,7 +632,7 @@ function createMainUI() {
             <img src="photo/18.png" style="width:30px;height:30px;">
             <div><div style="font-weight:500;">RUB</div></div>
           </div>
-          <div id="rubBalanceValue" style="font-weight:500;">--</div>
+          <div id="rubBalanceValue" style="font-weight:500;">0.00 ₽</div>
         </div>
       </div>
       <div style="background:#fff;border-radius:15px;padding:15px;box-shadow:0 2px 5px rgba(0,0,0,0.1)">
@@ -605,7 +641,7 @@ function createMainUI() {
             <img src="photo/15.png" style="width:30px;height:30px;">
             <div><div style="font-weight:500;">GUGA</div></div>
           </div>
-          <div><div id="gugaBalanceValue" style="font-weight:500;">--</div></div>
+          <div><div id="gugaBalanceValue" style="font-weight:500;">0.00000 ₲</div></div>
         </div>
       </div>
     `;
@@ -616,7 +652,6 @@ function createMainUI() {
   clearInterval(updateInterval);
   updateInterval = setInterval(fetchUserData, 2000);
 }
-
 
 /**************************************************
  * ПОЛЬЗОВАТЕЛЬ
