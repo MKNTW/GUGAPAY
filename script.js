@@ -1044,6 +1044,21 @@ function openExchangeModal(horizontalSwitch) {
     swapCurrencies();
   });
 
+  // Устанавливаем начальные значения
+document.getElementById("amountInput").value = "";
+document.getElementById("toAmount").value = currentExchangeDirection === "coin_to_rub" ? "0.00" : "0.00000";
+
+// Обновляем подписи валют
+updateCurrencyLabels();
+
+// Устанавливаем отображение текущих балансов, взятых из главного экрана
+const gugaBalance = document.getElementById("gugaBalanceValue")?.innerText || "0.00000 ₲";
+const rubBalance = document.getElementById("rubBalanceValue")?.innerText || "0.00 ₽";
+
+document.getElementById("balanceInfo").textContent = gugaBalance;
+document.getElementById("toBalanceInfo").textContent = rubBalance;
+
+
   loadBalanceAndExchangeRate()
   .then(({ gugaBalance, rubBalance }) => {
     drawExchangeChart();
@@ -1055,10 +1070,10 @@ function openExchangeModal(horizontalSwitch) {
     const toBalanceInfo = document.getElementById("toBalanceInfo");
 
     if (balanceInfo) {
-      balanceInfo.textContent = `${formatBalance(gugaBalance, 5)} ₲`;
+      balanceInfo.textContent = `${formatBalance(gugaBalanceValue, 5)} ₲`;
     }
     if (toBalanceInfo) {
-      toBalanceInfo.textContent = `${formatBalance(rubBalance, 2)} ₽`;
+      toBalanceInfo.textContent = `${formatBalance(rubBalanceValue, 2)} ₽`;
     }
 
     document.getElementById("btnPerformExchange").onclick = () => {
