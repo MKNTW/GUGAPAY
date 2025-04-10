@@ -2066,6 +2066,35 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /**************************************************
+ * Display User Profile
+ **************************************************/
+function displayUserProfile() {
+  // Получение данных пользователя
+  const userPhotoUrl = currentUser.photo_url; // Предположим, что эти данные должны быть в currentUser
+  const userFirstName = currentUser.first_name;
+
+  // Создаем элементы
+  const userInfoContainer = document.createElement("div");
+  userInfoContainer.classList.add("user-info");
+
+  const userPhoto = document.createElement("img");
+  userPhoto.classList.add("user-photo");
+  userPhoto.src = userPhotoUrl;
+  userPhoto.alt = "User Photo";
+
+  const userName = document.createElement("span");
+  userName.classList.add("user-name");
+  userName.textContent = userFirstName;
+
+  // Добавляем элементы в контейнер
+  userInfoContainer.appendChild(userPhoto);
+  userInfoContainer.appendChild(userName);
+
+  // Вставляем контейнер в DOM, например, в body
+  document.body.appendChild(userInfoContainer);
+}
+
+/**************************************************
  * УВЕДОМЛЕНИЯ (TOASTS)
  **************************************************/
 const notificationStyle = document.createElement("style");
