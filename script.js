@@ -1073,11 +1073,11 @@ function updateCurrencyLabels() {
   const fromLabel = document.getElementById("fromLabel");
   const toLabel = document.getElementById("toLabel");
   if (currentExchangeDirection === "coin_to_rub") {
-    fromLabel.innerHTML = `<img src="15.png" alt="GUGA" style="width:25px;vertical-align:middle;"> GUGA`;
-    toLabel.innerHTML   = `<img src="18.png" alt="RUB" style="width:25px;vertical-align:middle;"> RUB`;
+    fromLabel.innerHTML = `<img src="photo/15.png" alt="GUGA" style="width:25px;vertical-align:middle;"> GUGA`;
+    toLabel.innerHTML   = `<img src="photo/18.png" alt="RUB" style="width:25px;vertical-align:middle;"> RUB`;
   } else {
-    fromLabel.innerHTML = `<img src="18.png" alt="RUB" style="width:25px;vertical-align:middle;"> RUB`;
-    toLabel.innerHTML   = `<img src="15.png" alt="GUGA" style="width:25px;vertical-align:middle;"> GUGA`;
+    fromLabel.innerHTML = `<img src="photo/18.png" alt="RUB" style="width:25px;vertical-align:middle;"> RUB`;
+    toLabel.innerHTML   = `<img src="photo/15.png" alt="GUGA" style="width:25px;vertical-align:middle;"> GUGA`;
   }
 }
 
