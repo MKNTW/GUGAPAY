@@ -15,6 +15,37 @@ let lastDirection = null;
 let cycleCount = 0;
 let exchangeChartInstance = null;
 
+// В начало файла добавить базовые стили
+const appStyle = document.createElement('style');
+appStyle.textContent = `
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+  }
+
+  #appContainer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .scrollable-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    padding-bottom: 80px; /* Отступ для нижней панели */
+  }
+`;
+document.head.appendChild(appStyle);
+
 /**************************************************
  * CSS АНИМАЦИИ
  **************************************************/
