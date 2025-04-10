@@ -653,43 +653,10 @@ function openAuthModal() {
 }
 
 /**************************************************
- * ОСНОВНОЙ UI И ОБРАБОТКА БАЛАНСОВ
+ * ГЛАВНЫЙ ЭКРАН
  **************************************************/
-
-/**
- * Создает главный пользовательский интерфейс.
- */
 function createMainUI() {
-    // Профильный значок
-    if (!currentMerchantId && !document.getElementById("profileIcon")) {
-        const profileIcon = createProfileIcon();
-        profileIcon.addEventListener("click", openProfileModal);
-        document.body.appendChild(profileIcon);
-    }
-
-    // Нижняя панель
-    if (!document.getElementById("bottomBar")) {
-        const bottomBar = createBottomBar();
-        document.body.appendChild(bottomBar);
-    }
-
-    // Балансы
-    if (!document.getElementById("balanceContainer")) {
-        const balanceContainer = createBalanceContainer();
-        document.body.appendChild(balanceContainer);
-    }
-
-    // Запуск обновления данных
-    fetchUserData();
-    clearInterval(updateInterval);
-    updateInterval = setInterval(fetchUserData, 2000);
-}
-
-/**
- * Создает и возвращает элемент значка профиля.
- * @returns {HTMLElement} Элемент профиля.
- */
-function createProfileIcon() {
+  if (!currentMerchantId && !document.getElementById("profileIcon")) {
     const profileIcon = document.createElement("img");
     profileIcon.id = "profileIcon";
     profileIcon.src = "photo/68.png";
@@ -700,14 +667,12 @@ function createProfileIcon() {
     profileIcon.style.right = "10px";
     profileIcon.style.cursor = "pointer";
     profileIcon.style.zIndex = "90000";
-    return profileIcon;
-}
+    document.body.appendChild(profileIcon);
 
-/**
- * Создает и возвращает нижнюю панель навигации.
- * @returns {HTMLElement} Элемент нижней панели.
- */
-function createBottomBar() {
+    profileIcon.addEventListener("click", openProfileModal);
+  }
+
+  if (!document.getElementById("bottomBar")) {
     const bottomBar = document.createElement("div");
     bottomBar.id = "bottomBar";
     bottomBar.style.position = "fixed";
@@ -718,50 +683,112 @@ function createBottomBar() {
     bottomBar.style.display = "flex";
     bottomBar.style.justifyContent = "space-around";
     bottomBar.style.alignItems = "center";
-    bottomBar.style.padding = "0px";
+    bottomBar.style.padding = "0px"; // убран padding
     bottomBar.style.boxShadow = "0 -2px 5px rgba(0,0,0,0.1)";
     bottomBar.style.zIndex = "999999";
 
     bottomBar.innerHTML = `
-        <button id="btnMain" class="bottom-bar-btn">
-            <img src="photo/69.png" class="bottom-bar-icon">
-            Главная
-        </button>
-        <button id="historyBtn" class="bottom-bar-btn">
-            <img src="photo/70.png" class="bottom-bar-icon">
-            История
-        </button>
-        <button id="exchangeBtn" class="bottom-bar-btn">
-            <img src="photo/71.png" class="bottom-bar-icon">
-            Обменять
-        </button>
+      <button id="btnMain" style="padding:10px;border:none;background:none;">
+        <img src="photo/69.png" style="width:30px;height:30px;display:block;margin:0 auto;">
+        Главная
+      </button>
+      <button id="historyBtn" style="padding:10px;border:none;background:none;">
+        <img src="photo/70.png" style="width:30px;height:30px;display:block;margin:0 auto;">
+        История
+      </button>
+      <button id="exchangeBtn" style="padding:10px;border:none;background:none;">
+        <img src="photo/71.png" style="width:30px;height:30px;display:block;margin:0 auto;">
+        Обменять
+      </button>
     `;
+    document.body.appendChild(bottomBar);
 
-    // События для кнопок
+    // "Главная" => закрыть "История"/"Обмен" (анимация вниз)
     document.getElementById("btnMain").addEventListener("click", () => {
-        closeAllModals();
+      if (document.getElementById("historyModal")) {
+        closeModalWithAnimation("historyModal");
+      }
+      if (document.getElementById("exchangeModal")) {
+        closeModalWithAnimation("exchangeModal");
+      }
     });
 
+    // "История"
     document.getElementById("historyBtn").addEventListener("click", () => {
+      if (document.getElementById("exchangeModal")) {
+        // Переключение: "Обмен" -> "История"
+        switchHistoryExchange("exchangeModal", () => openHistoryModal(true), "toHistory");
+      } else {
+        removeAllModals();
         openHistoryModal(false);
+      }
     });
 
+    // "Обмен"
     document.getElementById("exchangeBtn").addEventListener("click", () => {
+      if (document.getElementById("historyModal")) {
+        // Переключение: "История" -> "Обмен"
+        switchHistoryExchange("historyModal", () => openExchangeModal(true), "toExchange");
+      } else {
+        removeAllModals();
         openExchangeModal(false);
+      }
     });
+  }
 
-    return bottomBar;
-}
+  // Баланс / Майнинг
+  const balanceDisplay = document.getElementById("balanceDisplay");
+  if (balanceDisplay) {
+    balanceDisplay.style.display = "block";
+  }
+  const mineContainer = document.getElementById("mineContainer");
+  if (mineContainer) {
+    // Скрываем кнопку майнинга
+    mineContainer.style.display = "none";
+  }
 
-/**
- * Создает и возвращает контейнер для отображения балансов.
- * @returns {HTMLElement} Элемент контейнера балансов.
- */
-function createBalanceContainer() {
+  // Кнопки "Перевести" / "Оплата"
+  if (!document.getElementById("actionButtonsContainer")) {
+    const container = document.createElement("div");
+    container.id = "actionButtonsContainer";
+    container.style.position = "fixed";
+    container.style.top = "180px";
+    container.style.left = "50%";
+    container.style.transform = "translateX(-50%)";
+    container.style.display = "flex";
+    container.style.flexDirection = "row";
+    container.style.gap = "16px";
+    container.style.zIndex = "90000";
+    container.style.margintop = "25px";
+
+    container.innerHTML = `
+      <button id="transferBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <img src="photo/81.png" style="width:35px;height:35px;">
+        Перевести
+      </button>
+      <button id="payQRBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;margin-top: -5px;">
+        <img src="photo/90.png" style="width:40px;height:40px;">
+        Оплатить
+      </button>
+    `;
+    document.body.appendChild(container);
+
+    document.getElementById("transferBtn").addEventListener("click", () => {
+      removeAllModals();
+      openTransferModal();
+    });
+    document.getElementById("payQRBtn").addEventListener("click", () => {
+      removeAllModals();
+      openPayQRModal();
+    });
+  }
+
+  // Балансы RUB и GUGA
+  if (!document.getElementById("balanceContainer")) {
     const balanceContainer = document.createElement("div");
     balanceContainer.id = "balanceContainer";
     balanceContainer.style.position = "fixed";
-    balanceContainer.style.top = "260px";
+    balanceContainer.style.top = "260px"; // Размещаем ниже кнопок
     balanceContainer.style.left = "50%";
     balanceContainer.style.transform = "translateX(-50%)";
     balanceContainer.style.width = "90%";
@@ -769,67 +796,37 @@ function createBalanceContainer() {
     balanceContainer.style.zIndex = "89999";
 
     balanceContainer.innerHTML = `
-        <div class="balance-item">
-            <div class="balance-header">
-                <img src="photo/18.png" class="balance-icon">
-                <div>RUB</div>
+      <div style="background: #fff; border-radius: 15px; padding: 15px; margin-bottom: 10px; margin-top: 50px; box-shadow: 0 2px 5px rgba(0,0,0,0.1)">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <img src="photo/18.png" style="width: 30px; height: 30px;">
+            <div>
+              <div style="font-weight: 500;">RUB</div>
             </div>
-            <div id="rubBalanceValue" class="balance-value">--</div>
+          </div>
+          <div id="rubBalanceValue" style="font-weight: 500;">--</div>
         </div>
-        <div class="balance-item">
-            <div class="balance-header">
-                <img src="photo/15.png" class="balance-icon">
-                <div>GUGA</div>
+      </div>
+      <div style="background: #fff; border-radius: 15px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1)">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <img src="photo/15.png" style="width: 30px; height: 30px;">
+            <div>
+              <div style="font-weight: 500;">GUGA</div>
             </div>
-            <div id="gugaBalanceValue" class="balance-value">--</div>
+          </div>
+          <div>
+            <div id="gugaBalanceValue" style="font-weight: 500;">--</div>
+          </div>
         </div>
+      </div>
     `;
-    return balanceContainer;
-}
+    document.body.appendChild(balanceContainer);
+  }
 
-/**
- * Загружает данные пользователя и обновляет интерфейс.
- */
-async function fetchUserData() {
-    try {
-        const [userResp, ratesResp] = await Promise.all([
-            fetch(`${API_URL}/user`, { credentials: "include" }),
-            fetch(`${API_URL}/exchangeRates?limit=1`),
-        ]);
-
-        const userData = await userResp.json();
-        const ratesData = await ratesResp.json();
-
-        if (userData.success && userData.user) {
-            currentUserId = userData.user.user_id;
-            updateBalanceUI(userData.user, ratesData.rates?.[0]?.exchange_rate || 0);
-        }
-    } catch (err) {
-        console.error("Ошибка fetchUserData:", err);
-        showNotification("Не удалось загрузить данные пользователя", "error");
-        resetBalanceUI();
-    }
-}
-
-/**
- * Обновляет баланс в интерфейсе.
- * @param {Object} user Данные пользователя.
- * @param {number} rate Текущий курс обмена.
- */
-function updateBalanceUI(user, rate) {
-    const rubBalance = user.rub_balance || 0;
-    const coinBalance = user.balance || 0;
-
-    document.getElementById("rubBalanceValue").textContent = `${formatBalance(rubBalance, 2)} ₽`;
-    document.getElementById("gugaBalanceValue").textContent = `${formatBalance(coinBalance, 5)} ₲`;
-}
-
-/**
- * Сбрасывает отображение балансов в случае ошибки.
- */
-function resetBalanceUI() {
-    document.getElementById("rubBalanceValue").textContent = "--";
-    document.getElementById("gugaBalanceValue").textContent = "--";
+  fetchUserData();
+  clearInterval(updateInterval);
+  updateInterval = setInterval(fetchUserData, 2000);
 }
 
 /**************************************************
