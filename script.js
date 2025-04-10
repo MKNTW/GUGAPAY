@@ -245,10 +245,6 @@ function closeProfileToTop(modalId) {
   );
 }
 
-/**************************************************
- * ГОРИЗОНТАЛЬНОЕ ПЕРЕКЛЮЧЕНИЕ (ОДНОВРЕМЕННО) 
- * БЕЗ СЕРОЙ ПЕЛЕНЫ СВЕРХУ
- **************************************************/
 function switchHistoryExchange(oldId, newModalFn, direction) {
   const oldModal = document.getElementById(oldId);
   if (!oldModal) {
@@ -258,7 +254,7 @@ function switchHistoryExchange(oldId, newModalFn, direction) {
   }
   const oldContent = oldModal.querySelector(".modal-content");
 
-  // Создаем новую модалку с прозрачным фоном
+  // Создаем новую модалку с нормальным фоном
   newModalFn(true);
 
   const newId = direction === "toExchange" ? "exchangeModal" : "historyModal";
@@ -266,15 +262,7 @@ function switchHistoryExchange(oldId, newModalFn, direction) {
   if (!newModal) return;
   const newContent = newModal.querySelector(".modal-content");
 
-  // Настраиваем прозрачность для новой модалки
-  newModal.style.background = "transparent";
-  const newOverlay = newModal.querySelector("div:nth-child(1)");
-  if (newOverlay) {
-    newOverlay.style.background = "transparent";
-    newOverlay.style.pointerEvents = "none";
-  }
-
-  // Управление z-index
+  // Настраиваем z-index
   oldModal.style.zIndex = "100002";
   newModal.style.zIndex = "100001";
 
@@ -286,19 +274,29 @@ function switchHistoryExchange(oldId, newModalFn, direction) {
   oldContent.classList.add("modal-slide-out-down");
   newContent.classList.add("modal-slide-in-up");
 
+  // Вешаем обработчик клика на overlay
+  const overlays = document.querySelectorAll('.modal-overlay');
+  overlays.forEach(overlay => {
+    overlay.addEventListener('click', removeAllModals);
+  });
+
   // Обработка завершения анимации
   oldContent.addEventListener(
     "animationend",
     () => {
       oldModal.remove();
-      newModal.style.background = "rgba(0,0,0,0.5)";
-      if (newOverlay) {
-        newOverlay.style.background = "transparent";
-        newOverlay.style.pointerEvents = "auto";
-      }
+      // Обновляем обработчики для новой модалки
+      newModal.querySelector('.modal-overlay').addEventListener('click', removeAllModals);
     },
     { once: true }
   );
+}
+
+// Функция для закрытия всех модалок
+function removeAllModals() {
+  document.querySelectorAll('.modal').forEach(modal => {
+    modal.remove();
+  });
 }
 
 /**************************************************
