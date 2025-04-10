@@ -286,143 +286,107 @@ function switchHistoryExchange(oldId, newModalFn, direction) {
 }
 
 /**************************************************
- * СОЗДАНИЕ / ОТКРЫТИЕ МОДАЛОК 
+ * УНИВЕРСАЛЬНАЯ РАБОТА С МОДАЛКАМИ
  **************************************************/
+
 /**
- * createModal(id, innerHtml, {
- *   showCloseBtn,      
- *   cornerTopMargin,   
- *   cornerTopRadius,   
- *   hasVerticalScroll, 
- *   profileFromTop,    
- *   defaultFromBottom, 
- *   horizontalSwitch,  
- *   noRadiusByDefault  // если true, убираем радиус у модалки
- * })
+ * Создает модальное окно.
+ * @param {string} id Уникальный идентификатор модального окна.
+ * @param {string} content HTML-содержимое модального окна.
+ * @param {Object} options Настройки модального окна.
+ * @param {boolean} [options.showCloseBtn=true] Показать кнопку закрытия.
+ * @param {boolean} [options.hasVerticalScroll=true] Включить вертикальную прокрутку.
+ * @param {boolean} [options.defaultFromBottom=true] Анимация появления снизу.
+ * @param {number} [options.cornerTopMargin=0] Отступ сверху в пикселях.
+ * @param {number} [options.cornerTopRadius=0] Радиус углов.
+ * @param {boolean} [options.noRadiusByDefault=false] Убрать радиус по умолчанию.
+ * @param {Function} [options.onClose] Колбэк при закрытии окна.
  */
 function createModal(
-  id,
-  innerHtml,
-  {
-    showCloseBtn = false,
-    cornerTopMargin = 0,
-    cornerTopRadius = 0,
-    hasVerticalScroll = true,
-    profileFromTop = false,
-    defaultFromBottom = true,
-    horizontalSwitch = false,
-    noRadiusByDefault = false,
-  } = {}
+    id,
+    content,
+    {
+        showCloseBtn = true,
+        hasVerticalScroll = true,
+        defaultFromBottom = true,
+        cornerTopMargin = 0,
+        cornerTopRadius = 0,
+        noRadiusByDefault = false,
+        onClose = null,
+    } = {}
 ) {
-  // Удаляем старый, если есть
-  const old = document.getElementById(id);
-  if (old) old.remove();
+    // Удаляем старое модальное окно с таким ID, если существует
+    const existingModal = document.getElementById(id);
+    if (existingModal) {
+        existingModal.remove();
+    }
 
-  const modal = document.createElement("div");
-  modal.id = id;
-  modal.className = "modal";
-  modal.style.zIndex = "100000";
-  modal.style.position = "fixed";
-  modal.style.top = "0";
-  modal.style.left = "0";
-  modal.style.width = "100%";
-  modal.style.height = "100%";
-  // По умолчанию делаем фон (затемнение), 
-  // но при горизонтальном переключении можем временно ставить transparent (выше).
-  modal.style.background = "rgba(0,0,0,0.5)";
-  modal.style.display = "flex";
-  modal.style.flexDirection = "column";
-  modal.style.justifyContent = "flex-start";
-  modal.style.alignItems = "stretch";
+    // Создаем основную структуру модального окна
+    const modal = document.createElement("div");
+    modal.id = id;
+    modal.className = "modal";
+    modal.style.position = "fixed";
+    modal.style.top = "0";
+    modal.style.left = "0";
+    modal.style.width = "100%";
+    modal.style.height = "100%";
+    modal.style.display = "flex";
+    modal.style.justifyContent = "center";
+    modal.style.alignItems = "center";
+    modal.style.background = "rgba(0,0,0,0.5)";
+    modal.style.zIndex = "100000";
 
-  // overlay
-  const overlay = document.createElement("div");
-  overlay.style.position = "absolute";
-  overlay.style.top = "0";
-  overlay.style.left = "0";
-  overlay.style.width = "100%";
-  overlay.style.height = "100%";
-  overlay.style.background = "rgba(0,0,0,0)"; // внутри modal, уже есть общий фон
+    // Создаем контейнер для содержимого
+    const contentDiv = document.createElement("div");
+    contentDiv.className = "modal-content";
+    if (defaultFromBottom) {
+        contentDiv.classList.add("modal-slide-up");
+    }
+    contentDiv.style.width = "90%";
+    contentDiv.style.maxWidth = "500px";
+    contentDiv.style.marginTop = `${cornerTopMargin}px`;
+    contentDiv.style.height = `calc(100% - ${cornerTopMargin}px)`;
+    contentDiv.style.overflowY = hasVerticalScroll ? "auto" : "hidden";
+    contentDiv.style.borderRadius = noRadiusByDefault
+        ? "0"
+        : `${cornerTopRadius}px ${cornerTopRadius}px 0 0`;
+    contentDiv.style.background = "#fff";
+    contentDiv.style.boxShadow = "0 2px 5px rgba(0,0,0,0.1)";
+    contentDiv.style.padding = "20px";
 
-  // Определяем анимацию открытия:
-  let openAnim = "";
-  if (profileFromTop) {
-    openAnim = "modal-slide-from-top";
-  } else if (defaultFromBottom) {
-    openAnim = "modal-slide-up";
-  }
-  // (horizontalSwitch) — управляется switchHistoryExchange()
-
-  const contentDiv = document.createElement("div");
-  contentDiv.className = "modal-content" + (openAnim ? ` ${openAnim}` : "");
-  contentDiv.style.marginTop = `${cornerTopMargin}px`;
-  contentDiv.style.width = "100%";
-  contentDiv.style.height = `calc(100% - ${cornerTopMargin}px)`;
-  contentDiv.style.background = "#fff";
-  contentDiv.style.boxSizing = "border-box";
-  contentDiv.style.overflowY = hasVerticalScroll ? "auto" : "hidden";
-  contentDiv.style.position = "relative";
-  contentDiv.style.padding = "20px";
-
-  // Если "noRadiusByDefault" = true => убираем радиус.
-  // Иначе используем cornerTopRadius
-  if (noRadiusByDefault) {
-    contentDiv.style.borderRadius = "0";
-  } else if (cornerTopRadius > 0) {
-    // Модалки "Перевести" и "Оплата" оставляем радиус, как просили
-    contentDiv.style.borderRadius = `${cornerTopRadius}px ${cornerTopRadius}px 0 0`;
-  }
-
-  // closeBtn
-  let closeBtnHtml = "";
-  if (showCloseBtn) {
-    closeBtnHtml = `
-      <button class="close-btn" style="
-        position:absolute;
-        top:10px;
-        right:10px;
-        border:none;
-        background:#000;
-        color:#fff;
-        width:30px;
-        height:30px;
-        font-size:18px;
-        cursor:pointer;
-        display:flex;
-        align-items:center;
-        justify-content:center;">
-        ×
-      </button>
+    // Добавляем содержимое
+    contentDiv.innerHTML = `
+        ${showCloseBtn ? '<button class="modal-close-btn">&times;</button>' : ""}
+        ${content}
     `;
-  }
+    modal.appendChild(contentDiv);
+    document.body.appendChild(modal);
 
-  contentDiv.innerHTML = closeBtnHtml + innerHtml;
-  modal.appendChild(overlay);
-  modal.appendChild(contentDiv);
-  document.body.appendChild(modal);
-
-  // Закрытие по overlay
-  overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) {
-      modal.remove();
-    }
-  });
-
-  // Закрытие по крестику
-  if (showCloseBtn) {
-    const cbtn = contentDiv.querySelector(".close-btn");
-    if (cbtn) {
-      cbtn.addEventListener("click", () => {
-        if (id === "profileModal") {
-          closeProfileToTop(id);
-        } else {
-          closeModalWithAnimation(id);
+    // Добавляем обработчик закрытия окна
+    if (showCloseBtn) {
+        const closeBtn = contentDiv.querySelector(".modal-close-btn");
+        if (closeBtn) {
+            closeBtn.addEventListener("click", () => {
+                modal.remove();
+                if (onClose) onClose();
+            });
         }
-      });
     }
-  }
 
-  return modal;
+    // Закрытие по клику на фон (если требуется)
+    modal.addEventListener("click", (event) => {
+        if (event.target === modal) {
+            modal.remove();
+            if (onClose) onClose();
+        }
+    });
+}
+
+/**
+ * Удаляет все модальные окна.
+ */
+function removeAllModals() {
+    document.querySelectorAll(".modal").forEach((modal) => modal.remove());
 }
 
 /**************************************************
