@@ -714,7 +714,7 @@ function createMainUI() {
     bottomBar.style.display = "flex";
     bottomBar.style.justifyContent = "space-around";
     bottomBar.style.alignItems = "center";
-    bottomBar.style.padding = "0px"; // убран padding
+    bottomBar.style.paddingbottom = "20px";
     bottomBar.style.boxShadow = "0 -2px 5px rgba(0,0,0,0.1)";
     bottomBar.style.zIndex = "999999";
 
