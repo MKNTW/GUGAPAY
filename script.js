@@ -300,15 +300,13 @@ const MODAL_DEFAULTS = {
   overlayOpacity: 0.5,
   borderRadius: 8,
   transitionDuration: 300,
-  zIndex: 1000,
+  baseZIndex: 1000,
 };
-
-// Кеш открытых модалок
-const modalCache = new Map();
 
 class ModalManager {
   constructor() {
-    this.modals = new Set();
+    this.modals = new Map();
+    this.currentZIndex = MODAL_DEFAULTS.baseZIndex;
     this.handleKeyDown = this.handleKeyDown.bind(this);
   }
 
@@ -317,7 +315,7 @@ class ModalManager {
    * @param {string} id - Уникальный идентификатор
    * @param {string|HTMLElement} content - Контент модалки
    * @param {Object} options - Настройки
-   * @returns {Promise<void>} - Промис, который резолвится после открытия
+   * @returns {Promise<void>}
    */
   async create(id, content, options = {}) {
     this.destroyExisting(id);
@@ -329,7 +327,7 @@ class ModalManager {
     this.setupEventListeners(modal, overlay, contentDiv, config);
     
     document.body.appendChild(modal);
-    this.modals.add(modal);
+    this.modals.set(id, modal);
     
     await this.animateOpen(overlay, contentDiv, config);
     
@@ -340,10 +338,10 @@ class ModalManager {
 
   /**
    * Удаляет все модальные окна
-   * @returns {Promise<void>} - Промис, который резолвится после закрытия
+   * @returns {Promise<void>}
    */
   async removeAll() {
-    const removals = Array.from(this.modals).map(modal => 
+    const removals = Array.from(this.modals.values()).map(modal => 
       this.animateClose(modal)
     );
     
@@ -357,7 +355,7 @@ class ModalManager {
     const modal = document.createElement('div');
     modal.id = id;
     modal.className = 'modal';
-    modal.style.zIndex = config.zIndex;
+    modal.style.zIndex = this.getNextZIndex();
 
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -378,7 +376,7 @@ class ModalManager {
       container.innerHTML = content;
     } else if (content instanceof HTMLElement) {
       container.innerHTML = '';
-      container.appendChild(content);
+      container.appendChild(content.cloneNode(true));
     }
 
     if (config.showCloseBtn) {
@@ -396,7 +394,7 @@ class ModalManager {
   }
 
   setupEventListeners(modal, overlay, contentDiv, config) {
-    const handleClose = () => this.destroy(modal, config.onClose);
+    const handleClose = () => this.destroy(modal.id);
     
     overlay.addEventListener('click', () => {
       if (config.closeOnOverlayClick) handleClose();
@@ -407,7 +405,8 @@ class ModalManager {
 
   handleKeyDown(e) {
     if (e.key === 'Escape') {
-      this.removeAll();
+      const lastModal = Array.from(this.modals.values()).pop();
+      if (lastModal) this.destroy(lastModal.id);
     }
   }
 
@@ -417,10 +416,10 @@ class ModalManager {
       contentDiv.style.transform = 'translateY(20px)';
       
       requestAnimationFrame(() => {
-        overlay.style.transition = `opacity ${config.transitionDuration}ms`;
+        overlay.style.transition = `opacity ${config.transitionDuration}ms ease`;
         contentDiv.style.transition = `
-          transform ${config.transitionDuration}ms,
-          opacity ${config.transitionDuration}ms
+          transform ${config.transitionDuration}ms ease,
+          opacity ${config.transitionDuration}ms ease
         `;
         
         overlay.style.opacity = '1';
@@ -441,25 +440,36 @@ class ModalManager {
       contentDiv.style.transform = 'translateY(20px)';
       contentDiv.style.opacity = '0';
       
-      setTimeout(() => {
+      const handleTransitionEnd = () => {
         modal.remove();
         resolve();
-      }, MODAL_DEFAULTS.transitionDuration);
+      };
+      
+      contentDiv.addEventListener('transitionend', handleTransitionEnd, { once: true });
     });
   }
 
   destroyExisting(id) {
-    const existing = document.getElementById(id);
+    const existing = this.modals.get(id);
     if (existing) {
-      existing.remove();
-      this.modals.delete(existing);
+      this.animateClose(existing).then(() => this.modals.delete(id));
     }
   }
 
-  async destroy(modal, callback) {
-    await this.animateClose(modal);
-    this.modals.delete(modal);
-    if (typeof callback === 'function') callback();
+  async destroy(id) {
+    const modal = this.modals.get(id);
+    if (modal) {
+      await this.animateClose(modal);
+      this.modals.delete(id);
+      
+      if (this.modals.size === 0) {
+        document.removeEventListener('keydown', this.handleKeyDown);
+      }
+    }
+  }
+
+  getNextZIndex() {
+    return this.currentZIndex += 10;
   }
 }
 
