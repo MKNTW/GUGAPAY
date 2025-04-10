@@ -1045,12 +1045,26 @@ function openExchangeModal(horizontalSwitch) {
   });
 
   loadBalanceAndExchangeRate()
-    .then(() => {
-      drawExchangeChart(); 
-      document.getElementById("btnPerformExchange").onclick = () => {
-        handleExchange(currentExchangeDirection);
-      };
-    })
+  .then(({ gugaBalance, rubBalance }) => {
+    drawExchangeChart();
+    updateCurrencyLabels(); // чтобы правильно выставились подписи валют
+    updateExchange(); // сразу рассчитать 0 → 0
+
+    // Устанавливаем балансы в UI
+    const balanceInfo = document.getElementById("balanceInfo");
+    const toBalanceInfo = document.getElementById("toBalanceInfo");
+
+    if (balanceInfo) {
+      balanceInfo.textContent = `${formatBalance(gugaBalance, 5)} ₲`;
+    }
+    if (toBalanceInfo) {
+      toBalanceInfo.textContent = `${formatBalance(rubBalance, 2)} ₽`;
+    }
+
+    document.getElementById("btnPerformExchange").onclick = () => {
+      handleExchange(currentExchangeDirection);
+    };
+  })
     .catch((err) => {
       console.error("openExchangeModal error:", err);
     })
@@ -1147,27 +1161,8 @@ async function handleExchange(direction) {
 }
 
 async function loadBalanceAndExchangeRate() {
-  try {
-  const rateResp = await fetch(`${API_URL}/exchangeRates?limit=50`, {
-    credentials: "include",
-  });
-  const rateData = await rateResp.json();
-  if (rateData.success && rateData.rates?.length) {
-    currentExchangeRate = parseFloat(rateData.rates[0].exchange_rate);
-
-    // Обновляем #currentRate
-    const currentRateElement = document.getElementById("currentRate");
-    if (currentRateElement) {
-      currentRateElement.textContent = formatBalance(currentExchangeRate, 2) + " ₽";
-    }
-
-    // Обновляем график и другой интерфейс
-    drawExchangeChart(rateData.rates);
-    updateCurrentRateDisplay();
-  }
-} catch (err) {
-  console.error("loadBalanceAndExchangeRate rates error:", err);
-}
+  let gugaBalance = 0;
+  let rubBalance = 0;
 
   try {
     const rateResp = await fetch(`${API_URL}/exchangeRates?limit=50`, {
@@ -1176,15 +1171,29 @@ async function loadBalanceAndExchangeRate() {
     const rateData = await rateResp.json();
     if (rateData.success && rateData.rates?.length) {
       currentExchangeRate = parseFloat(rateData.rates[0].exchange_rate);
-      // После получения курса сразу рисуем график:
       drawExchangeChart(rateData.rates);
-      // И обновляем надпись «1 ₲ = ...»:
       updateCurrentRateDisplay();
     }
   } catch (err) {
     console.error("loadBalanceAndExchangeRate rates error:", err);
   }
+
+  try {
+    const balanceResp = await fetch(`${API_URL}/user/balances`, {
+      credentials: "include"
+    });
+    const balanceData = await balanceResp.json();
+    if (balanceData.success) {
+      gugaBalance = parseFloat(balanceData.balances.GUGA || 0);
+      rubBalance = parseFloat(balanceData.balances.RUB || 0);
+    }
+  } catch (err) {
+    console.error("loadBalanceAndExchangeRate balance error:", err);
+  }
+
+  return { gugaBalance, rubBalance };
 }
+
 
 function updateCurrentRateDisplay() {
   // Убираем обращения к #currentRateDisplay
