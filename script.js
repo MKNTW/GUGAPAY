@@ -431,8 +431,8 @@ async function login() {
     const loginVal = document.getElementById("loginInput")?.value.trim();
     const passVal = document.getElementById("passwordInput")?.value.trim();
 
-    if (!validateInput(loginVal, 3) || !validateInput(passVal, 6)) {
-        showNotification("Введите корректный логин (мин. 3 символа) и пароль (мин. 6 символов)", "error");
+    if (!validateInput(loginVal, 1) || !validateInput(passVal, 6)) {
+        showNotification("Введите корректный логин (мин. 1 символ) и пароль (мин. 6 символов)", "error");
         return;
     }
 
@@ -463,8 +463,8 @@ async function register() {
     const loginVal = document.getElementById("regLogin")?.value.trim();
     const passVal = document.getElementById("regPassword")?.value.trim();
 
-    if (!validateInput(loginVal, 3) || !validateInput(passVal, 6)) {
-        showNotification("Введите корректный логин (мин. 3 символа) и пароль (мин. 6 символов)", "error");
+    if (!validateInput(loginVal, 1) || !validateInput(passVal, 6)) {
+        showNotification("Введите корректный логин (мин. 1 символ) и пароль (мин. 6 символов)", "error");
         return;
     }
 
