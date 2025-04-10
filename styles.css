@@ -398,3 +398,104 @@ body {
     line-height: 30px;
   }
 }
+/* ===== СТИЛИ АНИМАЦИИ ===== */
+@keyframes slideUp {
+  0% {
+    transform: translateY(100%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes slideFromTop {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideToTop {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-100%);
+  }
+}
+
+@keyframes slideInRight {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutLeft {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+/* ===== КЛАССЫ МОДАЛЬНЫХ ОКОН ===== */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100000;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 15px;
+  padding: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  animation-duration: 0.3s;
+  animation-fill-mode: forwards;
+}
+
+.modal-slide-up {
+  animation-name: slideUp;
+}
+
+.modal-slide-down {
+  animation-name: slideDown;
+}
+
+.modal-slide-from-top {
+  animation-name: slideFromTop;
+}
+
+.modal-slide-to-top {
+  animation-name: slideToTop;
+}
+
+.modal-slide-in-right {
+  animation-name: slideInRight;
+}
+
+.modal-slide-out-left {
+  animation-name: slideOutLeft;
+}
