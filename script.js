@@ -684,177 +684,222 @@ function openAuthModal() {
 }
 
 /**************************************************
- * ГЛАВНЫЙ ЭКРАН
+ * ГЛАВНЫЙ ЭКРАН (МОДИФИЦИРОВАННАЯ ВЕРСИЯ)
  **************************************************/
 function createMainUI() {
-  if (!currentMerchantId && !document.getElementById("profileIcon")) {
+  // Создаем основной контейнер приложения
+  const appContainer = document.createElement('div');
+  appContainer.id = 'app-container';
+  appContainer.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #f5f5f5;
+  `;
+
+  // Контейнер для контента с прокруткой
+  const contentWrapper = document.createElement('div');
+  contentWrapper.style.cssText = `
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    padding-bottom: 80px;
+  `;
+
+  // Профиль
+  if (!currentMerchantId) {
     const profileIcon = document.createElement("img");
     profileIcon.id = "profileIcon";
     profileIcon.src = "photo/68.png";
-    profileIcon.style.width = "40px";
-    profileIcon.style.height = "40px";
-    profileIcon.style.position = "fixed";
-    profileIcon.style.top = "10px";
-    profileIcon.style.right = "10px";
-    profileIcon.style.cursor = "pointer";
-    profileIcon.style.zIndex = "90000";
-    document.body.appendChild(profileIcon);
-
+    profileIcon.style.cssText = `
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      z-index: 100;
+    `;
     profileIcon.addEventListener("click", openProfileModal);
+    appContainer.appendChild(profileIcon);
   }
 
-  if (!document.getElementById("bottomBar")) {
-    const bottomBar = document.createElement("div");
-    bottomBar.id = "bottomBar";
-    bottomBar.style.position = "fixed";
-    bottomBar.style.bottom = "0";
-    bottomBar.style.left = "0";
-    bottomBar.style.width = "100%";
-    bottomBar.style.backgroundColor = "#fff";
-    bottomBar.style.display = "flex";
-    bottomBar.style.justifyContent = "space-around";
-    bottomBar.style.alignItems = "center";
-    bottomBar.style.padding = "0px"; // убран padding
-    bottomBar.style.boxShadow = "0 -2px 5px rgba(0,0,0,0.1)";
-    bottomBar.style.zIndex = "999999";
+  // Кнопки действий
+  const actionButtons = document.createElement("div");
+  actionButtons.id = "actionButtonsContainer";
+  actionButtons.style.cssText = `
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin: 20px 0;
+  `;
 
-    bottomBar.innerHTML = `
-      <button id="btnMain" style="padding:10px;border:none;background:none;">
-        <img src="photo/69.png" style="width:30px;height:30px;display:block;margin:0 auto;">
-        Главная
-      </button>
-      <button id="historyBtn" style="padding:10px;border:none;background:none;">
-        <img src="photo/70.png" style="width:30px;height:30px;display:block;margin:0 auto;">
-        История
-      </button>
-      <button id="exchangeBtn" style="padding:10px;border:none;background:none;">
-        <img src="photo/71.png" style="width:30px;height:30px;display:block;margin:0 auto;">
-        Обменять
-      </button>
-    `;
-    document.body.appendChild(bottomBar);
+  actionButtons.innerHTML = `
+    <button id="transferBtn" class="action-btn">
+      <img src="photo/81.png" class="action-icon">
+      Перевести
+    </button>
+    <button id="payQRBtn" class="action-btn">
+      <img src="photo/90.png" class="action-icon">
+      Оплатить
+    </button>
+  `;
 
-    // "Главная" => закрыть "История"/"Обмен" (анимация вниз)
-    document.getElementById("btnMain").addEventListener("click", () => {
-      if (document.getElementById("historyModal")) {
-        closeModalWithAnimation("historyModal");
-      }
-      if (document.getElementById("exchangeModal")) {
-        closeModalWithAnimation("exchangeModal");
-      }
-    });
+  // Балансы
+  const balanceContainer = document.createElement("div");
+  balanceContainer.id = "balanceContainer";
+  balanceContainer.style.cssText = `
+    background: white;
+    border-radius: 15px;
+    padding: 15px;
+    margin: 20px 0;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  `;
 
-    // "История"
-    document.getElementById("historyBtn").addEventListener("click", () => {
-      if (document.getElementById("exchangeModal")) {
-        // Переключение: "Обмен" -> "История"
-        switchHistoryExchange("exchangeModal", () => openHistoryModal(true), "toHistory");
-      } else {
-        removeAllModals();
-        openHistoryModal(false);
-      }
-    });
-
-    // "Обмен"
-    document.getElementById("exchangeBtn").addEventListener("click", () => {
-      if (document.getElementById("historyModal")) {
-        // Переключение: "История" -> "Обмен"
-        switchHistoryExchange("historyModal", () => openExchangeModal(true), "toExchange");
-      } else {
-        removeAllModals();
-        openExchangeModal(false);
-      }
-    });
-  }
-
-  // Баланс / Майнинг
-  const balanceDisplay = document.getElementById("balanceDisplay");
-  if (balanceDisplay) {
-    balanceDisplay.style.display = "block";
-  }
-  const mineContainer = document.getElementById("mineContainer");
-  if (mineContainer) {
-    // Скрываем кнопку майнинга
-    mineContainer.style.display = "none";
-  }
-
-  // Кнопки "Перевести" / "Оплата"
-  if (!document.getElementById("actionButtonsContainer")) {
-    const container = document.createElement("div");
-    container.id = "actionButtonsContainer";
-    container.style.position = "fixed";
-    container.style.top = "180px";
-    container.style.left = "50%";
-    container.style.transform = "translateX(-50%)";
-    container.style.display = "flex";
-    container.style.flexDirection = "row";
-    container.style.gap = "16px";
-    container.style.zIndex = "90000";
-    container.style.margintop = "25px";
-
-    container.innerHTML = `
-      <button id="transferBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;">
-        <img src="photo/81.png" style="width:35px;height:35px;">
-        Перевести
-      </button>
-      <button id="payQRBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;margin-top: -5px;">
-        <img src="photo/90.png" style="width:40px;height:40px;">
-        Оплатить
-      </button>
-    `;
-    document.body.appendChild(container);
-
-    document.getElementById("transferBtn").addEventListener("click", () => {
-      removeAllModals();
-      openTransferModal();
-    });
-    document.getElementById("payQRBtn").addEventListener("click", () => {
-      removeAllModals();
-      openPayQRModal();
-    });
-  }
-
-  // Балансы RUB и GUGA
-  if (!document.getElementById("balanceContainer")) {
-    const balanceContainer = document.createElement("div");
-    balanceContainer.id = "balanceContainer";
-    balanceContainer.style.position = "fixed";
-    balanceContainer.style.top = "260px"; // Размещаем ниже кнопок
-    balanceContainer.style.left = "50%";
-    balanceContainer.style.transform = "translateX(-50%)";
-    balanceContainer.style.width = "90%";
-    balanceContainer.style.maxWidth = "500px";
-    balanceContainer.style.zIndex = "89999";
-
-    balanceContainer.innerHTML = `
-      <div style="background: #fff; border-radius: 15px; padding: 15px; margin-bottom: 10px; margin-top: 50px; box-shadow: 0 2px 5px rgba(0,0,0,0.1)">
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <img src="photo/18.png" style="width: 30px; height: 30px;">
-            <div>
-              <div style="font-weight: 500;">RUB</div>
-            </div>
-          </div>
-          <div id="rubBalanceValue" style="font-weight: 500;">--</div>
-        </div>
+  balanceContainer.innerHTML = `
+    <div class="balance-item">
+      <div class="currency-info">
+        <img src="photo/18.png" class="currency-icon">
+        <span class="currency-name">RUB</span>
       </div>
-      <div style="background: #fff; border-radius: 15px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1)">
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <img src="photo/15.png" style="width: 30px; height: 30px;">
-            <div>
-              <div style="font-weight: 500;">GUGA</div>
-            </div>
-          </div>
-          <div>
-            <div id="gugaBalanceValue" style="font-weight: 500;">--</div>
-          </div>
-        </div>
+      <div id="rubBalanceValue" class="balance-value">--</div>
+    </div>
+    <div class="balance-item">
+      <div class="currency-info">
+        <img src="photo/15.png" class="currency-icon">
+        <span class="currency-name">GUGA</span>
       </div>
-    `;
-    document.body.appendChild(balanceContainer);
-  }
+      <div id="gugaBalanceValue" class="balance-value">--</div>
+    </div>
+  `;
 
+  // Нижняя панель навигации
+  const bottomBar = document.createElement("div");
+  bottomBar.id = "bottomBar";
+  bottomBar.style.cssText = `
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    background: white;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+    z-index: 100;
+  `;
+
+  bottomBar.innerHTML = `
+    <button id="btnMain" class="nav-btn">
+      <img src="photo/69.png" class="nav-icon">
+      Главная
+    </button>
+    <button id="historyBtn" class="nav-btn">
+      <img src="photo/70.png" class="nav-icon">
+      История
+    </button>
+    <button id="exchangeBtn" class="nav-btn">
+      <img src="photo/71.png" class="nav-icon">
+      Обменять
+    </button>
+  `;
+
+  // Сборка структуры
+  contentWrapper.appendChild(actionButtons);
+  contentWrapper.appendChild(balanceContainer);
+  appContainer.appendChild(contentWrapper);
+  appContainer.appendChild(bottomBar);
+  document.body.appendChild(appContainer);
+
+  // Стилизация компонентов
+  const styles = document.createElement('style');
+  styles.textContent = `
+    .action-btn {
+      padding: 10px;
+      border: none;
+      background: none;
+      font-size: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .action-icon {
+      width: 35px;
+      height: 35px;
+    }
+
+    .balance-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 10px 0;
+    }
+
+    .currency-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .currency-icon {
+      width: 30px;
+      height: 30px;
+    }
+
+    .balance-value {
+      font-weight: 500;
+    }
+
+    .nav-btn {
+      padding: 10px;
+      border: none;
+      background: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .nav-icon {
+      width: 30px;
+      height: 30px;
+      margin-bottom: 4px;
+    }
+  `;
+  document.head.appendChild(styles);
+
+  // Обработчики событий
+  document.getElementById("btnMain").addEventListener("click", () => {
+    ModalManager.removeAllModals();
+  });
+
+  document.getElementById("historyBtn").addEventListener("click", () => {
+    if (ModalManager.hasModal('exchangeModal')) {
+      switchHistoryExchange("exchangeModal", () => openHistoryModal(true), "toHistory");
+    } else {
+      openHistoryModal(false);
+    }
+  });
+
+  document.getElementById("exchangeBtn").addEventListener("click", () => {
+    if (ModalManager.hasModal('historyModal')) {
+      switchHistoryExchange("historyModal", () => openExchangeModal(true), "toExchange");
+    } else {
+      openExchangeModal(false);
+    }
+  });
+
+  document.getElementById("transferBtn").addEventListener("click", openTransferModal);
+  document.getElementById("payQRBtn").addEventListener("click", openPayQRModal);
+
+  // Обновление данных
   fetchUserData();
   clearInterval(updateInterval);
   updateInterval = setInterval(fetchUserData, 2000);
