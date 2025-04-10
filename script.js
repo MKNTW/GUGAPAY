@@ -390,103 +390,123 @@ function removeAllModals() {
 }
 
 /**************************************************
- * АВТОРИЗАЦИЯ / РЕГИСТРАЦИЯ
+ * АВТОРИЗАЦИЯ И РЕГИСТРАЦИЯ
  **************************************************/
+
+/**
+ * Универсальная функция для API-запросов (авторизация, регистрация и т.д.).
+ * @param {string} endpoint Конечная точка API.
+ * @param {Object} payload Тело запроса.
+ * @returns {Promise<Object>} Ответ сервера.
+ */
+async function apiAuthRequest(endpoint, payload) {
+    try {
+        showGlobalLoading();
+        const response = await fetch(`${API_URL}/${endpoint}`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || "Неизвестная ошибка");
+        }
+
+        return data;
+    } catch (err) {
+        console.error(`Ошибка в запросе к ${endpoint}:`, err);
+        showNotification(err.message, "error");
+        throw err;
+    } finally {
+        hideGlobalLoading();
+    }
+}
+
+/**
+ * Обработчик входа пользователя.
+ */
 async function login() {
-  const loginVal = document.getElementById("loginInput")?.value;
-  const passVal = document.getElementById("passwordInput")?.value;
-  if (!loginVal || !passVal) {
-    alert("❌ Введите логин и пароль");
-    return;
-  }
-  showGlobalLoading();
-  try {
-    const resp = await fetch(`${API_URL}/login`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: loginVal, password: passVal }),
-    });
-    const data = await resp.json();
-    if (resp.ok && data.success) {
-      await fetchUserData();
-      document.getElementById("authModal")?.remove();
-      createMainUI();
-      updateUI();
-      return;
-    } else {
-      if (data.error?.includes("блокирован")) {
-        alert("❌ Ваш аккаунт заблокирован");
+    const loginVal = document.getElementById("loginInput")?.value.trim();
+    const passVal = document.getElementById("passwordInput")?.value.trim();
+
+    if (!validateInput(loginVal, 3) || !validateInput(passVal, 6)) {
+        showNotification("Введите корректный логин (мин. 3 символа) и пароль (мин. 6 символов)", "error");
         return;
-      }
-      // Пробуем мерчант
-      const merchResp = await fetch(`${API_URL}/merchantLogin`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: loginVal, password: passVal }),
-      });
-      const merchData = await merchResp.json();
-      if (merchResp.ok && merchData.success) {
-        await fetchMerchantData();
-        document.getElementById("authModal")?.remove();
-        openMerchantUI();
-        return;
-      } else {
-        alert(`❌ Ошибка входа: ${merchData.error}`);
-      }
     }
-  } catch (err) {
-    console.error("Ошибка при логине:", err);
-  } finally {
-    hideGlobalLoading();
-  }
+
+    try {
+        // Попытка авторизации как пользователь
+        const userData = await apiAuthRequest("login", { username: loginVal, password: passVal });
+        await fetchUserData();
+        closeAllAuthModals();
+        createMainUI();
+        updateUI();
+    } catch {
+        try {
+            // Попытка авторизации как мерчант
+            const merchantData = await apiAuthRequest("merchantLogin", { username: loginVal, password: passVal });
+            await fetchMerchantData();
+            closeAllAuthModals();
+            openMerchantUI();
+        } catch (err) {
+            showNotification("Ошибка авторизации: " + err.message, "error");
+        }
+    }
 }
 
+/**
+ * Обработчик регистрации пользователя.
+ */
 async function register() {
-  const loginVal = document.getElementById("regLogin")?.value;
-  const passVal = document.getElementById("regPassword")?.value;
-  if (!loginVal || !passVal) {
-    alert("❌ Введите логин и пароль");
-    return;
-  }
-  showGlobalLoading();
-  try {
-    const resp = await fetch(`${API_URL}/register`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: loginVal, password: passVal }),
-    });
-    const data = await resp.json();
-    if (resp.ok && data.success) {
-      alert(`✅ Аккаунт создан! Ваш userId: ${data.userId}`);
-      await login();
-    } else {
-      alert(`❌ Ошибка регистрации: ${data.error}`);
+    const loginVal = document.getElementById("regLogin")?.value.trim();
+    const passVal = document.getElementById("regPassword")?.value.trim();
+
+    if (!validateInput(loginVal, 3) || !validateInput(passVal, 6)) {
+        showNotification("Введите корректный логин (мин. 3 символа) и пароль (мин. 6 символов)", "error");
+        return;
     }
-  } catch (err) {
-    console.error("Ошибка регистрации:", err);
-  } finally {
-    hideGlobalLoading();
-  }
+
+    try {
+        const data = await apiAuthRequest("register", { username: loginVal, password: passVal });
+        showNotification(`Аккаунт успешно создан! Ваш userId: ${data.userId}`, "success");
+        await login(); // Автоматический вход после регистрации
+    } catch (err) {
+        showNotification("Ошибка регистрации: " + err.message, "error");
+    }
 }
 
+/**
+ * Обработчик выхода из системы.
+ */
 async function logout() {
-  try {
-    await fetch(`${API_URL}/logout`, {
-      method: "POST",
-      credentials: "include",
-    });
-  } catch (err) {
-    console.error("Ошибка logout:", err);
-  }
-  currentUserId = null;
-  currentMerchantId = null;
-  document.getElementById("bottomBar")?.remove();
-  removeAllModals();
-  hideMainUI();
-  openAuthModal();
+    try {
+        await fetch(`${API_URL}/logout`, {
+            method: "POST",
+            credentials: "include",
+        });
+        showNotification("Вы вышли из системы", "success");
+    } catch (err) {
+        console.error("Ошибка при выходе:", err);
+        showNotification("Ошибка при выходе", "error");
+    } finally {
+        currentUserId = null;
+        currentMerchantId = null;
+        removeAllModals();
+        hideMainUI();
+        openAuthModal();
+    }
+}
+
+/**
+ * Валидация пользовательского ввода.
+ * @param {string} value Входное значение.
+ * @param {number} minLength Минимальная длина значения.
+ * @returns {boolean} Результат проверки.
+ */
+function validateInput(value, minLength = 1) {
+    return value && value.length >= minLength;
 }
 
 /**************************************************
