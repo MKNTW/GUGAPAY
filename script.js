@@ -489,34 +489,49 @@ function createMainUI() {
   if (!document.getElementById("user-info")) {
     const userInfoContainer = document.createElement("div");
     userInfoContainer.id = "user-info";
-    userInfoContainer.style.position = "fixed";
-    userInfoContainer.style.top = "10px";
-    userInfoContainer.style.left = "10px";
-    userInfoContainer.style.zIndex = "90001";
-    userInfoContainer.style.display = "flex";
-    userInfoContainer.style.flexDirection = "column";
-    userInfoContainer.style.alignItems = "flex-start";
+    Object.assign(userInfoContainer.style, {
+      position: "fixed",
+      top: "10px",
+      left: "10px",
+      zIndex: "90001",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "flex-start",
+      backgroundColor: "#fff",
+      padding: "10px",
+      borderRadius: "12px",
+      boxShadow: "0 2px 5px rgba(0,0,0,0.1)"
+    });
 
     const userPhoto = document.createElement("img");
     userPhoto.className = "user-photo";
-    userPhoto.style.width = "40px";
-    userPhoto.style.height = "40px";
-    userPhoto.style.borderRadius = "50%";
-    userPhoto.style.marginBottom = "4px";
+    Object.assign(userPhoto.style, {
+      width: "40px",
+      height: "40px",
+      borderRadius: "50%",
+      marginBottom: "5px"
+    });
 
     const userName = document.createElement("span");
     userName.className = "user-name";
-    userName.style.fontWeight = "bold";
-    userName.style.color = "#333";
+    Object.assign(userName.style, {
+      fontWeight: "bold",
+      fontSize: "14px",
+      color: "#333"
+    });
 
-    const userIdEl = document.createElement("span");
-    userIdEl.id = "userIdDisplay";
-    userIdEl.style.fontSize = "12px";
-    userIdEl.style.color = "#666";
+    const userIdText = document.createElement("span");
+    userIdText.className = "user-id";
+    userIdText.id = "userIdDisplay";
+    Object.assign(userIdText.style, {
+      fontSize: "12px",
+      color: "#666",
+      marginTop: "2px"
+    });
 
     userInfoContainer.appendChild(userPhoto);
     userInfoContainer.appendChild(userName);
-    userInfoContainer.appendChild(userIdEl);
+    userInfoContainer.appendChild(userIdText);
     document.body.appendChild(userInfoContainer);
   }
 
