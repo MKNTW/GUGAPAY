@@ -137,35 +137,49 @@ function hideGlobalLoading() {
 const loadingIndicator = document.getElementById("loadingIndicator");
 
 /**************************************************
+ * ПОДКЛЮЧЕНИЕ СТИЛЕЙ
+ **************************************************/
+function loadCSSStylesheet() {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "styles.css"; // Убедитесь, что путь корректный
+    document.head.appendChild(link);
+}
+
+// Загружаем стили при загрузке страницы
+loadCSSStylesheet();
+
+/**************************************************
  * АНИМАЦИЯ ЗАКРЫТИЯ ВНИЗ (ДЛЯ "ГЛАВНАЯ" / ОСТАЛЬНОГО)
  **************************************************/
 function closeModalWithAnimation(modalId) {
-  const modalEl = document.getElementById(modalId);
-  if (!modalEl) return;
-  const content = modalEl.querySelector(".modal-content");
-  if (!content) {
-    modalEl.remove();
-    return;
-  }
-  // Убираем все предыдущие классы открытия:
-  content.classList.remove(
-    "modal-slide-up",
-    "modal-slide-from-top",
-    "modal-slide-in-right",
-    "modal-slide-in-left",
-    "modal-slide-out-left",
-    "modal-slide-out-right",
-    "modal-slide-to-top"
-  );
-  // Добавляем slide-down (закрытие вниз):
-  content.classList.add("modal-slide-down");
-  content.addEventListener(
-    "animationend",
-    () => {
-      modalEl.remove();
-    },
-    { once: true }
-  );
+    const modalEl = document.getElementById(modalId);
+    if (!modalEl) return;
+
+    const content = modalEl.querySelector(".modal-content");
+    if (!content) {
+        modalEl.remove();
+        return;
+    }
+
+    // Убираем все предыдущие классы открытия:
+    content.classList.remove(
+        "modal-slide-up",
+        "modal-slide-from-top",
+        "modal-slide-in-right",
+        "modal-slide-in-left",
+        "modal-slide-out-left",
+        "modal-slide-out-right",
+        "modal-slide-to-top"
+    );
+
+    // Добавляем slide-down (закрытие вниз):
+    content.classList.add("modal-slide-down");
+    content.addEventListener(
+        "animationend",
+        () => modalEl.remove(),
+        { once: true }
+    );
 }
 
 /**************************************************
