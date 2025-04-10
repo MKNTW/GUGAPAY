@@ -215,75 +215,135 @@ function closeProfileToTop(modalId) {
 }
 
 /**************************************************
- * ГОРИЗОНТАЛЬНОЕ ПЕРЕКЛЮЧЕНИЕ (ОДНОВРЕМЕННО) 
- * БЕЗ СЕРОЙ ПЕЛЕНЫ СВЕРХУ
+ * СИСТЕМА ПЕРЕКЛЮЧЕНИЯ МОДАЛОК С АНИМАЦИЕЙ
  **************************************************/
-function switchHistoryExchange(oldId, newModalFn, direction) {
-  const oldModal = document.getElementById(oldId);
-  if (!oldModal) {
-    removeAllModals();
-    newModalFn();
-    return;
-  }
-  const oldContent = oldModal.querySelector(".modal-content");
 
-  // 1) Создаём новую модалку "в фоне", но убираем у неё overlay 
-  //    (чтобы не было дополнительной "серы пелены").
-  //    Сразу после создания тоже выставим newModal.style.background = 'transparent'
-  //    до окончания анимации.
-  newModalFn(true); // Доп.параметр (horizontalSwitch=true), см. ниже.
+const ModalTransition = {
+  /**
+   * Выполняет горизонтальное переключение между модалками
+   * @param {string} currentId - ID текущей модалки
+   * @param {Function} createNewModal - Функция создания новой модалки
+   * @param {'left'|'right'} direction - Направление анимации
+   */
+  async slide(currentId, createNewModal, direction) {
+    const currentModal = document.getElementById(currentId);
+    if (!currentModal) {
+      this.cleanupModals();
+      return createNewModal();
+    }
 
-  const newId = direction === "toExchange" ? "exchangeModal" : "historyModal";
-  const newModal = document.getElementById(newId);
-  if (!newModal) return;
-  const newContent = newModal.querySelector(".modal-content");
+    // Инициализируем новую модалку
+    const newModal = await this.prepareNewModal(createNewModal);
+    
+    // Настраиваем анимации
+    this.setupAnimations(currentModal, newModal, direction);
+    
+    // Запускаем переход
+    await this.startTransition(currentModal, newModal);
+    
+    // Финализация
+    this.finalizeTransition(currentModal, newModal);
+  },
 
-  // Ставим у нового modal.background в "transparent", убираем overlay.
-  newModal.style.background = "transparent";
-  const newOverlay = newModal.querySelector("div:nth-child(1)");
-  if (newOverlay) {
-    newOverlay.style.background = "transparent";
-    newOverlay.style.pointerEvents = "none"; // чтобы клики сквозь
-  }
+  // Подготовка новой модалки
+  async prepareNewModal(createNewModal) {
+    return new Promise(resolve => {
+      createNewModal({
+        background: 'transparent',
+        overlay: false,
+        onReady: resolve
+      });
+    });
+  },
 
-  // 2) Повышаем zIndex старого окна, чтобы оно было "сверху".
-  oldModal.style.zIndex = "100002";
-  newModal.style.zIndex = "100001";
-
-  // 3) Запускаем анимации одновременно:
-  if (direction === "toExchange") {
-    oldContent.classList.remove("modal-slide-in-left", "modal-slide-in-right");
-    oldContent.classList.add("modal-slide-out-left");
-    newContent.classList.remove("modal-slide-up");
-    newContent.classList.remove("modal-slide-in-left", "modal-slide-in-right");
-    newContent.classList.add("modal-slide-in-right");
-  } else {
-    oldContent.classList.remove("modal-slide-in-left", "modal-slide-in-right");
-    oldContent.classList.add("modal-slide-out-right");
-    newContent.classList.remove("modal-slide-up");
-    newContent.classList.remove("modal-slide-in-left", "modal-slide-in-right");
-    newContent.classList.add("modal-slide-in-left");
-  }
-
-  // 4) Когда старая анимация завершилась — убираем старую модалку, 
-  //    а у новой возвращаем "затемнение" overlay
-  oldContent.addEventListener(
-    "animationend",
-    () => {
-      oldModal.remove();
-      // Возвращаем overlay для нового:
-      newModal.style.background = "rgba(0,0,0,0.5)";
-      if (newOverlay) {
-        newOverlay.style.background = "transparent"; 
-        // Или поставить rgba(0,0,0,0.5), если хотите затемнение. 
-        // Но при переключении это может быть не нужно. 
-        // Можно вообще оставить прозрачным, если нужно.
-        newOverlay.style.pointerEvents = "auto";
+  // Настройка анимаций
+  setupAnimations(oldModal, newModal, direction) {
+    const animationClasses = {
+      old: {
+        left: 'slide-out-left',
+        right: 'slide-out-right'
+      },
+      new: {
+        left: 'slide-in-right',
+        right: 'slide-in-left'
       }
-    },
-    { once: true }
-  );
+    };
+
+    oldModal.classList.add('transition-active', animationClasses.old[direction]);
+    newModal.classList.add('transition-active', animationClasses.new[direction]);
+  },
+
+  // Запуск перехода
+  async startTransition(oldModal, newModal) {
+    return Promise.all([
+      this.waitForAnimationEnd(oldModal),
+      this.waitForAnimationEnd(newModal)
+    ]);
+  },
+
+  // Ожидание завершения анимации
+  waitForAnimationEnd(element) {
+    return new Promise(resolve => {
+      const handler = () => {
+        element.removeEventListener('animationend', handler);
+        resolve();
+      };
+      element.addEventListener('animationend', handler);
+    });
+  },
+
+  // Завершение перехода
+  finalizeTransition(oldModal, newModal) {
+    oldModal.remove();
+    newModal.style.background = '';
+    newModal.querySelector('.modal-overlay').style.display = 'block';
+  },
+
+  // Удаление всех модалок
+  cleanupModals() {
+    document.querySelectorAll('.modal').forEach(modal => modal.remove());
+  }
+};
+
+// CSS для анимаций
+const modalTransitionStyles = `
+.modal.transition-active {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s ease;
 }
+
+.slide-out-left {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+
+.slide-out-right {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.slide-in-left {
+  transform: translateX(-100%);
+  animation: slide-in-left 0.3s forwards;
+}
+
+.slide-in-right {
+  transform: translateX(100%);
+  animation: slide-in-right 0.3s forwards;
+}
+
+@keyframes slide-in-left {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+`;
+
+// Добавляем стили в документ
+document.head.insertAdjacentHTML('beforeend', `<style>${modalTransitionStyles}</style>`);
 
 /**************************************************
  * УНИВЕРСАЛЬНЫЙ МОДУЛЬ РАБОТЫ С МОДАЛЬНЫМИ ОКНАМИ
