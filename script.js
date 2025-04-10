@@ -518,36 +518,22 @@ function createMainUI() {
 
     // "Главная" => закрыть "История"/"Обмен" (анимация вниз)
     document.getElementById("btnMain").addEventListener("click", () => {
-      if (document.getElementById("historyModal")) {
-        closeModalWithAnimation("historyModal");
-      }
-      if (document.getElementById("exchangeModal")) {
-        closeModalWithAnimation("exchangeModal");
-      }
+       removeAllModals(); // закрывает всё
     });
 
     // "История"
-    document.getElementById("historyBtn").addEventListener("click", () => {
-      if (document.getElementById("exchangeModal")) {
-        // Переключение: "Обмен" -> "История"
-        switchHistoryExchange("exchangeModal", () => openHistoryModal(true), "toHistory");
-      } else {
-        removeAllModals();
-        openHistoryModal(false);
-      }
-    });
+   document.getElementById("historyBtn").addEventListener("click", () => {
+  removeAllModals(); // закрыть другие окна
+  openHistoryModal(); // открыть нужное
+});
+
 
     // "Обмен"
     document.getElementById("exchangeBtn").addEventListener("click", () => {
-      if (document.getElementById("historyModal")) {
-        // Переключение: "История" -> "Обмен"
-        switchHistoryExchange("historyModal", () => openExchangeModal(true), "toExchange");
-      } else {
-        removeAllModals();
-        openExchangeModal(false);
-      }
-    });
-  }
+  removeAllModals();
+  openExchangeModal();
+});
+
 
   // Баланс / Майнинг
   const balanceDisplay = document.getElementById("balanceDisplay");
