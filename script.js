@@ -286,108 +286,185 @@ function switchHistoryExchange(oldId, newModalFn, direction) {
 }
 
 /**************************************************
- * УНИВЕРСАЛЬНАЯ РАБОТА С МОДАЛКАМИ
+ * УНИВЕРСАЛЬНЫЙ МОДУЛЬ РАБОТЫ С МОДАЛЬНЫМИ ОКНАМИ
  **************************************************/
 
-/**
- * Создает модальное окно.
- * @param {string} id Уникальный идентификатор модального окна.
- * @param {string} content HTML-содержимое модального окна.
- * @param {Object} options Настройки модального окна.
- * @param {boolean} [options.showCloseBtn=true] Показать кнопку закрытия.
- * @param {boolean} [options.hasVerticalScroll=true] Включить вертикальную прокрутку.
- * @param {boolean} [options.defaultFromBottom=true] Анимация появления снизу.
- * @param {number} [options.cornerTopMargin=0] Отступ сверху в пикселях.
- * @param {number} [options.cornerTopRadius=0] Радиус углов.
- * @param {boolean} [options.noRadiusByDefault=false] Убрать радиус по умолчанию.
- * @param {Function} [options.onClose] Колбэк при закрытии окна.
- */
-function createModal(
-    id,
-    content,
-    {
-        showCloseBtn = true,
-        hasVerticalScroll = true,
-        defaultFromBottom = true,
-        cornerTopMargin = 0,
-        cornerTopRadius = 0,
-        noRadiusByDefault = false,
-        onClose = null,
-    } = {}
-) {
-    // Удаляем старое модальное окно с таким ID, если существует
-    const existingModal = document.getElementById(id);
-    if (existingModal) {
-        existingModal.remove();
-    }
+// Конфигурация по умолчанию
+const MODAL_DEFAULTS = {
+  showCloseBtn: true,
+  hasVerticalScroll: true,
+  animationType: 'slide-up',
+  closeOnOverlayClick: true,
+  closeOnEsc: true,
+  maxWidth: 500,
+  overlayOpacity: 0.5,
+  borderRadius: 8,
+  transitionDuration: 300,
+  zIndex: 1000,
+};
 
-    // Создаем основную структуру модального окна
-    const modal = document.createElement("div");
-    modal.id = id;
-    modal.className = "modal";
-    modal.style.position = "fixed";
-    modal.style.top = "0";
-    modal.style.left = "0";
-    modal.style.width = "100%";
-    modal.style.height = "100%";
-    modal.style.display = "flex";
-    modal.style.justifyContent = "center";
-    modal.style.alignItems = "center";
-    modal.style.background = "rgba(0,0,0,0.5)";
-    modal.style.zIndex = "100000";
+// Кеш открытых модалок
+const modalCache = new Map();
 
-    // Создаем контейнер для содержимого
-    const contentDiv = document.createElement("div");
-    contentDiv.className = "modal-content";
-    if (defaultFromBottom) {
-        contentDiv.classList.add("modal-slide-up");
-    }
-    contentDiv.style.width = "90%";
-    contentDiv.style.maxWidth = "500px";
-    contentDiv.style.marginTop = `${cornerTopMargin}px`;
-    contentDiv.style.height = `calc(100% - ${cornerTopMargin}px)`;
-    contentDiv.style.overflowY = hasVerticalScroll ? "auto" : "hidden";
-    contentDiv.style.borderRadius = noRadiusByDefault
-        ? "0"
-        : `${cornerTopRadius}px ${cornerTopRadius}px 0 0`;
-    contentDiv.style.background = "#fff";
-    contentDiv.style.boxShadow = "0 2px 5px rgba(0,0,0,0.1)";
-    contentDiv.style.padding = "20px";
+class ModalManager {
+  constructor() {
+    this.modals = new Set();
+    this.handleKeyDown = this.handleKeyDown.bind(this);
+  }
 
-    // Добавляем содержимое
-    contentDiv.innerHTML = `
-        ${showCloseBtn ? '<button class="modal-close-btn">&times;</button>' : ""}
-        ${content}
-    `;
-    modal.appendChild(contentDiv);
+  /**
+   * Создает модальное окно
+   * @param {string} id - Уникальный идентификатор
+   * @param {string|HTMLElement} content - Контент модалки
+   * @param {Object} options - Настройки
+   * @returns {Promise<void>} - Промис, который резолвится после открытия
+   */
+  async create(id, content, options = {}) {
+    this.destroyExisting(id);
+    
+    const config = { ...MODAL_DEFAULTS, ...options };
+    const { modal, overlay, contentDiv } = this.createElements(id, config);
+    
+    this.setupContent(contentDiv, content, config);
+    this.setupEventListeners(modal, overlay, contentDiv, config);
+    
     document.body.appendChild(modal);
+    this.modals.add(modal);
+    
+    await this.animateOpen(overlay, contentDiv, config);
+    
+    if (config.closeOnEsc) {
+      document.addEventListener('keydown', this.handleKeyDown);
+    }
+  }
 
-    // Добавляем обработчик закрытия окна
-    if (showCloseBtn) {
-        const closeBtn = contentDiv.querySelector(".modal-close-btn");
-        if (closeBtn) {
-            closeBtn.addEventListener("click", () => {
-                modal.remove();
-                if (onClose) onClose();
-            });
-        }
+  /**
+   * Удаляет все модальные окна
+   * @returns {Promise<void>} - Промис, который резолвится после закрытия
+   */
+  async removeAll() {
+    const removals = Array.from(this.modals).map(modal => 
+      this.animateClose(modal)
+    );
+    
+    await Promise.all(removals);
+    this.modals.clear();
+    document.removeEventListener('keydown', this.handleKeyDown);
+  }
+
+  // Приватные методы
+  createElements(id, config) {
+    const modal = document.createElement('div');
+    modal.id = id;
+    modal.className = 'modal';
+    modal.style.zIndex = config.zIndex;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.style.backgroundColor = `rgba(0,0,0,${config.overlayOpacity})`;
+
+    const contentDiv = document.createElement('div');
+    contentDiv.className = `modal-content ${config.animationType}`;
+    contentDiv.style.maxWidth = `${config.maxWidth}px`;
+    contentDiv.style.borderRadius = config.borderRadius ? 
+      `${config.borderRadius}px` : '0';
+
+    modal.append(overlay, contentDiv);
+    return { modal, overlay, contentDiv };
+  }
+
+  setupContent(container, content, config) {
+    if (typeof content === 'string') {
+      container.innerHTML = content;
+    } else if (content instanceof HTMLElement) {
+      container.innerHTML = '';
+      container.appendChild(content);
     }
 
-    // Закрытие по клику на фон (если требуется)
-    modal.addEventListener("click", (event) => {
-        if (event.target === modal) {
-            modal.remove();
-            if (onClose) onClose();
-        }
+    if (config.showCloseBtn) {
+      const closeBtn = this.createCloseButton();
+      container.prepend(closeBtn);
+    }
+  }
+
+  createCloseButton() {
+    const btn = document.createElement('button');
+    btn.className = 'modal-close-btn';
+    btn.innerHTML = '&times;';
+    btn.setAttribute('aria-label', 'Закрыть');
+    return btn;
+  }
+
+  setupEventListeners(modal, overlay, contentDiv, config) {
+    const handleClose = () => this.destroy(modal, config.onClose);
+    
+    overlay.addEventListener('click', () => {
+      if (config.closeOnOverlayClick) handleClose();
     });
+
+    contentDiv.querySelector('.modal-close-btn')?.addEventListener('click', handleClose);
+  }
+
+  handleKeyDown(e) {
+    if (e.key === 'Escape') {
+      this.removeAll();
+    }
+  }
+
+  async animateOpen(overlay, contentDiv, config) {
+    return new Promise(resolve => {
+      overlay.style.opacity = '0';
+      contentDiv.style.transform = 'translateY(20px)';
+      
+      requestAnimationFrame(() => {
+        overlay.style.transition = `opacity ${config.transitionDuration}ms`;
+        contentDiv.style.transition = `
+          transform ${config.transitionDuration}ms,
+          opacity ${config.transitionDuration}ms
+        `;
+        
+        overlay.style.opacity = '1';
+        contentDiv.style.transform = 'translateY(0)';
+        contentDiv.style.opacity = '1';
+        
+        setTimeout(resolve, config.transitionDuration);
+      });
+    });
+  }
+
+  async animateClose(modal) {
+    return new Promise(resolve => {
+      const overlay = modal.querySelector('.modal-overlay');
+      const contentDiv = modal.querySelector('.modal-content');
+      
+      overlay.style.opacity = '0';
+      contentDiv.style.transform = 'translateY(20px)';
+      contentDiv.style.opacity = '0';
+      
+      setTimeout(() => {
+        modal.remove();
+        resolve();
+      }, MODAL_DEFAULTS.transitionDuration);
+    });
+  }
+
+  destroyExisting(id) {
+    const existing = document.getElementById(id);
+    if (existing) {
+      existing.remove();
+      this.modals.delete(existing);
+    }
+  }
+
+  async destroy(modal, callback) {
+    await this.animateClose(modal);
+    this.modals.delete(modal);
+    if (typeof callback === 'function') callback();
+  }
 }
 
-/**
- * Удаляет все модальные окна.
- */
-function removeAllModals() {
-    document.querySelectorAll(".modal").forEach((modal) => modal.remove());
-}
+// Экспорт синглтона
+export const modalManager = new ModalManager();
 
 /**************************************************
  * АВТОРИЗАЦИЯ И РЕГИСТРАЦИЯ
