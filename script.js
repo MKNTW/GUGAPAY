@@ -851,6 +851,45 @@ async function fetchUserData() {
         ? parseFloat(ratesData.rates[0].exchange_rate) 
         : 0;
 
+      // Получаем URL фото и имя пользователя
+      const photoUrl = userData.user.photo_url || ""; // URL фото
+      const firstName = userData.user.first_name || "Гость"; // Имя пользователя
+
+      // Обновляем фото и имя в интерфейсе
+      const userInfoContainer = document.getElementById("user-info");
+      if (userInfoContainer) {
+        // Если контейнер существует, обновляем его содержимое
+        const userPhoto = userInfoContainer.querySelector(".user-photo");
+        const userName = userInfoContainer.querySelector(".user-name");
+
+        if (userPhoto) {
+          userPhoto.src = photoUrl;
+        }
+        if (userName) {
+          userName.textContent = firstName;
+        }
+      } else {
+        // Если контейнер не существует, создаём его
+        const newUserInfoContainer = document.createElement("div");
+        newUserInfoContainer.id = "user-info";
+        newUserInfoContainer.classList.add("user-info");
+
+        const userPhoto = document.createElement("img");
+        userPhoto.classList.add("user-photo");
+        userPhoto.src = photoUrl;
+        userPhoto.alt = "User Photo";
+
+        const userName = document.createElement("span");
+        userName.classList.add("user-name");
+        userName.textContent = firstName;
+
+        newUserInfoContainer.appendChild(userPhoto);
+        newUserInfoContainer.appendChild(userName);
+
+        // Добавляем контейнер в DOM (например, в body или в header)
+        document.body.appendChild(newUserInfoContainer);
+      }
+
       // Старое отображение (оставляем для совместимости)
       const balanceValue = document.getElementById("balanceValue");
       if (balanceValue) {
