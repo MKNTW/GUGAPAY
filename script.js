@@ -258,57 +258,42 @@ function switchHistoryExchange(oldId, newModalFn, direction) {
   }
   const oldContent = oldModal.querySelector(".modal-content");
 
-  // 1) Создаём новую модалку "в фоне", но убираем у неё overlay 
-  //    (чтобы не было дополнительной "серы пелены").
-  //    Сразу после создания тоже выставим newModal.style.background = 'transparent'
-  //    до окончания анимации.
-  newModalFn(true); // Доп.параметр (horizontalSwitch=true), см. ниже.
+  // Создаем новую модалку с прозрачным фоном
+  newModalFn(true);
 
   const newId = direction === "toExchange" ? "exchangeModal" : "historyModal";
   const newModal = document.getElementById(newId);
   if (!newModal) return;
   const newContent = newModal.querySelector(".modal-content");
 
-  // Ставим у нового modal.background в "transparent", убираем overlay.
+  // Настраиваем прозрачность для новой модалки
   newModal.style.background = "transparent";
   const newOverlay = newModal.querySelector("div:nth-child(1)");
   if (newOverlay) {
     newOverlay.style.background = "transparent";
-    newOverlay.style.pointerEvents = "none"; // чтобы клики сквозь
+    newOverlay.style.pointerEvents = "none";
   }
 
-  // 2) Повышаем zIndex старого окна, чтобы оно было "сверху".
+  // Управление z-index
   oldModal.style.zIndex = "100002";
   newModal.style.zIndex = "100001";
 
-  // 3) Запускаем анимации одновременно:
-  if (direction === "toExchange") {
-    oldContent.classList.remove("modal-slide-in-left", "modal-slide-in-right");
-    oldContent.classList.add("modal-slide-out-left");
-    newContent.classList.remove("modal-slide-up");
-    newContent.classList.remove("modal-slide-in-left", "modal-slide-in-right");
-    newContent.classList.add("modal-slide-in-right");
-  } else {
-    oldContent.classList.remove("modal-slide-in-left", "modal-slide-in-right");
-    oldContent.classList.add("modal-slide-out-right");
-    newContent.classList.remove("modal-slide-up");
-    newContent.classList.remove("modal-slide-in-left", "modal-slide-in-right");
-    newContent.classList.add("modal-slide-in-left");
-  }
+  // Удаляем существующие классы анимации
+  oldContent.classList.remove("modal-slide-in-up", "modal-slide-out-down");
+  newContent.classList.remove("modal-slide-in-up", "modal-slide-out-down");
 
-  // 4) Когда старая анимация завершилась — убираем старую модалку, 
-  //    а у новой возвращаем "затемнение" overlay
+  // Добавляем вертикальные анимации
+  oldContent.classList.add("modal-slide-out-down");
+  newContent.classList.add("modal-slide-in-up");
+
+  // Обработка завершения анимации
   oldContent.addEventListener(
     "animationend",
     () => {
       oldModal.remove();
-      // Возвращаем overlay для нового:
       newModal.style.background = "rgba(0,0,0,0.5)";
       if (newOverlay) {
-        newOverlay.style.background = "transparent"; 
-        // Или поставить rgba(0,0,0,0.5), если хотите затемнение. 
-        // Но при переключении это может быть не нужно. 
-        // Можно вообще оставить прозрачным, если нужно.
+        newOverlay.style.background = "transparent";
         newOverlay.style.pointerEvents = "auto";
       }
     },
