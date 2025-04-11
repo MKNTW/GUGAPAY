@@ -864,7 +864,7 @@ function openTransferModal() {
                             <div style="font-size: 13px; color: #909099;">Фиатные деньги</div>
                         </div>
                     </div>
-                    <div id="rubBalance" style="margin-top: 12px; font-size: 14px; color: #666;">
+                    <div id="rubBalanceValue" style="margin-top: 12px; font-size: 14px; color: #666;">
                         Доступно: 0.00 ₽
                     </div>
                 </div>
@@ -1014,25 +1014,7 @@ function openTransferModal() {
         }
     };
 
-    // Загрузка балансов сразу при открытии окна
-    async function loadBalances() {
-        try {
-            const response = await fetch(`${API_URL}/getBalances`, { method: 'GET', credentials: 'include' });
-            const data = await response.json();
-            const gugaBalance = data.gugaBalance || 0;
-            const rubBalance = data.rubBalance || 0;
-
-            // Обновляем балансы
-            document.getElementById("gugaBalance").innerHTML = `Доступно: ${formatBalance(gugaBalance, 5)} ₲`;
-            document.getElementById("rubBalance").innerHTML = `Доступно: ${formatBalance(rubBalance, 2)} ₽`;
-
-            updateTransferUI(); // Обновляем UI после загрузки балансов
-        } catch (err) {
-            console.error('Ошибка при загрузке балансов:', err);
-        }
-    }
-
-    // Обработчики событий для карточек валют
+    // Обработчики событий
     document.getElementById("btnCurrencyGUGA").addEventListener('click', () => {
         currentTransferCurrency = "GUGA";
         updateTransferUI();
@@ -1079,7 +1061,7 @@ function openTransferModal() {
         }
     };
 
-    loadBalances(); // Загружаем балансы при открытии окна
+    updateTransferUI(); // при запуске
 }
 
 /**************************************************
