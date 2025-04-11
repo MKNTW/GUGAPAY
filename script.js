@@ -1698,147 +1698,73 @@ function parseQRCodeData(qrString) {
 }
 
 /**************************************************
- * ОБМЕН (стилизованная версия)
+ * ОБМЕН ВАЛЮТЫ (ПОЛНАЯ ВЕРСИЯ С ДИЗАЙНОМ)
  **************************************************/
 let currentExchangeDirection = "coin_to_rub";
 let currentExchangeRate = 0;
+let exchangeChartInstance = null;
+let lastDirection = null;
 
-function openExchangeModal(horizontalSwitch) {
+function openExchangeModal() {
   showGlobalLoading();
   createModal(
     "exchangeModal",
     `
-      <div style="
-        max-width: 600px;
-        margin: 0 auto;
-        padding: 24px;
-        background: #FFFFFF;
-        border-radius: 24px;
-        box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
-      ">
-        <div style="
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          margin-bottom: 24px;
-        ">
-          <img src="photo/71.png" style="width: 40px; height: 40px;">
-          <div style="font-size: 20px; font-weight: 600; color: #1A1A1A;">Обмен валюты</div>
+      <div class="exchange-container">
+        <div class="exchange-header">
+          <img src="photo/71.png" class="exchange-icon">
+          <div class="exchange-title">Обмен валюты</div>
         </div>
 
-        <div style="
-          background: #F8F9FB;
-          border-radius: 16px;
-          padding: 16px;
-          margin-bottom: 24px;
-        ">
-          <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-            <div style="color: #666; font-size: 14px;">Текущий курс</div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span id="rateChangeArrow" style="font-size: 14px;">→</span>
-              <span id="rateChangePercent" style="font-size: 14px;">+0.00%</span>
+        <div class="rate-container">
+          <div class="rate-header">
+            <span class="rate-label">Текущий курс</span>
+            <div class="rate-change">
+              <span id="rateChangeArrow" class="rate-arrow">→</span>
+              <span id="rateChangePercent" class="rate-percent">+0.00%</span>
             </div>
           </div>
-          <div id="currentRateText" style="font-size: 24px; font-weight: 600; color: #1A1A1A;">--</div>
-          <div id="rateChangeRub" style="color: #666; font-size: 14px;">+0.00₽</div>
+          <div id="currentRateText" class="rate-value">--</div>
+          <div id="rateChangeRub" class="rate-change-rub">+0.00₽</div>
         </div>
 
-        <canvas id="exchangeChart" style="width:100%; height: 160px; margin-bottom: 24px;"></canvas>
+        <canvas id="exchangeChart" class="exchange-chart"></canvas>
 
-        <div style="
-          background: #F8F9FB;
-          border-radius: 16px;
-          padding: 24px;
-        ">
-          <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
-            <button 
-              id="swapBtn"
-              style="
-                background: #FFFFFF;
-                border: 1px solid #E6E6EB;
-                border-radius: 12px;
-                padding: 12px;
-                cursor: pointer;
-                transition: all 0.2s;
-              ">
-              <span style="font-size: 24px;">⇄</span>
+        <div class="converter-container">
+          <div class="converter-wrapper">
+            <button id="swapBtn" class="swap-button">
+              <span class="swap-icon">⇄</span>
             </button>
 
-            <div style="flex: 1;">
-              <div style="display: flex; flex-direction: column; gap: 8px;">
-                <div style="color: #666; font-size: 14px;">Отдаете</div>
-                <div id="fromLabel" style="
-                  background: #FFFFFF;
-                  border: 1px solid #E6E6EB;
-                  border-radius: 12px;
-                  padding: 14px;
-                  display: flex;
-                  align-items: center;
-                  gap: 8px;
-                ">
-                  <input 
-                    type="number" 
-                    id="amountInput" 
-                    placeholder="0.00"
-                    style="
-                      flex: 1;
-                      border: none;
-                      background: none;
-                      font-size: 16px;
-                      color: #1A1A1A;
-                      outline: none;
-                    ">
-                  <span id="fromCurrency" style="color: #666;">GUGA</span>
-                </div>
-                <div id="balanceInfo" style="color: #666; font-size: 12px;">Доступно: 0.00000 ₲</div>
+            <div class="currency-input">
+              <div class="input-header">Отдаете</div>
+              <div class="input-wrapper" id="fromLabel">
+                <input 
+                  type="number" 
+                  id="amountInput" 
+                  placeholder="0.00"
+                  class="currency-input-field">
+                <span id="fromCurrency" class="currency-symbol">GUGA</span>
               </div>
+              <div id="balanceInfo" class="balance-info">Доступно: 0.00000 ₲</div>
             </div>
 
-            <div style="flex: 1;">
-              <div style="display: flex; flex-direction: column; gap: 8px;">
-                <div style="color: #666; font-size: 14px;">Получаете</div>
-                <div id="toLabel" style="
-                  background: #FFFFFF;
-                  border: 1px solid #E6E6EB;
-                  border-radius: 12px;
-                  padding: 14px;
-                  display: flex;
-                  align-items: center;
-                  gap: 8px;
-                ">
-                  <input 
-                    type="text" 
-                    id="toAmount" 
-                    placeholder="0.00"
-                    disabled
-                    style="
-                      flex: 1;
-                      border: none;
-                      background: none;
-                      font-size: 16px;
-                      color: #1A1A1A;
-                    ">
-                  <span id="toCurrency" style="color: #666;">RUB</span>
-                </div>
-                <div id="toBalanceInfo" style="color: #666; font-size: 12px;">Доступно: 0.00 ₽</div>
+            <div class="currency-input">
+              <div class="input-header">Получаете</div>
+              <div class="input-wrapper" id="toLabel">
+                <input 
+                  type="text" 
+                  id="toAmount" 
+                  placeholder="0.00"
+                  disabled
+                  class="currency-input-field">
+                <span id="toCurrency" class="currency-symbol">RUB</span>
               </div>
+              <div id="toBalanceInfo" class="balance-info">Доступно: 0.00 ₽</div>
             </div>
           </div>
 
-          <button 
-            id="btnPerformExchange" 
-            style="
-              width: 100%;
-              padding: 16px;
-              background: linear-gradient(90deg, #2F80ED, #2D9CDB);
-              border: none;
-              border-radius: 12px;
-              color: white;
-              font-weight: 600;
-              font-size: 16px;
-              cursor: pointer;
-              transition: opacity 0.2s;
-            ">
+          <button id="btnPerformExchange" class="exchange-button">
             Обменять
           </button>
         </div>
@@ -1855,130 +1781,404 @@ function openExchangeModal(horizontalSwitch) {
     }
   );
 
-  // Остальной код обработчиков остается без изменений
-  document.getElementById("swapBtn").addEventListener("click", () => {
-    document.getElementById("swapBtn").style.transform = "rotate(180deg)";
-    setTimeout(() => {
-      document.getElementById("swapBtn").style.transform = "rotate(0deg)";
-    }, 300);
-    swapCurrencies();
-  });
+  // Инициализация обработчиков событий
+  document.getElementById("swapBtn").addEventListener("click", handleSwap);
+  document.getElementById("amountInput").addEventListener("input", updateExchange);
+  document.getElementById("btnPerformExchange").addEventListener("click", handleExchange);
 
-  loadBalanceAndExchangeRate()
-    .then(() => {
-      drawExchangeChart();
-      document.getElementById("btnPerformExchange").onclick = () => {
-        handleExchange(currentExchangeDirection);
-      };
-    })
-    .catch((err) => console.error("openExchangeModal error:", err))
-    .finally(() => hideGlobalLoading());
+  loadExchangeData().finally(() => hideGlobalLoading());
 }
 
-// Обновленная функция для графика
+async function loadExchangeData() {
+  try {
+    const [ratesResp, balanceResp] = await Promise.all([
+      fetch(`${API_URL}/exchangeRates?limit=50`, { credentials: "include" }),
+      fetch(`${API_URL}/user`, { credentials: "include" })
+    ]);
+
+    const ratesData = await ratesResp.json();
+    const balanceData = await balanceResp.json();
+
+    if (ratesData.success) processRatesData(ratesData.rates);
+    if (balanceData.success) processBalanceData(balanceData.user);
+    
+  } catch (err) {
+    console.error("Ошибка загрузки данных:", err);
+    showNotification("Ошибка загрузки данных", "error");
+  }
+}
+
+function processRatesData(rates) {
+  if (!rates?.length) return;
+
+  currentExchangeRate = parseFloat(rates[0].exchange_rate);
+  updateRateDisplay(rates);
+  drawExchangeChart(rates);
+}
+
+function processBalanceData(userData) {
+  const gugaBalance = userData.balance || 0;
+  const rubBalance = userData.rub_balance || 0;
+  
+  document.getElementById("balanceInfo").textContent = 
+    `Доступно: ${formatBalance(gugaBalance, 5)} ₲`;
+  
+  document.getElementById("toBalanceInfo").textContent = 
+    `Доступно: ${formatBalance(rubBalance, 2)} ₽`;
+}
+
+function updateRateDisplay(rates) {
+  const firstRate = rates[0].exchange_rate;
+  const lastRate = rates[rates.length - 1].exchange_rate;
+  const diff = lastRate - firstRate;
+  const percentChange = (diff / firstRate) * 100;
+
+  document.getElementById("currentRateText").textContent = 
+    `${formatBalance(lastRate, 2)} ₽`;
+
+  const arrow = document.getElementById("rateChangeArrow");
+  const percent = document.getElementById("rateChangePercent");
+  const rubChange = document.getElementById("rateChangeRub");
+
+  if (diff > 0) {
+    arrow.style.color = "#4BA857";
+    percent.style.color = "#4BA857";
+    rubChange.style.color = "#4BA857";
+    arrow.textContent = "↑";
+    percent.textContent = `+${percentChange.toFixed(2)}%`;
+    rubChange.textContent = `+${diff.toFixed(2)}₽`;
+  } else if (diff < 0) {
+    arrow.style.color = "#D21B1B";
+    percent.style.color = "#D21B1B";
+    rubChange.style.color = "#D21B1B";
+    arrow.textContent = "↓";
+    percent.textContent = `${percentChange.toFixed(2)}%`;
+    rubChange.textContent = `${diff.toFixed(2)}₽`;
+  } else {
+    arrow.style.color = "#666";
+    percent.style.color = "#666";
+    rubChange.style.color = "#666";
+    arrow.textContent = "→";
+    percent.textContent = "0.00%";
+    rubChange.textContent = "0.00₽";
+  }
+}
+
 function drawExchangeChart(rates) {
-  if (!rates || !rates.length) return;
   if (exchangeChartInstance) exchangeChartInstance.destroy();
 
-  const sorted = [...rates].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-  const labels = sorted.map((r) => {
-    const d = new Date(r.created_at);
-    return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-  });
-  const dataPoints = sorted.map((r) => parseFloat(r.exchange_rate));
-
   const ctx = document.getElementById("exchangeChart").getContext("2d");
+  const labels = rates.map(r => 
+    new Date(r.created_at).toLocaleTimeString("ru-RU", { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    })
+  );
+
   exchangeChartInstance = new Chart(ctx, {
     type: 'line',
     data: {
       labels,
       datasets: [{
-        label: 'Курс обмена',
-        data: dataPoints,
-        fill: false,
-        borderColor: 'rgba(47, 128, 237, 1)',
+        data: rates.map(r => r.exchange_rate),
+        borderColor: '#2F80ED',
         borderWidth: 2,
         tension: 0.4,
-        pointRadius: 0,
-        borderCapStyle: 'round'
+        fill: false,
+        pointRadius: 0
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      layout: {
-        padding: {
-          top: 10,
-          right: 20,
-          bottom: 10,
-          left: 20
-        }
-      },
+      plugins: { legend: { display: false } },
       scales: {
-        x: {
-          display: false,
-          grid: {
-            display: false
-          }
-        },
+        x: { display: false },
         y: {
           position: 'right',
-          grid: {
-            color: '#E6E6EB',
-            drawBorder: false
-          },
+          grid: { color: '#E6E6EB' },
           ticks: {
             color: '#666',
-            font: {
-              size: 12
-            },
-            callback: function(value) {
-              return value + ' ₽';
-            }
+            callback: value => `${value} ₽`
           }
-        }
-      },
-      plugins: {
-        legend: {
-          display: false
-        },
-        tooltip: {
-          enabled: false
         }
       }
     }
   });
 }
 
-async function loadBalanceAndExchangeRate() {
+function handleSwap() {
+  const swapBtn = document.getElementById("swapBtn");
+  swapBtn.style.transform = "rotate(180deg)";
+  setTimeout(() => swapBtn.style.transform = "rotate(0deg)", 300);
+  
+  currentExchangeDirection = currentExchangeDirection === "coin_to_rub" 
+    ? "rub_to_coin" 
+    : "coin_to_rub";
+  
+  updateCurrencyDisplay();
+  updateExchange();
+}
+
+function updateCurrencyDisplay() {
+  const fromCurrency = document.getElementById("fromCurrency");
+  const toCurrency = document.getElementById("toCurrency");
+  const amountInput = document.getElementById("amountInput");
+  const balanceInfo = document.getElementById("balanceInfo");
+  const toBalanceInfo = document.getElementById("toBalanceInfo");
+
+  if (currentExchangeDirection === "coin_to_rub") {
+    fromCurrency.textContent = "GUGA";
+    toCurrency.textContent = "RUB";
+    amountInput.placeholder = "0.00000";
+    balanceInfo.textContent = balanceInfo.textContent.replace("₽", "₲");
+    toBalanceInfo.textContent = toBalanceInfo.textContent.replace("₲", "₽");
+  } else {
+    fromCurrency.textContent = "RUB";
+    toCurrency.textContent = "GUGA";
+    amountInput.placeholder = "0.00";
+    balanceInfo.textContent = balanceInfo.textContent.replace("₲", "₽");
+    toBalanceInfo.textContent = toBalanceInfo.textContent.replace("₽", "₲");
+  }
+}
+
+function updateExchange() {
+  const amount = parseFloat(document.getElementById("amountInput").value);
+  let result = 0;
+
+  if (amount > 0 && currentExchangeRate) {
+    result = currentExchangeDirection === "coin_to_rub"
+      ? amount * currentExchangeRate
+      : amount / currentExchangeRate;
+  }
+
+  document.getElementById("toAmount").value = currentExchangeDirection === "coin_to_rub"
+    ? formatBalance(result, 2)
+    : formatBalance(result, 5);
+}
+
+async function handleExchange() {
+  const amount = parseFloat(document.getElementById("amountInput").value);
+  
+  if (!amount || amount <= 0) {
+    showNotification("Введите корректную сумму", "error");
+    return;
+  }
+
+  if (lastDirection === currentExchangeDirection) {
+    showNotification("Повторите попытку позже", "error");
+    return;
+  }
+
+  showGlobalLoading();
+  
   try {
-    const rateResp = await fetch(`${API_URL}/exchangeRates?limit=50`, {
+    const response = await fetch(`${API_URL}/exchange`, {
+      method: "POST",
       credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        direction: currentExchangeDirection,
+        amount: amount
+      })
     });
-    const rateData = await rateResp.json();
-    if (rateData.success && rateData.rates?.length) {
-      currentExchangeRate = parseFloat(rateData.rates[0].exchange_rate);
-      drawExchangeChart(rateData.rates);
-      updateCurrentRateDisplay();
+
+    const data = await response.json();
+    
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || "Ошибка обмена");
     }
+
+    showNotification("Обмен выполнен успешно!", "success");
+    lastDirection = currentExchangeDirection;
+    setTimeout(() => lastDirection = null, 5000);
+    await loadExchangeData();
+    
   } catch (err) {
-    console.error("loadBalanceAndExchangeRate rates error:", err);
-  }
-
-  // Обновляем балансы
-  updateCurrencyLabels();
-}
-
-function updateCurrentRateDisplay() {
-  const currentRateText = document.getElementById("currentRateText");
-  if (currentRateText) {
-    currentRateText.textContent = currentExchangeRate
-      ? `${formatBalance(currentExchangeRate, 2)} ₽`
-      : "--";
+    showNotification(err.message, "error");
+    console.error("Ошибка обмена:", err);
+  } finally {
+    hideGlobalLoading();
   }
 }
 
-// Остальные функции (updateExchange, swapCurrencies, handleExchange и т.д.) остаются без изменений
+// Стили для компонента
+const exchangeStyles = `
+  .exchange-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 24px;
+    background: #FFFFFF;
+    border-radius: 24px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  }
+
+  .exchange-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .exchange-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .exchange-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1A1A1A;
+  }
+
+  .rate-container {
+    background: #F8F9FB;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 24px;
+  }
+
+  .rate-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .rate-label {
+    color: #666;
+    font-size: 14px;
+  }
+
+  .rate-change {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .rate-arrow {
+    font-size: 14px;
+  }
+
+  .rate-percent {
+    font-size: 14px;
+  }
+
+  .rate-value {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1A1A1A;
+    margin-bottom: 4px;
+  }
+
+  .rate-change-rub {
+    color: #666;
+    font-size: 14px;
+  }
+
+  .exchange-chart {
+    width: 100%;
+    height: 160px;
+    margin-bottom: 24px;
+  }
+
+  .converter-container {
+    background: #F8F9FB;
+    border-radius: 16px;
+    padding: 24px;
+  }
+
+  .converter-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .swap-button {
+    background: #FFFFFF;
+    border: 1px solid #E6E6EB;
+    border-radius: 12px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .swap-button:hover {
+    background: #F8F9FB;
+  }
+
+  .swap-icon {
+    font-size: 24px;
+    display: block;
+  }
+
+  .currency-input {
+    flex: 1;
+  }
+
+  .input-header {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+
+  .input-wrapper {
+    background: #FFFFFF;
+    border: 1px solid #E6E6EB;
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .currency-input-field {
+    flex: 1;
+    border: none;
+    background: none;
+    font-size: 16px;
+    color: #1A1A1A;
+    outline: none;
+  }
+
+  .currency-input-field:disabled {
+    background: none;
+  }
+
+  .currency-symbol {
+    color: #666;
+    font-size: 16px;
+  }
+
+  .balance-info {
+    color: #666;
+    font-size: 12px;
+    margin-top: 8px;
+  }
+
+  .exchange-button {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(90deg, #2F80ED, #2D9CDB);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .exchange-button:hover {
+    opacity: 0.9;
+  }
+`;
+
+// Добавляем стили в документ
+const styleElement = document.createElement('style');
+styleElement.textContent = exchangeStyles;
+document.head.appendChild(styleElement);
+
 /**************************************************
  * ИСТОРИЯ (без кнопки закрытия, без радиуса)
  **************************************************/
