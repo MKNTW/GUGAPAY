@@ -826,34 +826,76 @@ function openProfileModal() {
   document.getElementById("profileLogoutBtn").onclick = logout;
 }
 
-/**************************************************
- * ПЕРЕВОД (здесь оставляем радиус) 
- **************************************************/
 function openTransferModal() {
   createModal(
     "transferModal",
     `
       <h3 style="text-align:center;">Перевод</h3>
-      <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px;">
+      <div style="display:flex;justify-content:center;margin-top:10px;">
+        <button id="btnCurrencyGUGA" class="currency-btn active" style="flex:1;padding:10px;">₲ GUGA</button>
+        <button id="btnCurrencyRUB" class="currency-btn" style="flex:1;padding:10px;">₽ RUB</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
         <label>Кому (ID):</label>
         <input type="text" id="toUserIdInput" placeholder="ID получателя" style="padding:8px;font-size:16px;">
-        <label>Сумма (₲):</label>
+        
+        <label>Сумма (<span id="currencySymbol">₲</span>):</label>
         <input type="number" id="transferAmountInput" step="0.00001" placeholder="Введите сумму" style="padding:8px;font-size:16px;">
+        <p id="transferBalanceInfo" style="font-size:14px;color:#555;margin:0;">Баланс: 0.00000 ₲</p>
+        
         <button id="sendTransferBtn" style="padding:10px;">Отправить</button>
       </div>
     `,
     {
       showCloseBtn: true,
       cornerTopMargin: 50,
-      cornerTopRadius: 20,   // радиус
+      cornerTopRadius: 20,
       hasVerticalScroll: true,
       defaultFromBottom: true,
       noRadiusByDefault: false
     }
   );
 
+  let currentTransferCurrency = "GUGA"; // по умолчанию
+
+  const updateTransferUI = () => {
+    const amountInput = document.getElementById("transferAmountInput");
+    const currencySymbol = document.getElementById("currencySymbol");
+    const balanceInfo = document.getElementById("transferBalanceInfo");
+    
+    if (currentTransferCurrency === "GUGA") {
+      amountInput.step = "0.00001";
+      amountInput.placeholder = "Введите сумму";
+      currencySymbol.textContent = "₲";
+      const guga = document.getElementById("gugaBalanceValue")?.innerText || "0.00000";
+      const gugaVal = parseFloat(guga.replace(/[^\d.]/g, "")) || 0;
+      balanceInfo.textContent = "Баланс: " + formatBalance(gugaVal, 5) + " ₲";
+    } else {
+      amountInput.step = "0.01";
+      amountInput.placeholder = "Введите сумму";
+      currencySymbol.textContent = "₽";
+      const rub = document.getElementById("rubBalanceValue")?.innerText || "0.00";
+      const rubVal = parseFloat(rub.replace(/[^\d.]/g, "")) || 0;
+      balanceInfo.textContent = "Баланс: " + formatBalance(rubVal, 2) + " ₽";
+    }
+  };
+
+  // Кнопки переключения валюты
+  document.getElementById("btnCurrencyGUGA").onclick = () => {
+    currentTransferCurrency = "GUGA";
+    document.getElementById("btnCurrencyGUGA").classList.add("active");
+    document.getElementById("btnCurrencyRUB").classList.remove("active");
+    updateTransferUI();
+  };
+  document.getElementById("btnCurrencyRUB").onclick = () => {
+    currentTransferCurrency = "RUB";
+    document.getElementById("btnCurrencyRUB").classList.add("active");
+    document.getElementById("btnCurrencyGUGA").classList.remove("active");
+    updateTransferUI();
+  };
+
+  // Кнопка "Отправить"
   document.getElementById("sendTransferBtn").onclick = async () => {
-    if (!currentUserId) return;
     const toUser = document.getElementById("toUserIdInput")?.value;
     const amount = parseFloat(document.getElementById("transferAmountInput")?.value);
     if (!toUser || !amount || amount <= 0) {
@@ -864,12 +906,15 @@ function openTransferModal() {
       alert("❌ Нельзя перевести самому себе");
       return;
     }
+
+    const endpoint = currentTransferCurrency === "GUGA" ? "/transfer" : "/transferRub";
+
     try {
-      const resp = await fetch(`${API_URL}/transfer`, {
+      const resp = await fetch(`${API_URL}${endpoint}`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fromUserId: currentUserId, toUserId: toUser, amount }),
+        body: JSON.stringify({ toUserId: toUser, amount })
       });
       const data = await resp.json();
       if (data.success) {
@@ -881,8 +926,11 @@ function openTransferModal() {
       }
     } catch (err) {
       console.error("Ошибка при переводе:", err);
+      alert("Произошла ошибка при выполнении перевода");
     }
   };
+
+  updateTransferUI(); // при запуске
 }
 
 /**************************************************
