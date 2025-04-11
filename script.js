@@ -1432,14 +1432,25 @@ function confirmPayMerchantModal({ merchantId, amount, purpose }) {
 /**************************************************
  * Подтверждение перевода между пользователями
  **************************************************/
-async function confirmPayUserModal({ userId, amount, purpose }) {
+async function confirmPayUserModal({ userId, amount, purpose, currency }) {
+  // Валидация основных параметров
+  if (!userId || !amount || amount <= 0) {
+    alert("❌ Некорректные данные для перевода");
+    return;
+  }
+
+  if (currency !== "GUGA") {
+    alert("❌ Поддерживаются только переводы в GUGA");
+    return;
+  }
+
   createModal(
     "confirmPayUserModal",
     `
       <h3 style="text-align:center;">Подтверждение перевода</h3>
       <p>Получатель: ${userId}</p>
       <p>Сумма: ${formatBalance(amount, 5)} ₲</p>
-      <p>Назначение: ${purpose || "Без назначения"}</p>
+      ${purpose ? `<p>Назначение: ${purpose}</p>` : ''}
       <button id="confirmPayUserBtn" style="padding:10px;margin-top:10px;">Перевести</button>
     `,
     {
@@ -1453,25 +1464,16 @@ async function confirmPayUserModal({ userId, amount, purpose }) {
   );
 
   document.getElementById("confirmPayUserBtn").onclick = async () => {
-    if (!currentUserId) {
-      alert("Ошибка: вы не авторизованы. Пожалуйста, войдите в систему.");
-      return;
-    }
-
-    if (!userId || !amount || amount <= 0) {
-      alert("Ошибка: некорректные данные для перевода.");
-      return;
-    }
-
     try {
+      if (!currentUserId) throw new Error("Требуется авторизация");
+      
       const payload = {
         fromUserId: currentUserId,
         toUserId: userId,
-        amount,
-        purpose,
+        amount: Number(amount),
+        purpose: purpose || "",
+        currency: currency || "GUGA"
       };
-
-      console.log("Отправляем данные:", payload);
 
       const resp = await fetch(`${API_URL}/payUser`, {
         method: "POST",
@@ -1480,22 +1482,19 @@ async function confirmPayUserModal({ userId, amount, purpose }) {
         body: JSON.stringify(payload),
       });
 
-      if (!resp.ok) {
-        const errorData = await resp.json();
-        throw new Error(errorData.error || "Неизвестная ошибка");
+      const data = await resp.json();
+      
+      if (!resp.ok || !data.success) {
+        throw new Error(data.error || "Ошибка сервера");
       }
 
-      const data = await resp.json();
-      if (data.success) {
-        alert("✅ Перевод выполнен успешно!");
-        document.getElementById("confirmPayUserModal")?.remove();
-        fetchUserData(); // Обновление данных пользователя
-      } else {
-        alert("❌ Ошибка выполнения перевода: " + data.error);
-      }
+      alert("✅ Перевод выполнен успешно!");
+      document.getElementById("confirmPayUserModal")?.remove();
+      await fetchUserData();
+      
     } catch (err) {
-      console.error("Ошибка выполнения перевода:", err);
-      alert("❌ Произошла ошибка при выполнении перевода: " + (err.message || "Неизвестная ошибка"));
+      console.error("Ошибка перевода:", err);
+      alert(`❌ Ошибка: ${err.message}`);
     }
   };
 }
