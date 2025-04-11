@@ -1475,6 +1475,29 @@ function confirmPayUserModal({ userId, amount, purpose }) {
 }
 
 /**************************************************
+ * Вспомогательная функция для парсинга QR-кода
+ **************************************************/
+function parseQRCodeData(qrString) {
+  const obj = { type: null, userId: null, merchantId: null, amount: 0, purpose: "" };
+  try {
+    if (!qrString.startsWith("guga://")) return obj;
+    const query = qrString.replace("guga://", "");
+    const parts = query.split("&");
+    for (const part of parts) {
+      const [key, val] = part.split("=");
+      if (key === "type") obj.type = val; // Тип: "person" или "merchant"
+      if (key === "userId") obj.userId = val; // ID пользователя
+      if (key === "merchantId") obj.merchantId = val; // ID мерчанта
+      if (key === "amount") obj.amount = parseFloat(val);
+      if (key === "purpose") obj.purpose = decodeURIComponent(val);
+    }
+  } catch (err) {
+    console.error("Ошибка при разборе QR-кода:", err);
+  }
+  return obj;
+}
+
+/**************************************************
  * ОБМЕН (без кнопки закрытия, без радиуса)
  **************************************************/
 let currentExchangeDirection = "coin_to_rub";
