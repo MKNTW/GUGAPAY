@@ -172,6 +172,35 @@ function createModal(
         ${showCloseBtn ? '<button class="modal-close-btn">&times;</button>' : ""}
         ${content}
     `;
+
+    // Стилизация кнопки закрытия
+const closeBtn = contentDiv.querySelector(".modal-close-btn");
+if (closeBtn) {
+    Object.assign(closeBtn.style, {
+        position: "absolute",
+        top: "15px",
+        right: "15px", // Переносим в правый верхний угол
+        width: "30px",
+        height: "30px",
+        backgroundColor: "#000", // Черный фон
+        color: "#fff", // Белый крестик
+        borderRadius: "50%", // Делаем кнопку круглой
+        border: "none", // Убираем границу
+        fontSize: "18px", // Размер текста для крестика
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: "pointer",
+    });
+
+    // Добавляем hover-эффект
+    closeBtn.addEventListener("mouseenter", () => {
+        closeBtn.style.opacity = "0.8";
+    });
+    closeBtn.addEventListener("mouseleave", () => {
+        closeBtn.style.opacity = "1";
+    });
+}
     modal.appendChild(contentDiv);
     document.body.appendChild(modal);
 
