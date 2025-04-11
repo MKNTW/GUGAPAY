@@ -1073,20 +1073,26 @@ function updateCurrencyLabels() {
   const balanceInfo = document.getElementById("balanceInfo");
   const toBalanceInfo = document.getElementById("toBalanceInfo");
 
+  const gugaRaw = document.getElementById("gugaBalanceValue")?.innerText || "0.00000";
+  const rubRaw = document.getElementById("rubBalanceValue")?.innerText || "0.00";
+
+  const gugaBalance = parseFloat(gugaRaw.replace(/[^\d.]/g, "")) || 0;
+  const rubBalance = parseFloat(rubRaw.replace(/[^\d.]/g, "")) || 0;
+
   if (currentExchangeDirection === "coin_to_rub") {
     fromLabel.innerHTML = `<img src="photo/15.png" alt="GUGA" style="width:25px;vertical-align:middle;"> GUGA`;
     toLabel.innerHTML = `<img src="photo/18.png" alt="RUB" style="width:25px;vertical-align:middle;"> RUB`;
     amountInput.placeholder = "0.00000";
     toAmount.placeholder = "0.00";
-    balanceInfo.textContent = formatBalance(gugaBalanceValue, 5) + " ₲";
-    toBalanceInfo.textContent = formatBalance(rubBalanceValue, 2) + " ₽";
+    balanceInfo.textContent = formatBalance(gugaBalance, 5) + " ₲";
+    toBalanceInfo.textContent = formatBalance(rubBalance, 2) + " ₽";
   } else {
     fromLabel.innerHTML = `<img src="photo/18.png" alt="RUB" style="width:25px;vertical-align:middle;"> RUB`;
     toLabel.innerHTML = `<img src="photo/15.png" alt="GUGA" style="width:25px;vertical-align:middle;"> GUGA`;
     amountInput.placeholder = "0.00";
     toAmount.placeholder = "0.00000";
-    balanceInfo.textContent = formatBalance(rubBalanceValue, 2) + " ₽";
-    toBalanceInfo.textContent = formatBalance(gugaBalanceValue, 5) + " ₲";
+    balanceInfo.textContent = formatBalance(rubBalance, 2) + " ₽";
+    toBalanceInfo.textContent = formatBalance(gugaBalance, 5) + " ₲";
   }
 }
 
