@@ -957,6 +957,15 @@ function openTransferModal() {
         }
     );
 
+    // Вызов fetchUserData для обновления балансов
+    fetchUserData().then(() => {
+        const rubBalanceElement = document.getElementById("rubBalance");
+        const rubBalanceValue = parseFloat(document.getElementById("rubBalanceValue")?.innerText || 0);
+        if (rubBalanceElement) {
+            rubBalanceElement.textContent = `Доступно: ${rubBalanceValue.toFixed(2)} ₽`;
+        }
+    });
+
     // Стили для активной карточки валюты
     const style = document.createElement('style');
     style.textContent = `
