@@ -1113,18 +1113,97 @@ function openPayQRModal() {
   createModal(
     "payQRModal",
     `
-      <h3 style="text-align:center;">Оплата по QR</h3>
-      <video id="opPayVideo" style="width:100%;max-width:600px; border:2px solid #333; margin-top:10px;" muted playsinline></video>
+      <div class="qr-scanner-container">
+        <video id="opPayVideo" class="fullscreen-video" muted playsinline></video>
+        <div class="scan-frame"></div>
+        <div class="scanner-overlay"></div>
+        <div class="bottom-bar">
+          <button class="close-scanner-btn" onclick="document.getElementById('payQRModal')?.remove()">× Закрыть</button>
+        </div>
+      </div>
     `,
     {
-      showCloseBtn: true,
-      cornerTopMargin: 50,
-      cornerTopRadius: 20,  // радиус
-      hasVerticalScroll: true,
-      defaultFromBottom: true,
-      noRadiusByDefault: false
+      showCloseBtn: false, // Скрываем стандартную кнопку закрытия
+      cornerTopMargin: 0,
+      cornerTopRadius: 0,
+      hasVerticalScroll: false,
+      defaultFromBottom: false,
+      noRadiusByDefault: true,
+      customStyles: {
+        position: 'fixed',
+        top: '0',
+        left: '0',
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(0,0,0,0.9)',
+        zIndex: 10000,
+        borderRadius: '0'
+      }
     }
   );
+
+  // Стили для элементов
+  const style = document.createElement('style');
+  style.innerHTML = `
+    .qr-scanner-container {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .fullscreen-video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .scan-frame {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 250px;
+      height: 250px;
+      border: 4px solid #00ff00;
+      border-radius: 20px;
+      box-shadow: 0 0 20px rgba(0,255,0,0.5);
+      z-index: 2;
+    }
+    .scanner-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to bottom, 
+        rgba(0,0,0,0.6) 0%, 
+        rgba(0,0,0,0.6) calc(50% - 125px), 
+        transparent calc(50% - 125px), 
+        transparent calc(50% + 125px), 
+        rgba(0,0,0,0.6) calc(50% + 125px), 
+        rgba(0,0,0,0.6) 100%);
+      z-index: 1;
+    }
+    .bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      padding: 20px;
+      background: rgba(0,0,0,0.7);
+      text-align: center;
+      z-index: 3;
+    }
+    .close-scanner-btn {
+      padding: 12px 40px;
+      font-size: 18px;
+      background: #ff4444;
+      color: white;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+    }
+  `;
+  document.head.appendChild(style);
 
   const videoEl = document.getElementById("opPayVideo");
   startUniversalQRScanner(videoEl, (rawValue) => {
