@@ -1,7 +1,7 @@
 /**************************************************
  * ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
  **************************************************/
-const API_URL = "https://mkntw-github-io.onrender.com";
+const API_URL = "https://api.mkntw.ru";
 
 let currentUserId = null;
 let currentMerchantId = null;
