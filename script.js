@@ -1543,31 +1543,98 @@ function confirmPayMerchantModal({ merchantId, amount, purpose }) {
 }
 
 /**************************************************
- * Подтверждение перевода между пользователями
+ * Подтверждение перевода между пользователями (стилизованная версия)
  **************************************************/
 async function confirmPayUserModal({ userId, amount, purpose }) {
   // Валидация основных параметров
   if (!userId || !amount || amount <= 0) {
-    alert("❌ Некорректные данные для перевода");
+    showNotification("❌ Некорректные данные для перевода", "error");
     return;
   }
 
   createModal(
     "confirmPayUserModal",
     `
-      <h3 style="text-align:center;">Подтверждение перевода</h3>
-      <p>Получатель: ${userId}</p>
-      <p>Сумма: ${formatBalance(amount, 5)} ₲</p>
-      ${purpose ? `<p>Назначение: ${purpose}</p>` : ''}
-      <button id="confirmPayUserBtn" style="padding:10px;margin-top:10px;">Перевести</button>
+      <div style="
+        max-width: 400px;
+        margin: 0 auto;
+        padding: 24px;
+        background: #FFFFFF;
+        border-radius: 24px;
+        box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
+      ">
+        <div style="
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 24px;
+        ">
+          <img src="photo/15.png" style="width: 40px; height: 40px;">
+          <div>
+            <div style="font-size: 20px; font-weight: 600; color: #1A1A1A;">Подтверждение перевода</div>
+            <div style="font-size: 16px; color: #666;">Операция с GUGA</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 24px;">
+          <div style="
+            background: #F8F9FB;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+          ">
+            <div style="color: #666; font-size: 14px; margin-bottom: 4px;">Получатель</div>
+            <div style="font-weight: 500; color: #1A1A1A;">${userId}</div>
+          </div>
+
+          <div style="
+            background: #F8F9FB;
+            border-radius: 16px;
+            padding: 16px;
+          ">
+            <div style="color: #666; font-size: 14px; margin-bottom: 4px;">Сумма</div>
+            <div style="font-weight: 500; color: #1A1A1A;">${formatBalance(amount, 5)} ₲</div>
+          </div>
+        </div>
+
+        ${purpose ? `
+          <div style="
+            background: #F8F9FB;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 24px;
+          ">
+            <div style="color: #666; font-size: 14px; margin-bottom: 4px;">Назначение</div>
+            <div style="font-weight: 500; color: #1A1A1A;">${purpose}</div>
+          </div>
+        ` : ''}
+
+        <button 
+          id="confirmPayUserBtn" 
+          style="
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(90deg, #2F80ED, #2D9CDB);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+          ">
+          Подтвердить перевод
+        </button>
+      </div>
     `,
     {
       showCloseBtn: true,
-      cornerTopMargin: 50,
-      cornerTopRadius: 20,
+      cornerTopMargin: 20,
+      cornerTopRadius: 24,
       hasVerticalScroll: true,
       defaultFromBottom: true,
       noRadiusByDefault: false,
+      contentMaxHeight: "calc(100vh - 160px)",
     }
   );
 
@@ -1575,7 +1642,6 @@ async function confirmPayUserModal({ userId, amount, purpose }) {
     try {
       if (!currentUserId) throw new Error("Требуется авторизация");
       
-      // Формируем тело запроса для обычного перевода
       const payload = {
         fromUserId: currentUserId,
         toUserId: userId,
@@ -1583,7 +1649,6 @@ async function confirmPayUserModal({ userId, amount, purpose }) {
         purpose: purpose || ""
       };
 
-      // Отправляем запрос на стандартный эндпоинт перевода
       const resp = await fetch(`${API_URL}/transfer`, {
         method: "POST",
         credentials: "include",
@@ -1597,14 +1662,13 @@ async function confirmPayUserModal({ userId, amount, purpose }) {
         throw new Error(data.error || "Ошибка сервера");
       }
 
-      // Показываем уведомление и обновляем данные
       showNotification("✅ Перевод успешно выполнен", "success");
       document.getElementById("confirmPayUserModal")?.remove();
       await fetchUserData();
       
     } catch (err) {
       console.error("Ошибка перевода:", err);
-      showNotification(`❌ Ошибка: ${err.message}`, "error");
+      showNotification(`❌ ${err.message}`, "error");
     }
   };
 }
