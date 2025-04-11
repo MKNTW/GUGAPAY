@@ -165,7 +165,7 @@ function createModal(
         : `${cornerTopRadius}px ${cornerTopRadius}px 0 0`;
     contentDiv.style.background = "#fff";
     contentDiv.style.boxShadow = "0 2px 5px rgba(0,0,0,0.1)";
-    contentDiv.style.padding = "20px";
+    contentDiv.style.padding = "0px";
 
     // Добавляем содержимое
     contentDiv.innerHTML = `
