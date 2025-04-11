@@ -1793,11 +1793,11 @@ function openExchangeModal() {
 // Обновленные стили
 const exchangeStyles = `
 .exchange-container {
-    width: 100%;
-    height: 100vh;
-    padding: 24px;
-    background: #fff;
-    overflow: auto;
+    #width: 100%;
+    #height: 100vh;
+    #padding: 24px;
+    #background: #fff;
+    #overflow: auto;
 }
 
 .exchange-header {
@@ -1843,8 +1843,7 @@ const exchangeStyles = `
 }
 
 .currency-block {
-    background: #fff;
-    border: 2px solid #F0F2F5;
+    background: #F8F9FB;
     border-radius: 16px;
     padding: 16px;
     margin: 12px 0;
