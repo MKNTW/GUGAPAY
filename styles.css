@@ -636,8 +636,8 @@ body {
 .chart-wrapper {
     background: #F8F9FB;
     border-radius: 16px;
-    padding: 16px;
-    margin-bottom: 24px;
+    #padding: 16px;
+    #margin-bottom: 24px;
 }
 
 .chart-header {
