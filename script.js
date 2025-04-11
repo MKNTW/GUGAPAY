@@ -1711,7 +1711,6 @@ function openExchangeModal() {
     `
 <div class="exchange-container">
     <div class="exchange-header">
-        <img src="photo/71.png" class="exchange-icon">
         <div class="header-info">
             <div class="exchange-title">Обмен валюты</div>
             <div id="currentRate" class="current-rate">1 ₲ = 0.00 ₽</div>
@@ -1732,6 +1731,12 @@ function openExchangeModal() {
     </div>
 
     <div class="converter">
+        <div class="arrows">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M10 17L5 12L10 7M14 7L19 12L14 17" stroke="#2F80ED" stroke-width="2"/>
+            </svg>
+        </div>
+        
         <div class="currency-block from-currency">
             <div class="currency-header">
                 <span class="currency-label">Отдаете</span>
@@ -1751,8 +1756,8 @@ function openExchangeModal() {
         </div>
 
         <button id="swapBtn" class="swap-btn">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M16 10L20 14L16 18M4 14L8 18L12 14M8 6L4 10L8 14" stroke="currentColor" stroke-width="2"/>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                <path d="M16 4L20 8L16 12M4 8L8 4L12 8M8 20L4 16L8 12" stroke="#2F80ED" stroke-width="2"/>
             </svg>
         </button>
 
@@ -1782,51 +1787,40 @@ function openExchangeModal() {
 </div>
     `,
     {
-      showCloseBtn: true,
-      cornerTopMargin: 20,
-      cornerTopRadius: 24,
-      contentMaxHeight: "90vh"
+      showCloseBtn: false,
+      cornerTopMargin: 0,
+      cornerTopRadius: 0,
+      contentMaxHeight: "100vh",
+      noRadiusByDefault: true
     }
   );
 
   initExchange();
 }
 
-// Обновленные стили в едином дизайне
+// Обновленные стили
 const exchangeStyles = `
 .exchange-container {
-    max-width: 440px;
+    width: 100%;
+    height: 100vh;
     padding: 24px;
     background: #fff;
-    border-radius: 24px;
-    box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
+    overflow: auto;
 }
 
 .exchange-header {
-    display: flex;
-    gap: 16px;
     margin-bottom: 32px;
 }
 
-.exchange-icon {
-    width: 40px;
-    height: 40px;
-    object-fit: contain;
-}
-
-.header-info {
-    flex: 1;
-}
-
 .exchange-title {
-    font-size: 20px;
+    font-size: 24px;
     font-weight: 600;
     color: #1A1A1A;
-    margin-bottom: 4px;
+    margin-bottom: 8px;
 }
 
 .current-rate {
-    font-size: 14px;
+    font-size: 16px;
     color: #666;
 }
 
@@ -1835,66 +1829,33 @@ const exchangeStyles = `
     border-radius: 16px;
     padding: 16px;
     margin-bottom: 24px;
-    border: 1px solid #E6E6EB;
 }
 
-.chart-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 16px;
-}
-
-.rate-label {
-    font-size: 14px;
-    color: #666;
-}
-
-.rate-change {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-}
-
-.rate-arrow {
-    font-size: 14px;
-}
-
-.rate-percent {
-    font-size: 14px;
-    font-weight: 500;
-}
-
-.chart-wrapper {
-    height: 200px;
-    position: relative;
+.chart-wrapper canvas {
+    height: 200px!important;
 }
 
 .converter {
-    margin-bottom: 24px;
+    position: relative;
+    margin: 40px 0;
+}
+
+.arrows {
+    position: absolute;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
 }
 
 .currency-block {
     background: #fff;
-    border: 1px solid #E6E6EB;
+    border: 2px solid #F0F2F5;
     border-radius: 16px;
     padding: 16px;
-    margin-bottom: 16px;
-}
-
-.currency-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 12px;
-}
-
-.currency-label {
-    font-size: 14px;
-    color: #666;
-}
-
-.balance {
-    font-size: 12px;
-    color: #666;
+    margin: 12px 0;
 }
 
 .input-group {
@@ -1907,10 +1868,9 @@ const exchangeStyles = `
     flex: 1;
     border: none;
     background: none;
-    font-size: 18px;
+    font-size: 20px;
     padding: 12px 0;
     color: #1A1A1A;
-    outline: none;
     font-weight: 500;
 }
 
@@ -1924,53 +1884,37 @@ const exchangeStyles = `
     gap: 8px;
     background: #F8F9FB;
     border-radius: 12px;
-    padding: 8px 16px;
+    padding: 10px 16px;
     border: 1px solid #E6E6EB;
-}
-
-.currency-icon {
-    width: 24px;
-    height: 24px;
-}
-
-.currency-symbol {
-    font-weight: 500;
-    font-size: 14px;
 }
 
 .swap-btn {
-    width: 48px;
-    height: 48px;
-    background: #fff;
-    border: 1px solid #E6E6EB;
-    border-radius: 12px;
+    width: 56px;
+    height: 56px;
+    background: #F8F9FB;
+    border: 2px solid #E6E6EB;
+    border-radius: 16px;
+    margin: 16px auto;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 8px auto;
-    cursor: pointer;
     transition: all 0.2s;
 }
 
 .swap-btn:hover {
-    background: #F8F9FB;
+    background: #eef0f3;
 }
 
 .submit-btn {
     width: 100%;
-    padding: 16px;
+    padding: 18px;
     background: linear-gradient(90deg, #2F80ED, #2D9CDB);
     border: none;
-    border-radius: 12px;
+    border-radius: 28px;
     color: white;
     font-weight: 600;
     font-size: 16px;
-    cursor: pointer;
-    transition: opacity 0.2s;
-}
-
-.submit-btn:hover {
-    opacity: 0.9;
+    margin-top: 24px;
 }
 `;
 
@@ -2079,30 +2023,29 @@ function initChart(rates) {
 
 function swapCurrencies() {
   currentExchangeDirection = currentExchangeDirection === 'coin_to_rub' ? 'rub_to_coin' : 'coin_to_rub';
-
-  const fromCurrency = document.querySelector('.from-currency .currency-name');
-  const toCurrency = document.querySelector('.to-currency .currency-name');
-  const fromIcon = document.querySelector('.from-currency .currency-img');
-  const toIcon = document.querySelector('.to-currency .currency-img');
+  
+  const fromDisplay = document.querySelector('.from-currency .currency-display');
+  const toDisplay = document.querySelector('.to-currency .currency-display');
   const fromBalance = document.getElementById('fromBalance');
   const toBalance = document.getElementById('toBalance');
+  const amountInput = document.getElementById('amountInput');
+  const toAmount = document.getElementById('toAmount');
 
+  // Swap values
+  [amountInput.value, toAmount.value] = [toAmount.value, amountInput.value];
+  
   if (currentExchangeDirection === 'coin_to_rub') {
-    fromCurrency.textContent = 'GUGA';
-    toCurrency.textContent = 'RUB';
-    fromIcon.src = 'photo/15.png';
-    toIcon.src = 'photo/18.png';
+    fromDisplay.innerHTML = `<img src="photo/15.png" class="currency-icon"><span class="currency-symbol">GUGA</span>`;
+    toDisplay.innerHTML = `<img src="photo/18.png" class="currency-icon"><span class="currency-symbol">RUB</span>`;
     fromBalance.textContent = fromBalance.textContent.replace('₽', '₲');
     toBalance.textContent = toBalance.textContent.replace('₲', '₽');
   } else {
-    fromCurrency.textContent = 'RUB';
-    toCurrency.textContent = 'GUGA';
-    fromIcon.src = 'photo/18.png';
-    toIcon.src = 'photo/15.png';
+    fromDisplay.innerHTML = `<img src="photo/18.png" class="currency-icon"><span class="currency-symbol">RUB</span>`;
+    toDisplay.innerHTML = `<img src="photo/15.png" class="currency-icon"><span class="currency-symbol">GUGA</span>`;
     fromBalance.textContent = fromBalance.textContent.replace('₲', '₽');
     toBalance.textContent = toBalance.textContent.replace('₽', '₲');
   }
-
+  
   updateConversion();
 }
 
