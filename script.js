@@ -182,8 +182,8 @@ if (closeBtn) {
         right: "15px", // Переносим в правый верхний угол
         width: "30px",
         height: "30px",
-        backgroundColor: "#000", // Черный фон
-        color: "#fff", // Белый крестик
+        backgroundColor: "#fff", // Черный фон
+        color: "#000", // Белый крестик
         borderRadius: "50%", // Делаем кнопку круглой
         border: "none", // Убираем границу
         fontSize: "18px", // Размер текста для крестика
