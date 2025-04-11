@@ -970,8 +970,6 @@ function confirmPayMerchantModal({ merchantId, amount, purpose }) {
  **************************************************/
 let currentExchangeDirection = "coin_to_rub";
 let currentExchangeRate = 0;
-let lastDirection = null;
-let exchangeChartInstance = null;
 
 function openExchangeModal(horizontalSwitch) {
   showGlobalLoading();
