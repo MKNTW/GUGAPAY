@@ -467,53 +467,6 @@ function createUserQR(userId, amount, purpose) {
 }
 
 /**************************************************
- * Новая функция confirmPayUserModal
- **************************************************/
-
-function confirmPayUserModal({ userId, amount, purpose }) {
-  createModal(
-    "confirmPayUserModal",
-    `
-      <h3 style="text-align:center;">Подтверждение перевода</h3>
-      <p>Получатель: ${userId}</p>
-      <p>Сумма: ${formatBalance(amount, 5)} ₲</p>
-      <p>Назначение: ${purpose}</p>
-      <button id="confirmPayUserBtn" style="padding:10px;margin-top:10px;">Перевести</button>
-    `,
-    {
-      showCloseBtn: true,
-      cornerTopMargin: 50,
-      cornerTopRadius: 20,
-      hasVerticalScroll: true,
-      defaultFromBottom: true,
-      noRadiusByDefault: false,
-    }
-  );
-
-  document.getElementById("confirmPayUserBtn").onclick = async () => {
-    if (!currentUserId) return;
-    try {
-      const resp = await fetch(`${API_URL}/payUser`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fromUserId: currentUserId, toUserId: userId, amount, purpose }),
-      });
-      const data = await resp.json();
-      if (data.success) {
-        alert("✅ Перевод выполнен!");
-        document.getElementById("confirmPayUserModal")?.remove();
-        fetchUserData(); // Обновление данных пользователя
-      } else {
-        alert("❌ Ошибка: " + data.error);
-      }
-    } catch (err) {
-      console.error("Ошибка при переводе:", err);
-    }
-  };
-}
-
-/**************************************************
  * ОКНО АВТОРИЗАЦИИ
  **************************************************/
 function openAuthModal() {
