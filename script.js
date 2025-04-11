@@ -388,8 +388,14 @@ function openRequestModal() {
       return;
     }
 
-    // Генерация данных для QR-кода без использования merchantId
-    const qrData = `guga://type=person&amount=${amount}&purpose=${encodeURIComponent(purpose)}`;
+    // Проверка наличия userId
+    if (!currentUserId) {
+      alert("Ошибка: userId отсутствует. Пожалуйста, войдите в систему.");
+      return;
+    }
+
+    // Генерация данных для QR-кода с userId
+    const qrData = `guga://type=person&userId=${currentUserId}&amount=${amount}&purpose=${encodeURIComponent(purpose)}`;
 
     createModal(
       "qrModal",
