@@ -864,7 +864,7 @@ function openTransferModal() {
                             <div style="font-size: 13px; color: #909099;">Фиатные деньги</div>
                         </div>
                     </div>
-                    <div id="rubBalanceValue" style="margin-top: 12px; font-size: 14px; color: #666;">
+                    <div id="rubBalance" style="margin-top: 12px; font-size: 14px; color: #666;">
                         Доступно: 0.00 ₽
                     </div>
                 </div>
