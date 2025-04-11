@@ -1113,78 +1113,119 @@ function openPayQRModal() {
   createModal(
     "payQRModal",
     `
-      <h3 style="text-align:center;">Оплата по QR</h3>
-      <video id="opPayVideo" style="width:100%;max-width:600px; border:2px solid #333; margin-top:10px;" muted playsinline></video>
+      <div style="position:relative; width:100vw; height:100vh; background:black; overflow:hidden;">
+        <!-- Видео -->
+        <video id="opPayVideo" style="width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0;" muted playsinline></video>
+
+        <!-- Рамка сканирования -->
+        <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:60vw; aspect-ratio:1;">
+          <div style="position:absolute; top:0; left:0; width:20px; height:20px; border-left:4px solid white; border-top:4px solid white;"></div>
+          <div style="position:absolute; top:0; right:0; width:20px; height:20px; border-right:4px solid white; border-top:4px solid white;"></div>
+          <div style="position:absolute; bottom:0; left:0; width:20px; height:20px; border-left:4px solid white; border-bottom:4px solid white;"></div>
+          <div style="position:absolute; bottom:0; right:0; width:20px; height:20px; border-right:4px solid white; border-bottom:4px solid white;"></div>
+        </div>
+
+        <!-- Нижняя панель -->
+        <div style="position:absolute; bottom:0; width:100%; background:rgba(0,0,0,0.8); padding:12px 20px; display:flex; justify-content:space-between; align-items:center;">
+          <button onclick="toggleFlashlight()" style="background:none; border:none; color:white; font-size:24px;">🔦</button>
+          <button onclick="document.getElementById('qrImageInput').click()" style="background:none; border:none; color:white; font-size:24px;">🖼️</button>
+          <button onclick="document.getElementById('payQRModal')?.remove()" style="background:none; border:none; color:white; font-size:24px;">✖️</button>
+        </div>
+
+        <!-- input для загрузки изображения -->
+        <input type="file" id="qrImageInput" accept="image/*" style="display:none;" />
+      </div>
     `,
     {
-      showCloseBtn: true,
-      cornerTopMargin: 50,
-      cornerTopRadius: 20,  // радиус
-      hasVerticalScroll: true,
-      defaultFromBottom: true,
-      noRadiusByDefault: false
+      showCloseBtn: false,
+      cornerTopMargin: 0,
+      cornerTopRadius: 0,
+      hasVerticalScroll: false,
+      defaultFromBottom: false,
+      noRadiusByDefault: true
     }
   );
 
   const videoEl = document.getElementById("opPayVideo");
-  startUniversalQRScanner(videoEl, (rawValue) => {
+  let stream;
+  let track;
+
+  // Запускаем сканер
+  startUniversalQRScanner(videoEl, async (rawValue) => {
     const parsed = parseMerchantQRData(rawValue);
     if (!parsed.merchantId) {
       alert("❌ Неверный QR. Нет merchantId.");
       return;
     }
-    // Сначала создаём окно подтверждения
+
     confirmPayMerchantModal(parsed);
 
-    // А теперь закрываем окно сканера (через небольшую паузу, чтобы не конфликтовать с анимацией)
     setTimeout(() => {
       document.getElementById("payQRModal")?.remove();
+      if (track) track.stop();
     }, 500);
+  }).then((mediaStream) => {
+    stream = mediaStream;
+    track = stream.getVideoTracks()[0];
+  });
+
+  // Обработка выбора изображения
+  document.getElementById("qrImageInput").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const img = new Image();
+    img.onload = async () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+      // Используем jsQR или аналогичный QR-декодер
+      const code = jsQR(imageData.data, canvas.width, canvas.height);
+      if (code) {
+        const parsed = parseMerchantQRData(code.data);
+        if (!parsed.merchantId) {
+          alert("❌ Неверный QR. Нет merchantId.");
+          return;
+        }
+
+        confirmPayMerchantModal(parsed);
+        setTimeout(() => {
+          document.getElementById("payQRModal")?.remove();
+          if (track) track.stop();
+        }, 500);
+      } else {
+        alert("❌ QR-код не найден в изображении.");
+      }
+    };
+    img.src = URL.createObjectURL(file);
   });
 }
 
-function confirmPayMerchantModal({ merchantId, amount, purpose }) {
-  createModal(
-    "confirmPayMerchantModal",
-    `
-      <h3 style="text-align:center;">Подтверждение оплаты</h3>
-      <p>Мерчант: ${merchantId}</p>
-      <p>Сумма: ${formatBalance(amount, 5)} ₲</p>
-      <p>Назначение: ${purpose}</p>
-      <button id="confirmPayBtn" style="padding:10px;margin-top:10px;">Оплатить</button>
-    `,
-    {
-      showCloseBtn: true,
-      cornerTopMargin: 50,
-      cornerTopRadius: 20, // радиус
-      hasVerticalScroll: true,
-      defaultFromBottom: true,
-      noRadiusByDefault: false
-    }
-  );
+function toggleFlashlight() {
+  const videoEl = document.getElementById("opPayVideo");
+  const stream = videoEl.srcObject;
+  if (!stream) return;
 
-  document.getElementById("confirmPayBtn").onclick = async () => {
-    if (!currentUserId) return;
-    try {
-      const resp = await fetch(`${API_URL}/payMerchantOneTime`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: currentUserId, merchantId, amount, purpose }),
-      });
-      const data = await resp.json();
-      if (data.success) {
-        alert("✅ Оплачено!");
-        document.getElementById("confirmPayMerchantModal")?.remove();
-        fetchUserData();
-      } else {
-        alert("❌ Ошибка: " + data.error);
-      }
-    } catch (err) {
-      console.error("payMerchantOneTime error:", err);
-    }
-  };
+  const track = stream.getVideoTracks()[0];
+  const capabilities = track.getCapabilities();
+  if (!capabilities.torch) {
+    alert("Фонарик не поддерживается этим устройством.");
+    return;
+  }
+
+  track.applyConstraints({
+    advanced: [{ torch: !track._torchOn }],
+  }).then(() => {
+    track._torchOn = !track._torchOn;
+  }).catch(err => {
+    console.error("Ошибка переключения фонарика:", err);
+  });
 }
+
 
 /**************************************************
  * ОБМЕН (без кнопки закрытия, без радиуса)
