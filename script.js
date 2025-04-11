@@ -1709,90 +1709,88 @@ function openExchangeModal() {
   createModal(
     "exchangeModal",
     `
-      <div class="exchange-fullscreen">
-        <div class="exchange-container">
-
-          <div class="exchange-header">
-            <img src="photo/71.png" class="exchange-icon">
-            <div>
-              <div class="exchange-title">Обмен валюты</div>
-              <div id="currentRate" class="current-rate">1 ₲ = 0.00 ₽</div>
-            </div>
+      <div class="exchange-container">
+        <div class="exchange-header">
+          <img src="photo/71.png" class="exchange-icon">
+          <div>
+            <div class="exchange-title">Обмен валюты</div>
+            <div id="currentRate" class="current-rate">1 ₲ = 0.00 ₽</div>
           </div>
-
-          <div class="chart-wrapper fixed-chart">
-            <div class="chart-header">
-              <span class="rate-label">Текущий курс</span>
-              <div class="rate-change">
-                <span id="rateChangeArrow" class="rate-arrow">→</span>
-                <span id="rateChangePercent" class="rate-percent">0.00%</span>
-              </div>
-            </div>
-            <canvas id="exchangeChart" class="exchange-chart"></canvas>
-          </div>
-
-          <div class="converter-container">
-            <div class="converter-body">
-
-              <div class="currency-block">
-                <div class="currency-header">
-                  <span class="currency-label">Отдаете</span>
-                  <span id="fromBalance" class="balance-label">Доступно: 0.00000 ₲</span>
-                </div>
-                <div class="currency-input">
-                  <input 
-                    type="number" 
-                    id="amountInput" 
-                    placeholder="0.00" 
-                    class="input-field">
-                  <div class="currency-display">
-                    <img src="photo/15.png" class="currency-icon">
-                    <span class="currency-name">GUGA</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="swap-button" id="swapBtn">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path d="M16 10L20 14L16 18M4 14L8 18L12 14M8 6L4 10L8 14" stroke="#76808F" stroke-width="2"/>
-                </svg>
-              </div>
-
-              <div class="currency-block">
-                <div class="currency-header">
-                  <span class="currency-label">Получаете</span>
-                  <span id="toBalance" class="balance-label">Доступно: 0.00 ₽</span>
-                </div>
-                <div class="currency-input">
-                  <input 
-                    type="text" 
-                    id="toAmount" 
-                    placeholder="0.00" 
-                    class="input-field" 
-                    disabled>
-                  <div class="currency-display">
-                    <img src="photo/18.png" class="currency-icon">
-                    <span class="currency-name">RUB</span>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-          <button id="btnPerformExchange" class="exchange-button">
-            Подтвердить обмен
-          </button>
-
         </div>
+
+        <div class="chart-wrapper">
+          <div class="chart-header">
+            <span class="rate-label">Текущий курс</span>
+            <div class="rate-change">
+              <span id="rateChangeArrow" class="rate-arrow">→</span>
+              <span id="rateChangePercent" class="rate-percent">0.00%</span>
+            </div>
+          </div>
+          <canvas id="exchangeChart" class="exchange-chart"></canvas>
+        </div>
+
+        <div class="converter-container">
+          <div class="converter-body">
+
+            <div class="currency-block">
+              <div class="currency-header">
+                <span class="currency-label">Отдаете</span>
+                <span id="fromBalance" class="balance-label">Доступно: 0.00000 ₲</span>
+              </div>
+              <div class="currency-input">
+                <input 
+                  type="number" 
+                  id="amountInput" 
+                  placeholder="0.00" 
+                  class="input-field">
+                <div class="currency-display">
+                  <img src="photo/15.png" class="currency-icon">
+                  <span class="currency-name">GUGA</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="swap-button" id="swapBtn">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M16 10L20 14L16 18M4 14L8 18L12 14M8 6L4 10L8 14" stroke="#76808F" stroke-width="2"/>
+              </svg>
+            </div>
+
+            <div class="currency-block">
+              <div class="currency-header">
+                <span class="currency-label">Получаете</span>
+                <span id="toBalance" class="balance-label">Доступно: 0.00 ₽</span>
+              </div>
+              <div class="currency-input">
+                <input 
+                  type="text" 
+                  id="toAmount" 
+                  placeholder="0.00" 
+                  class="input-field" 
+                  disabled>
+                <div class="currency-display">
+                  <img src="photo/18.png" class="currency-icon">
+                  <span class="currency-name">RUB</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <button id="btnPerformExchange" class="exchange-button">
+          Подтвердить обмен
+        </button>
       </div>
     `,
     {
       showCloseBtn: false,
-      cornerTopRadius: 0,
-      noRadiusByDefault: true,
-      fullScreen: true,
-      contentMaxHeight: "100vh",
+      cornerTopMargin: 20,
+      cornerTopRadius: 24,
+      hasVerticalScroll: false,
+      defaultFromBottom: true,
+      noRadiusByDefault: false,
+      contentMaxHeight: "calc(100vh - 160px)",
     }
   );
 
