@@ -50,7 +50,7 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 const corsOptions = {
   origin: [
     'https://mkntw.ru',
-    'http://localhost:3000' // для разработки
+    'https://mkntw.github.io/gugacoin/' // для разработки
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
