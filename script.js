@@ -41,7 +41,7 @@ appStyle.textContent = `
     flex: 1;
     overflow-y: auto;
     padding: 16px;
-    padding-bottom: 80px; /* Отступ для нижней панели */
+    padding-bottom: 80px; /* Отступ для нижней панелио */
   }
 `;
 document.head.appendChild(appStyle);
