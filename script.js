@@ -359,16 +359,78 @@ function validateInput(value, minLength = 1) {
  * ОКНО ЗАПРОСА qr
  **************************************************/
 
-function openRequestModal() {
+function openPayQRModal() {
   createModal(
-    "requestModal",
+    "payQRModal",
     `
-      <h3>Создать запрос на перевод</h3>
-      <label>Сумма:</label>
-      <input type="number" id="requestAmountInput" placeholder="Введите сумму" style="padding: 8px; font-size: 16px; width: 100%;">
-      <label>Назначение (необязательно):</label>
-      <input type="text" id="requestPurposeInput" placeholder="Введите назначение платежа" style="padding: 8px; font-size: 16px; width: 100%; margin-bottom: 20px;">
-      <button id="generateQRBtn" style="padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; width: 100%;">Создать QR-код</button>
+      <div class="qr-scanner-wrapper">
+        <video id="opPayVideo" muted playsinline></video>
+        <div class="scanner-overlay"></div>
+        <div class="scan-frame">
+          <div class="corner top-left"></div>
+          <div class="corner top-right"></div>
+          <div class="corner bottom-left"></div>
+          <div class="corner bottom-right"></div>
+        </div>
+      </div>
+    `,
+    {
+      showCloseBtn: false,
+      customStyles: {
+        position: 'fixed',
+        top: '0',
+        left: '0',
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(0,0,0,0.9)',
+        zIndex: 10000,
+        padding: '0',
+        overflow: 'hidden',
+      },
+    }
+  );
+
+  const videoEl = document.getElementById("opPayVideo");
+  startUniversalQRScanner(videoEl, (rawValue) => {
+    const parsed = parseMerchantQRData(rawValue);
+
+    if (parsed.type === "person") {
+      if (!parsed.userId) {
+        alert("❌ Неверный QR. Нет userId.");
+        return;
+      }
+      confirmPayUserModal(parsed); // Обработка перевода между пользователями
+    } else if (parsed.type === "merchant") {
+      if (!parsed.merchantId) {
+        alert("❌ Неверный QR. Нет merchantId.");
+        return;
+      }
+      confirmPayMerchantModal(parsed); // Обработка оплаты мерчанту
+    } else {
+      alert("❌ Неверный тип QR-кода.");
+      return;
+    }
+    
+    // Закрываем окно сканера после успешного сканирования
+    setTimeout(() => {
+      document.getElementById("payQRModal")?.remove();
+    }, 500);
+  });
+}
+
+/**************************************************
+ * Новая функция confirmPayUserModal
+ **************************************************/
+
+function confirmPayUserModal({ userId, amount, purpose }) {
+  createModal(
+    "confirmPayUserModal",
+    `
+      <h3 style="text-align:center;">Подтверждение перевода</h3>
+      <p>Получатель: ${userId}</p>
+      <p>Сумма: ${formatBalance(amount, 5)} ₲</p>
+      <p>Назначение: ${purpose}</p>
+      <button id="confirmPayUserBtn" style="padding:10px;margin-top:10px;">Перевести</button>
     `,
     {
       showCloseBtn: true,
@@ -380,43 +442,27 @@ function openRequestModal() {
     }
   );
 
-  document.getElementById("generateQRBtn").addEventListener("click", () => {
-    const amount = parseFloat(document.getElementById("requestAmountInput").value);
-    const purpose = document.getElementById("requestPurposeInput").value || "";
-
-    if (!amount || amount <= 0) {
-      alert("Введите корректную сумму!");
-      return;
-    }
-
-    // Генерация данных для QR-кода без использования merchantId
-    const qrData = `guga://type=person&amount=${amount}&purpose=${encodeURIComponent(purpose)}`;
-
-    createModal(
-      "qrModal",
-      `
-        <h3>Ваш QR-код</h3>
-        <div id="qrCodeContainer" style="display: flex; justify-content: center; align-items: center; margin: 20px 0;"></div>
-        <p>Сумма: <strong>${amount.toFixed(2)}</strong></p>
-        ${purpose ? `<p>Назначение: <strong>${purpose}</strong></p>` : ""}
-      `,
-      {
-        showCloseBtn: true,
-        cornerTopMargin: 50,
-        cornerTopRadius: 20,
-        hasVerticalScroll: true,
-        defaultFromBottom: true,
-        noRadiusByDefault: false,
+  document.getElementById("confirmPayUserBtn").onclick = async () => {
+    if (!currentUserId) return;
+    try {
+      const resp = await fetch(`${API_URL}/payUser`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fromUserId: currentUserId, toUserId: userId, amount, purpose }),
+      });
+      const data = await resp.json();
+      if (data.success) {
+        alert("✅ Перевод выполнен!");
+        document.getElementById("confirmPayUserModal")?.remove();
+        fetchUserData(); // Обновление данных пользователя
+      } else {
+        alert("❌ Ошибка: " + data.error);
       }
-    );
-
-    const qrCodeContainer = document.getElementById("qrCodeContainer");
-    new QRCode(qrCodeContainer, {
-      text: qrData,
-      width: 300,
-      height: 300,
-    });
-  });
+    } catch (err) {
+      console.error("Ошибка при переводе:", err);
+    }
+  };
 }
 
 /**************************************************
@@ -2309,13 +2355,13 @@ function parseMerchantQRData(qrString) {
     const parts = query.split("&");
     for (const p of parts) {
       const [key, val] = p.split("=");
-      if (key === "type") obj.type = val; // "person" или "merchant"
-      if (key === "userId") obj.userId = val; // ID пользователя
+      if (key === "type") obj.type = val; // Тип операции: "person" или "merchant"
+      if (key === "userId") obj.userId = val; // ID получателя
       if (key === "amount") obj.amount = parseFloat(val);
       if (key === "purpose") obj.purpose = decodeURIComponent(val);
     }
   } catch (e) {
-    console.error("parseMerchantQRData error:", e);
+    console.error("Ошибка при разборе QR-кода:", e);
   }
   return obj;
 }
