@@ -965,6 +965,10 @@ function confirmPayMerchantModal({ merchantId, amount, purpose }) {
   };
 }
 
+/**************************************************
+ * обмен
+ **************************************************/
+
 let currentExchangeDirection = "coin_to_rub";
 let currentExchangeRate = 0;
 
@@ -978,6 +982,7 @@ function openExchangeModal(horizontalSwitch) {
 
       <div style="max-width:600px; margin:0 auto; background:rgb(247, 247, 247); 
                   padding:10px; border-radius:10px; position:relative;">
+
         <div style="position:absolute; top:10px; left:10px; display:flex; flex-direction:column; gap:4px;">
           <div id="currentRateText" style="font-size:24px; font-weight:bold; margin-left: 10px;">--</div>
           <div style="display:flex; align-items:center; gap:12px;">
@@ -986,6 +991,7 @@ function openExchangeModal(horizontalSwitch) {
             <span id="rateChangeRub" style="font-size:16px; color:#000;">+0.00₽</span>
           </div>
         </div>
+
         <canvas id="exchangeChart" style="width:100%; max-height:200px; margin-top:70px;"></canvas>
       </div>
 
@@ -1023,9 +1029,6 @@ function openExchangeModal(horizontalSwitch) {
     }
   );
 
-  document.getElementById("amountInput").value = "";
-  document.getElementById("toAmount").value = "0.00";
-
   const swapBtn = document.getElementById("swapBtn");
   swapBtn.addEventListener("click", () => {
     swapBtn.classList.add("swap-rotate");
@@ -1033,32 +1036,33 @@ function openExchangeModal(horizontalSwitch) {
     swapCurrencies();
   });
 
-  // Показываем балансы из главного экрана
+  // Устанавливаем фиксированные значения
+  document.getElementById("amountInput").value = "";
+  document.getElementById("toAmount").value = "0.00";
   updateCurrencyLabels();
   updateExchange();
-  updateBalanceTexts();
+  updateFixedBalanceText();
 
-  // Загружаем курс и рисуем график
   loadExchangeRate()
     .then(() => {
       drawExchangeChart();
       updateCurrentRateDisplay();
-      setExchangeButtonHandler();
     })
-    .catch((err) => console.error("openExchangeModal error:", err))
-    .finally(() => hideGlobalLoading());
+    .finally(() => {
+      document.getElementById("btnPerformExchange").onclick = () => {
+        handleExchange(currentExchangeDirection);
+      };
+      hideGlobalLoading();
+    });
 }
 
 function swapCurrencies() {
   currentExchangeDirection = currentExchangeDirection === "coin_to_rub" ? "rub_to_coin" : "coin_to_rub";
-
   document.getElementById("amountInput").value = "";
-  document.getElementById("toAmount").value = currentExchangeDirection === "coin_to_rub" ? "0.00" : "0.00000";
-
+  document.getElementById("toAmount").value = "0.00";
   updateCurrencyLabels();
   updateExchange();
-  updateBalanceTexts();
-  setExchangeButtonHandler();
+  updateFixedBalanceText();
 }
 
 function updateExchange() {
@@ -1075,7 +1079,7 @@ function updateExchange() {
       document.getElementById("toAmount").value = formatBalance(result, 5);
     }
   } else {
-    document.getElementById("toAmount").value = currentExchangeDirection === "coin_to_rub" ? "0.00" : "0.00000";
+    document.getElementById("toAmount").value = "0.00";
   }
 }
 
@@ -1092,25 +1096,19 @@ function updateCurrencyLabels() {
   }
 }
 
-function updateBalanceTexts() {
-  const guga = document.getElementById("gugaBalanceValue")?.innerText || "0.00000 ₲";
-  const rub = document.getElementById("rubBalanceValue")?.innerText || "0.00 ₽";
-
-  if (currentExchangeDirection === "coin_to_rub") {
-    document.getElementById("balanceInfo").textContent = guga;
-    document.getElementById("toBalanceInfo").textContent = rub;
-  } else {
-    document.getElementById("balanceInfo").textContent = rub;
-    document.getElementById("toBalanceInfo").textContent = guga;
-  }
+function updateFixedBalanceText() {
+  // Показываем всегда одни и те же балансы:
+  document.getElementById("balanceInfo").textContent = "0.00000 ₲";
+  document.getElementById("toBalanceInfo").textContent = "0.00 ₽";
 }
 
-function setExchangeButtonHandler() {
-  const btn = document.getElementById("btnPerformExchange");
-  if (!btn) return;
-  btn.onclick = () => {
-    handleExchange(currentExchangeDirection);
-  };
+function updateCurrentRateDisplay() {
+  const currentRateText = document.getElementById("currentRateText");
+  if (!currentExchangeRate) {
+    currentRateText.textContent = "--";
+  } else {
+    currentRateText.textContent = `${formatBalance(currentExchangeRate, 2)} ₽`;
+  }
 }
 
 async function handleExchange(direction) {
@@ -1133,6 +1131,7 @@ async function handleExchange(direction) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ direction, amount: amountVal }),
     });
+
     const data = await resp.json();
     if (data.success) {
       const msg = direction === "rub_to_coin"
@@ -1142,8 +1141,8 @@ async function handleExchange(direction) {
       alert("✅ Обмен выполнен! " + msg);
       lastDirection = direction;
       setTimeout(() => (lastDirection = null), 5000);
-      fetchUserData(); // обновим балансы на главном экране
-      removeAllModals(); // закроем окно
+      fetchUserData(); // обновляем балансы
+      removeAllModals(); // закрываем окно
     } else {
       alert("❌ Ошибка обмена: " + data.error);
     }
@@ -1167,15 +1166,6 @@ async function loadExchangeRate() {
     }
   } catch (err) {
     console.error("loadExchangeRate error:", err);
-  }
-}
-
-function updateCurrentRateDisplay() {
-  const currentRateText = document.getElementById("currentRateText");
-  if (!currentExchangeRate) {
-    currentRateText.textContent = "--";
-  } else {
-    currentRateText.textContent = `${formatBalance(currentExchangeRate, 2)} ₽`;
   }
 }
 
