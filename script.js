@@ -15,7 +15,7 @@ let lastDirection = null;
 let cycleCount = 0;
 let exchangeChartInstance = null;
 
-// В начало файла добавить базовые стили
+// В начало файла добавить базовые стил
 const appStyle = document.createElement('style');
 appStyle.textContent = `
   html, body {
