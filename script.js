@@ -1698,10 +1698,11 @@ function parseQRCodeData(qrString) {
 }
 
 /**************************************************
- * ОБМЕН ВАЛЮТЫ (ПОЛНАЯ ВЕРСИЯ)
+ * ОБМЕН ВАЛЮТЫ (ПОЛНАЯ ВЕРСИЯя)
  **************************************************/
 let currentExchangeDirection = "coin_to_rub";
 let currentExchangeRate = 0;
+
 
 function openExchangeModal() {
   showGlobalLoading();
