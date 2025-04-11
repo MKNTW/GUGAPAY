@@ -977,6 +977,10 @@ function openTransferModal() {
 
     let currentTransferCurrency = "GUGA";
 
+    const formatBalance = (balance, decimals) => {
+        return balance.toFixed(decimals);
+    }
+
     const updateTransferUI = () => {
         const currencySymbol = document.getElementById("currencySymbol");
         const balanceInfo = document.getElementById("transferBalanceInfo");
@@ -1021,43 +1025,43 @@ function openTransferModal() {
         updateTransferUI();
     });
 
-  // Кнопка "Отправить"
-  document.getElementById("sendTransferBtn").onclick = async () => {
-    const toUser = document.getElementById("toUserIdInput")?.value;
-    const amount = parseFloat(document.getElementById("transferAmountInput")?.value);
-    if (!toUser || !amount || amount <= 0) {
-      alert("❌ Введите корректные данные");
-      return;
-    }
-    if (toUser === currentUserId) {
-      alert("❌ Нельзя перевести самому себе");
-      return;
-    }
+    // Кнопка "Отправить"
+    document.getElementById("sendTransferBtn").onclick = async () => {
+        const toUser = document.getElementById("toUserIdInput")?.value;
+        const amount = parseFloat(document.getElementById("transferAmountInput")?.value);
+        if (!toUser || !amount || amount <= 0) {
+            alert("❌ Введите корректные данные");
+            return;
+        }
+        if (toUser === currentUserId) {
+            alert("❌ Нельзя перевести самому себе");
+            return;
+        }
 
-    const endpoint = currentTransferCurrency === "GUGA" ? "/transfer" : "/transferRub";
+        const endpoint = currentTransferCurrency === "GUGA" ? "/transfer" : "/transferRub";
 
-    try {
-      const resp = await fetch(`${API_URL}${endpoint}`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ toUserId: toUser, amount })
-      });
-      const data = await resp.json();
-      if (data.success) {
-        alert("✅ Перевод выполнен!");
-        document.getElementById("transferModal")?.remove();
-        fetchUserData();
-      } else {
-        alert("❌ Ошибка перевода: " + data.error);
-      }
-    } catch (err) {
-      console.error("Ошибка при переводе:", err);
-      alert("Произошла ошибка при выполнении перевода");
-    }
-  };
+        try {
+            const resp = await fetch(`${API_URL}${endpoint}`, {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ toUserId: toUser, amount })
+            });
+            const data = await resp.json();
+            if (data.success) {
+                alert("✅ Перевод выполнен!");
+                document.getElementById("transferModal")?.remove();
+                fetchUserData();
+            } else {
+                alert("❌ Ошибка перевода: " + data.error);
+            }
+        } catch (err) {
+            console.error("Ошибка при переводе:", err);
+            alert("Произошла ошибка при выполнении перевода");
+        }
+    };
 
-  updateTransferUI(); // при запуске
+    updateTransferUI(); // при запуске
 }
 
 /**************************************************
