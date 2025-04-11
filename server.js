@@ -50,11 +50,7 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 app.use(helmet());
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({
-  origin: ['https://mkntw.ru'],
-  credentials: true,
-  optionsSuccessStatus: 200
-}));
+
 
 const authLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
