@@ -1980,7 +1980,7 @@ function updateRateDisplay(rates) {
 
 function initChart(rates) {
   const ctx = document.getElementById('exchangeChart').getContext('2d');
-  const labels = rates.slice(0, 20).reverse().map(r =>
+  const labels = rates.slice(0, 4).reverse().map(r =>
     new Date(r.created_at).toLocaleTimeString('ru-RU', {
       hour: '2-digit', minute: '2-digit'
     })
@@ -1993,7 +1993,7 @@ function initChart(rates) {
     data: {
       labels,
       datasets: [{
-        data: rates.slice(0, 20).reverse().map(r => r.exchange_rate),
+        data: rates.slice(0, 4).reverse().map(r => r.exchange_rate),
         borderColor: '#2F80ED',
         borderWidth: 2,
         tension: 0.4,
