@@ -1439,17 +1439,12 @@ async function confirmPayUserModal({ userId, amount, purpose, currency }) {
     return;
   }
 
-  if (currency !== "GUGA") {
-    alert("❌ Поддерживаются только переводы в GUGA");
-    return;
-  }
-
   createModal(
     "confirmPayUserModal",
     `
       <h3 style="text-align:center;">Подтверждение перевода</h3>
       <p>Получатель: ${userId}</p>
-      <p>Сумма: ${formatBalance(amount, 5)} ₲</p>
+      <p>Сумма: ${formatBalance(amount, 5)} ${currency === 'RUB' ? '₽' : '₲'}</p>
       ${purpose ? `<p>Назначение: ${purpose}</p>` : ''}
       <button id="confirmPayUserBtn" style="padding:10px;margin-top:10px;">Перевести</button>
     `,
