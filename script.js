@@ -177,29 +177,33 @@ function createModal(
 const closeBtn = contentDiv.querySelector(".modal-close-btn");
 if (closeBtn) {
     Object.assign(closeBtn.style, {
-        position: "absolute",
-        top: "15px",
-        right: "15px", // Переносим в правый верхний угол
-        width: "30px",
-        height: "30px",
-        backgroundColor: "#fff", // Черный фон
-        color: "#000", // Белый крестик
-        borderRadius: "50%", // Делаем кнопку круглой
-        border: "solid", // Убираем границу
-        fontSize: "18px", // Размер текста для крестика
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        cursor: "pointer",
-    });
+    position: "absolute",
+    top: "20px", // Отступ сверху
+    right: "20px", // Отступ справа
+    width: "40px", // Ширина кнопки
+    height: "40px", // Высота кнопки
+    backgroundColor: "#000", // Чёрный фон
+    color: "#fff", // Белый крестик
+    borderRadius: "50%", // Делаем кнопку круглой
+    border: "none", // Убираем границы
+    display: "flex", // Используем flex для выравнивания
+    alignItems: "center", // Центрируем крестик по вертикали
+    justifyContent: "center", // Центрируем крестик по горизонтали
+    cursor: "pointer", // Курсор "рука" при наведении
+    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)", // Тень для объёмности
+    transition: "all 0.3s ease", // Плавный переход
+    zIndex: "1001", // Поверх остальных элементов
+});
 
-    // Добавляем hover-эффект
-    closeBtn.addEventListener("mouseenter", () => {
-        closeBtn.style.opacity = "0.8";
-    });
-    closeBtn.addEventListener("mouseleave", () => {
-        closeBtn.style.opacity = "1";
-    });
+// Добавляем hover-эффект
+closeBtn.addEventListener("mouseenter", () => {
+    closeBtn.style.backgroundColor = "#333"; // Темнее при наведении
+    closeBtn.style.transform = "scale(1.1)"; // Увеличиваем чуть-чуть
+});
+closeBtn.addEventListener("mouseleave", () => {
+    closeBtn.style.backgroundColor = "#000"; // Возвращаем фон
+    closeBtn.style.transform = "scale(1)"; // Возвращаем размер
+});
 }
     modal.appendChild(contentDiv);
     document.body.appendChild(modal);
