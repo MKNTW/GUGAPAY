@@ -2302,14 +2302,15 @@ function stopStream(stream) {
 }
 
 function parseMerchantQRData(qrString) {
-  const obj = { merchantId: null, amount: 0, purpose: "" };
+  const obj = { type: null, userId: null, amount: 0, purpose: "" };
   try {
     if (!qrString.startsWith("guga://")) return obj;
     const query = qrString.replace("guga://", "");
     const parts = query.split("&");
     for (const p of parts) {
       const [key, val] = p.split("=");
-      if (key === "merchantId") obj.merchantId = val;
+      if (key === "type") obj.type = val; // "person" или "merchant"
+      if (key === "userId") obj.userId = val; // ID пользователя
       if (key === "amount") obj.amount = parseFloat(val);
       if (key === "purpose") obj.purpose = decodeURIComponent(val);
     }
