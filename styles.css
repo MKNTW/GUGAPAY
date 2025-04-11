@@ -595,3 +595,169 @@ body {
 .modal-slide-out-down {
   animation: slide-out-down 0.3s ease-out;
 }
+
+/* Стили для обмена валюты */
+.exchange-fullscreen {
+    padding: 20px;
+    max-width: 440px;
+    margin: 0 auto;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 32px;
+}
+
+.section-header img {
+    width: 40px;
+    height: 40px;
+}
+
+.section-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1A1A1A;
+    line-height: 1.2;
+}
+
+.rate-display {
+    font-size: 16px;
+    color: #666;
+}
+
+.chart-container {
+    background: #F8F9FB;
+    border-radius: 16px;
+    padding: 16px;
+    margin: 24px 0;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.rate-change {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+}
+
+.positive {
+    color: #4BA857 !important;
+}
+
+.negative {
+    color: #D21B1B !important;
+}
+
+.currency-card {
+    background: #FFFFFF;
+    border: 1px solid #E6E6EB;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.currency-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.currency-label {
+    font-size: 14px;
+    color: #666;
+}
+
+.balance-value {
+    font-size: 12px;
+    color: #666;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.exchange-input {
+    flex: 1;
+    border: none;
+    background: none;
+    font-size: 18px;
+    color: #1A1A1A;
+    padding: 12px 0;
+    outline: none;
+}
+
+.exchange-input::placeholder {
+    color: #B1B8C5;
+}
+
+.currency-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #F8F9FB;
+    border-radius: 12px;
+    padding: 8px 16px;
+}
+
+.currency-badge img {
+    width: 24px;
+    height: 24px;
+}
+
+.currency-name {
+    font-weight: 500;
+    color: #1A1A1A;
+}
+
+.swap-button {
+    background: #FFFFFF;
+    border: 1px solid #E6E6EB;
+    border-radius: 12px;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 12px auto;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.swap-button:hover {
+    background: #F8F9FB;
+}
+
+.exchange-submit-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(90deg, #2F80ED, #2D9CDB);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    margin-top: 24px;
+}
+
+.exchange-submit-btn:hover {
+    opacity: 0.9;
+}
+
+/* График */
+.exchange-chart-canvas {
+    width: 100% !important;
+    height: 160px !important;
+}
