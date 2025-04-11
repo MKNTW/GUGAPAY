@@ -320,16 +320,16 @@ body {
 }
 
 .modal-content button {
-  margin-top: 10px;
-  padding: 8px;
-  border: 2px solid #000;
-  cursor: pointer;
-  border-radius: 0;
-  transition: background-color 0.3s ease;
-  font-size: 16px;
-  font-weight: 600;
+  #margin-top: 10px;
+  #padding: 8px;
+  #border: 2px solid #000;
+  #cursor: pointer;
+  #border-radius: 0;
+  #transition: background-color 0.3s ease;
+  #font-size: 16px;
+  #font-weight: 600;
   background-color: transparent;
-  color: #000;
+  #color: #000;
 }
 
 .modal-content button:hover {
