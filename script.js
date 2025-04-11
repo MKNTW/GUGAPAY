@@ -438,6 +438,7 @@ function openRequestModal() {
             cursor: pointer;
             transition: all 0.2s;
             margin-top: 8px;
+            background: linear-gradient(90deg, #2F80ED, #2D9CDB);
           ">
           Создать QR-код
         </button>
