@@ -642,6 +642,10 @@ function createMainUI() {
         <img src="photo/81.png" style="width:35px;height:35px;">
         Перевести
       </button>
+      <button id="requestBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <img src="photo/82.png" style="width:35px;height:35px;">
+        Запросить
+      </button>
       <button id="payQRBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:-5px;">
         <img src="photo/90.png" style="width:40px;height:40px;">
         Оплатить
@@ -652,6 +656,11 @@ function createMainUI() {
     document.getElementById("transferBtn").addEventListener("click", () => {
       removeAllModals();
       openTransferModal();
+    });
+
+    document.getElementById("requestBtn").addEventListener("click", () => {
+      removeAllModals();
+      openRequestModal();
     });
 
     document.getElementById("payQRBtn").addEventListener("click", () => {
