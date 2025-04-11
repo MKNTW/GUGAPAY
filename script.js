@@ -1310,8 +1310,22 @@ function openPayQRModal() {
   const videoEl = document.getElementById("opPayVideo");
   startUniversalQRScanner(videoEl, (rawValue) => {
     const parsed = parseMerchantQRData(rawValue);
-    if (!parsed.merchantId) {
-      alert("❌ Неверный QR. Нет merchantId.");
+    if (parsed.type === "person") {
+      // Обработка перевода между пользователями
+      if (!parsed.userId) {
+        alert("❌ Неверный QR. Нет userId.");
+        return;
+      }
+      confirmPayUserModal(parsed);
+    } else if (parsed.type === "merchant") {
+      // Обработка оплаты мерчанту
+      if (!parsed.merchantId) {
+        alert("❌ Неверный QR. Нет merchantId.");
+        return;
+      }
+      confirmPayMerchantModal(parsed);
+    } else {
+      alert("❌ Неверный тип QR-кода.");
       return;
     }
     // Сначала создаём окно подтверждения
@@ -1363,6 +1377,49 @@ function confirmPayMerchantModal({ merchantId, amount, purpose }) {
       }
     } catch (err) {
       console.error("payMerchantOneTime error:", err);
+    }
+  };
+}
+
+function confirmPayUserModal({ userId, amount, purpose }) {
+  createModal(
+    "confirmPayUserModal",
+    `
+      <h3 style="text-align:center;">Подтверждение перевода</h3>
+      <p>Получатель: ${userId}</p>
+      <p>Сумма: ${formatBalance(amount, 5)} ₲</p>
+      <p>Назначение: ${purpose}</p>
+      <button id="confirmPayUserBtn" style="padding:10px;margin-top:10px;">Перевести</button>
+    `,
+    {
+      showCloseBtn: true,
+      cornerTopMargin: 50,
+      cornerTopRadius: 20, // радиус
+      hasVerticalScroll: true,
+      defaultFromBottom: true,
+      noRadiusByDefault: false,
+    }
+  );
+
+  document.getElementById("confirmPayUserBtn").onclick = async () => {
+    if (!currentUserId) return;
+    try {
+      const resp = await fetch(`${API_URL}/payUser`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fromUserId: currentUserId, toUserId: userId, amount, purpose }),
+      });
+      const data = await resp.json();
+      if (data.success) {
+        alert("✅ Перевод выполнен!");
+        document.getElementById("confirmPayUserModal")?.remove();
+        fetchUserData();
+      } else {
+        alert("❌ Ошибка: " + data.error);
+      }
+    } catch (err) {
+      console.error("payUser error:", err);
     }
   };
 }
