@@ -1709,89 +1709,270 @@ function openExchangeModal() {
   createModal(
     "exchangeModal",
     `
-<div class="exchange-fullscreen">
-    <div class="section-header">
-        <img src="photo/71.png" class="section-icon">
-        <div>
-            <div class="section-title">Обмен валюты</div>
-            <div id="currentRate" class="rate-display">1 ₲ = 0.00 ₽</div>
+<div class="exchange-container">
+    <div class="exchange-header">
+        <img src="photo/71.png" class="exchange-icon">
+        <div class="header-info">
+            <div class="exchange-title">Обмен валюты</div>
+            <div id="currentRate" class="current-rate">1 ₲ = 0.00 ₽</div>
         </div>
     </div>
 
     <div class="chart-container">
         <div class="chart-header">
-            <span class="currency-label">Курс GUGA/RUB</span>
+            <span class="rate-label">Курс GUGA/RUB</span>
             <div class="rate-change">
-                <span id="rateChangeArrow">→</span>
-                <span id="rateChangePercent">0.00%</span>
+                <span id="rateChangeArrow" class="rate-arrow">→</span>
+                <span id="rateChangePercent" class="rate-percent">0.00%</span>
             </div>
         </div>
-        <canvas id="exchangeChart" class="exchange-chart-canvas"></canvas>
+        <div class="chart-wrapper">
+            <canvas id="exchangeChart"></canvas>
+        </div>
     </div>
 
-    <div class="currency-card">
-        <div class="currency-row">
-            <span class="currency-label">Отдаете</span>
-            <span id="fromBalance" class="balance-value">0.00000 ₲</span>
+    <div class="converter">
+        <div class="currency-block from-currency">
+            <div class="currency-header">
+                <span class="currency-label">Отдаете</span>
+                <span id="fromBalance" class="balance">0.00000 ₲</span>
+            </div>
+            <div class="input-group">
+                <input 
+                    type="number" 
+                    id="amountInput" 
+                    placeholder="0.00" 
+                    class="currency-input">
+                <div class="currency-display">
+                    <img src="photo/15.png" class="currency-icon">
+                    <span class="currency-symbol">GUGA</span>
+                </div>
+            </div>
         </div>
-        <div class="input-group">
-            <input 
-                type="number" 
-                id="amountInput" 
-                placeholder="0.00" 
-                class="exchange-input">
-            <div class="currency-badge">
-                <img src="photo/15.png">
-                <span class="currency-name">GUGA</span>
+
+        <button id="swapBtn" class="swap-btn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M16 10L20 14L16 18M4 14L8 18L12 14M8 6L4 10L8 14" stroke="currentColor" stroke-width="2"/>
+            </svg>
+        </button>
+
+        <div class="currency-block to-currency">
+            <div class="currency-header">
+                <span class="currency-label">Получаете</span>
+                <span id="toBalance" class="balance">0.00 ₽</span>
+            </div>
+            <div class="input-group">
+                <input 
+                    type="text" 
+                    id="toAmount" 
+                    placeholder="0.00" 
+                    class="currency-input"
+                    disabled>
+                <div class="currency-display">
+                    <img src="photo/18.png" class="currency-icon">
+                    <span class="currency-symbol">RUB</span>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="swap-button" id="swapBtn">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M16 10L20 14L16 18M4 14L8 18L12 14M8 6L4 10L8 14" stroke="currentColor" stroke-width="2"/>
-        </svg>
-    </div>
-
-    <div class="currency-card">
-        <div class="currency-row">
-            <span class="currency-label">Получаете</span>
-            <span id="toBalance" class="balance-value">0.00 ₽</span>
-        </div>
-        <div class="input-group">
-            <input 
-                type="text" 
-                id="toAmount" 
-                placeholder="0.00" 
-                class="exchange-input" 
-                disabled>
-            <div class="currency-badge">
-                <img src="photo/18.png">
-                <span class="currency-name">RUB</span>
-            </div>
-        </div>
-    </div>
-
-    <button id="btnPerformExchange" class="exchange-submit-btn">
+    <button id="btnPerformExchange" class="submit-btn">
         Подтвердить обмен
     </button>
 </div>
-`,
+    `,
     {
-      showCloseBtn: false,
-      cornerTopMargin: 0,
-      cornerTopRadius: 0,
-      hasVerticalScroll: false,
-      defaultFromBottom: false,
-      noRadiusByDefault: true,
-      contentMaxHeight: "100vh",
+      showCloseBtn: true,
+      cornerTopMargin: 20,
+      cornerTopRadius: 24,
+      contentMaxHeight: "90vh"
     }
   );
 
-  document.body.classList.add("modal-opened");
   initExchange();
 }
 
+// Стили
+const exchangeStyles = `
+.exchange-container {
+    max-width: 440px;
+    padding: 20px;
+    background: #fff;
+}
+
+.exchange-header {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.exchange-icon {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+}
+
+.header-info {
+    flex: 1;
+}
+
+.exchange-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1A1A1A;
+    margin-bottom: 4px;
+}
+
+.current-rate {
+    font-size: 16px;
+    color: #76808F;
+}
+
+.chart-container {
+    background: #F8F9FB;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 24px;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.rate-label {
+    font-size: 14px;
+    color: #76808F;
+}
+
+.rate-change {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.rate-arrow {
+    font-size: 14px;
+}
+
+.rate-percent {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.chart-wrapper {
+    height: 200px;
+    position: relative;
+}
+
+.converter {
+    margin-bottom: 24px;
+}
+
+.currency-block {
+    background: #fff;
+    border: 1px solid #E6E6EB;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.currency-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.currency-label {
+    font-size: 14px;
+    color: #76808F;
+}
+
+.balance {
+    font-size: 12px;
+    color: #76808F;
+}
+
+.input-group {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.currency-input {
+    flex: 1;
+    border: none;
+    background: none;
+    font-size: 18px;
+    padding: 12px 0;
+    color: #1A1A1A;
+    outline: none;
+}
+
+.currency-input::placeholder {
+    color: #B1B8C5;
+}
+
+.currency-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #F8F9FB;
+    border-radius: 12px;
+    padding: 8px 16px;
+}
+
+.currency-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.currency-symbol {
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.swap-btn {
+    width: 48px;
+    height: 48px;
+    background: #fff;
+    border: 1px solid #E6E6EB;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 8px auto;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.swap-btn:hover {
+    background: #F8F9FB;
+}
+
+.submit-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(90deg, #2F80ED, #2D9CDB);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.submit-btn:hover {
+    opacity: 0.9;
+}
+`;
+
+// Добавляем стили
+const style = document.createElement('style');
+style.textContent = exchangeStyles;
+document.head.appendChild(style);
 async function initExchange() {
   try {
     const [ratesResp, userResp] = await Promise.all([
