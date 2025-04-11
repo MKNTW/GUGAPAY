@@ -356,18 +356,85 @@ function validateInput(value, minLength = 1) {
 }
 
 /**************************************************
- * ОКНО ЗАПРОСА qr
+ * ОКНО ЗАПРОСА QR
  **************************************************/
 function openRequestModal() {
   createModal(
     "requestModal",
     `
-      <h3>Создать запрос на перевод</h3>
-      <label>Сумма:</label>
-      <input type="number" id="requestAmountInput" placeholder="Введите сумму" style="padding: 8px; font-size: 16px; width: 100%;">
-      <label>Назначение (необязательно):</label>
-      <input type="text" id="requestPurposeInput" placeholder="Введите назначение платежа" style="padding: 8px; font-size: 16px; width: 100%; margin-bottom: 20px;">
-      <button id="generateQRBtn" style="padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; width: 100%;">Создать QR-код</button>
+      <div style="
+        max-width: 400px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #0B0E15;
+        border-radius: 16px;
+        color: #FFFFFF;
+        font-family: 'Inter', sans-serif;
+      ">
+        <div style="
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 24px;
+        ">
+          <img src="photo/15.png" style="width: 32px; height: 32px;">
+          <h3 style="margin: 0; font-size: 20px;">Создать запрос</h3>
+        </div>
+
+        <div style="margin-bottom: 24px;">
+          <div style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            color: #8A939F;
+            font-size: 14px;
+          ">
+            <span>Сумма</span>
+          </div>
+          
+          <div style="
+            background: #1A1E28;
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          ">
+            <input 
+              type="number" 
+              id="requestAmountInput" 
+              placeholder="0.00"
+              style="
+                flex: 1;
+                background: none;
+                border: none;
+                color: #FFFFFF;
+                font-size: 18px;
+                outline: none;
+                padding: 0;
+              ">
+            <span style="color: #8A939F; font-size: 16px;">₲</span>
+          </div>
+        </div>
+
+        <button 
+          id="generateQRBtn" 
+          style="
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(90deg, #2F80ED, #2D9CDB);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+          ">
+          Создать QR
+        </button>
+      </div>
     `,
     {
       showCloseBtn: true,
@@ -381,29 +448,50 @@ function openRequestModal() {
 
   document.getElementById("generateQRBtn").addEventListener("click", () => {
     const amount = parseFloat(document.getElementById("requestAmountInput").value);
-    const purpose = document.getElementById("requestPurposeInput").value || "";
 
     if (!amount || amount <= 0) {
-      alert("Введите корректную сумму!");
+      showNotification("Введите корректную сумму!", "error");
       return;
     }
 
-    // Проверка наличия userId
     if (!currentUserId) {
-      alert("Ошибка: userId отсутствует. Пожалуйста, войдите в систему.");
+      showNotification("Требуется авторизация", "error");
       return;
     }
 
-    // Генерация данных для QR-кода с userId
-    const qrData = `guga://type=person&userId=${currentUserId}&amount=${amount}&purpose=${encodeURIComponent(purpose)}`;
+    const qrData = `guga://type=person&userId=${currentUserId}&amount=${amount}`;
 
     createModal(
       "qrModal",
       `
-        <h3>Ваш QR-код</h3>
-        <div id="qrCodeContainer" style="display: flex; justify-content: center; align-items: center; margin: 20px 0;"></div>
-        <p>Сумма: <strong>${amount.toFixed(2)}</strong></p>
-        ${purpose ? `<p>Назначение: <strong>${purpose}</strong></p>` : ""}
+        <div style="
+          max-width: 400px;
+          margin: 0 auto;
+          padding: 24px;
+          background: #0B0E15;
+          border-radius: 16px;
+          text-align: center;
+          color: #FFFFFF;
+        ">
+          <h3 style="margin: 0 0 20px 0; font-size: 20px;">Ваш QR-код</h3>
+          
+          <div id="qrCodeContainer" style="
+            background: white;
+            padding: 16px;
+            border-radius: 12px;
+            margin: 0 auto 20px;
+            width: fit-content;
+          "></div>
+          
+          <div style="
+            background: #1A1E28;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 18px;
+          ">
+            ${formatBalance(amount, 5)} ₲
+          </div>
+        </div>
       `,
       {
         showCloseBtn: true,
@@ -415,11 +503,13 @@ function openRequestModal() {
       }
     );
 
-    const qrCodeContainer = document.getElementById("qrCodeContainer");
-    new QRCode(qrCodeContainer, {
+    new QRCode(document.getElementById("qrCodeContainer"), {
       text: qrData,
-      width: 300,
-      height: 300,
+      width: 220,
+      height: 220,
+      colorDark: "#000000",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.H
     });
   });
 }
