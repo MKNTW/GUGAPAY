@@ -1709,113 +1709,90 @@ function openExchangeModal() {
   createModal(
     "exchangeModal",
     `
-      <div style="
-        max-width: 400px;
-        margin: 0 auto;
-        padding: 24px;
-        background: #FFFFFF;
-        border-radius: 24px;
-        box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
-        position: relative;
-        margin-top: 60px;
-      ">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
-          <img src="photo/71.png" style="width: 40px; height: 40px;">
-          <div>
-            <div style="font-size: 20px; font-weight: 600; color: #1A1A1A;">Обмен валюты</div>
-            <div id="currentRate" style="font-size: 16px; color: #666;">1 ₲ = 0.00 ₽</div>
-          </div>
-        </div>
+      <div class="exchange-fullscreen">
+        <div class="exchange-container">
 
-        <div style="margin-bottom: 24px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: #76808F; margin-bottom: 8px;">
-            <span>Текущий курс</span>
-            <div class="rate-change" style="display: flex; align-items: center; gap: 6px;">
-              <span id="rateChangeArrow" style="font-size: 14px;">→</span>
-              <span id="rateChangePercent" style="font-size: 14px;">0.00%</span>
+          <div class="exchange-header">
+            <img src="photo/71.png" class="exchange-icon">
+            <div>
+              <div class="exchange-title">Обмен валюты</div>
+              <div id="currentRate" class="current-rate">1 ₲ = 0.00 ₽</div>
             </div>
           </div>
-          <canvas id="exchangeChart" style="width: 100%; height: 160px;"></canvas>
-        </div>
 
-        <div style="margin-bottom: 16px;">
-          <div style="font-size: 14px; color: #76808F; margin-bottom: 6px;">Отдаете</div>
-          <div style="display: flex; align-items: center; border: 1px solid #E6E6EB; border-radius: 16px; background: #F8F9FB; padding: 16px; gap: 10px;">
-            <input 
-              type="number" 
-              id="amountInput" 
-              placeholder="0.00"
-              style="flex: 1; background: none; border: none; font-size: 18px; color: #1A1A1A; font-weight: 500; outline: none;">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <img src="photo/15.png" class="currency-icon" style="width: 24px; height: 24px;">
-              <span class="currency-name">GUGA</span>
+          <div class="chart-wrapper fixed-chart">
+            <div class="chart-header">
+              <span class="rate-label">Текущий курс</span>
+              <div class="rate-change">
+                <span id="rateChangeArrow" class="rate-arrow">→</span>
+                <span id="rateChangePercent" class="rate-percent">0.00%</span>
+              </div>
+            </div>
+            <canvas id="exchangeChart" class="exchange-chart"></canvas>
+          </div>
+
+          <div class="converter-container">
+            <div class="converter-body">
+
+              <div class="currency-block">
+                <div class="currency-header">
+                  <span class="currency-label">Отдаете</span>
+                  <span id="fromBalance" class="balance-label">Доступно: 0.00000 ₲</span>
+                </div>
+                <div class="currency-input">
+                  <input 
+                    type="number" 
+                    id="amountInput" 
+                    placeholder="0.00" 
+                    class="input-field">
+                  <div class="currency-display">
+                    <img src="photo/15.png" class="currency-icon">
+                    <span class="currency-name">GUGA</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="swap-button" id="swapBtn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M16 10L20 14L16 18M4 14L8 18L12 14M8 6L4 10L8 14" stroke="#76808F" stroke-width="2"/>
+                </svg>
+              </div>
+
+              <div class="currency-block">
+                <div class="currency-header">
+                  <span class="currency-label">Получаете</span>
+                  <span id="toBalance" class="balance-label">Доступно: 0.00 ₽</span>
+                </div>
+                <div class="currency-input">
+                  <input 
+                    type="text" 
+                    id="toAmount" 
+                    placeholder="0.00" 
+                    class="input-field" 
+                    disabled>
+                  <div class="currency-display">
+                    <img src="photo/18.png" class="currency-icon">
+                    <span class="currency-name">RUB</span>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
-          <div id="fromBalance" style="font-size: 12px; color: #76808F; margin-top: 6px;">Доступно: 0.00000 ₲</div>
-        </div>
 
-        <div style="text-align: center; margin: 16px 0;">
-          <button id="swapBtn" style="
-            background: #fff;
-            border: 1px solid #E6E6EB;
-            border-radius: 12px;
-            width: 48px;
-            height: 48px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: background 0.2s;
-          ">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M16 10L20 14L16 18M4 14L8 18L12 14M8 6L4 10L8 14" stroke="#76808F" stroke-width="2"/>
-            </svg>
+          <button id="btnPerformExchange" class="exchange-button">
+            Подтвердить обмен
           </button>
-        </div>
 
-        <div style="margin-bottom: 16px;">
-          <div style="font-size: 14px; color: #76808F; margin-bottom: 6px;">Получаете</div>
-          <div style="display: flex; align-items: center; border: 1px solid #E6E6EB; border-radius: 16px; background: #F8F9FB; padding: 16px; gap: 10px;">
-            <input 
-              type="text" 
-              id="toAmount" 
-              placeholder="0.00"
-              disabled
-              style="flex: 1; background: none; border: none; font-size: 18px; color: #1A1A1A; font-weight: 500; outline: none;">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <img src="photo/18.png" class="currency-icon" style="width: 24px; height: 24px;">
-              <span class="currency-name">RUB</span>
-            </div>
-          </div>
-          <div id="toBalance" style="font-size: 12px; color: #76808F; margin-top: 6px;">Доступно: 0.00 ₽</div>
         </div>
-
-        <button 
-          id="btnPerformExchange"
-          style="
-            width: 100%;
-            padding: 16px;
-            background: linear-gradient(90deg, #2F80ED, #2D9CDB);
-            border: none;
-            border-radius: 16px;
-            color: #FFFFFF;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: opacity 0.2s;
-          ">
-          Подтвердить обмен
-        </button>
       </div>
     `,
     {
-      showCloseBtn: true,
-      cornerTopMargin: 20,
-      cornerTopRadius: 24,
-      hasVerticalScroll: true,
-      defaultFromBottom: true,
-      noRadiusByDefault: false,
-      contentMaxHeight: "calc(100vh - 160px)",
+      showCloseBtn: false,
+      cornerTopRadius: 0,
+      noRadiusByDefault: true,
+      fullScreen: true,
+      contentMaxHeight: "100vh",
     }
   );
 
