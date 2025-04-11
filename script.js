@@ -419,6 +419,48 @@ function openRequestModal() {
 }
 
 /**************************************************
+ * Новая функция генерации QR-кода
+ **************************************************/
+
+function createUserQR(userId, amount, purpose) {
+  if (!userId) {
+    console.error("Ошибка: userId отсутствует.");
+    return null;
+  }
+
+  const qrData = `guga://type=person&userId=${userId}&amount=${amount}&purpose=${encodeURIComponent(purpose)}`;
+  console.log("Сгенерирован QR-код:", qrData);
+
+  // Дополнительно: показать QR-код пользователю
+  createModal(
+    "qrModal",
+    `
+      <h3>Ваш QR-код</h3>
+      <div id="qrCodeContainer" style="display: flex; justify-content: center; align-items: center; margin: 20px 0;"></div>
+      <p>Сумма: <strong>${amount.toFixed(2)}</strong></p>
+      ${purpose ? `<p>Назначение: <strong>${purpose}</strong></p>` : ""}
+    `,
+    {
+      showCloseBtn: true,
+      cornerTopMargin: 50,
+      cornerTopRadius: 20,
+      hasVerticalScroll: true,
+      defaultFromBottom: true,
+      noRadiusByDefault: false,
+    }
+  );
+
+  const qrCodeContainer = document.getElementById("qrCodeContainer");
+  new QRCode(qrCodeContainer, {
+    text: qrData,
+    width: 300,
+    height: 300,
+  });
+
+  return qrData;
+}
+
+/**************************************************
  * Новая функция confirmPayUserModal
  **************************************************/
 
