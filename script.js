@@ -1009,7 +1009,7 @@ function openExchangeModal(horizontalSwitch) {
             <p id="fromLabel">
               <img src="photo/15.png" alt="GUGA" style="width:25px;vertical-align:middle;"> GUGA
             </p>
-            <input type="number" id="amountInput" placeholder="0.00" style="width:100%;padding:8px;" oninput="updateExchange()">
+            <input type="number" id="amountInput" placeholder="0.00000" style="width:100%;padding:8px;" oninput="updateExchange()">
             <p id="balanceInfo" style="font-size:14px;color:#666;">0.00000 ₲</p>
           </div>
           <button id="swapBtn" style="padding:10px;border:none;background:none;cursor:pointer;font-size:24px;">⇄</button>
@@ -1017,7 +1017,7 @@ function openExchangeModal(horizontalSwitch) {
             <p id="toLabel">
               <img src="photo/18.png" alt="RUB" style="width:25px;vertical-align:middle;"> RUB
             </p>
-            <input type="text" id="toAmount" disabled style="width:100%;padding:8px;">
+            <input type="text" id="toAmount" placeholder="0.00" disabled style="width:100%;padding:8px;">
             <p id="toBalanceInfo" style="font-size:14px;color:#666;">0.00 ₽</p>
           </div>
         </div>
