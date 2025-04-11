@@ -1504,22 +1504,33 @@ async function confirmPayUserModal({ userId, amount, purpose }) {
  * Вспомогательная функция для парсинга QR-кода
  **************************************************/
 function parseQRCodeData(qrString) {
-  const obj = { type: null, userId: null, merchantId: null, amount: 0, purpose: "" };
+  const obj = { 
+    type: null, 
+    userId: null, 
+    merchantId: null, 
+    amount: 0, 
+    purpose: "",
+    currency: "GUGA" 
+  };
+  
   try {
     if (!qrString.startsWith("guga://")) return obj;
-    const query = qrString.replace("guga://", "");
-    const parts = query.split("&");
-    for (const part of parts) {
-      const [key, val] = part.split("=");
-      if (key === "type") obj.type = val; // Тип: "person" или "merchant"
-      if (key === "userId") obj.userId = val; // ID пользователя
-      if (key === "merchantId") obj.merchantId = val; // ID мерчанта
-      if (key === "amount") obj.amount = parseFloat(val);
-      if (key === "purpose") obj.purpose = decodeURIComponent(val);
-    }
+    
+    const url = new URL(qrString);
+    const params = new URLSearchParams(url.search);
+    
+    obj.type = params.get("type") || null;
+    obj.userId = params.get("userId") || null;
+    obj.merchantId = params.get("merchantId") || null;
+    obj.amount = parseFloat(params.get("amount")) || 0;
+    obj.purpose = decodeURIComponent(params.get("purpose") || "");
+    obj.currency = params.get("currency") || "GUGA";
+
   } catch (err) {
     console.error("Ошибка при разборе QR-кода:", err);
+    throw new Error("Неверный формат QR-кода");
   }
+  
   return obj;
 }
 
