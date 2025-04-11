@@ -1792,12 +1792,14 @@ function openExchangeModal() {
   initExchange();
 }
 
-// Стили
+// Обновленные стили в едином дизайне
 const exchangeStyles = `
 .exchange-container {
     max-width: 440px;
-    padding: 20px;
+    padding: 24px;
     background: #fff;
+    border-radius: 24px;
+    box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
 }
 
 .exchange-header {
@@ -1807,8 +1809,8 @@ const exchangeStyles = `
 }
 
 .exchange-icon {
-    width: 48px;
-    height: 48px;
+    width: 40px;
+    height: 40px;
     object-fit: contain;
 }
 
@@ -1817,15 +1819,15 @@ const exchangeStyles = `
 }
 
 .exchange-title {
-    font-size: 24px;
-    font-weight: 700;
+    font-size: 20px;
+    font-weight: 600;
     color: #1A1A1A;
     margin-bottom: 4px;
 }
 
 .current-rate {
-    font-size: 16px;
-    color: #76808F;
+    font-size: 14px;
+    color: #666;
 }
 
 .chart-container {
@@ -1833,6 +1835,7 @@ const exchangeStyles = `
     border-radius: 16px;
     padding: 16px;
     margin-bottom: 24px;
+    border: 1px solid #E6E6EB;
 }
 
 .chart-header {
@@ -1843,7 +1846,7 @@ const exchangeStyles = `
 
 .rate-label {
     font-size: 14px;
-    color: #76808F;
+    color: #666;
 }
 
 .rate-change {
@@ -1886,12 +1889,12 @@ const exchangeStyles = `
 
 .currency-label {
     font-size: 14px;
-    color: #76808F;
+    color: #666;
 }
 
 .balance {
     font-size: 12px;
-    color: #76808F;
+    color: #666;
 }
 
 .input-group {
@@ -1908,6 +1911,7 @@ const exchangeStyles = `
     padding: 12px 0;
     color: #1A1A1A;
     outline: none;
+    font-weight: 500;
 }
 
 .currency-input::placeholder {
@@ -1921,6 +1925,7 @@ const exchangeStyles = `
     background: #F8F9FB;
     border-radius: 12px;
     padding: 8px 16px;
+    border: 1px solid #E6E6EB;
 }
 
 .currency-icon {
