@@ -1101,7 +1101,7 @@ function openTransferModal() {
         "transferModal",
         `
         <div style="position: relative; max-width: 400px; margin: 0 auto;">
-            <h3 style="text-align: center; margin: 0 0 25px 0; color: #1A1A1A; font-size: 20px;">Перевод средств</h3>
+            <h3 style="text-align: center; margin: 0 0 25px 0; color: #1A1A1A; font-size: 20px; margin-top: 35px;">Перевод средств</h3>
             
             <!-- Выбор валюты -->
             <div style="display: flex; gap: 12px; margin-bottom: 30px;">
@@ -1813,7 +1813,7 @@ const exchangeStyles = `
 }
 
 .current-rate {
-    font-size: 16px;
+    font-size: 24px;
     color: #666;
 }
 
