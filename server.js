@@ -1,7 +1,7 @@
 // server.js
 const express = require('express');
 const helmet = require('helmet');
-
+const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 const { createClient } = require('@supabase/supabase-js');
@@ -46,11 +46,26 @@ if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
 }
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
+// CORS Configuration
+const corsOptions = {
+  origin: [
+    'https://mkntw.ru',
+    'http://localhost:3000' // для разработки
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+};
+
++app.use(cors(corsOptions));
+
 // Middleware
 app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: false // Отключаем политику ресурсов
+}));
 app.use(express.json());
 app.use(cookieParser());
-
 
 const authLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
