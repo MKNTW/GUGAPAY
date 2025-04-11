@@ -57,13 +57,11 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 };
 
-+app.use(cors(corsOptions));
+app.use(cors(corsOptions));
 
 // Middleware
 app.use(helmet());
-app.use(helmet({
-  crossOriginResourcePolicy: false // Отключаем политику ресурсов
-}));
+
 app.use(express.json());
 app.use(cookieParser());
 
