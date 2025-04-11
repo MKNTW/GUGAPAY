@@ -178,10 +178,10 @@ const closeBtn = contentDiv.querySelector(".modal-close-btn");
 if (closeBtn) {
     Object.assign(closeBtn.style, {
     position: "absolute",
-    top: "10px", // Отступ сверху
+    top: "15px", // Отступ сверху
     right: "20px", // Отступ справа
-    width: "25px", // Ширина кнопки
-    height: "25px", // Высота кнопки
+    width: "30px", // Ширина кнопки
+    height: "30px", // Высота кнопки
     backgroundColor: "#000", // Чёрный фон
     color: "#fff", // Белый крестик
     borderRadius: "50%", // Делаем кнопку круглой
