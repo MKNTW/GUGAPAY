@@ -185,7 +185,7 @@ if (closeBtn) {
         backgroundColor: "#fff", // Черный фон
         color: "#000", // Белый крестик
         borderRadius: "50%", // Делаем кнопку круглой
-        border: "none", // Убираем границу
+        border: "solid", // Убираем границу
         fontSize: "18px", // Размер текста для крестика
         display: "flex",
         alignItems: "center",
