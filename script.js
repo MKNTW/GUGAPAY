@@ -1113,75 +1113,113 @@ function openPayQRModal() {
   createModal(
     "payQRModal",
     
-      <h3 style="text-align:center;">Оплата по QR</h3>
-      <video id="opPayVideo" style="width:100%;max-width:600px; border:2px solid #333; margin-top:10px;" muted playsinline></video>
-    ,
+    `<div class="payment-qr-container">
+      <h3 class="payment-header">
+        <img src="/icons/terminal-qr-icon.svg" class="qr-header-icon">
+        Сканирование терминала
+      </h3>
+      
+      <div class="qr-guide-box">
+        <div class="qr-example">
+          <img src="/images/terminal-qr-example.png" class="qr-example-image">
+        </div>
+        <p class="qr-instruction">
+          Наведите камеру на QR-код платёжного терминала.<br>
+          Код должен содержать логотип платежной системы.
+        </p>
+      </div>
+
+      <video id="opPayVideo" class="qr-scanner-video"></video>
+      
+      <div class="qr-scan-indicator">
+        <div class="laser-line"></div>
+      </div>
+    </div>`,
     {
       showCloseBtn: true,
-      cornerTopMargin: 50,
-      cornerTopRadius: 20,  // радиус
-      hasVerticalScroll: true,
-      defaultFromBottom: true,
-      noRadiusByDefault: false
+      cornerTopMargin: 40,
+      cornerTopRadius: 24,
+      theme: 'payment'
     }
   );
 
   const videoEl = document.getElementById("opPayVideo");
   startUniversalQRScanner(videoEl, (rawValue) => {
-    const parsed = parseMerchantQRData(rawValue);
-    if (!parsed.merchantId) {
-      alert("❌ Неверный QR. Нет merchantId.");
+    const parsed = parseTerminalQRData(rawValue); // Новая функция парсинга
+    
+    if (!parsed.isTerminalQR) {
+      showErrorOverlay("Это не QR-код терминала", {
+        description: "Пожалуйста, сканируйте только официальные коды платежных систем",
+        retryHandler: () => videoEl.play()
+      });
       return;
     }
-    // Сначала создаём окно подтверждения
-    confirmPayMerchantModal(parsed);
 
-    // А теперь закрываем окно сканера (через небольшую паузу, чтобы не конфликтовать с анимацией)
-    setTimeout(() => {
-      document.getElementById("payQRModal")?.remove();
-    }, 500);
+    if (!parsed.terminalId || !parsed.paymentSystem) {
+      showErrorOverlay("Некорректный формат", {
+        description: "В QR-коде отсутствуют обязательные данные"
+      });
+      return;
+    }
+
+    confirmPayMerchantModal(parsed);
+    setTimeout(() => document.getElementById("payQRModal")?.remove(), 300);
   });
 }
 
-function confirmPayMerchantModal({ merchantId, amount, purpose }) {
+// Модифицированная функция подтверждения
+function confirmPayMerchantModal(data) {
   createModal(
     "confirmPayMerchantModal",
     
-      <h3 style="text-align:center;">Подтверждение оплаты</h3>
-      <p>Мерчант: ${merchantId}</p>
-      <p>Сумма: ${formatBalance(amount, 5)} ₲</p>
-      <p>Назначение: ${purpose}</p>
-      <button id="confirmPayBtn" style="padding:10px;margin-top:10px;">Оплатить</button>
-    ,
+    `<div class="payment-confirm-container">
+      <h3 class="confirm-header">
+        <img src="${getPaymentSystemIcon(data.paymentSystem)}" class="payment-system-icon">
+        Подтверждение оплаты
+      </h3>
+      
+      <div class="terminal-info">
+        <info-row>
+          <span>Терминал:</span>
+          <span class="terminal-id">${data.terminalId}</span>
+        </info-row>
+        <info-row>
+          <span>Система:</span>
+          <span>${data.paymentSystemLabel}</span>
+        </info-row>
+      </div>
+
+      <amount-display>
+        ${formatBalance(data.amount, 2)} <currency>₽</currency>
+      </amount-display>
+
+      <div class="payment-actions">
+        <button class="secondary-btn" onclick="closeModal()">Отмена</button>
+        <button id="confirmPayBtn" class="primary-btn">
+          <span>Оплатить</span>
+          <lock-icon></lock-icon>
+        </button>
+      </div>
+    </div>`,
     {
       showCloseBtn: true,
-      cornerTopMargin: 50,
-      cornerTopRadius: 20, // радиус
-      hasVerticalScroll: true,
-      defaultFromBottom: true,
-      noRadiusByDefault: false
+      cornerTopRadius: 24,
+      theme: 'payment-confirm'
     }
   );
 
+  // Обновлённый обработчик платежа
   document.getElementById("confirmPayBtn").onclick = async () => {
-    if (!currentUserId) return;
     try {
-      const resp = await fetch(${API_URL}/payMerchantOneTime, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: currentUserId, merchantId, amount, purpose }),
-      });
-      const data = await resp.json();
-      if (data.success) {
-        alert("✅ Оплачено!");
-        document.getElementById("confirmPayMerchantModal")?.remove();
-        fetchUserData();
-      } else {
-        alert("❌ Ошибка: " + data.error);
+      const terminalData = validateTerminalData(data); // Доп. проверки
+      const paymentResult = await processTerminalPayment(terminalData);
+      
+      if (paymentResult.success) {
+        showPaymentReceipt(paymentResult); // Отображение чека
+        closeAllModals();
       }
-    } catch (err) {
-      console.error("payMerchantOneTime error:", err);
+    } catch (error) {
+      handlePaymentError(error);
     }
   };
 }
