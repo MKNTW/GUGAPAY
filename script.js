@@ -1700,7 +1700,6 @@ function parseQRCodeData(qrString) {
 /**************************************************
  * ОБМЕН ВАЛЮТЫ (ПОЛНАЯ ВЕРСИЯ)
  **************************************************/
-
 let currentExchangeDirection = "coin_to_rub";
 let currentExchangeRate = 0;
 
@@ -1710,28 +1709,29 @@ function openExchangeModal() {
     "exchangeModal",
     `
 <div class="exchange-container">
-    <div class="header">
-        <div class="title">Обмен валюты</div>
-        <div id="currentRate" class="rate">1 ₲ = 0.00 ₽</div>
+    <div class="exchange-header">
+        <div class="header-info">
+            <div class="exchange-title">Обмен валюты</div>
+            <div id="currentRate" class="current-rate">1 ₲ = 0.00 ₽</div>
+        </div>
     </div>
 
     <div class="chart-container">
         <div class="chart-header">
-            <span class="label">Курс GUGA/RUB</span>
-            <div class="change">
-                <span id="rateChangeArrow" class="arrow">→</span>
-                <span id="rateChangePercent" class="percent">0.00%</span>
+            <span class="rate-label">Курс GUGA/RUB</span>
+            <div class="rate-change">
+                <span id="rateChangeArrow" class="rate-arrow">→</span>
+                <span id="rateChangePercent" class="rate-percent">0.00%</span>
             </div>
         </div>
         <div class="chart-wrapper">
             <canvas id="exchangeChart"></canvas>
         </div>
     </div>
-
-    <div class="converter">
-        <div class="currency-block from">
-            <div class="top">
-                <span class="label">Отдаете</span>
+    
+        <div class="currency-block from-currency">
+            <div class="currency-header">
+                <span class="currency-label">Отдаете</span>
                 <span id="fromBalance" class="balance">0.00000 ₲</span>
             </div>
             <div class="input-group">
@@ -1739,10 +1739,10 @@ function openExchangeModal() {
                     type="number" 
                     id="amountInput" 
                     placeholder="0.00" 
-                    class="input">
-                <div class="display">
-                    <img src="photo/15.png" class="icon">
-                    <span class="symbol">GUGA</span>
+                    class="currency-input">
+                <div class="currency-display">
+                    <img src="photo/15.png" class="currency-icon">
+                    <span class="currency-symbol">GUGA</span>
                 </div>
             </div>
         </div>
@@ -1753,9 +1753,9 @@ function openExchangeModal() {
             </svg>
         </button>
 
-        <div class="currency-block to">
-            <div class="top">
-                <span class="label">Получаете</span>
+        <div class="currency-block to-currency">
+            <div class="currency-header">
+                <span class="currency-label">Получаете</span>
                 <span id="toBalance" class="balance">0.00 ₽</span>
             </div>
             <div class="input-group">
@@ -1763,11 +1763,11 @@ function openExchangeModal() {
                     type="text" 
                     id="toAmount" 
                     placeholder="0.00" 
-                    class="input"
+                    class="currency-input"
                     disabled>
-                <div class="display">
-                    <img src="photo/18.png" class="icon">
-                    <span class="symbol">RUB</span>
+                <div class="currency-display">
+                    <img src="photo/18.png" class="currency-icon">
+                    <span class="currency-symbol">RUB</span>
                 </div>
             </div>
         </div>
@@ -1790,37 +1790,37 @@ function openExchangeModal() {
   initExchange();
 }
 
-// Стили
+// Обновленные стили
 const exchangeStyles = `
 .exchange-container {
     width: 100%;
     height: 100vh;
-    padding: 0;
+    padding: 24px;
     background: #fff;
-    display: flex;
-    flex-direction: column;
     overflow: auto;
 }
 
-.header {
-    padding: 24px 16px 16px;
-    border-bottom: 1px solid #F0F2F5;
+.exchange-header {
+    margin-bottom: 32px;
 }
 
-.title {
+.exchange-title {
     font-size: 24px;
     font-weight: 600;
     color: #1A1A1A;
-    margin-bottom: 4px;
+    margin-bottom: 8px;
 }
 
-.rate {
+.current-rate {
     font-size: 16px;
     color: #666;
 }
 
 .chart-container {
+    background: #F8F9FB;
+    border-radius: 16px;
     padding: 16px;
+    margin-bottom: 24px;
 }
 
 .chart-wrapper canvas {
@@ -1828,92 +1828,85 @@ const exchangeStyles = `
 }
 
 .converter {
-    flex: 1;
-    padding: 0 16px 80px;
+    position: relative;
+    margin: 40px 0;
+}
+
+.arrows {
+    position: absolute;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
 }
 
 .currency-block {
-    margin: 16px 0;
-}
-
-.top {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 8px;
-}
-
-.label {
-    font-size: 14px;
-    color: #666;
-}
-
-.balance {
-    font-size: 12px;
-    color: #666;
+    background: #fff;
+    border: 2px solid #F0F2F5;
+    border-radius: 16px;
+    padding: 16px;
+    margin: 12px 0;
 }
 
 .input-group {
-    background: #F8F9FB;
-    border-radius: 16px;
-    padding: 16px;
     display: flex;
+    gap: 12px;
     align-items: center;
-    gap: 10px;
-    border: 1px solid #E6E6EB;
 }
 
-.input {
+.currency-input {
     flex: 1;
     border: none;
     background: none;
     font-size: 20px;
+    padding: 12px 0;
     color: #1A1A1A;
     font-weight: 500;
-    padding: 0;
 }
 
-.input::placeholder {
+.currency-input::placeholder {
     color: #B1B8C5;
 }
 
-.display {
+.currency-display {
     display: flex;
     align-items: center;
     gap: 8px;
-}
-
-.icon {
-    width: 24px;
-    height: 24px;
+    background: #F8F9FB;
+    border-radius: 12px;
+    padding: 10px 16px;
+    border: 1px solid #E6E6EB;
 }
 
 .swap-btn {
-    width: 100%;
-    background: none;
-    border: none;
-    padding: 8px;
-    margin: 8px 0;
-    cursor: pointer;
+    width: 56px;
+    height: 56px;
+    background: #F8F9FB;
+    border: 2px solid #E6E6EB;
+    border-radius: 16px;
+    margin: 16px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.swap-btn:hover {
+    background: #eef0f3;
 }
 
 .submit-btn {
-    position: sticky;
-    bottom: 0;
-    width: calc(100% - 32px);
-    margin: 16px;
+    width: 100%;
     padding: 18px;
     background: linear-gradient(90deg, #2F80ED, #2D9CDB);
     border: none;
-    border-radius: 12px;
+    border-radius: 28px;
     color: white;
     font-weight: 600;
     font-size: 16px;
-    cursor: pointer;
-    transition: opacity 0.2s;
-}
-
-.submit-btn:hover {
-    opacity: 0.9;
+    margin-top: 24px;
 }
 `;
 
@@ -2023,24 +2016,24 @@ function initChart(rates) {
 function swapCurrencies() {
   currentExchangeDirection = currentExchangeDirection === 'coin_to_rub' ? 'rub_to_coin' : 'coin_to_rub';
   
-  const fromBlock = document.querySelector('.from .display');
-  const toBlock = document.querySelector('.to .display');
+  const fromDisplay = document.querySelector('.from-currency .currency-display');
+  const toDisplay = document.querySelector('.to-currency .currency-display');
   const fromBalance = document.getElementById('fromBalance');
   const toBalance = document.getElementById('toBalance');
   const amountInput = document.getElementById('amountInput');
   const toAmount = document.getElementById('toAmount');
 
-  // Меняем значения местами
+  // Swap values
   [amountInput.value, toAmount.value] = [toAmount.value, amountInput.value];
   
   if (currentExchangeDirection === 'coin_to_rub') {
-    fromBlock.innerHTML = `<img src="photo/15.png" class="icon"><span class="symbol">GUGA</span>`;
-    toBlock.innerHTML = `<img src="photo/18.png" class="icon"><span class="symbol">RUB</span>`;
+    fromDisplay.innerHTML = `<img src="photo/15.png" class="currency-icon"><span class="currency-symbol">GUGA</span>`;
+    toDisplay.innerHTML = `<img src="photo/18.png" class="currency-icon"><span class="currency-symbol">RUB</span>`;
     fromBalance.textContent = fromBalance.textContent.replace('₽', '₲');
     toBalance.textContent = toBalance.textContent.replace('₲', '₽');
   } else {
-    fromBlock.innerHTML = `<img src="photo/18.png" class="icon"><span class="symbol">RUB</span>`;
-    toBlock.innerHTML = `<img src="photo/15.png" class="icon"><span class="symbol">GUGA</span>`;
+    fromDisplay.innerHTML = `<img src="photo/18.png" class="currency-icon"><span class="currency-symbol">RUB</span>`;
+    toDisplay.innerHTML = `<img src="photo/15.png" class="currency-icon"><span class="currency-symbol">GUGA</span>`;
     fromBalance.textContent = fromBalance.textContent.replace('₲', '₽');
     toBalance.textContent = toBalance.textContent.replace('₽', '₲');
   }
