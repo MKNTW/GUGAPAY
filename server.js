@@ -373,7 +373,13 @@ app.post('/transfer', verifyToken, async (req, res) => {
       .eq('user_id', toUserId);
     const { error: insertError } = await supabase
       .from('transactions')
-      .insert([{ from_user_id: fromUserId, to_user_id: toUserId, amount, type: 'sent' }]);
+      .insert([{
+        from_user_id: fromUserId,
+        to_user_id: toUserId,
+        amount,
+        type: 'sent',
+        currency: 'GUGA'
+      }]);
     if (insertError) {
       console.error('Ошибка вставки транзакции:', insertError);
       return res.status(500).json({ success: false, error: 'Ошибка записи транзакции' });
@@ -387,9 +393,8 @@ app.post('/transfer', verifyToken, async (req, res) => {
 });
 
 /* ========================
-   6) POST /transferrub (пользователь → пользователь)
+   6.1) POST /transferRub (пользователь → пользователь)
 ======================== */
-
 app.post('/transferRub', verifyToken, async (req, res) => {
   try {
     if (req.user.role !== 'user') {
@@ -441,23 +446,23 @@ app.post('/transferRub', verifyToken, async (req, res) => {
       .update({ rub_balance: newToRub.toFixed(2) })
       .eq('user_id', toUserId);
 
-    await supabase
+    const { error: insertError } = await supabase
       .from('transactions')
       .insert([{
         from_user_id: fromUserId,
         to_user_id: toUserId,
         amount,
-        type: 'rub_sent'
+        type: 'sent',
+        currency: 'RUB'
       }]);
 
+    if (insertError) {
+      console.error('Ошибка вставки транзакции (RUB):', insertError);
+      return res.status(500).json({ success: false, error: 'Ошибка записи транзакции' });
+    }
+
     console.log(`[transferRub] ${fromUserId} → ${toUserId} = ${amount}₽`);
-
-    res.json({
-      success: true,
-      newFromRub,
-      newToRub
-    });
-
+    res.json({ success: true, newFromRub, newToRub });
   } catch (err) {
     console.error('[transferRub] Ошибка:', err);
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
