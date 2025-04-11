@@ -987,12 +987,12 @@ function openTransferModal() {
         const gugaBalance = document.getElementById("gugaBalance");
         const rubBalance = document.getElementById("rubBalance");
 
-        // Обновление карточек валют
+        // Сброс стилей для карточек валют
         document.querySelectorAll('.currency-card').forEach(card => {
-            card.style.background = 'white';
-            card.style.borderColor = '#E6E6EB';
+            card.classList.remove('active');
         });
-        
+
+        // Устанавливаем активную карточку
         const activeCard = currentTransferCurrency === "GUGA" 
             ? document.getElementById("btnCurrencyGUGA")
             : document.getElementById("btnCurrencyRUB");
