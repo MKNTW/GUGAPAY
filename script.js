@@ -356,6 +356,69 @@ function validateInput(value, minLength = 1) {
 }
 
 /**************************************************
+ * ОКНО ЗАПРОСА
+ **************************************************/
+
+function openRequestModal() {
+  createModal(
+    "requestModal",
+    `
+      <h3>Создать запрос на пополнение</h3>
+      <label>Сумма:</label>
+      <input type="number" id="requestAmountInput" placeholder="Введите сумму" style="padding: 8px; font-size: 16px; width: 100%;">
+      <label>Назначение (необязательно):</label>
+      <input type="text" id="requestPurposeInput" placeholder="Введите назначение платежа" style="padding: 8px; font-size: 16px; width: 100%; margin-bottom: 20px;">
+      <button id="generateQRBtn" style="padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; width: 100%;">Создать QR-код</button>
+    `,
+    {
+      showCloseBtn: true,
+      cornerTopMargin: 50,
+      cornerTopRadius: 20,
+      hasVerticalScroll: true,
+      defaultFromBottom: true,
+      noRadiusByDefault: false,
+    }
+  );
+
+  document.getElementById("generateQRBtn").addEventListener("click", () => {
+    const amount = parseFloat(document.getElementById("requestAmountInput").value);
+    const purpose = document.getElementById("requestPurposeInput").value || "";
+
+    if (!amount || amount <= 0) {
+      alert("Введите корректную сумму!");
+      return;
+    }
+
+    const qrData = `guga://amount=${amount}&purpose=${encodeURIComponent(purpose)}`;
+
+    createModal(
+      "qrModal",
+      `
+        <h3>Ваш QR-код</h3>
+        <div id="qrCodeContainer" style="display: flex; justify-content: center; align-items: center; margin: 20px 0;"></div>
+        <p>Сумма: <strong>${amount.toFixed(2)}</strong></p>
+        ${purpose ? `<p>Назначение: <strong>${purpose}</strong></p>` : ""}
+      `,
+      {
+        showCloseBtn: true,
+        cornerTopMargin: 50,
+        cornerTopRadius: 20,
+        hasVerticalScroll: true,
+        defaultFromBottom: true,
+        noRadiusByDefault: false,
+      }
+    );
+
+    const qrCodeContainer = document.getElementById("qrCodeContainer");
+    new QRCode(qrCodeContainer, {
+      text: qrData,
+      width: 300,
+      height: 300,
+    });
+  });
+}
+
+/**************************************************
  * ОКНО АВТОРИЗАЦИИ
  **************************************************/
 function openAuthModal() {
