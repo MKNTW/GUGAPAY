@@ -595,3 +595,28 @@ body {
 .modal-slide-out-down {
   animation: slide-out-down 0.3s ease-out;
 }
+
+  .exchange-fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 9999;
+  }
+
+  .exchange-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 24px 80px; /* Отступ под bottom bar */
+    box-sizing: border-box;
+  }
+
+  .fixed-chart {
+    flex-shrink: 0;
+  }
+
