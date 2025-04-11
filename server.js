@@ -387,6 +387,84 @@ app.post('/transfer', verifyToken, async (req, res) => {
 });
 
 /* ========================
+   6) POST /transferrub (пользователь → пользователь)
+======================== */
+
+app.post('/transferRub', verifyToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'user') {
+      return res.status(403).json({ success: false, error: 'Доступ запрещён' });
+    }
+
+    const fromUserId = req.user.userId;
+    const { toUserId, amount } = req.body;
+
+    if (!toUserId || !amount || isNaN(amount) || amount <= 0) {
+      return res.status(400).json({ success: false, error: 'Неверные данные' });
+    }
+
+    if (fromUserId === toUserId) {
+      return res.status(400).json({ success: false, error: 'Нельзя переводить самому себе' });
+    }
+
+    const { data: fromUser } = await supabase
+      .from('users')
+      .select('*')
+      .eq('user_id', fromUserId)
+      .single();
+
+    const { data: toUser } = await supabase
+      .from('users')
+      .select('*')
+      .eq('user_id', toUserId)
+      .single();
+
+    if (!fromUser || !toUser) {
+      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+    }
+
+    const rubBalance = parseFloat(fromUser.rub_balance || 0);
+    if (rubBalance < amount) {
+      return res.status(400).json({ success: false, error: 'Недостаточно рублей' });
+    }
+
+    const newFromRub = rubBalance - amount;
+    const newToRub = parseFloat(toUser.rub_balance || 0) + amount;
+
+    await supabase
+      .from('users')
+      .update({ rub_balance: newFromRub.toFixed(2) })
+      .eq('user_id', fromUserId);
+
+    await supabase
+      .from('users')
+      .update({ rub_balance: newToRub.toFixed(2) })
+      .eq('user_id', toUserId);
+
+    await supabase
+      .from('transactions')
+      .insert([{
+        from_user_id: fromUserId,
+        to_user_id: toUserId,
+        amount,
+        type: 'rub_sent'
+      }]);
+
+    console.log(`[transferRub] ${fromUserId} → ${toUserId} = ${amount}₽`);
+
+    res.json({
+      success: true,
+      newFromRub,
+      newToRub
+    });
+
+  } catch (err) {
+    console.error('[transferRub] Ошибка:', err);
+    res.status(500).json({ success: false, error: 'Ошибка сервера' });
+  }
+});
+
+/* ========================
    7) GET /transactions
 ======================== */
 app.get('/transactions', verifyToken, async (req, res) => {
