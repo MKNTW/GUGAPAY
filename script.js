@@ -356,7 +356,7 @@ function validateInput(value, minLength = 1) {
 }
 
 /**************************************************
- * ОКНО ЗАПРОСА QR
+ * ОКНО ЗАПРОСА QR (единый стиль интерфейса)
  **************************************************/
 function openRequestModal() {
   createModal(
@@ -365,20 +365,23 @@ function openRequestModal() {
       <div style="
         max-width: 400px;
         margin: 0 auto;
-        padding: 20px;
-        background: #0B0E15;
-        border-radius: 16px;
-        color: #FFFFFF;
-        font-family: 'Inter', sans-serif;
+        padding: 24px;
+        background: #FFFFFF;
+        border-radius: 24px;
+        box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
+        position: relative;
       ">
         <div style="
           display: flex;
           align-items: center;
           gap: 12px;
-          margin-bottom: 24px;
+          margin-bottom: 32px;
         ">
-          <img src="photo/15.png" style="width: 32px; height: 32px;">
-          <h3 style="margin: 0; font-size: 20px;">Создать запрос</h3>
+          <img src="photo/15.png" style="width: 40px; height: 40px;">
+          <div>
+            <div style="font-size: 20px; font-weight: 600; color: #1A1A1A;">GUGA</div>
+            <div style="font-size: 16px; color: #666;">Запрос на перевод</div>
+          </div>
         </div>
 
         <div style="margin-bottom: 24px;">
@@ -387,19 +390,20 @@ function openRequestModal() {
             justify-content: space-between;
             align-items: center;
             margin-bottom: 8px;
-            color: #8A939F;
+            color: #666;
             font-size: 14px;
           ">
-            <span>Сумма</span>
+            <span>Сумма перевода</span>
           </div>
           
           <div style="
-            background: #1A1E28;
-            border-radius: 12px;
-            padding: 14px;
+            background: #F8F9FB;
+            border-radius: 16px;
+            padding: 16px;
             display: flex;
             align-items: center;
             gap: 10px;
+            border: 1px solid #E6E6EB;
           ">
             <input 
               type="number" 
@@ -409,12 +413,13 @@ function openRequestModal() {
                 flex: 1;
                 background: none;
                 border: none;
-                color: #FFFFFF;
+                color: #1A1A1A;
                 font-size: 18px;
                 outline: none;
                 padding: 0;
+                font-weight: 500;
               ">
-            <span style="color: #8A939F; font-size: 16px;">₲</span>
+            <span style="color: #666; font-size: 16px;">₲</span>
           </div>
         </div>
 
@@ -423,26 +428,28 @@ function openRequestModal() {
           style="
             width: 100%;
             padding: 16px;
-            background: linear-gradient(90deg, #2F80ED, #2D9CDB);
+            background: #1A1A1A;
             border: none;
             border-radius: 12px;
             color: white;
             font-weight: 600;
             font-size: 16px;
             cursor: pointer;
-            transition: opacity 0.2s;
+            transition: all 0.2s;
+            margin-top: 8px;
           ">
-          Создать QR
+          Создать QR-код
         </button>
       </div>
     `,
     {
       showCloseBtn: true,
-      cornerTopMargin: 50,
-      cornerTopRadius: 20,
+      cornerTopMargin: 20,
+      cornerTopRadius: 24,
       hasVerticalScroll: true,
       defaultFromBottom: true,
       noRadiusByDefault: false,
+      contentMaxHeight: "calc(100vh - 160px)", // Отступ для нижней панели
     }
   );
 
@@ -468,46 +475,60 @@ function openRequestModal() {
           max-width: 400px;
           margin: 0 auto;
           padding: 24px;
-          background: #0B0E15;
-          border-radius: 16px;
+          background: #FFFFFF;
+          border-radius: 24px;
           text-align: center;
-          color: #FFFFFF;
         ">
-          <h3 style="margin: 0 0 20px 0; font-size: 20px;">Ваш QR-код</h3>
+          <div style="
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 24px;
+          ">
+            <img src="photo/15.png" style="width: 40px; height: 40px;">
+            <div style="font-size: 20px; font-weight: 600;">GUGA</div>
+          </div>
           
           <div id="qrCodeContainer" style="
             background: white;
             padding: 16px;
-            border-radius: 12px;
+            border-radius: 16px;
             margin: 0 auto 20px;
             width: fit-content;
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
           "></div>
           
           <div style="
-            background: #1A1E28;
-            border-radius: 8px;
-            padding: 12px;
             font-size: 18px;
+            color: #1A1A1A;
+            font-weight: 500;
+            margin-bottom: 8px;
           ">
             ${formatBalance(amount, 5)} ₲
+          </div>
+          
+          <div style="color: #666; font-size: 14px;">
+            Отсканируйте QR-код для перевода
           </div>
         </div>
       `,
       {
         showCloseBtn: true,
-        cornerTopMargin: 50,
-        cornerTopRadius: 20,
+        cornerTopMargin: 20,
+        cornerTopRadius: 24,
         hasVerticalScroll: true,
         defaultFromBottom: true,
         noRadiusByDefault: false,
+        contentMaxHeight: "calc(100vh - 160px)", // Отступ снизу
       }
     );
 
     new QRCode(document.getElementById("qrCodeContainer"), {
       text: qrData,
-      width: 220,
-      height: 220,
-      colorDark: "#000000",
+      width: 200,
+      height: 200,
+      colorDark: "#1A1A1A",
       colorLight: "#ffffff",
       correctLevel: QRCode.CorrectLevel.H
     });
