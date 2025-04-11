@@ -1709,69 +1709,74 @@ function openExchangeModal() {
   createModal(
     "exchangeModal",
     `
-      <div class="exchange-fullscreen">
-        <div class="exchange-header-new">
-          <img src="photo/71.png" class="exchange-icon-new">
-          <div>
-            <div class="exchange-title-new">Обмен валюты</div>
-            <div id="currentRate" class="exchange-rate-new">1 ₲ = 0.00 ₽</div>
-          </div>
+<div class="exchange-fullscreen">
+    <div class="section-header">
+        <img src="photo/71.png" class="section-icon">
+        <div>
+            <div class="section-title">Обмен валюты</div>
+            <div id="currentRate" class="rate-display">1 ₲ = 0.00 ₽</div>
         </div>
+    </div>
 
-        <div class="exchange-chart-block">
-          <div class="exchange-chart-header">
-            <span class="rate-label">Текущий курс</span>
+    <div class="chart-container">
+        <div class="chart-header">
+            <span class="currency-label">Курс GUGA/RUB</span>
             <div class="rate-change">
-              <span id="rateChangeArrow" class="rate-arrow">→</span>
-              <span id="rateChangePercent" class="rate-percent">0.00%</span>
+                <span id="rateChangeArrow">→</span>
+                <span id="rateChangePercent">0.00%</span>
             </div>
-          </div>
-          <canvas id="exchangeChart" class="exchange-chart-canvas"></canvas>
         </div>
+        <canvas id="exchangeChart" class="exchange-chart-canvas"></canvas>
+    </div>
 
-        <div class="exchange-form">
-          <div class="currency-box">
-            <div class="currency-info">
-              <span class="currency-label">Отдаете</span>
-              <span id="fromBalance" class="balance-value">0.00000 ₲</span>
-            </div>
-            <div class="currency-input">
-              <input type="number" id="amountInput" placeholder="0.00" class="exchange-input">
-              <div class="currency-type from-currency">
-                <img src="photo/15.png" class="currency-img">
+    <div class="currency-card">
+        <div class="currency-row">
+            <span class="currency-label">Отдаете</span>
+            <span id="fromBalance" class="balance-value">0.00000 ₲</span>
+        </div>
+        <div class="input-group">
+            <input 
+                type="number" 
+                id="amountInput" 
+                placeholder="0.00" 
+                class="exchange-input">
+            <div class="currency-badge">
+                <img src="photo/15.png">
                 <span class="currency-name">GUGA</span>
-              </div>
             </div>
-          </div>
+        </div>
+    </div>
 
-          <div id="swapBtn" class="swap-button-new">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M16 10L20 14L16 18M4 14L8 18L12 14M8 6L4 10L8 14" stroke="#76808F" stroke-width="2"/>
-            </svg>
-          </div>
+    <div class="swap-button" id="swapBtn">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M16 10L20 14L16 18M4 14L8 18L12 14M8 6L4 10L8 14" stroke="currentColor" stroke-width="2"/>
+        </svg>
+    </div>
 
-          <div class="currency-box">
-            <div class="currency-info">
-              <span class="currency-label">Получаете</span>
-              <span id="toBalance" class="balance-value">0.00 ₽</span>
-            </div>
-            <div class="currency-input">
-              <input type="text" id="toAmount" placeholder="0.00" class="exchange-input" disabled>
-              <div class="currency-type to-currency">
-                <img src="photo/18.png" class="currency-img">
+    <div class="currency-card">
+        <div class="currency-row">
+            <span class="currency-label">Получаете</span>
+            <span id="toBalance" class="balance-value">0.00 ₽</span>
+        </div>
+        <div class="input-group">
+            <input 
+                type="text" 
+                id="toAmount" 
+                placeholder="0.00" 
+                class="exchange-input" 
+                disabled>
+            <div class="currency-badge">
+                <img src="photo/18.png">
                 <span class="currency-name">RUB</span>
-              </div>
             </div>
-          </div>
         </div>
+    </div>
 
-        <div class="exchange-footer">
-          <button id="btnPerformExchange" class="exchange-submit-btn">
-            Подтвердить обмен
-          </button>
-        </div>
-      </div>
-    `,
+    <button id="btnPerformExchange" class="exchange-submit-btn">
+        Подтвердить обмен
+    </button>
+</div>
+`,
     {
       showCloseBtn: false,
       cornerTopMargin: 0,
