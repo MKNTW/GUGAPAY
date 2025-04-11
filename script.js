@@ -1113,8 +1113,8 @@ function openPayQRModal() {
   createModal(
     "payQRModal",
     `
-      <div class="qr-scanner-container">
-        <video id="opPayVideo" class="scanner-video" muted playsinline></video>
+      <div class="qr-scanner-wrapper">
+        <video id="opPayVideo" muted playsinline></video>
         <div class="scanner-overlay"></div>
         <div class="scan-frame">
           <div class="corner top-left"></div>
@@ -1134,7 +1134,6 @@ function openPayQRModal() {
         height: '100%',
         backgroundColor: 'rgba(0,0,0,0.9)',
         zIndex: 10000,
-        borderRadius: '0',
         padding: '0',
         overflow: 'hidden'
       }
@@ -1143,70 +1142,70 @@ function openPayQRModal() {
 
   const style = document.createElement('style');
   style.innerHTML = `
-    .qr-scanner-container {
-      position: relative;
+    .qr-scanner-wrapper {
+      position: fixed;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
     }
-    
-    .scanner-video {
-      width: 100vmin;
-      height: 100vmin;
-      max-width: 90%;
-      max-height: 70vh;
-      object-fit: cover;
-      position: relative;
-      z-index: 1;
-    }
-    
-    .scan-frame {
+
+    #opPayVideo {
       position: absolute;
-      width: 80vmin;
-      height: 80vmin;
-      max-width: 80%;
-      max-height: 60vh;
-      z-index: 3;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scale(1.02); /* Убирает чёрные полосы у некоторых камер */
+    }
+
+    .scan-frame {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80%;
+      max-width: 400px;
+      height: 60vh;
+      max-height: 400px;
+      z-index: 2;
       pointer-events: none;
     }
-    
+
     .corner {
       position: absolute;
       width: 24px;
       height: 24px;
       border: 3px solid #fff;
     }
-    
+
     .top-left {
       top: 0;
       left: 0;
       border-right: none;
       border-bottom: none;
     }
-    
+
     .top-right {
       top: 0;
       right: 0;
       border-left: none;
       border-bottom: none;
     }
-    
+
     .bottom-left {
       bottom: 0;
       left: 0;
       border-right: none;
       border-top: none;
     }
-    
+
     .bottom-right {
       bottom: 0;
       right: 0;
       border-left: none;
       border-top: none;
     }
-    
+
     .scanner-overlay {
       position: fixed;
       top: 0;
@@ -1216,22 +1215,20 @@ function openPayQRModal() {
       background: linear-gradient(
         to bottom,
         rgba(0,0,0,0.6) 0,
-        rgba(0,0,0,0.3) 40px,
+        rgba(0,0,0,0.6) 40px,
+        transparent 40px,
         transparent calc(100% - 80px),
+        rgba(0,0,0,0.6) calc(100% - 80px),
         rgba(0,0,0,0.6) 100%
       );
-      z-index: 2;
+      z-index: 1;
       pointer-events: none;
     }
-    
+
     @media (orientation: landscape) {
-      .scanner-video {
-        max-height: 90vh;
-        max-width: 70vw;
-      }
       .scan-frame {
-        max-height: 80vh;
-        max-width: 60vw;
+        width: 60vh;
+        height: 80%;
       }
     }
   `;
