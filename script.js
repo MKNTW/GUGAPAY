@@ -356,14 +356,14 @@ function validateInput(value, minLength = 1) {
 }
 
 /**************************************************
- * ОКНО ЗАПРОСА
+ * ОКНО ЗАПРОСА qr
  **************************************************/
 
 function openRequestModal() {
   createModal(
     "requestModal",
     `
-      <h3>Создать запрос на пополнение</h3>
+      <h3>Создать запрос на перевод</h3>
       <label>Сумма:</label>
       <input type="number" id="requestAmountInput" placeholder="Введите сумму" style="padding: 8px; font-size: 16px; width: 100%;">
       <label>Назначение (необязательно):</label>
@@ -389,7 +389,8 @@ function openRequestModal() {
       return;
     }
 
-    const qrData = `guga://amount=${amount}&purpose=${encodeURIComponent(purpose)}`;
+    // Генерация данных для QR-кода без использования merchantId
+    const qrData = `guga://type=person&amount=${amount}&purpose=${encodeURIComponent(purpose)}`;
 
     createModal(
       "qrModal",
