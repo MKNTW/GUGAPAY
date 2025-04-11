@@ -1709,31 +1709,26 @@ function openExchangeModal() {
     "exchangeModal",
     `
       <div class="exchange-container">
+        <!-- Заголовок -->
         <div class="exchange-header">
           <img src="photo/71.png" class="exchange-icon">
           <div class="exchange-title">Обмен валюты</div>
         </div>
 
-        <div class="rate-container">
-          <div class="rate-header">
-            <span class="rate-label">Текущий курс</span>
-            <div class="rate-change">
-              <span id="rateChangeArrow" class="rate-arrow">→</span>
-              <span id="rateChangePercent" class="rate-percent">+0.00%</span>
-            </div>
-          </div>
-          <div id="currentRateText" class="rate-value">--</div>
-          <div id="rateChangeRub" class="rate-change-rub">+0.00₽</div>
+        <!-- График -->
+        <div class="chart-container" style="margin-top: 60px;">
+          <canvas id="exchangeChart" class="exchange-chart"></canvas>
         </div>
 
-        <canvas id="exchangeChart" class="exchange-chart"></canvas>
-
+        <!-- Блок обмена -->
         <div class="converter-container">
           <div class="converter-wrapper">
+            <!-- Кнопка переключения -->
             <button id="swapBtn" class="swap-button">
               <span class="swap-icon">⇄</span>
             </button>
 
+            <!-- Поле ввода -->
             <div class="currency-input">
               <div class="input-header">Отдаете</div>
               <div class="input-wrapper" id="fromLabel">
@@ -1747,6 +1742,7 @@ function openExchangeModal() {
               <div id="balanceInfo" class="balance-info">Доступно: 0.00000 ₲</div>
             </div>
 
+            <!-- Поле получения -->
             <div class="currency-input">
               <div class="input-header">Получаете</div>
               <div class="input-wrapper" id="toLabel">
@@ -1762,6 +1758,7 @@ function openExchangeModal() {
             </div>
           </div>
 
+          <!-- Кнопка обмена -->
           <button id="btnPerformExchange" class="exchange-button">
             Обменять
           </button>
@@ -1779,7 +1776,7 @@ function openExchangeModal() {
     }
   );
 
-  // Инициализация обработчиков событий
+  // Инициализация обработчиков
   document.getElementById("swapBtn").addEventListener("click", handleSwap);
   document.getElementById("amountInput").addEventListener("input", updateExchange);
   document.getElementById("btnPerformExchange").addEventListener("click", handleExchange);
@@ -2011,6 +2008,7 @@ const exchangeStyles = `
     box-shadow: 0 4px 20px rgba(0,0,0,0.1);
   }
 
+  /* Заголовок */
   .exchange-header {
     display: flex;
     align-items: center;
@@ -2029,60 +2027,24 @@ const exchangeStyles = `
     color: #1A1A1A;
   }
 
-  .rate-container {
-    background: #F8F9FB;
-    border-radius: 16px;
-    padding: 16px;
-    margin-bottom: 24px;
-  }
-
-  .rate-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 8px;
-  }
-
-  .rate-label {
-    color: #666;
-    font-size: 14px;
-  }
-
-  .rate-change {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .rate-arrow {
-    font-size: 14px;
-  }
-
-  .rate-percent {
-    font-size: 14px;
-  }
-
-  .rate-value {
-    font-size: 24px;
-    font-weight: 600;
-    color: #1A1A1A;
-    margin-bottom: 4px;
-  }
-
-  .rate-change-rub {
-    color: #666;
-    font-size: 14px;
+  /* График */
+  .chart-container {
+    height: 200px;
+    margin: 60px 0 24px;
   }
 
   .exchange-chart {
-    width: 100%;
-    height: 160px;
-    margin-bottom: 24px;
+    width: 100% !important;
+    height: 100% !important;
   }
 
+  /* Блок обмена */
   .converter-container {
-    background: #F8F9FB;
+    background: #FFFFFF;
+    border: 1px solid #E6E6EB;
     border-radius: 16px;
     padding: 24px;
+    margin-top: 24px;
   }
 
   .converter-wrapper {
@@ -2092,24 +2054,7 @@ const exchangeStyles = `
     margin-bottom: 24px;
   }
 
-  .swap-button {
-    background: #FFFFFF;
-    border: 1px solid #E6E6EB;
-    border-radius: 12px;
-    padding: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .swap-button:hover {
-    background: #F8F9FB;
-  }
-
-  .swap-icon {
-    font-size: 24px;
-    display: block;
-  }
-
+  /* Поля ввода */
   .currency-input {
     flex: 1;
   }
@@ -2121,7 +2066,7 @@ const exchangeStyles = `
   }
 
   .input-wrapper {
-    background: #FFFFFF;
+    background: #F8F9FB;
     border: 1px solid #E6E6EB;
     border-radius: 12px;
     padding: 14px;
@@ -2139,19 +2084,18 @@ const exchangeStyles = `
     outline: none;
   }
 
-  .currency-input-field:disabled {
-    background: none;
+  /* Кнопки */
+  .swap-button {
+    background: #FFFFFF;
+    border: 1px solid #E6E6EB;
+    border-radius: 12px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
   }
 
-  .currency-symbol {
-    color: #666;
-    font-size: 16px;
-  }
-
-  .balance-info {
-    color: #666;
-    font-size: 12px;
-    margin-top: 8px;
+  .swap-button:hover {
+    background: #F8F9FB;
   }
 
   .exchange-button {
@@ -2169,6 +2113,13 @@ const exchangeStyles = `
 
   .exchange-button:hover {
     opacity: 0.9;
+  }
+
+  /* Баланс */
+  .balance-info {
+    color: #666;
+    font-size: 12px;
+    margin-top: 8px;
   }
 `;
 
