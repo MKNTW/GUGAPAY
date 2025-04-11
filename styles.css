@@ -596,3 +596,192 @@ body {
   animation: slide-out-down 0.3s ease-out;
 }
 
+/* Основные стили обмена */
+.exchange-container {
+    #max-width: 440px;
+    #margin: 0 auto;
+    #padding: 24px;
+    background: #FFFFFF;
+    #border-radius: 24px;
+    #box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.exchange-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.exchange-icon {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+}
+
+.exchange-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1A1A1A;
+    line-height: 1.3;
+}
+
+.current-rate {
+    font-size: 16px;
+    color: #76808F;
+    margin-top: 4px;
+}
+
+/* График */
+.chart-wrapper {
+    background: #F8F9FB;
+    border-radius: 16px;
+    #padding: 16px;
+    #margin-bottom: 24px;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.rate-label {
+    font-size: 14px;
+    color: #76808F;
+}
+
+.rate-change {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.rate-arrow {
+    font-size: 14px;
+    transition: color 0.2s;
+}
+
+.rate-percent {
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+/* Конвертер */
+.converter-container {
+    background: #FFFFFF;
+    border: 1px solid #E6E6EB;
+    border-radius: 16px;
+    padding: 16px;
+}
+
+.currency-block {
+    margin-bottom: 24px;
+}
+
+.currency-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.currency-label {
+    font-size: 14px;
+    color: #76808F;
+}
+
+.balance-label {
+    font-size: 12px;
+    color: #76808F;
+}
+
+.currency-input {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #F8F9FB;
+    border-radius: 12px;
+    padding: 8px 16px;
+    transition: border-color 0.2s;
+}
+
+.input-field {
+    flex: 1;
+    border: none;
+    background: none;
+    font-size: 18px;
+    font-weight: 500;
+    color: #1A1A1A;
+    padding: 8px 0;
+    outline: none;
+}
+
+.input-field::placeholder {
+    color: #B1B8C5;
+}
+
+.currency-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 100px;
+}
+
+.currency-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.currency-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1A1A1A;
+}
+
+/* Кнопка переключения */
+.swap-button {
+    background: #FFFFFF;
+    border: 1px solid #E6E6EB;
+    border-radius: 12px;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 16px auto;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.swap-button:hover {
+    background: #F8F9FB;
+    transform: rotate(180deg);
+}
+
+/* Кнопка подтверждения */
+.exchange-button {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(90deg, #2F80ED, #2D9CDB);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    margin-top: 24px;
+}
+
+.exchange-button:hover {
+    opacity: 0.9;
+}
+
+/* График */
+.exchange-chart {
+    width: 100% !important;
+    height: 160px !important;
+}
