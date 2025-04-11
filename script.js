@@ -1480,13 +1480,14 @@ function confirmPayMerchantModal({ merchantId, amount, purpose }) {
  * Подтверждение перевода между пользователями
  **************************************************/
 function confirmPayUserModal({ userId, amount, purpose }) {
+  // Создаем модальное окно подтверждения перевода
   createModal(
     "confirmPayUserModal",
     `
       <h3 style="text-align:center;">Подтверждение перевода</h3>
       <p>Получатель: ${userId}</p>
       <p>Сумма: ${formatBalance(amount, 5)} ₲</p>
-      <p>Назначение: ${purpose}</p>
+      <p>Назначение: ${purpose || "Без назначения"}</p>
       <button id="confirmPayUserBtn" style="padding:10px;margin-top:10px;">Перевести</button>
     `,
     {
@@ -1499,8 +1500,19 @@ function confirmPayUserModal({ userId, amount, purpose }) {
     }
   );
 
+  // Обработчик нажатия кнопки "Перевести"
   document.getElementById("confirmPayUserBtn").onclick = async () => {
-    if (!currentUserId) return;
+    if (!currentUserId) {
+      alert("Ошибка: вы не авторизованы. Пожалуйста, войдите в систему.");
+      return;
+    }
+
+    if (!userId || !amount || amount <= 0) {
+      alert("Ошибка: некорректные данные для перевода.");
+      return;
+    }
+
+    // Подтверждение перевода
     try {
       const resp = await fetch(`${API_URL}/payUser`, {
         method: "POST",
@@ -1508,16 +1520,23 @@ function confirmPayUserModal({ userId, amount, purpose }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fromUserId: currentUserId, toUserId: userId, amount, purpose }),
       });
+
+      if (!resp.ok) {
+        const errorData = await resp.json();
+        throw new Error(errorData.error || "Неизвестная ошибка");
+      }
+
       const data = await resp.json();
       if (data.success) {
-        alert("✅ Перевод выполнен!");
+        alert("✅ Перевод выполнен успешно!");
         document.getElementById("confirmPayUserModal")?.remove();
-        fetchUserData();
+        fetchUserData(); // Обновление данных пользователя
       } else {
-        alert("❌ Ошибка: " + data.error);
+        alert("❌ Ошибка выполнения перевода: " + data.error);
       }
     } catch (err) {
-      console.error("Ошибка перевода:", err);
+      console.error("Ошибка выполнения перевода:", err);
+      alert("❌ Произошла ошибка при выполнении перевода: " + (err.message || "Неизвестная ошибка"));
     }
   };
 }
