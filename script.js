@@ -1355,7 +1355,7 @@ function openPayQRModal() {
 
   const videoEl = document.getElementById("opPayVideo");
   startUniversalQRScanner(videoEl, (rawValue) => {
-    const parsed = parseMerchantQRData(rawValue);
+    const parsed = parseQRCodeData(rawValue);
     if (parsed.type === "person") {
       // Обработка перевода между пользователями
       if (!parsed.userId) {
@@ -1374,16 +1374,17 @@ function openPayQRModal() {
       alert("❌ Неверный тип QR-кода.");
       return;
     }
-    // Сначала создаём окно подтверждения
-    confirmPayMerchantModal(parsed);
 
-    // А теперь закрываем окно сканера (через небольшую паузу, чтобы не конфликтовать с анимацией)
+    // Закрываем окно сканера после успешного сканирования
     setTimeout(() => {
       document.getElementById("payQRModal")?.remove();
     }, 500);
   });
 }
 
+/**************************************************
+ * Подтверждение оплаты мерчанту
+ **************************************************/
 function confirmPayMerchantModal({ merchantId, amount, purpose }) {
   createModal(
     "confirmPayMerchantModal",
@@ -1397,7 +1398,7 @@ function confirmPayMerchantModal({ merchantId, amount, purpose }) {
     {
       showCloseBtn: true,
       cornerTopMargin: 50,
-      cornerTopRadius: 20, // радиус
+      cornerTopRadius: 20,
       hasVerticalScroll: true,
       defaultFromBottom: true,
       noRadiusByDefault: false
@@ -1422,11 +1423,14 @@ function confirmPayMerchantModal({ merchantId, amount, purpose }) {
         alert("❌ Ошибка: " + data.error);
       }
     } catch (err) {
-      console.error("payMerchantOneTime error:", err);
+      console.error("Ошибка оплаты мерчанту:", err);
     }
   };
 }
 
+/**************************************************
+ * Подтверждение перевода между пользователями
+ **************************************************/
 function confirmPayUserModal({ userId, amount, purpose }) {
   createModal(
     "confirmPayUserModal",
@@ -1440,7 +1444,7 @@ function confirmPayUserModal({ userId, amount, purpose }) {
     {
       showCloseBtn: true,
       cornerTopMargin: 50,
-      cornerTopRadius: 20, // радиус
+      cornerTopRadius: 20,
       hasVerticalScroll: true,
       defaultFromBottom: true,
       noRadiusByDefault: false,
@@ -1465,7 +1469,7 @@ function confirmPayUserModal({ userId, amount, purpose }) {
         alert("❌ Ошибка: " + data.error);
       }
     } catch (err) {
-      console.error("payUser error:", err);
+      console.error("Ошибка перевода:", err);
     }
   };
 }
