@@ -2362,7 +2362,7 @@ function hideMainUI() {
  * ПАРСИНГ QR + ЗАПРОС КАМЕРЫ (И ДЕКОДИРОВАНИЕ)
  **************************************************/
 function startUniversalQRScanner(videoElement, onResultCallback) {
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+  if (!navigator.mediaDevices?.getUserMedia) {
     alert("Камера не поддерживается вашим браузером");
     return;
   }
@@ -2371,62 +2371,42 @@ function startUniversalQRScanner(videoElement, onResultCallback) {
     .getUserMedia({ video: { facingMode: "environment" } })
     .then((stream) => {
       videoElement.srcObject = stream;
-      videoElement.setAttribute("playsinline", true); // нужно для iOS
+      videoElement.setAttribute("playsinline", "true");
       videoElement.play();
 
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
+      let scanning = true;
 
-      let alreadyScanned = false; // флаг, чтобы не обрабатывать повторно
+      const processFrame = () => {
+        if (!scanning) return;
 
-      function tick() {
-        if (!alreadyScanned && videoElement.readyState === videoElement.HAVE_ENOUGH_DATA) {
-          canvas.width = videoElement.videoWidth;
-          canvas.height = videoElement.videoHeight;
-          ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const code = jsQR(imageData.data, canvas.width, canvas.height);
+        try {
+          if (videoElement.readyState >= videoElement.HAVE_METADATA) {
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height);
 
-          if (code) {
-            // Успешно распознали QR
-            alreadyScanned = true;      // ставим флаг
-            stopStream(stream);         // останавливаем камеру
-            onResultCallback(code.data); // вызываем колбэк
-            return;
+            if (code) {
+              scanning = false;
+              stopStream(stream);
+              onResultCallback(code.data);
+            }
           }
+        } catch (err) {
+          console.error("Ошибка обработки кадра:", err);
         }
-        requestAnimationFrame(tick);
-      }
-      requestAnimationFrame(tick);
+        
+        requestAnimationFrame(processFrame);
+      };
+
+      requestAnimationFrame(processFrame);
     })
     .catch((err) => {
-      alert("Доступ к камере отклонён: " + err);
+      alert(`Ошибка доступа к камере: ${err.message}`);
     });
-}
-
-function stopStream(stream) {
-  if (stream) {
-    stream.getTracks().forEach((track) => track.stop());
-  }
-}
-
-function parseMerchantQRData(qrString) {
-  const obj = { type: null, userId: null, amount: 0, purpose: "" };
-  try {
-    if (!qrString.startsWith("guga://")) return obj;
-    const query = qrString.replace("guga://", "");
-    const parts = query.split("&");
-    for (const p of parts) {
-      const [key, val] = p.split("=");
-      if (key === "type") obj.type = val; // Тип операции: "person" или "merchant"
-      if (key === "userId") obj.userId = val; // ID получателя
-      if (key === "amount") obj.amount = parseFloat(val);
-      if (key === "purpose") obj.purpose = decodeURIComponent(val);
-    }
-  } catch (e) {
-    console.error("Ошибка при разборе QR-кода:", e);
-  }
-  return obj;
 }
 
 /**************************************************
