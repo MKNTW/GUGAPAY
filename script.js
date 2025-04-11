@@ -1702,8 +1702,6 @@ function parseQRCodeData(qrString) {
  **************************************************/
 let currentExchangeDirection = "coin_to_rub";
 let currentExchangeRate = 0;
-let exchangeChartInstance = null;
-let lastDirection = null;
 
 function openExchangeModal() {
   showGlobalLoading();
