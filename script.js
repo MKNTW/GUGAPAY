@@ -1114,15 +1114,14 @@ function openPayQRModal() {
     "payQRModal",
     `
       <div class="qr-scanner-container">
-        <video id="opPayVideo" class="fullscreen-video" muted playsinline></video>
+        <video id="opPayVideo" class="scanner-video" muted playsinline></video>
+        <div class="scanner-overlay"></div>
         <div class="scan-frame">
           <div class="corner top-left"></div>
           <div class="corner top-right"></div>
           <div class="corner bottom-left"></div>
           <div class="corner bottom-right"></div>
         </div>
-        <div class="scanner-overlay"></div>
-        <button class="close-scanner-btn" onclick="document.getElementById('payQRModal')?.remove()">×</button>
       </div>
     `,
     {
@@ -1136,7 +1135,8 @@ function openPayQRModal() {
         backgroundColor: 'rgba(0,0,0,0.9)',
         zIndex: 10000,
         borderRadius: '0',
-        padding: '0'
+        padding: '0',
+        overflow: 'hidden'
       }
     }
   );
@@ -1146,81 +1146,93 @@ function openPayQRModal() {
     .qr-scanner-container {
       position: relative;
       width: 100%;
-      height: 100vh;
-      overflow: hidden;
-    }
-    .fullscreen-video {
-      width: 100%;
       height: 100%;
-      object-fit: cover;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
+    
+    .scanner-video {
+      width: 100vmin;
+      height: 100vmin;
+      max-width: 90%;
+      max-height: 70vh;
+      object-fit: cover;
+      position: relative;
+      z-index: 1;
+    }
+    
     .scan-frame {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 250px;
-      height: 250px;
-      z-index: 2;
+      width: 80vmin;
+      height: 80vmin;
+      max-width: 80%;
+      max-height: 60vh;
+      z-index: 3;
+      pointer-events: none;
     }
+    
     .corner {
       position: absolute;
-      width: 30px;
-      height: 30px;
+      width: 24px;
+      height: 24px;
       border: 3px solid #fff;
     }
+    
     .top-left {
       top: 0;
       left: 0;
       border-right: none;
       border-bottom: none;
     }
+    
     .top-right {
       top: 0;
       right: 0;
       border-left: none;
       border-bottom: none;
     }
+    
     .bottom-left {
       bottom: 0;
       left: 0;
       border-right: none;
       border-top: none;
     }
+    
     .bottom-right {
       bottom: 0;
       right: 0;
       border-left: none;
       border-top: none;
     }
+    
     .scanner-overlay {
-      position: absolute;
-      top: 40px;
-      left: 0;
-      right: 0;
-      bottom: 80px;
-      background: linear-gradient(to bottom, 
-        rgba(0,0,0,0.6) 0%, 
-        transparent 40px, 
-        transparent calc(100% - 80px), 
-        rgba(0,0,0,0.6) 100%);
-      z-index: 1;
-    }
-    .close-scanner-btn {
       position: fixed;
-      top: 20px;
-      right: 20px;
-      width: 40px;
-      height: 40px;
-      background: rgba(255,255,255,0.2);
-      color: white;
-      border: none;
-      border-radius: 50%;
-      font-size: 28px;
-      line-height: 40px;
-      text-align: center;
-      cursor: pointer;
-      z-index: 3;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        to bottom,
+        rgba(0,0,0,0.6) 0,
+        rgba(0,0,0,0.3) 40px,
+        transparent calc(100% - 80px),
+        rgba(0,0,0,0.6) 100%
+      );
+      z-index: 2;
+      pointer-events: none;
+    }
+    
+    @media (orientation: landscape) {
+      .scanner-video {
+        max-height: 90vh;
+        max-width: 70vw;
+      }
+      .scan-frame {
+        max-height: 80vh;
+        max-width: 60vw;
+      }
     }
   `;
   document.head.appendChild(style);
