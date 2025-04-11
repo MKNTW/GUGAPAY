@@ -1728,8 +1728,7 @@ function openExchangeModal() {
             <canvas id="exchangeChart"></canvas>
         </div>
     </div>
-
-    <div class="converter">
+    
         <div class="currency-block from-currency">
             <div class="currency-header">
                 <span class="currency-label">Отдаете</span>
@@ -1772,13 +1771,12 @@ function openExchangeModal() {
                 </div>
             </div>
         </div>
-
-        <div class="bottom-spacer"></div>
     </div>
 
     <button id="btnPerformExchange" class="submit-btn">
         Подтвердить обмен
     </button>
+    <div class="bottom-spacer"></div>
 </div>
     `,
     {
@@ -1796,23 +1794,22 @@ function openExchangeModal() {
 // Обновленные стили
 const exchangeStyles = `
 .exchange-container {
-    width: 100%;
-    height: 100vh;
-    padding: 0;
-    background: #fff;
-    overflow: auto;
-    scroll-behavior: smooth;
+    #width: 100%;
+    #height: 100vh;
+    #padding: 24px;
+    #background: #fff;
+    #overflow: auto;
 }
 
 .exchange-header {
-    padding: 24px 16px 16px;
+    margin-bottom: 32px;
 }
 
 .exchange-title {
     font-size: 24px;
     font-weight: 600;
     color: #1A1A1A;
-    margin-bottom: 4px;
+    margin-bottom: 8px;
 }
 
 .current-rate {
@@ -1822,9 +1819,9 @@ const exchangeStyles = `
 
 .chart-container {
     background: #F8F9FB;
-    margin: 0 16px 24px;
     border-radius: 16px;
     padding: 16px;
+    margin-bottom: 24px;
 }
 
 .chart-wrapper canvas {
@@ -1832,25 +1829,31 @@ const exchangeStyles = `
 }
 
 .converter {
-    padding: 0 16px 100px;
+    position: relative;
+    margin: 40px 0;
+}
+
+.arrows {
+    position: absolute;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
 }
 
 .currency-block {
-    margin: 16px 0;
     background: #F8F9FB;
     border-radius: 16px;
     padding: 16px;
-    border: 1px solid #E6E6EB;
+    margin: 12px 0;
 }
 
 .input-group {
     display: flex;
     gap: 12px;
     align-items: center;
-    background: #fff;
-    border-radius: 12px;
-    padding: 12px;
-    border: 1px solid #E6E6EB;
 }
 
 .currency-input {
@@ -1858,9 +1861,9 @@ const exchangeStyles = `
     border: none;
     background: none;
     font-size: 20px;
+    padding: 12px 0;
     color: #1A1A1A;
     font-weight: 500;
-    padding: 0;
 }
 
 .currency-input::placeholder {
@@ -1871,16 +1874,27 @@ const exchangeStyles = `
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 12px;
+    background: #F8F9FB;
+    border-radius: 12px;
+    padding: 10px 16px;
+    border: 1px solid #E6E6EB;
 }
 
 .swap-btn {
-    width: 100%;
-    background: none;
-    border: none;
-    padding: 16px 0;
-    margin: 8px 0;
-    cursor: pointer;
+    width: 56px;
+    height: 56px;
+    background: #F8F9FB;
+    border: 2px solid #E6E6EB;
+    border-radius: 16px;
+    margin: 16px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.swap-btn:hover {
+    background: #eef0f3;
 }
 
 .submit-btn {
@@ -1898,8 +1912,7 @@ const exchangeStyles = `
     cursor: pointer;
     box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
 }
-
-.bottom-spacer {
+    .bottom-spacer {
     height: 120px;
 }
 `;
