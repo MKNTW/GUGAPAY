@@ -1432,7 +1432,7 @@ function confirmPayMerchantModal({ merchantId, amount, purpose }) {
 /**************************************************
  * Подтверждение перевода между пользователями
  **************************************************/
-async function confirmPayUserModal({ userId, amount, purpose, currency }) {
+async function confirmPayUserModal({ userId, amount, purpose }) {
   // Валидация основных параметров
   if (!userId || !amount || amount <= 0) {
     alert("❌ Некорректные данные для перевода");
@@ -1444,7 +1444,7 @@ async function confirmPayUserModal({ userId, amount, purpose, currency }) {
     `
       <h3 style="text-align:center;">Подтверждение перевода</h3>
       <p>Получатель: ${userId}</p>
-      <p>Сумма: ${formatBalance(amount, 5)} ${currency === 'RUB' ? '₽' : '₲'}</p>
+      <p>Сумма: ${formatBalance(amount, 5)} ₲</p>
       ${purpose ? `<p>Назначение: ${purpose}</p>` : ''}
       <button id="confirmPayUserBtn" style="padding:10px;margin-top:10px;">Перевести</button>
     `,
@@ -1462,15 +1462,16 @@ async function confirmPayUserModal({ userId, amount, purpose, currency }) {
     try {
       if (!currentUserId) throw new Error("Требуется авторизация");
       
+      // Формируем тело запроса для обычного перевода
       const payload = {
         fromUserId: currentUserId,
         toUserId: userId,
         amount: Number(amount),
-        purpose: purpose || "",
-        currency: currency || "GUGA"
+        purpose: purpose || ""
       };
 
-      const resp = await fetch(`${API_URL}/payUser`, {
+      // Отправляем запрос на стандартный эндпоинт перевода
+      const resp = await fetch(`${API_URL}/transfer`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -1483,13 +1484,14 @@ async function confirmPayUserModal({ userId, amount, purpose, currency }) {
         throw new Error(data.error || "Ошибка сервера");
       }
 
-      alert("✅ Перевод выполнен успешно!");
+      // Показываем уведомление и обновляем данные
+      showNotification("✅ Перевод успешно выполнен", "success");
       document.getElementById("confirmPayUserModal")?.remove();
       await fetchUserData();
       
     } catch (err) {
       console.error("Ошибка перевода:", err);
-      alert(`❌ Ошибка: ${err.message}`);
+      showNotification(`❌ Ошибка: ${err.message}`, "error");
     }
   };
 }
