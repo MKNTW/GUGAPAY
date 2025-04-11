@@ -1355,6 +1355,7 @@ function displayTransactionHistory(transactions) {
     if (!groups[label]) groups[label] = [];
     groups[label].push(tx);
   });
+
   const sortedDates = Object.keys(groups).sort((a, b) => {
     const dA = new Date(groups[a][0].client_time || groups[a][0].created_at);
     const dB = new Date(groups[b][0].client_time || groups[b][0].created_at);
@@ -1383,58 +1384,45 @@ function displayTransactionHistory(transactions) {
       let detailsText = "";
       let amountSign = "";
       let amountValue = formatBalance(tx.amount, 5);
-
-      // По умолчанию чёрный
+      let currencySymbol = "₲";
       let color = "#000";
 
+      if (tx.currency === "RUB") {
+        amountValue = formatBalance(tx.amount, 2);
+        currencySymbol = "₽";
+      }
+
       if (tx.type === "merchant_payment") {
-        // Оплата по QR
         iconSrc = "photo/92.png";
         titleText = "Оплата по QR";
-        detailsText = `Мерчант: ${
-          tx.merchant_id ||
-          (tx.to_user_id && tx.to_user_id.replace("MERCHANT:", "")) ||
-          "???"
-        }`;
+        detailsText = `Мерчант: ${tx.merchant_id || (tx.to_user_id && tx.to_user_id.replace("MERCHANT:", "")) || "???"}`;
         amountSign = "-";
-        color = "rgb(0 0 0)"; // или красный
+        color = "rgb(0 0 0)";
 
       } else if (tx.from_user_id === currentUserId) {
-        // Списание (отправили кому-то)
         iconSrc = "photo/67.png";
         titleText = "Отправлено";
         detailsText = `Кому: ${tx.to_user_id}`;
         amountSign = "-";
-        color = "rgb(0 0 0)"; // или красный
+        color = "rgb(0 0 0)";
 
       } else if (tx.to_user_id === currentUserId) {
-        // Пополнение (получили)
         iconSrc = "photo/66.png";
         titleText = "Получено";
         detailsText = `От кого: ${tx.from_user_id}`;
         amountSign = "+";
-        color = "rgb(25 150 70)"; // зелёный
+        color = "rgb(25 150 70)";
 
       } else if (tx.type === "exchange") {
-        // Обмен
         iconSrc = "photo/67.png";
         titleText = "Обмен";
         detailsText = `Направление: ${
           tx.direction === "rub_to_coin" ? "Рубли → Монеты" : "Монеты → Рубли"
         }`;
-        if (tx.direction === "rub_to_coin") {
-          amountSign = "+";
-          color = "rgb(25 150 70)"; // зелёный
-        } else {
-          amountSign = "-";
-          color = "rgb(0 0 0)"; // или красный
-        }
-
-      } else {
-        // Прочие случаи
-        iconSrc = "photo/67.png";
-        titleText = "Операция";
-        detailsText = "Детали не указаны";
+        amountSign = tx.direction === "rub_to_coin" ? "+" : "-";
+        color = tx.direction === "rub_to_coin" ? "rgb(25 150 70)" : "rgb(0 0 0)";
+        amountValue = formatBalance(tx.amount, 5); // для обменов пока оставляем в монетах
+        currencySymbol = tx.direction === "rub_to_coin" ? "₲" : "₽";
       }
 
       const cardDiv = document.createElement("div");
@@ -1488,7 +1476,7 @@ function displayTransactionHistory(transactions) {
       const amountEl = document.createElement("div");
       amountEl.style.fontWeight = "bold";
       amountEl.style.color = color;
-      amountEl.textContent = `${amountSign} ${amountValue} ₲`;
+      amountEl.textContent = `${amountSign}${amountValue} ${currencySymbol}`;
 
       const timeEl = document.createElement("div");
       timeEl.textContent = timeStr;
@@ -1505,6 +1493,7 @@ function displayTransactionHistory(transactions) {
 
       dateItem.appendChild(cardDiv);
     });
+
     list.appendChild(dateItem);
   });
 }
