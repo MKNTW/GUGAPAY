@@ -826,6 +826,10 @@ function openProfileModal() {
   document.getElementById("profileLogoutBtn").onclick = logout;
 }
 
+/**************************************************
+ * ПЕРЕВОД
+ **************************************************/
+
 function openTransferModal() {
   createModal(
     "transferModal",
