@@ -1479,8 +1479,7 @@ function confirmPayMerchantModal({ merchantId, amount, purpose }) {
 /**************************************************
  * Подтверждение перевода между пользователями
  **************************************************/
-function confirmPayUserModal({ userId, amount, purpose }) {
-  // Создаем модальное окно подтверждения перевода
+async function confirmPayUserModal({ userId, amount, purpose }) {
   createModal(
     "confirmPayUserModal",
     `
@@ -1500,7 +1499,6 @@ function confirmPayUserModal({ userId, amount, purpose }) {
     }
   );
 
-  // Обработчик нажатия кнопки "Перевести"
   document.getElementById("confirmPayUserBtn").onclick = async () => {
     if (!currentUserId) {
       alert("Ошибка: вы не авторизованы. Пожалуйста, войдите в систему.");
@@ -1512,13 +1510,21 @@ function confirmPayUserModal({ userId, amount, purpose }) {
       return;
     }
 
-    // Подтверждение перевода
     try {
+      const payload = {
+        fromUserId: currentUserId,
+        toUserId: userId,
+        amount,
+        purpose,
+      };
+
+      console.log("Отправляем данные:", payload);
+
       const resp = await fetch(`${API_URL}/payUser`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fromUserId: currentUserId, toUserId: userId, amount, purpose }),
+        body: JSON.stringify(payload),
       });
 
       if (!resp.ok) {
