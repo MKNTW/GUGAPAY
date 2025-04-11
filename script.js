@@ -1014,7 +1014,25 @@ function openTransferModal() {
         }
     };
 
-    // Обработчики событий
+    // Загрузка балансов сразу при открытии окна
+    async function loadBalances() {
+        try {
+            const response = await fetch(`${API_URL}/getBalances`, { method: 'GET', credentials: 'include' });
+            const data = await response.json();
+            const gugaBalance = data.gugaBalance || 0;
+            const rubBalance = data.rubBalance || 0;
+
+            // Обновляем балансы
+            document.getElementById("gugaBalance").innerHTML = `Доступно: ${formatBalance(gugaBalance, 5)} ₲`;
+            document.getElementById("rubBalance").innerHTML = `Доступно: ${formatBalance(rubBalance, 2)} ₽`;
+
+            updateTransferUI(); // Обновляем UI после загрузки балансов
+        } catch (err) {
+            console.error('Ошибка при загрузке балансов:', err);
+        }
+    }
+
+    // Обработчики событий для карточек валют
     document.getElementById("btnCurrencyGUGA").addEventListener('click', () => {
         currentTransferCurrency = "GUGA";
         updateTransferUI();
@@ -1061,7 +1079,7 @@ function openTransferModal() {
         }
     };
 
-    updateTransferUI(); // при запуске
+    loadBalances(); // Загружаем балансы при открытии окна
 }
 
 /**************************************************
