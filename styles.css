@@ -596,7 +596,7 @@ body {
   animation: slide-out-down 0.3s ease-out;
 }
 
-/* Основной контейнер */
+/* Основные стили обмена */
 .exchange-container {
     max-width: 440px;
     margin: 0 auto;
@@ -606,7 +606,6 @@ body {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
 
-/* Шапка */
 .exchange-header {
     display: flex;
     align-items: center;
