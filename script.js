@@ -975,7 +975,7 @@ function openExchangeModal(horizontalSwitch) {
   showGlobalLoading();
   createModal(
     "exchangeModal",
-    
+    `
       <h3 style="text-align:center;">Обменять</h3>
 
       <!-- Контейнер для графика с position:relative, чтобы разместить курс и стрелку сверху слева -->
@@ -1025,7 +1025,7 @@ function openExchangeModal(horizontalSwitch) {
           <button id="btnPerformExchange" style="padding:10px;">Обменять</button>
         </div>
       </div>
-    ,
+    `,
     {
       showCloseBtn: false,
       cornerTopMargin: 0,
@@ -1097,11 +1097,11 @@ function updateCurrencyLabels() {
   const fromLabel = document.getElementById("fromLabel");
   const toLabel = document.getElementById("toLabel");
   if (currentExchangeDirection === "coin_to_rub") {
-    fromLabel.innerHTML = <img src="photo/15.png" alt="GUGA" style="width:25px;vertical-align:middle;"> GUGA;
-    toLabel.innerHTML   = <img src="photo/18.png" alt="RUB" style="width:25px;vertical-align:middle;"> RUB;
+    fromLabel.innerHTML = `<img src="photo/15.png" alt="GUGA" style="width:25px;vertical-align:middle;"> GUGA`;
+    toLabel.innerHTML   = `<img src="photo/18.png" alt="RUB" style="width:25px;vertical-align:middle;"> RUB`;
   } else {
-    fromLabel.innerHTML = <img src="photo/18.png" alt="RUB" style="width:25px;vertical-align:middle;"> RUB;
-    toLabel.innerHTML   = <img src="photo/15.png" alt="GUGA" style="width:25px;vertical-align:middle;"> GUGA;
+    fromLabel.innerHTML = `<img src="photo/18.png" alt="RUB" style="width:25px;vertical-align:middle;"> RUB`;
+    toLabel.innerHTML   = `<img src="photo/15.png" alt="GUGA" style="width:25px;vertical-align:middle;"> GUGA`;
   }
 }
 
@@ -1117,7 +1117,7 @@ async function handleExchange(direction) {
   }
   showGlobalLoading();
   try {
-    const resp = await fetch(${API_URL}/exchange, {
+    const resp = await fetch(`${API_URL}/exchange`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -1127,9 +1127,9 @@ async function handleExchange(direction) {
     if (data.success) {
       let msg = "";
       if (direction === "rub_to_coin") {
-        msg = ${formatBalance(amountVal, 2)} ₽ → ${formatBalance(data.exchanged_amount, 5)} ₲;
+        msg = `${formatBalance(amountVal, 2)} ₽ → ${formatBalance(data.exchanged_amount, 5)} ₲`;
       } else {
-        msg = ${formatBalance(amountVal, 5)} ₲ → ${formatBalance(data.exchanged_amount, 2)} ₽;
+        msg = `${formatBalance(amountVal, 5)} ₲ → ${formatBalance(data.exchanged_amount, 2)} ₽`;
       }
       alert("✅ Обмен выполнен! " + msg);
       lastDirection = direction;
@@ -1148,7 +1148,7 @@ async function handleExchange(direction) {
 
 async function loadBalanceAndExchangeRate() {
   try {
-  const rateResp = await fetch(${API_URL}/exchangeRates?limit=50, {
+  const rateResp = await fetch(`${API_URL}/exchangeRates?limit=50`, {
     credentials: "include",
   });
   const rateData = await rateResp.json();
@@ -1170,7 +1170,7 @@ async function loadBalanceAndExchangeRate() {
 }
 
   try {
-    const rateResp = await fetch(${API_URL}/exchangeRates?limit=50, {
+    const rateResp = await fetch(`${API_URL}/exchangeRates?limit=50`, {
       credentials: "include",
     });
     const rateData = await rateResp.json();
@@ -1228,15 +1228,15 @@ function drawExchangeChart(rates) {
   if (diff > 0) {
     rateChangeArrow.textContent = "↑";
     rateChangeArrow.style.color = "rgb(75, 168, 87)";
-    rateChangePercent.textContent = +${percentChange.toFixed(2)}%;
+    rateChangePercent.textContent = `+${percentChange.toFixed(2)}%`;
     rateChangePercent.style.color = "rgb(75, 168, 87)";
-    rateChangeRub.textContent = +${diff.toFixed(2)}₽;
+    rateChangeRub.textContent = `+${diff.toFixed(2)}₽`;
   } else if (diff < 0) {
     rateChangeArrow.textContent = "↓";
     rateChangeArrow.style.color = "rgb(210, 27, 27)";
-    rateChangePercent.textContent = ${percentChange.toFixed(2)}%;
+    rateChangePercent.textContent = `${percentChange.toFixed(2)}%`;
     rateChangePercent.style.color = "rgb(210, 27, 27)";
-    rateChangeRub.textContent = ${diff.toFixed(2)}₽;
+    rateChangeRub.textContent = `${diff.toFixed(2)}₽`;
   } else {
     // diff == 0
     rateChangeArrow.textContent = "→";
@@ -1292,6 +1292,7 @@ function drawExchangeChart(rates) {
     }
   });
 }
+
 /**************************************************
  * ИСТОРИЯ (без кнопки закрытия, без радиуса)
  **************************************************/
