@@ -939,25 +939,25 @@ function injectMainUIStyles() {
     }
 
     /* Контейнер для иконки-картинки (белый фон, закруглённые углы, центрирование) */
-.icon-wrap {
-  width: 50px;              /* «окно» (больше) */
-  height: 50px;
-  background: #fff;         /* белый фон */
-  border-radius: 12px;      /* закруглённые углы */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 10px;       /* небольшой отступ снизу, чтобы текст шёл ниже */
-}
+  .icon-wrap {
+    width: 50px;              
+    height: 50px;
+    background: #fff;         
+    border-radius: 12px;      
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;       
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
 
-/* Сама картинка (иконка) внутри */
-.action-icon {
-  width: 28px;              /* картинка поменьше */
-  height: 28px;
-  border-radius: 6px;       /* тоже скругляем, если хотите */
-  object-fit: cover;        /* обрезка/масштаб */
-}
-
+  /* Сама картинка (иконка) внутри */
+  .action-icon {
+    width: 28px;              
+    height: 28px;
+    border-radius: 6px;       
+    object-fit: cover;        
+  }
 
     .header-divider {
       width: 100%;
@@ -3073,88 +3073,112 @@ function displayUserProfile() {
 }
 
 /**************************************************
- * УВЕДОМЛЕНИЯ (TOASTS)
+ * УВЕДОМЛЕНИЯ (TOASTS) - Единый стиль
  **************************************************/
+
+// (1) Стили: заменяем на единый стиль, похожий на общий дизайн
 const notificationStyle = document.createElement("style");
 notificationStyle.textContent = `
+  /* Контейнер для всех уведомлений */
   #notificationContainer {
     position: fixed;
     top: 10px;
     right: 10px;
-    z-index: 9999999;
+    z-index: 9999999; /* выше всего */
     display: flex;
     flex-direction: column;
     gap: 10px;
     align-items: flex-end;
   }
 
+  /* Общее оформление уведомления */
   .notification {
-    background: #fff;
-    color: #333;
-    border: 1px solid #ddd;
-    padding: 10px 14px;
-    border-radius: 4px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    font-family: "Oswald", sans-serif; /* единый шрифт */
+    font-size: 14px;
     position: relative;
-    min-width: 200px;
-    max-width: 300px;
+    min-width: 220px;
+    max-width: 340px;
     word-break: break-word;
+
+    background: #fff;               /* белый фон */
+    border: 1px solid #E6E6EB;     /* тонкая граница */
+    border-radius: 12px;           /* скруглённые углы */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+
+    color: #333;
+    padding: 12px 16px;            /* чуть больше отступы */
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-family: sans-serif;
-    font-size: 14px;
   }
 
-  .notification-success {
-    border-color: #c3e6cb;
-    background-color: #d4edda;
-    color: #155724;
+  /* Боковая цветная полоса для различия типов */
+  .notification::before {
+    content: "";
+    display: block;
+    position: absolute;
+    left: 0; top: 0;
+    width: 6px;
+    height: 100%;
+    border-radius: 12px 0 0 12px;   /* скругляем левую полосу */
   }
 
-  .notification-error {
-    border-color: #f5c6cb;
-    background-color: #f8d7da;
-    color: #721c24;
+  /* Тип: success (цветной бордер слева) */
+  .notification-success::before {
+    background-color: #2F80ED; /* или #27AE60, если нужно "зелёный успех" */
   }
 
-  .notification-info {
-    border-color: #bee5eb;
-    background-color: #d1ecf1;
-    color: #0c5460;
+  /* Тип: error */
+  .notification-error::before {
+    background-color: #D21B1B;
   }
 
+  /* Тип: info */
+  .notification-info::before {
+    background-color: #2D9CDB;
+  }
+
+  /* Кнопка "закрыть" */
   .notification-close {
     background: none;
     border: none;
-    color: currentColor;
-    font-size: 18px;
+    color: #999;
+    font-size: 20px;
     cursor: pointer;
     margin-left: 10px;
+    transition: color 0.2s;
+  }
+  .notification-close:hover {
+    color: #666;
   }
 `;
 document.head.appendChild(notificationStyle);
 
-// Контейнер для всех уведомлений
+// (2) Создаём контейнер под все уведомления, если не создан
 const notificationContainer = document.createElement("div");
 notificationContainer.id = "notificationContainer";
 document.body.appendChild(notificationContainer);
 
 /**
- * Функция для показа уведомления.
+ * (3) Функция для показа уведомления в едином стиле.
  * @param {string} message Текст уведомления.
- * @param {'success'|'error'|'info'} [type='info'] Тип уведомления (цвет).
+ * @param {'success'|'error'|'info'} [type='info'] Тип (цветное различие).
  * @param {number} [duration=5000] Время автозакрытия (мс). Если 0 — не закрывать автоматически.
  */
 function showNotification(message, type = "info", duration = 5000) {
   const notif = document.createElement("div");
   notif.classList.add("notification");
-  if (type === "success") {
-    notif.classList.add("notification-success");
-  } else if (type === "error") {
-    notif.classList.add("notification-error");
-  } else {
-    notif.classList.add("notification-info");
+
+  switch (type) {
+    case "success":
+      notif.classList.add("notification-success");
+      break;
+    case "error":
+      notif.classList.add("notification-error");
+      break;
+    default:
+      notif.classList.add("notification-info");
+      break;
   }
 
   // Текст
@@ -3176,7 +3200,7 @@ function showNotification(message, type = "info", duration = 5000) {
   notif.appendChild(closeBtn);
   notificationContainer.appendChild(notif);
 
-  // Автоудаление
+  // Автоудаление по таймеру
   if (duration && duration > 0) {
     setTimeout(() => {
       if (notif.parentNode === notificationContainer) {
