@@ -924,7 +924,7 @@ function injectMainUIStyles() {
       z-index: 9999;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 0px;
       background: transparent;
       border-radius: 8px;
       padding: 6px 10px;
@@ -938,9 +938,9 @@ function injectMainUIStyles() {
       background: #eee;
     }
     .user-name {
-      font-size: 14px;
+      font-size: 24px;
       font-weight: 600;
-      color: #333;
+      color: #fff;
       max-width: 130px;  /* чтобы если имя длинное, переносилось */
       white-space: nowrap;
       overflow: hidden;
