@@ -1004,7 +1004,7 @@ function injectMainUIStyles() {
       flex-direction: column;
     }
     .balance-label {
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 500;
       color: #1A1A1A;
     }
@@ -1283,8 +1283,8 @@ function openTransferModal() {
     `,
     {
       showCloseBtn: true,
-      cornerTopMargin: 50,
-      cornerTopRadius: 20,
+      cornerTopMargin: 0,
+      cornerTopRadius: 0,
       hasVerticalScroll: true,
       defaultFromBottom: true,
       noRadiusByDefault: false
