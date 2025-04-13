@@ -866,12 +866,17 @@ function createMainUI() {
     });
   }
 
-  // 6) Убираем/скрываем лишние элементы, если были
+  // 6) Показываем balanceDisplay, если он есть
   const balanceDisplay = document.getElementById("balanceDisplay");
-  if (balanceDisplay) balanceDisplay.style.display = "block"; 
+  if (balanceDisplay) {
+    balanceDisplay.style.display = "block"; 
+  }
 
+  // Скрываем майнинг, если есть
   const mineContainer = document.getElementById("mineContainer");
-  if (mineContainer) mineContainer.style.display = "none";
+  if (mineContainer) {
+    mineContainer.style.display = "none";
+  }
 
   // 7) Запрашиваем данные (балансы, user info) и запускаем автоповтор
   fetchUserData();
@@ -888,39 +893,28 @@ function injectMainUIStyles() {
   const style = document.createElement("style");
   style.id = "mainUIStyles";
   style.textContent = `
-    /* === Общие сбросы (если нужно) === */
     body {
       margin: 0;
       padding: 0;
-      font-family: "Oswald", sans-serif; /* пример, как у вас выше */
+      font-family: "Oswald", sans-serif;
     }
 
-    /* === Верхняя часть с градиентом === */
+    /* Верхняя часть с градиентом */
     .main-header {
-      
-      top: 0; left: 0;
       width: 100%;
-      /* Градиент */
       background: linear-gradient(90deg, #2F80ED, #2D9CDB);
-      /* Закругляем низ */
       border-bottom-left-radius: 20px;
       border-bottom-right-radius: 20px;
       padding: 16px;
       box-sizing: border-box;
-       
-    }
-    .user-info {
-      display: flex;
-      align-items: center;
-      margin-bottom: 16px;
-      color: #fff; /* на фоне градиента */
+      z-index: 90000;
     }
     .action-container {
       display: flex;
       gap: 16px;
       justify-content: center;
       margin-bottom: 16px;
-      margin-top: 175px;
+      margin-top: 175px; /* Чтобы опустить кнопки вниз */
     }
     .action-btn {
       display: flex;
@@ -937,22 +931,25 @@ function injectMainUIStyles() {
     .action-btn:hover {
       opacity: 0.9;
     }
+
+    /* Иконки в квадрате с закруглёнными краями (как ваш дизайн) */
     .action-icon {
-      width: 35px;
-      height: 35px;
+      width: 40px;
+      height: 40px;
+      border-radius: 8px; /* закруглённые углы */
+      object-fit: cover;
       margin-bottom: 4px;
     }
+
     .header-divider {
-      /* Если нужно визуально отделить нижнюю часть, 
-         можно поставить border или просто пустой отступ. */
       width: 100%;
-      height: 0px; 
+      height: 0px;
     }
 
-    /* === Контейнер для балансов (ниже "шапки") === */
+    /* Контейнер для балансов */
     .balance-container {
       position: absolute;
-      top: 300px; /* чтобы не перекрывало шапку */
+      top: 300px;
       width: 90%;
       max-width: 500px;
       left: 50%;
@@ -960,8 +957,6 @@ function injectMainUIStyles() {
       display: flex;
       flex-direction: column;
       gap: 16px;
-      margin-bottom: 10px;
-      /* Можно небольшой padding-top, если нужно больше пространства */
     }
 
     .balance-card {
@@ -989,29 +984,19 @@ function injectMainUIStyles() {
     .balance-info {
       display: flex;
       flex-direction: column;
-      
     }
     .balance-label {
       font-size: 16px;
       font-weight: 500;
       color: #1A1A1A;
     }
-    .balance-rate {
-      font-size: 14px;
-      color: #888;
-      margin-left: 8px;
-    }
     .balance-amount {
       font-size: 20px;
       font-weight: 500;
       color: #666;
     }
-    .balance-subtext {
-      font-size: 14px;
-      color: #666;
-    }
 
-    /* === Нижняя панель (bottomBar) === */
+    /* Нижняя панель */
     .bottom-bar {
       position: fixed;
       bottom: 0; left: 0;
@@ -1043,6 +1028,7 @@ function injectMainUIStyles() {
   `;
   document.head.appendChild(style);
 }
+
 
 /**************************************************
  * ПОЛЬЗОВАТЕЛЬ
