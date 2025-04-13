@@ -1092,6 +1092,9 @@ function openProfileModal() {
   document.getElementById("profileLogoutBtn").onclick = logout;
 }
 
+/**************************************************
+ * ПЕРЕВОД
+ **************************************************/
 function openTransferModal() {
   createModal(
     "transferModal",
@@ -1180,8 +1183,8 @@ function openTransferModal() {
   .transfer-container {
     background: #FFFFFF;
     border-radius: 16px;
-    padding: 16px;
-    margin: 0 auto;
+    padding: 0px;
+    margin-top: 25px;
     max-width: 440px;
   }
   /* Шапка и заголовок */
