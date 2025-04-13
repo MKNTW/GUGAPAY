@@ -868,7 +868,7 @@ function createMainUI() {
 
   // 6) Убираем/скрываем лишние элементы, если были
   const balanceDisplay = document.getElementById("balanceDisplay");
-  if (balanceDisplay) balanceDisplay.style.display = "none"; 
+  if (balanceDisplay) balanceDisplay.style.display = "true"; 
 
   const mineContainer = document.getElementById("mineContainer");
   if (mineContainer) mineContainer.style.display = "none";
