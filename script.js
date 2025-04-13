@@ -947,7 +947,7 @@ function injectMainUIStyles() {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 4px;       /* небольшой отступ снизу, чтобы текст шёл ниже */
+  margin-bottom: 10px;       /* небольшой отступ снизу, чтобы текст шёл ниже */
 }
 
 /* Сама картинка (иконка) внутри */
@@ -967,7 +967,7 @@ function injectMainUIStyles() {
     /* Контейнер для балансов */
     .balance-container {
       position: absolute;
-      top: 300px;
+      top: 320px;
       width: 90%;
       max-width: 500px;
       left: 50%;
