@@ -938,7 +938,7 @@ function injectMainUIStyles() {
       background: #eee;
     }
     .user-name {
-      font-size: 24px;
+      font-size: 20px;
       font-weight: 600;
       color: #fff;
       max-width: 130px;  /* чтобы если имя длинное, переносилось */
