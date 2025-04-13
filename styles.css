@@ -743,37 +743,50 @@ body {
 
 /* Кнопка переключения */
 .swap-button {
-    background: #FFFFFF;
-    border: 1px solid #E6E6EB;
-    border-radius: 12px;
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 16px auto;
-    cursor: pointer;
-    transition: all 0.2s;
+  background: #FFFFFF;
+  border: 1px solid #E6E6EB;
+  border-radius: 50%;       /* делаем окружность */
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 8px auto;         /* уменьшаем вертикальный зазор */
+  cursor: pointer;
+  transition: transform 0.3s ease;
 }
 
 .swap-button:hover {
-    background: #F8F9FB;
-    transform: rotate(180deg);
+  box-shadow: 0 0 6px rgba(0,0,0,0.1);
+}
+
+@keyframes swapRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.swap-button:active {
+  animation: swapRotate 0.5s forwards ease;
 }
 
 /* Кнопка подтверждения */
-.exchange-button {
-    width: 100%;
-    padding: 16px;
-    background: linear-gradient(90deg, #2F80ED, #2D9CDB);
-    border: none;
-    border-radius: 12px;
-    color: white;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity 0.2s;
-    margin-top: 24px;
+.exchange-button,
+.btn-exchange {
+  display: inline-block !important; /* Убедитесь, что кнопка не скрыта */
+  /* При необходимости задайте стили, чтобы она точно была заметна */
+  padding: 12px 20px;
+  background: linear-gradient(90deg, #2F80ED, #2D9CDB);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  text-align: center;
+  margin-top: 16px;
 }
 
 .exchange-button:hover {
