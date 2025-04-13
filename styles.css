@@ -872,11 +872,12 @@ body {
   min-width: 44px;
   min-height: 44px;
   border-radius: 50%;
-  background: #eeeeee;
+  #background: #eeeeee;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 10px;
+   background: linear-gradient(90deg, #2F80ED, #2D9CDB);
 }
 
 /* Центральная часть (заголовок и подзаголовок) */
