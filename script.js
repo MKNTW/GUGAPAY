@@ -1800,7 +1800,7 @@ function openExchangeModal() {
 const exchangeStyles = `
 .exchange-container {
   /* Добавим нижний отступ, чтобы ничего не перекрывало кнопку */
-  margin-bottom: 100px; 
+  margin-bottom: 150px; 
 }
 
 .exchange-header {
