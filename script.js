@@ -739,8 +739,8 @@ function createMainUI() {
     profileIconContainer.style.position = "absolute";
     profileIconContainer.style.top = "10px";
     profileIconContainer.style.right = "10px";
-    profileIconContainer.style.width = "50px";
-    profileIconContainer.style.height = "50px";
+    profileIconContainer.style.width = "35px";
+    profileIconContainer.style.height = "35px";
     profileIconContainer.style.background = "#fff";
     profileIconContainer.style.borderRadius = "12px";
     profileIconContainer.style.display = "flex";
