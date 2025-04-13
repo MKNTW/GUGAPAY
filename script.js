@@ -754,11 +754,6 @@ function createMainUI() {
     headerEl.className = "main-header";
     document.body.appendChild(headerEl);
 
-    // Внутри headerEl можем разместить "user-info" (аватар+имя+id) и кнопки
-    const userInfoContainer = document.createElement("div");
-    userInfoContainer.id = "user-info";
-    userInfoContainer.className = "user-info";
-
     // Картинка пользователя
     const userPhoto = document.createElement("img");
     userPhoto.className = "user-photo";
@@ -932,7 +927,6 @@ function injectMainUIStyles() {
 
     /* === Верхняя часть с градиентом === */
     .main-header {
-      position: fixed;
       top: 0; left: 0;
       width: 100%;
       /* Градиент */
@@ -942,7 +936,7 @@ function injectMainUIStyles() {
       border-bottom-right-radius: 20px;
       padding: 16px;
       box-sizing: border-box;
-      z-index: 90000; 
+       
     }
     .user-info {
       display: flex;
@@ -955,6 +949,7 @@ function injectMainUIStyles() {
       gap: 16px;
       justify-content: center;
       margin-bottom: 16px;
+      margin-top: 165px;
     }
     .action-btn {
       display: flex;
@@ -997,9 +992,9 @@ function injectMainUIStyles() {
     }
 
     .balance-card {
-      background: #fff;
+      background: #F8F9FB;
       border-radius: 15px;
-      padding: 16px;
+      padding: 10px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       display: flex;
       align-items: center;
@@ -1021,11 +1016,10 @@ function injectMainUIStyles() {
     .balance-info {
       display: flex;
       flex-direction: column;
-      gap: 4px;
     }
     .balance-label {
-      font-size: 18px;
-      font-weight: 600;
+      font-size: 16px;
+      font-weight: 500;
       color: #1A1A1A;
     }
     .balance-rate {
@@ -1034,8 +1028,8 @@ function injectMainUIStyles() {
       margin-left: 8px;
     }
     .balance-amount {
-      font-size: 24px;
-      font-weight: 600;
+      font-size: 22px;
+      font-weight: 500;
       color: #000;
     }
     .balance-subtext {
