@@ -3280,46 +3280,6 @@ async function login() {
     }
 }
 
-
-/**************************************************
- * Получение данных о пользователе
- **************************************************/
-async function fetchUserData() {
-    try {
-        const [userResp, ratesResp] = await Promise.all([
-            fetch(`${API_URL}/user`, { credentials: "include" }),
-            fetch(`${API_URL}/exchangeRates?limit=1`)
-        ]);
-
-        const userData = await userResp.json();
-        const ratesData = await ratesResp.json();
-
-        if (userData.success && userData.user) {
-            // -- BLOCKED LOGIC --
-            // Если заблокирован, сразу показываем уведомление или выкидываем на модалку авторизации
-            if (userData.user.blocked) {
-                showNotification("Ваш аккаунт заблокирован. Доступ ограничен.", "error");
-                // Например, делаем logout() или открываем окно авторизации заново
-                logout(); 
-                return;
-            }
-
-            currentUserId = userData.user.user_id;
-            const coinBalance = userData.user.balance || 0;
-            const rubBalance = userData.user.rub_balance || 0;
-
-            // Дальше стандартная логика...
-            // ...
-        }
-    } catch (err) {
-        console.error("fetchUserData error:", err);
-        const balanceValue = document.getElementById("balanceValue");
-        if (balanceValue) {
-            balanceValue.textContent = "-- ₽";
-        }
-    }
-}
-
 window.addEventListener("beforeunload", () => {
   if (pendingMinedCoins > 0) {
     flushMinedCoins();
