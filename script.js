@@ -2543,7 +2543,7 @@ function displayTransactionHistory(transactions) {
         amountSign = tx.direction === "rub_to_coin" ? "+" : "-";
         color = tx.direction === "rub_to_coin"
           ? "rgb(25, 150, 70)"
-          : "#666";
+          : "rgb(102, 102, 102);";
         amountValue = formatBalance(tx.amount, 5);
         currencySymbol = tx.direction === "rub_to_coin" ? "₲" : "₽";
       }
@@ -2559,8 +2559,8 @@ function displayTransactionHistory(transactions) {
       const iconImg = document.createElement("img");
       iconImg.src = iconSrc;
       iconImg.alt = "icon";
-      iconImg.style.width = "35px";
-      iconImg.style.height = "35px";
+      iconImg.style.width = "34px";
+      iconImg.style.height = "34px";
       leftDiv.appendChild(iconImg);
 
       // Центр (текст)
