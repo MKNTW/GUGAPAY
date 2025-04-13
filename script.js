@@ -723,215 +723,420 @@ function openAuthModal() {
 }
 
 /**************************************************
- * ГЛАВНЫЙ ЭКРАН
+ * ГЛАВНЫЙ ЭКРАН (единый стиль с градиентом, 
+ * закруглённым верхом и крупными балансами)
  **************************************************/
 function createMainUI() {
+  // 1) Создаём/подключаем общий CSS для стилей
+  injectMainUIStyles();
+
+  // 2) Профиль (иконка справа)
   if (!currentMerchantId && !document.getElementById("profileIcon")) {
     const profileIcon = document.createElement("img");
     profileIcon.id = "profileIcon";
     profileIcon.src = "photo/68.png";
-    Object.assign(profileIcon.style, {
-      width: "40px",
-      height: "40px",
-      position: "fixed",
-      top: "10px",
-      right: "10px",
-      cursor: "pointer",
-      zIndex: "90000"
-    });
+    profileIcon.style.position = "absolute";
+    profileIcon.style.top = "10px";
+    profileIcon.style.right = "10px";
+    profileIcon.style.width = "40px";
+    profileIcon.style.height = "40px";
+    profileIcon.style.cursor = "pointer";
+    profileIcon.style.zIndex = "9999";
     document.body.appendChild(profileIcon);
     profileIcon.addEventListener("click", openProfileModal);
   }
 
-  if (!document.getElementById("user-info")) {
+  // 3) Контейнер "main-header" с градиентным фоном и закруглённым низом
+  let headerEl = document.getElementById("mainHeaderContainer");
+  if (!headerEl) {
+    headerEl = document.createElement("div");
+    headerEl.id = "mainHeaderContainer";
+    headerEl.className = "main-header";
+    document.body.appendChild(headerEl);
+
+    // Внутри headerEl можем разместить "user-info" (аватар+имя+id) и кнопки
     const userInfoContainer = document.createElement("div");
     userInfoContainer.id = "user-info";
-    Object.assign(userInfoContainer.style, {
-      position: "fixed",
-      top: "10px",
-      left: "10px",
-      zIndex: "90001",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "flex-start",
-      backgroundColor: "#fff",
-      padding: "10px",
-      borderRadius: "12px",
-      boxShadow: "0 2px 5px rgba(0,0,0,0.1)"
-    });
+    userInfoContainer.className = "user-info";
 
+    // Картинка пользователя
     const userPhoto = document.createElement("img");
     userPhoto.className = "user-photo";
-    Object.assign(userPhoto.style, {
-      width: "40px",
-      height: "40px",
-      borderRadius: "50%",
-      marginBottom: "5px"
-    });
+    userPhoto.style.width = "50px";
+    userPhoto.style.height = "50px";
+    userPhoto.style.borderRadius = "50%";
+    userPhoto.style.marginRight = "12px";
 
-    const userName = document.createElement("span");
+    // Блок текстов (имя и ID)
+    const userTextWrap = document.createElement("div");
+    const userName = document.createElement("div");
     userName.className = "user-name";
-    Object.assign(userName.style, {
-      fontWeight: "bold",
-      fontSize: "14px",
-      color: "#333"
-    });
+    userName.style.fontWeight = "600";
+    userName.style.fontSize = "16px";
+    userName.textContent = "User Name"; // заполним динамически
 
-    const userIdText = document.createElement("span");
-    userIdText.className = "user-id";
+    const userIdText = document.createElement("div");
     userIdText.id = "userIdDisplay";
-    Object.assign(userIdText.style, {
-      fontSize: "12px",
-      color: "#666",
-      marginTop: "2px"
-    });
+    userIdText.className = "user-id";
+    userIdText.style.fontSize = "12px";
+    userIdText.style.color = "#eee";
+    userIdText.textContent = "ID: ???"; // тоже динамически
+
+    userTextWrap.appendChild(userName);
+    userTextWrap.appendChild(userIdText);
 
     userInfoContainer.appendChild(userPhoto);
-    userInfoContainer.appendChild(userName);
-    userInfoContainer.appendChild(userIdText);
-    document.body.appendChild(userInfoContainer);
+    userInfoContainer.appendChild(userTextWrap);
+    headerEl.appendChild(userInfoContainer);
+
+    // Кнопки "Перевести", "Запросить", "Оплатить"
+    const actionContainer = document.createElement("div");
+    actionContainer.className = "action-container";
+    actionContainer.innerHTML = `
+      <button id="transferBtn" class="action-btn">
+        <img src="photo/81.png" class="action-icon"/>
+        <span>Перевести</span>
+      </button>
+      <button id="requestBtn" class="action-btn">
+        <img src="photo/82.png" class="action-icon"/>
+        <span>Запросить</span>
+      </button>
+      <button id="payQRBtn" class="action-btn">
+        <img src="photo/90.png" class="action-icon"/>
+        <span>Оплатить</span>
+      </button>
+    `;
+    headerEl.appendChild(actionContainer);
+
+    // Обработчики
+    actionContainer.querySelector("#transferBtn").addEventListener("click", () => {
+      removeAllModals();
+      openTransferModal();
+    });
+    actionContainer.querySelector("#requestBtn").addEventListener("click", () => {
+      removeAllModals();
+      openRequestModal();
+    });
+    actionContainer.querySelector("#payQRBtn").addEventListener("click", () => {
+      removeAllModals();
+      openPayQRModal();
+    });
+
+    // Добавим "разделитель" (или нижний отступ), если нужно
+    const headerDivider = document.createElement("div");
+    headerDivider.className = "header-divider";
+    headerEl.appendChild(headerDivider);
   }
 
+  // 4) Контейнер "balanceContainer" — крупные карточки для баланса
+  let balanceContainer = document.getElementById("balanceContainer");
+  if (!balanceContainer) {
+    balanceContainer = document.createElement("div");
+    balanceContainer.id = "balanceContainer";
+    balanceContainer.className = "balance-container";
+    document.body.appendChild(balanceContainer);
+
+    // Карточка RUB
+    const rubCard = document.createElement("div");
+    rubCard.className = "balance-card rub";
+    rubCard.innerHTML = `
+      <div class="balance-icon-wrap">
+        <img src="photo/18.png" alt="RUB" class="balance-icon">
+      </div>
+      <div class="balance-info">
+        <div class="balance-label">RUB</div>
+        <div id="rubBalanceValue" class="balance-amount">0.00 ₽</div>
+      </div>
+    `;
+    balanceContainer.appendChild(rubCard);
+
+    // Карточка GUGA
+    const gugaCard = document.createElement("div");
+    gugaCard.className = "balance-card guga";
+    gugaCard.innerHTML = `
+      <div class="balance-icon-wrap">
+        <img src="photo/15.png" alt="GUGA" class="balance-icon">
+      </div>
+      <div class="balance-info">
+        <div class="balance-label">
+          GUGA 
+          <span id="gugaRate" class="balance-rate">(1 GUGA = 1.35 ₽)</span>
+        </div>
+        <div id="gugaBalanceValue" class="balance-amount">0.00000 ₲</div>
+        <div id="gugaEquivalent" class="balance-subtext">≈ 0.00 ₽</div>
+      </div>
+    `;
+    balanceContainer.appendChild(gugaCard);
+  }
+
+  // 5) Нижняя панель (bottomBar) — «Главная», «История», «Обменять»
   if (!document.getElementById("bottomBar")) {
     const bottomBar = document.createElement("div");
     bottomBar.id = "bottomBar";
-    Object.assign(bottomBar.style, {
-      position: "fixed",
-      bottom: "0",
-      left: "0",
-      width: "100%",
-      backgroundColor: "#fff",
-      display: "flex",
-      justifyContent: "space-around",
-      alignItems: "center",
-      paddingBottom: "20px",
-      boxShadow: "0 -2px 5px rgba(0,0,0,0.1)",
-      zIndex: "999999"
-    });
-
+    bottomBar.className = "bottom-bar";
     bottomBar.innerHTML = `
-      <button id="btnMain" style="padding:10px;border:none;background:none;">
-        <img src="photo/69.png" style="width:30px;height:30px;display:block;margin:0 auto;">
-        Главная
+      <button id="btnMain" class="nav-btn">
+        <img src="photo/69.png" class="nav-icon">
+        <span>Главная</span>
       </button>
-      <button id="historyBtn" style="padding:10px;border:none;background:none;">
-        <img src="photo/70.png" style="width:30px;height:30px;display:block;margin:0 auto;">
-        История
+      <button id="historyBtn" class="nav-btn">
+        <img src="photo/70.png" class="nav-icon">
+        <span>История</span>
       </button>
-      <button id="exchangeBtn" style="padding:10px;border:none;background:none;">
-        <img src="photo/71.png" style="width:30px;height:30px;display:block;margin:0 auto;">
-        Обменять
+      <button id="exchangeBtn" class="nav-btn">
+        <img src="photo/71.png" class="nav-icon">
+        <span>Обменять</span>
       </button>
     `;
     document.body.appendChild(bottomBar);
 
-    document.getElementById("btnMain").addEventListener("click", () => {
+    bottomBar.querySelector("#btnMain").addEventListener("click", () => {
       removeAllModals();
     });
-
-    document.getElementById("historyBtn").addEventListener("click", () => {
+    bottomBar.querySelector("#historyBtn").addEventListener("click", () => {
       removeAllModals();
       openHistoryModal();
     });
-
-    document.getElementById("exchangeBtn").addEventListener("click", () => {
+    bottomBar.querySelector("#exchangeBtn").addEventListener("click", () => {
       removeAllModals();
       openExchangeModal();
     });
   }
 
+  // 6) Убираем/скрываем лишние элементы, если были
   const balanceDisplay = document.getElementById("balanceDisplay");
-  if (balanceDisplay) balanceDisplay.style.display = "block";
+  if (balanceDisplay) balanceDisplay.style.display = "none"; 
 
   const mineContainer = document.getElementById("mineContainer");
   if (mineContainer) mineContainer.style.display = "none";
 
-  if (!document.getElementById("actionButtonsContainer")) {
-    const container = document.createElement("div");
-    container.id = "actionButtonsContainer";
-    Object.assign(container.style, {
-      position: "fixed",
-      top: "180px",
-      left: "50%",
-      transform: "translateX(-50%)",
-      display: "flex",
-      flexDirection: "row",
-      gap: "16px",
-      zIndex: "90000",
-      marginTop: "25px"
-    });
-
-    container.innerHTML = `
-      <button id="transferBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;">
-        <img src="photo/81.png" style="width:35px;height:35px;">
-        Перевести
-      </button>
-      <button id="requestBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;">
-        <img src="photo/82.png" style="width:35px;height:35px;">
-        Запросить
-      </button>
-      <button id="payQRBtn" style="padding:10px;border:none;background:none;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:-5px;">
-        <img src="photo/90.png" style="width:40px;height:40px;">
-        Оплатить
-      </button>
-    `;
-    document.body.appendChild(container);
-
-    document.getElementById("transferBtn").addEventListener("click", () => {
-      removeAllModals();
-      openTransferModal();
-    });
-
-    document.getElementById("requestBtn").addEventListener("click", () => {
-      removeAllModals();
-      openRequestModal();
-    });
-
-    document.getElementById("payQRBtn").addEventListener("click", () => {
-      removeAllModals();
-      openPayQRModal();
-    });
-  }
-
-  if (!document.getElementById("balanceContainer")) {
-    const balanceContainer = document.createElement("div");
-    balanceContainer.id = "balanceContainer";
-    Object.assign(balanceContainer.style, {
-      position: "fixed",
-      top: "260px",
-      left: "50%",
-      transform: "translateX(-50%)",
-      width: "90%",
-      maxWidth: "500px",
-      zIndex: "89999"
-    });
-
-    balanceContainer.innerHTML = `
-      <div style="background:#fff;border-radius:15px;padding:15px;margin-bottom:10px;margin-top:50px;box-shadow:0 2px 5px rgba(0,0,0,0.1)">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <img src="photo/18.png" style="width:30px;height:30px;">
-            <div><div style="font-weight:500;">RUB</div></div>
-          </div>
-          <div id="rubBalanceValue" style="font-weight:500;">0.00 ₽</div>
-        </div>
-      </div>
-      <div style="background:#fff;border-radius:15px;padding:15px;box-shadow:0 2px 5px rgba(0,0,0,0.1)">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <img src="photo/15.png" style="width:30px;height:30px;">
-            <div><div style="font-weight:500;">GUGA</div></div>
-          </div>
-          <div><div id="gugaBalanceValue" style="font-weight:500;">0.00000 ₲</div></div>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(balanceContainer);
-  }
-
+  // 7) Запрашиваем данные (балансы, user info) и запускаем автоповтор
   fetchUserData();
   clearInterval(updateInterval);
   updateInterval = setInterval(fetchUserData, 2000);
+}
+
+/**************************************************
+ * Подключаем общий стиль для главного экрана
+ **************************************************/
+function injectMainUIStyles() {
+  if (document.getElementById("mainUIStyles")) return; // чтобы не дублировать
+
+  const style = document.createElement("style");
+  style.id = "mainUIStyles";
+  style.textContent = `
+    /* === Общие сбросы (если нужно) === */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Oswald", sans-serif; /* пример, как у вас выше */
+    }
+
+    /* === Верхняя часть с градиентом === */
+    .main-header {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      /* Градиент */
+      background: linear-gradient(90deg, #2F80ED, #2D9CDB);
+      /* Закругляем низ */
+      border-bottom-left-radius: 20px;
+      border-bottom-right-radius: 20px;
+      padding: 16px;
+      box-sizing: border-box;
+      z-index: 90000; 
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+      color: #fff; /* на фоне градиента */
+    }
+    .action-container {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+    .action-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border: none;
+      background: none;
+      cursor: pointer;
+      color: #fff;
+      font-size: 14px;
+    }
+    .action-btn:hover {
+      opacity: 0.9;
+    }
+    .action-icon {
+      width: 35px;
+      height: 35px;
+      margin-bottom: 4px;
+    }
+    .header-divider {
+      /* Если нужно визуально отделить нижнюю часть, 
+         можно поставить border или просто пустой отступ. */
+      width: 100%;
+      height: 10px; 
+    }
+
+    /* === Контейнер для балансов (ниже "шапки") === */
+    .balance-container {
+      position: absolute;
+      top: 160px; /* чтобы не перекрывало шапку */
+      width: 90%;
+      max-width: 500px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 10px;
+      /* Можно небольшой padding-top, если нужно больше пространства */
+    }
+
+    .balance-card {
+      background: #fff;
+      border-radius: 15px;
+      padding: 16px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .balance-icon-wrap {
+      width: 50px;
+      height: 50px;
+      background: #F0F0F0;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .balance-icon {
+      width: 30px; 
+      height: 30px;
+    }
+    .balance-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .balance-label {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1A1A1A;
+    }
+    .balance-rate {
+      font-size: 14px;
+      color: #888;
+      margin-left: 8px;
+    }
+    .balance-amount {
+      font-size: 24px;
+      font-weight: 600;
+      color: #000;
+    }
+    .balance-subtext {
+      font-size: 14px;
+      color: #666;
+    }
+
+    /* === Нижняя панель (bottomBar) === */
+    .bottom-bar {
+      position: fixed;
+      bottom: 0; left: 0;
+      width: 100%;
+      background-color: #fff;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding-bottom: 20px;
+      box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+      z-index: 999999;
+    }
+    .nav-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border: none;
+      background: none;
+      cursor: pointer;
+      color: #000;
+      font-size: 14px;
+      padding: 10px;
+    }
+    .nav-icon {
+      width: 30px;
+      height: 30px;
+      margin-bottom: 4px;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+/**************************************************
+ * ВАШИ СУЩЕСТВУЮЩИЕ ФУНКЦИИ 
+ * (fetchUserData, openTransferModal, 
+ *  openRequestModal, openPayQRModal, etc.)
+ **************************************************/
+// Пример: при обновлении данных мы хотим заполнить gugaRate, gugaEquivalent
+// и фото/имя пользователя, RUB / GUGA balances
+// Убедитесь, что у вас где-то хранится currentExchangeRate.
+async function fetchUserData() {
+  try {
+    const resp = await fetch(`${API_URL}/user`, { credentials: "include" });
+    const data = await resp.json();
+    if (data.success) {
+      currentUserId = data.user.user_id;
+      const coinBalance = parseFloat(data.user.balance) || 0;
+      const rubBalance = parseFloat(data.user.rub_balance) || 0;
+      // допустим, currentExchangeRate уже где-то тоже подгружается
+      // или есть ratesData.rates[0].exchange_rate
+
+      // Обновляем руб баланс
+      const rubEl = document.getElementById("rubBalanceValue");
+      if (rubEl) {
+        rubEl.textContent = rubBalance.toFixed(2) + " ₽";
+      }
+
+      // Обновляем guga баланс
+      const gugaEl = document.getElementById("gugaBalanceValue");
+      if (gugaEl) {
+        gugaEl.textContent = coinBalance.toFixed(5) + " ₲";
+      }
+
+      // Курс + руб эквивалент
+      const gugaRateEl = document.getElementById("gugaRate");
+      if (gugaRateEl && typeof currentExchangeRate === "number") {
+        gugaRateEl.textContent = `(1 GUGA = ${currentExchangeRate.toFixed(2)} ₽)`;
+      }
+      const gugaEqEl = document.getElementById("gugaEquivalent");
+      if (gugaEqEl && typeof currentExchangeRate === "number") {
+        const totalRub = coinBalance * currentExchangeRate;
+        gugaEqEl.textContent = `≈ ${totalRub.toFixed(2)} ₽`;
+      }
+
+      // Обновляем user-info
+      const userNameEl = document.querySelector(".user-name");
+      const userIdEl = document.getElementById("userIdDisplay");
+      const userPhotoEl = document.querySelector(".user-photo");
+      if (userNameEl) {
+        userNameEl.textContent = data.user.first_name || "Пользователь";
+      }
+      if (userIdEl) {
+        userIdEl.textContent = "ID: " + data.user.user_id;
+      }
+      if (userPhotoEl && data.user.photo_url) {
+        userPhotoEl.src = data.user.photo_url;
+      }
+    }
+  } catch (err) {
+    console.error("Ошибка fetchUserData:", err);
+  }
 }
 
 /**************************************************
