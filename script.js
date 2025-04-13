@@ -2026,7 +2026,7 @@ const exchangeStyles = `
 
 .current-rate {
   font-size: 24px;
-  color: #666;
+  color: #2f80ed;
 }
 
 .chart-container {
