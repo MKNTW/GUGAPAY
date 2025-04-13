@@ -924,10 +924,11 @@ function injectMainUIStyles() {
       z-index: 9999;
       display: flex;
       align-items: center;
-      gap: 0px;
-      background: transparent;
+      gap: 8px;
+      background: #fff;
       border-radius: 8px;
       padding: 6px 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       cursor: pointer; /* чтобы показывать, что кликабельно */
     }
     .user-photo {
@@ -938,9 +939,9 @@ function injectMainUIStyles() {
       background: #eee;
     }
     .user-name {
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 600;
-      color: #fff;
+      color: #333;
       max-width: 130px;  /* чтобы если имя длинное, переносилось */
       white-space: nowrap;
       overflow: hidden;
