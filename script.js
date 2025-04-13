@@ -1092,251 +1092,307 @@ function openProfileModal() {
   document.getElementById("profileLogoutBtn").onclick = logout;
 }
 
-/**************************************************
- * ПЕРЕВОД
- **************************************************/
-
 function openTransferModal() {
-    createModal(
-        "transferModal",
-        `
-        <div style="position: relative; max-width: 400px; margin: 0 auto;">
-            <h3 style="text-align: center; margin: 0 0 25px 0; color: #1A1A1A; font-size: 20px; margin-top: 35px;">Перевод средств</h3>
-            
-            <!-- Выбор валюты -->
-            <div style="display: flex; gap: 12px; margin-bottom: 30px;">
-                <div id="btnCurrencyGUGA" 
-                    style="flex: 1; padding: 16px; border: 1px solid #E6E6EB; border-radius: 16px; cursor: pointer; transition: all 0.2s;"
-                    class="currency-card">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <img src="photo/15.png" style="width: 32px; height: 32px; border-radius: 8px;">
-                        <div>
-                            <div style="font-weight: 500; color: #1A1A1A;">GUGA</div>
-                            <div style="font-size: 13px; color: #909099;">Криптовалюта</div>
-                        </div>
-                    </div>
-                    <div id="gugaBalance" style="margin-top: 12px; font-size: 14px; color: #666;">
-                        Доступно: 0.00000 ₲
-                    </div>
-                </div>
-                
-                <div id="btnCurrencyRUB" 
-                    style="flex: 1; padding: 16px; border: 1px solid #E6E6EB; border-radius: 16px; cursor: pointer; transition: all 0.2s;"
-                    class="currency-card">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <img src="photo/18.png" style="width: 32px; height: 32px; border-radius: 8px;">
-                        <div>
-                            <div style="font-weight: 500; color: #1A1A1A;">RUB</div>
-                            <div style="font-size: 13px; color: #909099;">Фиатные деньги</div>
-                        </div>
-                    </div>
-                    <div id="rubBalance" style="margin-top: 12px; font-size: 14px; color: #666;">
-                        Доступно: 0.00 ₽
-                    </div>
-                </div>
-            </div>
-
-            <!-- Форма перевода -->
-            <div style="background: #F8F9FB; border-radius: 16px; padding: 16px;">
-                <!-- Поле получателя -->
-                <div style="margin-bottom: 20px;">
-                    <label style="display: block; font-size: 14px; color: #666; margin-bottom: 8px;">Получатель</label>
-                    <div style="position: relative;">
-                        <input 
-                            type="text" 
-                            id="toUserIdInput" 
-                            placeholder="Введите ID пользователя" 
-                            style="
-                                width: 100%;
-                                padding: 12px 16px;
-                                border: 1px solid #E6E6EB;
-                                border-radius: 12px;
-                                font-size: 15px;
-                                background: white;
-                            ">
-                    </div>
-                </div>
-
-                <!-- Поле суммы -->
-                <div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <label style="font-size: 14px; color: #666;">Сумма</label>
-                        <div id="transferBalanceInfo" style="font-size: 13px; color: #909099;"></div>
-                    </div>
-                    <div style="position: relative;">
-                        <input 
-                            type="number" 
-                            id="transferAmountInput" 
-                            step="0.00001"
-                            placeholder="0.00"
-                            style="
-                                width: 100%;
-                                padding: 12px 16px;
-                                border: 1px solid #E6E6EB;
-                                border-radius: 12px;
-                                font-size: 24px;
-                                font-weight: 500;
-                                text-align: right;
-                                background: white;
-                            ">
-                        <span id="currencySymbol" 
-                            style="
-                                position: absolute;
-                                left: 16px;
-                                top: 50%;
-                                transform: translateY(-50%);
-                                font-size: 16px;
-                                color: #1A1A1A;
-                                font-weight: 500;
-                            ">₲</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Кнопка отправки -->
-            <button 
-                id="sendTransferBtn" 
-                style="
-                    width: 100%;
-                    padding: 16px;
-                    margin-top: 24px;
-                    background: linear-gradient(90deg, #2F80ED, #2D9CDB);
-                    border: none;
-                    border-radius: 12px;
-                    color: white;
-                    font-weight: 600;
-                    font-size: 16px;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                ">
-                Подтвердить перевод
-            </button>
+  createModal(
+    "transferModal",
+    `
+<div class="transfer-container">
+    <div class="transfer-header">
+        <div class="header-info">
+            <div class="transfer-title">Перевод средств</div>
         </div>
-        `,
-        {
-            showCloseBtn: true,
-            cornerTopMargin: 50,
-            cornerTopRadius: 20,
-            hasVerticalScroll: true,
-            defaultFromBottom: true,
-            noRadiusByDefault: false
-        }
-    );
+    </div>
 
-    // Вызов fetchUserData для обновления балансов
-    fetchUserData().then(() => {
-        const rubBalanceElement = document.getElementById("rubBalance");
-        const rubBalanceValue = parseFloat(document.getElementById("rubBalanceValue")?.innerText || 0);
-        if (rubBalanceElement) {
-            rubBalanceElement.textContent = `Доступно: ${rubBalanceValue.toFixed(2)} ₽`;
-        }
+    <!-- Блок выбора валюты -->
+    <div class="currency-select">
+        <div id="btnCurrencyGUGA" class="currency-card">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <img src="photo/15.png" style="width: 32px; height: 32px; border-radius: 8px;">
+                <div>
+                    <div style="font-weight: 500; color: #1A1A1A;">GUGA</div>
+                    <div style="font-size: 13px; color: #909099;">Криптовалюта</div>
+                </div>
+            </div>
+            <div id="gugaBalance" style="margin-top: 12px; font-size: 14px; color: #666;">
+                Доступно: 0.00000 ₲
+            </div>
+        </div>
+        
+        <div id="btnCurrencyRUB" class="currency-card">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <img src="photo/18.png" style="width: 32px; height: 32px; border-radius: 8px;">
+                <div>
+                    <div style="font-weight: 500; color: #1A1A1A;">RUB</div>
+                    <div style="font-size: 13px; color: #909099;">Фиатные деньги</div>
+                </div>
+            </div>
+            <div id="rubBalance" style="margin-top: 12px; font-size: 14px; color: #666;">
+                Доступно: 0.00 ₽
+            </div>
+        </div>
+    </div>
+
+    <!-- Блок формы перевода -->
+    <div class="transfer-form">
+        <div class="transfer-field">
+            <label class="transfer-label">Получатель</label>
+            <input 
+                type="text" 
+                id="toUserIdInput" 
+                placeholder="Введите ID пользователя" 
+                class="transfer-input">
+        </div>
+
+        <div class="transfer-field">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <label class="transfer-label">Сумма</label>
+                <div id="transferBalanceInfo" style="font-size: 13px; color: #909099;"></div>
+            </div>
+            <div class="transfer-amount">
+                <input 
+                    type="number" 
+                    id="transferAmountInput"
+                    placeholder="0.00">
+                <span id="currencySymbol">₲</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Кнопка отправки -->
+    <button id="sendTransferBtn" class="transfer-submit-btn">
+        Подтвердить перевод
+    </button>
+</div>
+    `,
+    {
+      showCloseBtn: true,
+      cornerTopMargin: 50,
+      cornerTopRadius: 20,
+      hasVerticalScroll: true,
+      defaultFromBottom: true,
+      noRadiusByDefault: false
+    }
+  );
+
+  // Подключаем общий стиль (как в разделе "обмен")
+  const transferStyles = `
+  /* Контейнер всего окна перевода */
+  .transfer-container {
+    background: #FFFFFF;
+    border-radius: 16px;
+    padding: 16px;
+    margin: 0 auto;
+    max-width: 440px;
+  }
+  /* Шапка и заголовок */
+  .transfer-header {
+    margin-bottom: 24px;
+    text-align: center;
+  }
+  .transfer-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1A1A1A;
+    margin: 0;
+  }
+
+  /* Блок выбора валюты */
+  .currency-select {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 30px;
+  }
+  .currency-card {
+    flex: 1;
+    padding: 16px;
+    border: 1px solid #E6E6EB;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .currency-card.active {
+    border-color: #2F80ED;
+    background: #F5F9FF;
+    box-shadow: 0 2px 8px rgba(47, 128, 237, 0.1);
+  }
+
+  /* Форма перевода */
+  .transfer-form {
+    background: #F8F9FB;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 24px;
+  }
+  .transfer-field {
+    margin-bottom: 20px;
+  }
+  .transfer-label {
+    display: block;
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 8px;
+  }
+  .transfer-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #E6E6EB;
+    border-radius: 12px;
+    font-size: 15px;
+    background: white;
+  }
+
+  /* Поле суммы с абсолютным символом */
+  .transfer-amount {
+    position: relative;
+  }
+  .transfer-amount input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #E6E6EB;
+    border-radius: 12px;
+    font-size: 24px;
+    font-weight: 500;
+    text-align: right;
+    background: white;
+  }
+  .transfer-amount span {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    color: #1A1A1A;
+    font-weight: 500;
+  }
+
+  /* Кнопка отправки */
+  .transfer-submit-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(90deg, #2F80ED, #2D9CDB);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .transfer-submit-btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
+  .transfer-submit-btn:active {
+    transform: translateY(0);
+  }
+  `;
+
+  const styleEl = document.createElement('style');
+  styleEl.textContent = transferStyles;
+  document.head.appendChild(styleEl);
+
+  /**************************************************
+   * Основная логика
+   **************************************************/
+  // Текущая валюта "GUGA" или "RUB"
+  let currentTransferCurrency = "GUGA";
+
+  const formatBalanceLocal = (balance, decimals) => {
+    return balance.toFixed(decimals);
+  };
+
+  // Обновление UI при переключении валют
+  const updateTransferUI = () => {
+    const currencySymbol = document.getElementById("currencySymbol");
+    const balanceInfo = document.getElementById("transferBalanceInfo");
+    const gugaBalance = document.getElementById("gugaBalance");
+    const rubBalance = document.getElementById("rubBalance");
+
+    // Сброс "active" у всех карточек
+    document.querySelectorAll('.currency-card').forEach(card => {
+      card.classList.remove('active');
     });
 
-    // Стили для активной карточки валюты
-    const style = document.createElement('style');
-    style.textContent = `
-        .currency-card.active {
-            border-color: #2F80ED !important;
-            background: #F5F9FF !important;
-            box-shadow: 0 2px 8px rgba(47, 128, 237, 0.1);
-        }
-        #sendTransferBtn:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-        }
-        #sendTransferBtn:active {
-            transform: translateY(0);
-        }
-    `;
-    document.head.appendChild(style);
+    // Ставим "active" на нужную
+    const activeCard = (currentTransferCurrency === "GUGA")
+      ? document.getElementById("btnCurrencyGUGA")
+      : document.getElementById("btnCurrencyRUB");
+    activeCard.classList.add('active');
 
-    let currentTransferCurrency = "GUGA";
+    // Меняем символ валюты, шаг ввода, и отображение балансов
+    if (currentTransferCurrency === "GUGA") {
+      const balance = parseFloat(document.getElementById("gugaBalanceValue")?.innerText || 0);
+      currencySymbol.textContent = '₲';
+      document.getElementById("transferAmountInput").step = "0.00001";
+      gugaBalance.innerHTML = `Доступно: ${formatBalanceLocal(balance, 5)} ₲`;
+      balanceInfo.textContent = `Макс: ${formatBalanceLocal(balance, 5)} ₲`;
+    } else {
+      const balance = parseFloat(document.getElementById("rubBalanceValue")?.innerText || 0);
+      currencySymbol.textContent = '₽';
+      document.getElementById("transferAmountInput").step = "0.01";
+      rubBalance.innerHTML = `Доступно: ${formatBalanceLocal(balance, 2)} ₽`;
+      balanceInfo.textContent = `Макс: ${formatBalanceLocal(balance, 2)} ₽`;
+    }
+  };
 
-    const formatBalance = (balance, decimals) => {
-        return balance.toFixed(decimals);
+  // Переключение валют
+  document.getElementById("btnCurrencyGUGA").addEventListener('click', () => {
+    currentTransferCurrency = "GUGA";
+    updateTransferUI();
+  });
+  document.getElementById("btnCurrencyRUB").addEventListener('click', () => {
+    currentTransferCurrency = "RUB";
+    updateTransferUI();
+  });
+
+  // Кнопка "Отправить"
+  document.getElementById("sendTransferBtn").onclick = async () => {
+    const toUser = document.getElementById("toUserIdInput")?.value.trim();
+    const amount = parseFloat(document.getElementById("transferAmountInput")?.value);
+    if (!toUser || !amount || amount <= 0) {
+      alert("❌ Введите корректные данные!");
+      return;
+    }
+    if (toUser === currentUserId) {
+      alert("❌ Нельзя перевести самому себе");
+      return;
     }
 
-    const updateTransferUI = () => {
-        const currencySymbol = document.getElementById("currencySymbol");
-        const balanceInfo = document.getElementById("transferBalanceInfo");
-        const gugaBalance = document.getElementById("gugaBalance");
-        const rubBalance = document.getElementById("rubBalance");
+    // Выбираем эндпоинт в зависимости от валюты
+    const endpoint = (currentTransferCurrency === "GUGA") ? "/transfer" : "/transferRub";
 
-        // Сброс стилей для карточек валют
-        document.querySelectorAll('.currency-card').forEach(card => {
-            card.classList.remove('active');
-        });
+    try {
+      const resp = await fetch(`${API_URL}${endpoint}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ toUserId: toUser, amount })
+      });
+      const data = await resp.json();
+      if (data.success) {
+        alert("✅ Перевод выполнен!");
+        document.getElementById("transferModal")?.remove();
+        fetchUserData();
+      } else {
+        alert("❌ Ошибка перевода: " + data.error);
+      }
+    } catch (err) {
+      console.error("Ошибка при переводе:", err);
+      alert("Произошла ошибка при выполнении перевода");
+    }
+  };
 
-        // Устанавливаем активную карточку
-        const activeCard = currentTransferCurrency === "GUGA" 
-            ? document.getElementById("btnCurrencyGUGA")
-            : document.getElementById("btnCurrencyRUB");
-        activeCard.classList.add('active');
-
-        // Обновление данных
-        if (currentTransferCurrency === "GUGA") {
-            const balance = parseFloat(document.getElementById("gugaBalanceValue")?.innerText || 0);
-            currencySymbol.textContent = '₲';
-            document.getElementById("transferAmountInput").step = "0.00001";
-            gugaBalance.innerHTML = `Доступно: ${formatBalance(balance, 5)} ₲`;
-            balanceInfo.textContent = `Макс: ${formatBalance(balance, 5)} ₲`;
-        } else {
-            const balance = parseFloat(document.getElementById("rubBalanceValue")?.innerText || 0);
-            currencySymbol.textContent = '₽';
-            document.getElementById("transferAmountInput").step = "0.01";
-            rubBalance.innerHTML = `Доступно: ${formatBalance(balance, 2)} ₽`;
-            balanceInfo.textContent = `Макс: ${formatBalance(balance, 2)} ₽`;
-        }
-    };
-
-    // Обработчики событий
-    document.getElementById("btnCurrencyGUGA").addEventListener('click', () => {
-        currentTransferCurrency = "GUGA";
-        updateTransferUI();
-    });
-
-    document.getElementById("btnCurrencyRUB").addEventListener('click', () => {
-        currentTransferCurrency = "RUB";
-        updateTransferUI();
-    });
-
-    // Кнопка "Отправить"
-    document.getElementById("sendTransferBtn").onclick = async () => {
-        const toUser = document.getElementById("toUserIdInput")?.value;
-        const amount = parseFloat(document.getElementById("transferAmountInput")?.value);
-        if (!toUser || !amount || amount <= 0) {
-            alert("❌ Введите корректные данные");
-            return;
-        }
-        if (toUser === currentUserId) {
-            alert("❌ Нельзя перевести самому себе");
-            return;
-        }
-
-        const endpoint = currentTransferCurrency === "GUGA" ? "/transfer" : "/transferRub";
-
-        try {
-            const resp = await fetch(`${API_URL}${endpoint}`, {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ toUserId: toUser, amount })
-            });
-            const data = await resp.json();
-            if (data.success) {
-                alert("✅ Перевод выполнен!");
-                document.getElementById("transferModal")?.remove();
-                fetchUserData();
-            } else {
-                alert("❌ Ошибка перевода: " + data.error);
-            }
-        } catch (err) {
-            console.error("Ошибка при переводе:", err);
-            alert("Произошла ошибка при выполнении перевода");
-        }
-    };
-
-    updateTransferUI(); // при запуске
+  // После загрузки балансов — обновим отображение
+  fetchUserData().then(() => {
+    // Обновляем rubBalance, если нужно
+    const rubBalanceElement = document.getElementById("rubBalance");
+    const rubBalanceValue = parseFloat(document.getElementById("rubBalanceValue")?.innerText || 0);
+    if (rubBalanceElement) {
+      rubBalanceElement.textContent = `Доступно: ${rubBalanceValue.toFixed(2)} ₽`;
+    }
+    // Первичная инициализация UI
+    updateTransferUI();
+  });
 }
 
 /**************************************************
