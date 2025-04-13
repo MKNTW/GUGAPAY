@@ -757,7 +757,7 @@ function createMainUI() {
     // Кнопки "Перевести", "Запросить", "Оплатить"
     const actionContainer = document.createElement("div");
 actionContainer.className = "action-container";
-actionContainer.innerHTML = 
+actionContainer.innerHTML = `
   <button id="transferBtn" class="action-btn">
     <div class="icon-wrap">
       <img src="photo/81.png" class="action-icon"/>
@@ -776,7 +776,7 @@ actionContainer.innerHTML =
     </div>
     <span>Оплатить</span>
   </button>
-;
+`;
 headerEl.appendChild(actionContainer);
 
     // Обработчики
@@ -810,7 +810,7 @@ headerEl.appendChild(actionContainer);
     // Карточка RUB
     const rubCard = document.createElement("div");
     rubCard.className = "balance-card rub";
-    rubCard.innerHTML = 
+    rubCard.innerHTML = `
       <div class="balance-icon-wrap">
         <img src="photo/18.png" alt="RUB" class="balance-icon">
       </div>
@@ -818,13 +818,13 @@ headerEl.appendChild(actionContainer);
         <div class="balance-label">RUB</div>
         <div id="rubBalanceValue" class="balance-amount">0.00 ₽</div>
       </div>
-    ;
+    `;
     balanceContainer.appendChild(rubCard);
 
     // Карточка GUGA
     const gugaCard = document.createElement("div");
     gugaCard.className = "balance-card guga";
-    gugaCard.innerHTML = 
+    gugaCard.innerHTML = `
       <div class="balance-icon-wrap">
         <img src="photo/15.png" alt="GUGA" class="balance-icon">
       </div>
@@ -834,7 +834,7 @@ headerEl.appendChild(actionContainer);
         </div>
         <div id="gugaBalanceValue" class="balance-amount">0.00000 ₲</div>
       </div>
-    ;
+    `;
     balanceContainer.appendChild(gugaCard);
   }
 
@@ -843,7 +843,7 @@ headerEl.appendChild(actionContainer);
     const bottomBar = document.createElement("div");
     bottomBar.id = "bottomBar";
     bottomBar.className = "bottom-bar";
-    bottomBar.innerHTML = 
+    bottomBar.innerHTML = `
       <button id="btnMain" class="nav-btn">
         <img src="photo/69.png" class="nav-icon">
         <span>Главная</span>
@@ -856,7 +856,7 @@ headerEl.appendChild(actionContainer);
         <img src="photo/71.png" class="nav-icon">
         <span>Обменять</span>
       </button>
-    ;
+    `;
     document.body.appendChild(bottomBar);
 
     bottomBar.querySelector("#btnMain").addEventListener("click", () => {
@@ -898,7 +898,7 @@ function injectMainUIStyles() {
 
   const style = document.createElement("style");
   style.id = "mainUIStyles";
-  style.textContent = 
+  style.textContent = `
     body {
       margin: 0;
       padding: 0;
@@ -1045,7 +1045,7 @@ function injectMainUIStyles() {
       height: 30px;
       margin-bottom: 4px;
     }
-  ;
+  `;
   document.head.appendChild(style);
 }
 
