@@ -1702,6 +1702,8 @@ function parseQRCodeData(qrString) {
  **************************************************/
 let currentExchangeDirection = "coin_to_rub";
 let currentExchangeRate = 0;
+let lastDirection = null;
+let exchangeChartInstance = null;
 
 function openExchangeModal() {
   showGlobalLoading();
@@ -1749,7 +1751,7 @@ function openExchangeModal() {
 
     <!-- Кнопка свапа (меняет местами валюты) -->
     <button id="swapBtn" class="swap-btn">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
             <path d="M8 11L12 7L16 11M16 13L12 17L8 13" stroke="#2F80ED" stroke-width="2"/>
         </svg>
     </button>
@@ -1778,6 +1780,7 @@ function openExchangeModal() {
         Подтвердить обмен
     </button>
 
+    <!-- Отступ снизу, чтобы кнопка не перекрывалась -->
     <div class="bottom-spacer"></div>
 </div>
     `,
@@ -1798,7 +1801,8 @@ function openExchangeModal() {
  **************************************************/
 const exchangeStyles = `
 .exchange-container {
-  /* Контейнер для общего блока обмена, если нужно */
+  /* Добавим нижний отступ, чтобы ничего не перекрывало кнопку */
+  margin-bottom: 100px; 
 }
 
 .exchange-header {
@@ -1875,7 +1879,7 @@ const exchangeStyles = `
   }
 }
 
-/* При "активном" нажатии можем запускать анимацию */
+/* При "активном" нажатии запускаем анимацию */
 .swap-btn:active {
   animation: swapRotate 0.5s forwards ease;
 }
@@ -1925,11 +1929,12 @@ const exchangeStyles = `
   font-size: 16px;
   cursor: pointer;
   box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+  z-index: 9999; /* Поверх других элементов */
 }
 
-/* Небольшой отступ, чтобы кнопка не перекрывала нижнюю часть */
+/* Небольшой отступ, чтобы внизу был воздух */
 .bottom-spacer {
-  height: 120px;
+  height: 100px;
 }
 `;
 
@@ -2052,6 +2057,32 @@ function initChart(rates) {
 }
 
 /**************************************************
+ * ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ БАЛАНСОВ
+ **************************************************/
+function parseBalanceString(str) {
+  // Пример: "123.456 ₲" или "999.00 ₽"
+  const parts = str.trim().split(" ");
+  if (parts.length < 2) {
+    // На случай если формат неожиданно другой
+    return { amount: 0, symbol: "" };
+  }
+  const amount = parseFloat(parts[0]) || 0;
+  const symbol = parts[1];
+  return { amount, symbol };
+}
+
+function formatBalanceValue(num, symbol) {
+  // Если это GUGA (₲), 5 знаков; если RUB (₽), 2 знака
+  if (symbol === "₲") {
+    return formatBalance(num, 5) + " ₲";
+  } else if (symbol === "₽") {
+    return formatBalance(num, 2) + " ₽";
+  }
+  // На случай других валют
+  return num + " " + symbol;
+}
+
+/**************************************************
  * ФУНКЦИЯ "SWAP" (МЕНЯЕТ МЕСТАМИ ВАЛЮТЫ + АНИМАЦИЯ)
  **************************************************/
 function swapCurrencies() {
@@ -2066,15 +2097,15 @@ function swapCurrencies() {
   
   const fromDisplay = document.querySelector('.from-currency .currency-display');
   const toDisplay = document.querySelector('.to-currency .currency-display');
-  const fromBalance = document.getElementById('fromBalance');
-  const toBalance = document.getElementById('toBalance');
+  const fromBalanceEl = document.getElementById('fromBalance');
+  const toBalanceEl = document.getElementById('toBalance');
   const amountInput = document.getElementById('amountInput');
   const toAmount = document.getElementById('toAmount');
 
-  // Меняем местами введённые значения
+  // 1) Меняем местами введённые значения
   [amountInput.value, toAmount.value] = [toAmount.value, amountInput.value];
   
-  // Если теперь "coin_to_rub" — значит отдаём GUGA, получаем RUB
+  // 2) Меняем местами отображаемые валюты (иконки и подписи)
   if (currentExchangeDirection === 'coin_to_rub') {
     fromDisplay.innerHTML = `
       <img src="photo/15.png" class="currency-icon">
@@ -2084,9 +2115,6 @@ function swapCurrencies() {
       <img src="photo/18.png" class="currency-icon">
       <span class="currency-symbol">RUB</span>
     `;
-    // Меняем подписи балансов (₲ <-> ₽)
-    fromBalance.textContent = fromBalance.textContent.replace('₽', '₲');
-    toBalance.textContent = toBalance.textContent.replace('₲', '₽');
   } else {
     // rub_to_coin
     fromDisplay.innerHTML = `
@@ -2097,11 +2125,18 @@ function swapCurrencies() {
       <img src="photo/15.png" class="currency-icon">
       <span class="currency-symbol">GUGA</span>
     `;
-    fromBalance.textContent = fromBalance.textContent.replace('₲', '₽');
-    toBalance.textContent = toBalance.textContent.replace('₽', '₲');
   }
-  
-  // Обновляем вычисление
+
+  // 3) Меняем местами балансы (числовые значения + символ)
+  const oldFrom = parseBalanceString(fromBalanceEl.textContent);
+  const oldTo = parseBalanceString(toBalanceEl.textContent);
+
+  // Теперь если direction = coin_to_rub, то fromBalance должен показывать GUGA (старый to, если он был GUGA)
+  // Но на практике — просто меняем местами, а иконка/подпись уже выставлена выше
+  fromBalanceEl.textContent = formatBalanceValue(oldTo.amount, oldFrom.symbol);
+  toBalanceEl.textContent = formatBalanceValue(oldFrom.amount, oldTo.symbol);
+
+  // 4) Обновляем вычисление
   updateConversion();
 }
 
@@ -2173,6 +2208,93 @@ async function performExchange() {
     hideGlobalLoading();
   }
 }
+
+/**************************************************
+ * ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+ **************************************************/
+function formatBalance(num, decimals = 5, defaultValue = "0.00000") {
+  const parsed = parseFloat(num);
+  if (isNaN(parsed)) return defaultValue;
+  return parsed.toFixed(decimals);
+}
+
+function showNotification(message, type = 'info') {
+  console.log(`[${type.toUpperCase()}] ${message}`);
+  // Реализуйте свою логику, например, тосты на экране
+}
+
+function showGlobalLoading() {
+  const loader = document.getElementById('loadingIndicator');
+  if (loader) loader.style.display = 'flex';
+}
+
+function hideGlobalLoading() {
+  const loader = document.getElementById('loadingIndicator');
+  if (loader) loader.style.display = 'none';
+}
+
+/**
+ * Пример упрощённого createModal
+ */
+function createModal(id, content, options = {}) {
+  const existing = document.getElementById(id);
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = id;
+  modal.className = 'modal';
+  modal.style.position = 'fixed';
+  modal.style.top = 0;
+  modal.style.left = 0;
+  modal.style.width = '100%';
+  modal.style.height = '100%';
+  modal.style.background = 'rgba(0,0,0,0.5)';
+  modal.style.zIndex = 999999;
+  modal.style.display = 'flex';
+  modal.style.justifyContent = 'center';
+  modal.style.alignItems = 'center';
+
+  const contentDiv = document.createElement('div');
+  contentDiv.className = 'modal-content';
+  contentDiv.style.width = '100%';
+  contentDiv.style.maxWidth = '500px';
+  contentDiv.style.height = options.contentMaxHeight || 'auto';
+  contentDiv.style.background = '#fff';
+  contentDiv.style.overflowY = 'auto';
+  contentDiv.style.borderRadius = '0';
+  contentDiv.style.position = 'relative';
+  contentDiv.innerHTML = content;
+
+  modal.appendChild(contentDiv);
+  document.body.appendChild(modal);
+
+  if (options.showCloseBtn !== false) {
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '×';
+    Object.assign(closeBtn.style, {
+      position: 'absolute',
+      top: '10px',
+      right: '10px',
+      width: '32px',
+      height: '32px',
+      backgroundColor: '#000',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '50%',
+      cursor: 'pointer',
+      fontSize: '18px',
+      zIndex: '999999'
+    });
+    closeBtn.onclick = () => modal.remove();
+    contentDiv.appendChild(closeBtn);
+  }
+
+  // Закрытие по клику на фон
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.remove();
+  });
+}
+
 
 /**************************************************
  * ИСТОРИЯ (без кнопки закрытия, без радиуса)
