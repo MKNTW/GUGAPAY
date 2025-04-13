@@ -860,10 +860,8 @@ function createMainUI() {
       <div class="balance-info">
         <div class="balance-label">
           GUGA 
-          <span id="gugaRate" class="balance-rate">(1 GUGA = 1.35 ₽)</span>
         </div>
         <div id="gugaBalanceValue" class="balance-amount">0.00000 ₲</div>
-        <div id="gugaEquivalent" class="balance-subtext">≈ 0.00 ₽</div>
       </div>
     `;
     balanceContainer.appendChild(gugaCard);
@@ -1076,67 +1074,6 @@ function injectMainUIStyles() {
     }
   `;
   document.head.appendChild(style);
-}
-
-/**************************************************
- * ВАШИ СУЩЕСТВУЮЩИЕ ФУНКЦИИ 
- * (fetchUserData, openTransferModal, 
- *  openRequestModal, openPayQRModal, etc.)
- **************************************************/
-// Пример: при обновлении данных мы хотим заполнить gugaRate, gugaEquivalent
-// и фото/имя пользователя, RUB / GUGA balances
-// Убедитесь, что у вас где-то хранится currentExchangeRate.
-async function fetchUserData() {
-  try {
-    const resp = await fetch(`${API_URL}/user`, { credentials: "include" });
-    const data = await resp.json();
-    if (data.success) {
-      currentUserId = data.user.user_id;
-      const coinBalance = parseFloat(data.user.balance) || 0;
-      const rubBalance = parseFloat(data.user.rub_balance) || 0;
-      // допустим, currentExchangeRate уже где-то тоже подгружается
-      // или есть ratesData.rates[0].exchange_rate
-
-      // Обновляем руб баланс
-      const rubEl = document.getElementById("rubBalanceValue");
-      if (rubEl) {
-        rubEl.textContent = rubBalance.toFixed(2) + " ₽";
-      }
-
-      // Обновляем guga баланс
-      const gugaEl = document.getElementById("gugaBalanceValue");
-      if (gugaEl) {
-        gugaEl.textContent = coinBalance.toFixed(5) + " ₲";
-      }
-
-      // Курс + руб эквивалент
-      const gugaRateEl = document.getElementById("gugaRate");
-      if (gugaRateEl && typeof currentExchangeRate === "number") {
-        gugaRateEl.textContent = `(1 GUGA = ${currentExchangeRate.toFixed(2)} ₽)`;
-      }
-      const gugaEqEl = document.getElementById("gugaEquivalent");
-      if (gugaEqEl && typeof currentExchangeRate === "number") {
-        const totalRub = coinBalance * currentExchangeRate;
-        gugaEqEl.textContent = `≈ ${totalRub.toFixed(2)} ₽`;
-      }
-
-      // Обновляем user-info
-      const userNameEl = document.querySelector(".user-name");
-      const userIdEl = document.getElementById("userIdDisplay");
-      const userPhotoEl = document.querySelector(".user-photo");
-      if (userNameEl) {
-        userNameEl.textContent = data.user.first_name || "Пользователь";
-      }
-      if (userIdEl) {
-        userIdEl.textContent = "ID: " + data.user.user_id;
-      }
-      if (userPhotoEl && data.user.photo_url) {
-        userPhotoEl.src = data.user.photo_url;
-      }
-    }
-  } catch (err) {
-    console.error("Ошибка fetchUserData:", err);
-  }
 }
 
 /**************************************************
