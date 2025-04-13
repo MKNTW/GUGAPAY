@@ -831,15 +831,15 @@ function createMainUI() {
     // Карточка RUB
     const rubCard = document.createElement("div");
     rubCard.className = "balance-card rub";
-    rubCard.innerHTML = 
-        <div class="balance-icon-wrap">
+    rubCard.innerHTML = `
+      <div class="balance-icon-wrap">
         <img src="photo/18.png" alt="RUB" class="balance-icon">
       </div>
       <div class="balance-info">
         <div class="balance-label">RUB</div>
         <div id="rubBalanceValue" class="balance-amount">0.00 ₽</div>
       </div>
-    ;
+    `;
     balanceContainer.appendChild(rubCard);
 
     // Карточка GUGA
