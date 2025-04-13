@@ -754,41 +754,6 @@ function createMainUI() {
     headerEl.className = "main-header";
     document.body.appendChild(headerEl);
 
-    // Внутри headerEl можем разместить "user-info" (аватар+имя+id) и кнопки
-    const userInfoContainer = document.createElement("div");
-    userInfoContainer.id = "user-info";
-    userInfoContainer.className = "user-info";
-
-    // Картинка пользователя
-    const userPhoto = document.createElement("img");
-    userPhoto.className = "user-photo";
-    userPhoto.style.width = "50px";
-    userPhoto.style.height = "50px";
-    userPhoto.style.borderRadius = "50%";
-    userPhoto.style.marginRight = "12px";
-
-    // Блок текстов (имя и ID)
-    const userTextWrap = document.createElement("div");
-    const userName = document.createElement("div");
-    userName.className = "user-name";
-    userName.style.fontWeight = "600";
-    userName.style.fontSize = "16px";
-    userName.textContent = "User Name"; // заполним динамически
-
-    const userIdText = document.createElement("div");
-    userIdText.id = "userIdDisplay";
-    userIdText.className = "user-id";
-    userIdText.style.fontSize = "12px";
-    userIdText.style.color = "#eee";
-    userIdText.textContent = "ID: ???"; // тоже динамически
-
-    userTextWrap.appendChild(userName);
-    userTextWrap.appendChild(userIdText);
-
-    userInfoContainer.appendChild(userPhoto);
-    userInfoContainer.appendChild(userTextWrap);
-    headerEl.appendChild(userInfoContainer);
-
     // Кнопки "Перевести", "Запросить", "Оплатить"
     const actionContainer = document.createElement("div");
     actionContainer.className = "action-container";
