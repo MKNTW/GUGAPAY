@@ -2211,32 +2211,10 @@ function hideGlobalLoading() {
   if (loader) loader.style.display = 'none';
 }
 
-  // Можно добавить кнопку закрытия и т.п.
-  if (options.showCloseBtn !== false) {
-    const closeBtn = document.createElement('button');
-    closeBtn.textContent = '×';
-    Object.assign(closeBtn.style, {
-      position: 'absolute',
-      top: '10px',
-      right: '10px',
-      width: '32px',
-      height: '32px',
-      backgroundColor: '#000',
-      color: '#fff',
-      border: 'none',
-      borderRadius: '50%',
-      cursor: 'pointer',
-      fontSize: '18px'
-    });
-    closeBtn.onclick = () => modal.remove();
-    contentDiv.appendChild(closeBtn);
-  }
-
   // Закрытие по клику на фон
   modal.addEventListener('click', (e) => {
     if (e.target === modal) modal.remove();
   });
-
 
 
 /**************************************************
