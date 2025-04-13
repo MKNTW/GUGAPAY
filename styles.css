@@ -150,7 +150,7 @@ body {
 #balanceValue {
   font-size: 32px;
   font-weight: 600;
-  color: #000;
+  color: #fff;
 }
 
 /* ID пользователя сразу под балансом */
@@ -159,7 +159,7 @@ body {
   margin-top: 10px;
   font-size: 14px;
   font-weight: 400;
-  color: #555;
+  color: #fff;
   text-align: center;
 }
 
@@ -515,7 +515,7 @@ body {
 .user-name {
   font-size: 16px;
   font-weight: bold;
-  color: #333;
+  color: #fff;
 }
 /* Верхняя часть экрана (красный фон) */
 .header {
