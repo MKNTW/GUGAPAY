@@ -730,23 +730,44 @@ function createMainUI() {
   // 1) Создаём/подключаем общий CSS для стилей
   injectMainUIStyles();
 
-  // 2) Профиль (иконка справа)
-  if (!currentMerchantId && !document.getElementById("profileIcon")) {
+  // 2) Профиль (иконка справа) – делаем контейнер с белым фоном и иконкой внутри
+  if (!currentMerchantId && !document.getElementById("profileIconContainer")) {
+    // Контейнер
+    const profileIconContainer = document.createElement("div");
+    profileIconContainer.id = "profileIconContainer";
+    // Используем те же стили, что у .icon-wrap, но позиционируем отдельно:
+    profileIconContainer.style.position = "absolute";
+    profileIconContainer.style.top = "10px";
+    profileIconContainer.style.right = "10px";
+    profileIconContainer.style.width = "50px";
+    profileIconContainer.style.height = "50px";
+    profileIconContainer.style.background = "#fff";
+    profileIconContainer.style.borderRadius = "12px";
+    profileIconContainer.style.display = "flex";
+    profileIconContainer.style.alignItems = "center";
+    profileIconContainer.style.justifyContent = "center";
+    profileIconContainer.style.boxShadow = "0 2px 5px rgba(0, 0, 0, 0.1)";
+    profileIconContainer.style.cursor = "pointer";
+    profileIconContainer.style.zIndex = "9999";
+
+    // Картинка профиля
     const profileIcon = document.createElement("img");
     profileIcon.id = "profileIcon";
     profileIcon.src = "photo/68.png";
-    profileIcon.style.position = "absolute";
-    profileIcon.style.top = "10px";
-    profileIcon.style.right = "10px";
-    profileIcon.style.width = "40px";
-    profileIcon.style.height = "40px";
-    profileIcon.style.cursor = "pointer";
-    profileIcon.style.zIndex = "9999";
-    document.body.appendChild(profileIcon);
-    profileIcon.addEventListener("click", openProfileModal);
+    profileIcon.style.width = "28px";
+    profileIcon.style.height = "28px";
+    profileIcon.style.borderRadius = "6px";
+    profileIcon.style.objectFit = "cover";
+
+    // Добавляем картинку в контейнер, а контейнер на страницу
+    profileIconContainer.appendChild(profileIcon);
+    document.body.appendChild(profileIconContainer);
+
+    // Событие по клику (например, открывать модальное окно)
+    profileIconContainer.addEventListener("click", openProfileModal);
   }
 
-  // 3) Контейнер "main-header" с градиентным фоном и закруглённым низом
+  // 3) Контейнер "main-header" ...
   let headerEl = document.getElementById("mainHeaderContainer");
   if (!headerEl) {
     headerEl = document.createElement("div");
@@ -756,28 +777,28 @@ function createMainUI() {
 
     // Кнопки "Перевести", "Запросить", "Оплатить"
     const actionContainer = document.createElement("div");
-actionContainer.className = "action-container";
-actionContainer.innerHTML = `
-  <button id="transferBtn" class="action-btn">
-    <div class="icon-wrap">
-      <img src="photo/81.png" class="action-icon"/>
-    </div>
-    <span>Перевести</span>
-  </button>
-  <button id="requestBtn" class="action-btn">
-    <div class="icon-wrap">
-      <img src="photo/82.png" class="action-icon"/>
-    </div>
-    <span>Запросить</span>
-  </button>
-  <button id="payQRBtn" class="action-btn">
-    <div class="icon-wrap">
-      <img src="photo/90.png" class="action-icon"/>
-    </div>
-    <span>Оплатить</span>
-  </button>
-`;
-headerEl.appendChild(actionContainer);
+    actionContainer.className = "action-container";
+    actionContainer.innerHTML = `
+      <button id="transferBtn" class="action-btn">
+        <div class="icon-wrap">
+          <img src="photo/81.png" class="action-icon"/>
+        </div>
+        <span>Перевести</span>
+      </button>
+      <button id="requestBtn" class="action-btn">
+        <div class="icon-wrap">
+          <img src="photo/82.png" class="action-icon"/>
+        </div>
+        <span>Запросить</span>
+      </button>
+      <button id="payQRBtn" class="action-btn">
+        <div class="icon-wrap">
+          <img src="photo/90.png" class="action-icon"/>
+        </div>
+        <span>Оплатить</span>
+      </button>
+    `;
+    headerEl.appendChild(actionContainer);
 
     // Обработчики
     actionContainer.querySelector("#transferBtn").addEventListener("click", () => {
@@ -793,13 +814,13 @@ headerEl.appendChild(actionContainer);
       openPayQRModal();
     });
 
-    // Добавим "разделитель" (или нижний отступ), если нужно
+    // Разделитель или нижний отступ
     const headerDivider = document.createElement("div");
     headerDivider.className = "header-divider";
     headerEl.appendChild(headerDivider);
   }
 
-  // 4) Контейнер "balanceContainer" — крупные карточки для баланса
+// 4) Контейнер "balanceContainer" — крупные карточки для баланса
   let balanceContainer = document.getElementById("balanceContainer");
   if (!balanceContainer) {
     balanceContainer = document.createElement("div");
@@ -810,7 +831,7 @@ headerEl.appendChild(actionContainer);
     // Карточка RUB
     const rubCard = document.createElement("div");
     rubCard.className = "balance-card rub";
-    rubCard.innerHTML = `
+    rubCard.innerHTML = 
       <div class="balance-icon-wrap">
         <img src="photo/18.png" alt="RUB" class="balance-icon">
       </div>
@@ -818,13 +839,13 @@ headerEl.appendChild(actionContainer);
         <div class="balance-label">RUB</div>
         <div id="rubBalanceValue" class="balance-amount">0.00 ₽</div>
       </div>
-    `;
+    ;
     balanceContainer.appendChild(rubCard);
 
     // Карточка GUGA
     const gugaCard = document.createElement("div");
     gugaCard.className = "balance-card guga";
-    gugaCard.innerHTML = `
+    gugaCard.innerHTML = 
       <div class="balance-icon-wrap">
         <img src="photo/15.png" alt="GUGA" class="balance-icon">
       </div>
@@ -834,7 +855,7 @@ headerEl.appendChild(actionContainer);
         </div>
         <div id="gugaBalanceValue" class="balance-amount">0.00000 ₲</div>
       </div>
-    `;
+    ;
     balanceContainer.appendChild(gugaCard);
   }
 
@@ -843,7 +864,7 @@ headerEl.appendChild(actionContainer);
     const bottomBar = document.createElement("div");
     bottomBar.id = "bottomBar";
     bottomBar.className = "bottom-bar";
-    bottomBar.innerHTML = `
+    bottomBar.innerHTML = 
       <button id="btnMain" class="nav-btn">
         <img src="photo/69.png" class="nav-icon">
         <span>Главная</span>
@@ -856,7 +877,7 @@ headerEl.appendChild(actionContainer);
         <img src="photo/71.png" class="nav-icon">
         <span>Обменять</span>
       </button>
-    `;
+    ;
     document.body.appendChild(bottomBar);
 
     bottomBar.querySelector("#btnMain").addEventListener("click", () => {
@@ -938,26 +959,26 @@ function injectMainUIStyles() {
       opacity: 0.9;
     }
 
-    /* Контейнер для иконки-картинки (белый фон, закруглённые углы, центрирование) */
-  .icon-wrap {
-    width: 50px;              
-    height: 50px;
-    background: #fff;         
-    border-radius: 12px;      
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 10px;       
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  }
+    /* Контейнер для иконки (белый фон, закруглённые углы, центрирование) */
+    .icon-wrap {
+      width: 50px;              
+      height: 50px;
+      background: #fff;         
+      border-radius: 12px;      
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;       
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
 
-  /* Сама картинка (иконка) внутри */
-  .action-icon {
-    width: 28px;              
-    height: 28px;
-    border-radius: 6px;       
-    object-fit: cover;        
-  }
+    /* Сама картинка (иконка) внутри */
+    .action-icon {
+      width: 28px;              
+      height: 28px;
+      border-radius: 6px;       
+      object-fit: cover;        
+    }
 
     .header-divider {
       width: 100%;
@@ -976,7 +997,6 @@ function injectMainUIStyles() {
       flex-direction: column;
       gap: 8px;
     }
-
     .balance-card {
       background: #F8F9FB;
       border-radius: 15px;
@@ -1048,6 +1068,7 @@ function injectMainUIStyles() {
   `;
   document.head.appendChild(style);
 }
+
 
 /**************************************************
  * ПОЛЬЗОВАТЕЛЬ
