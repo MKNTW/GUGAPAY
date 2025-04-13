@@ -932,7 +932,7 @@ function injectMainUIStyles() {
 
     /* === Верхняя часть с градиентом === */
     .main-header {
-      position: fixed;
+      
       top: 0; left: 0;
       width: 100%;
       /* Градиент */
@@ -942,7 +942,7 @@ function injectMainUIStyles() {
       border-bottom-right-radius: 20px;
       padding: 16px;
       box-sizing: border-box;
-      z-index: 90000; 
+       
     }
     .user-info {
       display: flex;
@@ -985,7 +985,7 @@ function injectMainUIStyles() {
     /* === Контейнер для балансов (ниже "шапки") === */
     .balance-container {
       position: absolute;
-      top: 160px; /* чтобы не перекрывало шапку */
+      top: 300px; /* чтобы не перекрывало шапку */
       width: 90%;
       max-width: 500px;
       left: 50%;
