@@ -868,7 +868,7 @@ function createMainUI() {
 
   // 6) Убираем/скрываем лишние элементы, если были
   const balanceDisplay = document.getElementById("balanceDisplay");
-  if (balanceDisplay) balanceDisplay.style.display = "true"; 
+  if (balanceDisplay) balanceDisplay.style.display = "block"; 
 
   const mineContainer = document.getElementById("mineContainer");
   if (mineContainer) mineContainer.style.display = "none";
@@ -944,7 +944,7 @@ function injectMainUIStyles() {
       /* Если нужно визуально отделить нижнюю часть, 
          можно поставить border или просто пустой отступ. */
       width: 100%;
-      height: 10px; 
+      height: 0px; 
     }
 
     /* === Контейнер для балансов (ниже "шапки") === */
