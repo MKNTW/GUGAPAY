@@ -1592,18 +1592,18 @@ function openPayQRModal() {
       left: 50%;
       transform: translate(-50%, -50%);
       width: 80%;
-      max-width: 400px;
-      height: 60vh;
-      max-height: 400px;
+      max-width: 300px;
+      height: 40vh;
+      max-height: 300px;
       z-index: 2;
       pointer-events: none;
     }
 
     .corner {
       position: absolute;
-      width: 24px;
-      height: 24px;
-      border: 3px solid #fff;
+      width: 38px;
+      height: 38px;
+      border: 4px solid #fff;
     }
 
     .top-left {
