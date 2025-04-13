@@ -2211,12 +2211,6 @@ function hideGlobalLoading() {
   if (loader) loader.style.display = 'none';
 }
 
-  // Закрытие по клику на фон
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) modal.remove();
-  });
-
-
 /**************************************************
  * ИСТОРИЯ (без кнопки закрытия, без радиуса)
  **************************************************/
