@@ -370,7 +370,7 @@ function openRequestModal() {
         border-radius: 24px;
         box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
         position: relative;
-        margin-top: 60px;
+        margin-top: 40px;
       ">
         <div style="
           display: flex;
