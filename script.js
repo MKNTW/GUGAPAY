@@ -1084,7 +1084,21 @@ async function fetchUserData() {
     const userData = await userResp.json();
     const ratesData = await ratesResp.json();
 
+    // Проверяем, что запрос вернулся успешно и есть объект user
     if (userData.success && userData.user) {
+
+      // -- ЛОГИКА БЛОКИРОВКИ --
+      if (userData.user.blocked) {
+        // Показываем уведомление, что пользователь заблокирован
+        showNotification("Ваш аккаунт заблокирован. Доступ ограничен.", "error");
+
+        // Делаем логаут, чтобы пользователь не мог пользоваться системой
+        // (можно заменить на openAuthModal(), перенаправление и т.д.)
+        logout();
+        return;
+      }
+
+      // Если не заблокирован, продолжаем обычную логику
       currentUserId = userData.user.user_id;
       const coinBalance = userData.user.balance || 0;
       const rubBalance = userData.user.rub_balance || 0;
@@ -1168,7 +1182,8 @@ async function fetchUserData() {
     }
   } catch (err) {
     console.error("fetchUserData error:", err);
-    // Показываем ошибку в интерфейсе
+
+    // Показываем ошибку в интерфейсе (при желании)
     const balanceValue = document.getElementById("balanceValue");
     if (balanceValue) {
       balanceValue.textContent = "-- ₽";
