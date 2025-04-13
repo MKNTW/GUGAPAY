@@ -2211,44 +2211,6 @@ function hideGlobalLoading() {
   if (loader) loader.style.display = 'none';
 }
 
-/**
- * Создание модалки (упрощённый пример, как в вашем проекте)
- */
-function createModal(id, content, options = {}) {
-  // Удаляем старую, если есть
-  const existing = document.getElementById(id);
-  if (existing) existing.remove();
-
-  const modal = document.createElement('div');
-  modal.id = id;
-  modal.className = 'modal';
-  // Можно задать стили или использовать общий .modal из css
-  modal.style.position = 'fixed';
-  modal.style.top = 0;
-  modal.style.left = 0;
-  modal.style.width = '100%';
-  modal.style.height = '100%';
-  modal.style.background = 'rgba(0,0,0,0.5)';
-  modal.style.zIndex = 999999;
-  modal.style.display = 'flex';
-  modal.style.justifyContent = 'center';
-  modal.style.alignItems = 'center';
-
-  const contentDiv = document.createElement('div');
-  contentDiv.className = 'modal-content';
-  // Простая прокрутка контента
-  contentDiv.style.width = '100%';
-  contentDiv.style.maxWidth = '500px';
-  contentDiv.style.height = options.contentMaxHeight || 'auto';
-  contentDiv.style.background = '#fff';
-  contentDiv.style.overflowY = 'auto';
-  contentDiv.style.borderRadius = '0';
-  contentDiv.style.position = 'relative';
-  contentDiv.innerHTML = content;
-
-  modal.appendChild(contentDiv);
-  document.body.appendChild(modal);
-
   // Можно добавить кнопку закрытия и т.п.
   if (options.showCloseBtn !== false) {
     const closeBtn = document.createElement('button');
