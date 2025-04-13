@@ -845,7 +845,7 @@ function createMainUI() {
     // Карточка GUGA
     const gugaCard = document.createElement("div");
     gugaCard.className = "balance-card guga";
-    gugaCard.innerHTML = 
+    gugaCard.innerHTML = `
       <div class="balance-icon-wrap">
         <img src="photo/15.png" alt="GUGA" class="balance-icon">
       </div>
@@ -855,7 +855,7 @@ function createMainUI() {
         </div>
         <div id="gugaBalanceValue" class="balance-amount">0.00000 ₲</div>
       </div>
-    ;
+    `;
     balanceContainer.appendChild(gugaCard);
   }
 
@@ -864,7 +864,7 @@ function createMainUI() {
     const bottomBar = document.createElement("div");
     bottomBar.id = "bottomBar";
     bottomBar.className = "bottom-bar";
-    bottomBar.innerHTML = 
+    bottomBar.innerHTML = `
       <button id="btnMain" class="nav-btn">
         <img src="photo/69.png" class="nav-icon">
         <span>Главная</span>
@@ -877,7 +877,7 @@ function createMainUI() {
         <img src="photo/71.png" class="nav-icon">
         <span>Обменять</span>
       </button>
-    ;
+    `;
     document.body.appendChild(bottomBar);
 
     bottomBar.querySelector("#btnMain").addEventListener("click", () => {
