@@ -118,9 +118,6 @@ body {
   transition: background-color 0.3s ease;
 }
 
-#bottomBar button:hover {
-  background-color: #f0f0f0;
-}
 
 /* Убираем кнопку «Операции» (если она была) */
 #operationsBtn {
