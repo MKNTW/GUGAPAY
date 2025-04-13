@@ -1698,10 +1698,12 @@ function parseQRCodeData(qrString) {
 }
 
 /**************************************************
- * ОБМЕН ВАЛЮТЫ (ПОЛНАЯ ВЕРСИЯ)
+ * ОБМЕН ВАЛЮТЫ (ПОЛНАЯ ВЕРСИЯ, С ДОРАБОТКАМИ)
  **************************************************/
 let currentExchangeDirection = "coin_to_rub";
 let currentExchangeRate = 0;
+let lastDirection = null;
+let exchangeChartInstance = null;
 
 function openExchangeModal() {
   showGlobalLoading();
@@ -1729,53 +1731,55 @@ function openExchangeModal() {
         </div>
     </div>
     
-        <div class="currency-block from-currency">
-            <div class="currency-header">
-                <span class="currency-label">Отдаете</span>
-                <span id="fromBalance" class="balance">0.00000 ₲</span>
-            </div>
-            <div class="input-group">
-                <input 
-                    type="number" 
-                    id="amountInput" 
-                    placeholder="0.00" 
-                    class="currency-input">
-                <div class="currency-display">
-                    <img src="photo/15.png" class="currency-icon">
-                    <span class="currency-symbol">GUGA</span>
-                </div>
-            </div>
+    <div class="currency-block from-currency">
+        <div class="currency-header">
+            <span class="currency-label">Отдаёте</span>
+            <span id="fromBalance" class="balance">0.00000 ₲</span>
         </div>
-
-        <button id="swapBtn" class="swap-btn">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-                <path d="M8 11L12 7L16 11M16 13L12 17L8 13" stroke="#2F80ED" stroke-width="2"/>
-            </svg>
-        </button>
-
-        <div class="currency-block to-currency">
-            <div class="currency-header">
-                <span class="currency-label">Получаете</span>
-                <span id="toBalance" class="balance">0.00 ₽</span>
-            </div>
-            <div class="input-group">
-                <input 
-                    type="text" 
-                    id="toAmount" 
-                    placeholder="0.00" 
-                    class="currency-input"
-                    disabled>
-                <div class="currency-display">
-                    <img src="photo/18.png" class="currency-icon">
-                    <span class="currency-symbol">RUB</span>
-                </div>
+        <div class="input-group">
+            <input 
+                type="number" 
+                id="amountInput" 
+                placeholder="0.00" 
+                class="currency-input">
+            <div class="currency-display">
+                <img src="photo/15.png" class="currency-icon">
+                <span class="currency-symbol">GUGA</span>
             </div>
         </div>
     </div>
 
+    <!-- Кнопка свапа (меняет местами валюты) -->
+    <button id="swapBtn" class="swap-btn">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M8 11L12 7L16 11M16 13L12 17L8 13" stroke="#2F80ED" stroke-width="2"/>
+        </svg>
+    </button>
+
+    <div class="currency-block to-currency">
+        <div class="currency-header">
+            <span class="currency-label">Получаете</span>
+            <span id="toBalance" class="balance">0.00 ₽</span>
+        </div>
+        <div class="input-group">
+            <input 
+                type="text" 
+                id="toAmount" 
+                placeholder="0.00" 
+                class="currency-input"
+                disabled>
+            <div class="currency-display">
+                <img src="photo/18.png" class="currency-icon">
+                <span class="currency-symbol">RUB</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Кнопка подтверждения обмена -->
     <button id="btnPerformExchange" class="submit-btn">
         Подтвердить обмен
     </button>
+
     <div class="bottom-spacer"></div>
 </div>
     `,
@@ -1791,136 +1795,154 @@ function openExchangeModal() {
   initExchange();
 }
 
-// Обновленные стили
+/**************************************************
+ * СТИЛИ (CSS), включая анимацию вращения
+ **************************************************/
 const exchangeStyles = `
 .exchange-container {
-    #width: 100%;
-    #height: 100vh;
-    #padding: 24px;
-    #background: #fff;
-    #overflow: auto;
+  /* Контейнер для общего блока обмена, если нужно */
 }
 
 .exchange-header {
-    margin-bottom: 32px;
+  margin-bottom: 32px;
 }
 
 .exchange-title {
-    font-size: 24px;
-    font-weight: 600;
-    color: #1A1A1A;
-    margin-bottom: 8px;
+  font-size: 24px;
+  font-weight: 600;
+  color: #1A1A1A;
+  margin-bottom: 8px;
 }
 
 .current-rate {
-    font-size: 24px;
-    color: #666;
+  font-size: 24px;
+  color: #666;
 }
 
 .chart-container {
-    background: #F8F9FB;
-    border-radius: 16px;
-    padding: 16px;
-    margin-bottom: 24px;
+  background: #F8F9FB;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 24px;
 }
 
 .chart-wrapper canvas {
-    height: 200px!important;
-}
-
-.converter {
-    position: relative;
-    margin: 40px 0;
-}
-
-.arrows {
-    position: absolute;
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    top: 50%;
-    transform: translateY(-50%);
-    pointer-events: none;
+  height: 200px !important;
 }
 
 .currency-block {
-    background: #F8F9FB;
-    border-radius: 16px;
-    padding: 16px;
-    margin: 12px 0;
+  background: #F8F9FB;
+  border-radius: 16px;
+  padding: 16px;
+  margin: 8px 0; /* УМЕНЬШЕННЫЙ зазор (было 12px) */
 }
 
-.input-group {
-    display: flex;
-    gap: 12px;
-    align-items: center;
+.currency-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
 }
 
-.currency-input {
-    flex: 1;
-    border: none;
-    background: none;
-    font-size: 20px;
-    padding: 12px 0;
-    color: #1A1A1A;
-    font-weight: 500;
+.balance {
+  font-weight: 500;
 }
 
-.currency-input::placeholder {
-    color: #B1B8C5;
-}
-
-.currency-display {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: #F8F9FB;
-    border-radius: 12px;
-    padding: 10px 16px;
-    border: 1px solid #E6E6EB;
-}
-
+/* Кнопка свапа (круглая, с анимацией) */
 .swap-btn {
-    width: 56px;
-    height: 56px;
-    background: #F8F9FB;
-    border: 2px solid #E6E6EB;
-    border-radius: 16px;
-    margin: 16px auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
+  width: 56px;
+  height: 56px;
+  background: #F8F9FB;
+  border: 2px solid #E6E6EB;
+  border-radius: 50%; /* Делаем кнопку круглой */
+  margin: 16px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, transform 0.2s;
+  cursor: pointer;
 }
 
 .swap-btn:hover {
-    background: #eef0f3;
+  background: #eef0f3;
 }
 
-.submit-btn {
-    position: fixed;
-    bottom: 20px;
-    left: 16px;
-    right: 16px;
-    padding: 18px;
-    background: linear-gradient(90deg, #2F80ED, #2D9CDB);
-    border: none;
-    border-radius: 12px;
-    color: white;
-    font-weight: 600;
-    font-size: 16px;
-    cursor: pointer;
-    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+/* Анимация вращения */
+@keyframes swapRotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
-    .bottom-spacer {
-    height: 120px;
+
+/* При "активном" нажатии можем запускать анимацию */
+.swap-btn:active {
+  animation: swapRotate 0.5s forwards ease;
+}
+
+.input-group {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.currency-input {
+  flex: 1;
+  border: none;
+  background: none;
+  font-size: 20px;
+  padding: 12px 0;
+  color: #1A1A1A;
+  font-weight: 500;
+}
+
+.currency-input::placeholder {
+  color: #B1B8C5;
+}
+
+.currency-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #F8F9FB;
+  border-radius: 12px;
+  padding: 10px 16px;
+  border: 1px solid #E6E6EB;
+}
+
+/* Кнопка "Подтвердить обмен" */
+.submit-btn {
+  position: fixed;
+  bottom: 20px;
+  left: 16px;
+  right: 16px;
+  padding: 18px;
+  background: linear-gradient(90deg, #2F80ED, #2D9CDB);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Небольшой отступ, чтобы кнопка не перекрывала нижнюю часть */
+.bottom-spacer {
+  height: 120px;
 }
 `;
 
-// Добавляем стили
+// Подключаем стили к документу (можно и один раз в createModal, если хотите)
 const style = document.createElement('style');
 style.textContent = exchangeStyles;
 document.head.appendChild(style);
+
+/**************************************************
+ * ИНИЦИАЛИЗАЦИЯ ОБМЕНА
+ **************************************************/
 async function initExchange() {
   try {
     const [ratesResp, userResp] = await Promise.all([
@@ -1938,8 +1960,10 @@ async function initExchange() {
     }
 
     if (userData.success) {
-      document.getElementById('fromBalance').textContent = `${formatBalance(userData.user.balance, 5)} ₲`;
-      document.getElementById('toBalance').textContent = `${formatBalance(userData.user.rub_balance, 2)} ₽`;
+      document.getElementById('fromBalance').textContent =
+        formatBalance(userData.user.balance, 5) + " ₲";
+      document.getElementById('toBalance').textContent =
+        formatBalance(userData.user.rub_balance, 2) + " ₽";
     }
 
     document.getElementById('swapBtn').addEventListener('click', swapCurrencies);
@@ -1953,6 +1977,9 @@ async function initExchange() {
   }
 }
 
+/**************************************************
+ * ОТОБРАЖЕНИЕ ТЕКУЩЕГО КУРСА (+ РАЗНИЦА В %)
+ **************************************************/
 function updateRateDisplay(rates) {
   if (!rates || rates.length < 2) return;
 
@@ -1961,7 +1988,9 @@ function updateRateDisplay(rates) {
   const diff = current - previous;
   const percent = (diff / previous) * 100;
 
-  document.getElementById('currentRate').textContent = `1 ₲ = ${formatBalance(current, 2)} ₽`;
+  document.getElementById('currentRate').textContent =
+    `1 ₲ = ${formatBalance(current, 2)} ₽`;
+
   const arrow = document.getElementById('rateChangeArrow');
   const ratePercent = document.getElementById('rateChangePercent');
 
@@ -1978,11 +2007,15 @@ function updateRateDisplay(rates) {
   }
 }
 
+/**************************************************
+ * ИНИЦИАЛИЗАЦИЯ ГРАФИКА
+ **************************************************/
 function initChart(rates) {
   const ctx = document.getElementById('exchangeChart').getContext('2d');
   const labels = rates.slice(0, 50).reverse().map(r =>
     new Date(r.created_at).toLocaleTimeString('ru-RU', {
-      hour: '2-digit', minute: '2-digit'
+      hour: '2-digit',
+      minute: '2-digit'
     })
   );
 
@@ -1994,8 +2027,8 @@ function initChart(rates) {
       labels,
       datasets: [{
         data: rates.slice(0, 50).reverse().map(r => r.exchange_rate),
-        borderColor: '#2F80ED',
         borderWidth: 2,
+        borderColor: '#2F80ED',
         tension: 0.4,
         fill: false,
         pointRadius: 0
@@ -2020,8 +2053,18 @@ function initChart(rates) {
   });
 }
 
+/**************************************************
+ * ФУНКЦИЯ "SWAP" (МЕНЯЕТ МЕСТАМИ ВАЛЮТЫ + АНИМАЦИЯ)
+ **************************************************/
 function swapCurrencies() {
-  currentExchangeDirection = currentExchangeDirection === 'coin_to_rub' ? 'rub_to_coin' : 'coin_to_rub';
+  // Запускаем анимацию вращения через JS (дополнительно к :active)
+  const swapBtn = document.getElementById('swapBtn');
+  swapBtn.style.animation = 'swapRotate 0.5s forwards ease';
+  setTimeout(() => { swapBtn.style.animation = 'none'; }, 500);
+
+  // Меняем направление
+  currentExchangeDirection =
+    currentExchangeDirection === 'coin_to_rub' ? 'rub_to_coin' : 'coin_to_rub';
   
   const fromDisplay = document.querySelector('.from-currency .currency-display');
   const toDisplay = document.querySelector('.to-currency .currency-display');
@@ -2030,24 +2073,43 @@ function swapCurrencies() {
   const amountInput = document.getElementById('amountInput');
   const toAmount = document.getElementById('toAmount');
 
-  // Swap values
+  // Меняем местами введённые значения
   [amountInput.value, toAmount.value] = [toAmount.value, amountInput.value];
   
+  // Если теперь "coin_to_rub" — значит отдаём GUGA, получаем RUB
   if (currentExchangeDirection === 'coin_to_rub') {
-    fromDisplay.innerHTML = `<img src="photo/15.png" class="currency-icon"><span class="currency-symbol">GUGA</span>`;
-    toDisplay.innerHTML = `<img src="photo/18.png" class="currency-icon"><span class="currency-symbol">RUB</span>`;
+    fromDisplay.innerHTML = `
+      <img src="photo/15.png" class="currency-icon">
+      <span class="currency-symbol">GUGA</span>
+    `;
+    toDisplay.innerHTML = `
+      <img src="photo/18.png" class="currency-icon">
+      <span class="currency-symbol">RUB</span>
+    `;
+    // Меняем подписи балансов (₲ <-> ₽)
     fromBalance.textContent = fromBalance.textContent.replace('₽', '₲');
     toBalance.textContent = toBalance.textContent.replace('₲', '₽');
   } else {
-    fromDisplay.innerHTML = `<img src="photo/18.png" class="currency-icon"><span class="currency-symbol">RUB</span>`;
-    toDisplay.innerHTML = `<img src="photo/15.png" class="currency-icon"><span class="currency-symbol">GUGA</span>`;
+    // rub_to_coin
+    fromDisplay.innerHTML = `
+      <img src="photo/18.png" class="currency-icon">
+      <span class="currency-symbol">RUB</span>
+    `;
+    toDisplay.innerHTML = `
+      <img src="photo/15.png" class="currency-icon">
+      <span class="currency-symbol">GUGA</span>
+    `;
     fromBalance.textContent = fromBalance.textContent.replace('₲', '₽');
     toBalance.textContent = toBalance.textContent.replace('₽', '₲');
   }
   
+  // Обновляем вычисление
   updateConversion();
 }
 
+/**************************************************
+ * ПЕРЕРАСЧЁТ ЗНАЧЕНИЙ ПРИ ВВОДЕ
+ **************************************************/
 function updateConversion() {
   const input = document.getElementById('amountInput');
   const output = document.getElementById('toAmount');
@@ -2060,6 +2122,9 @@ function updateConversion() {
   }
 }
 
+/**************************************************
+ * ВЫПОЛНЕНИЕ ОБМЕНА (API-ЗАПРОС)
+ **************************************************/
 async function performExchange() {
   const amount = parseFloat(document.getElementById('amountInput').value);
 
@@ -2068,8 +2133,9 @@ async function performExchange() {
     return;
   }
 
+  // Защита от двойного обмена подряд
   if (lastDirection === currentExchangeDirection) {
-    showNotification('Пожалуйста, обновите курс перед обменом', 'error');
+    showNotification('Пожалуйста, обновите курс или смените направление', 'error');
     return;
   }
 
@@ -2080,16 +2146,26 @@ async function performExchange() {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ direction: currentExchangeDirection, amount })
+      body: JSON.stringify({
+        direction: currentExchangeDirection,
+        amount
+      })
     });
 
     const data = await response.json();
 
-    if (!response.ok || !data.success) throw new Error(data.error || 'Ошибка обмена');
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || 'Ошибка обмена');
+    }
 
     showNotification('Обмен выполнен успешно!', 'success');
+
+    // Запоминаем последнее направление
     lastDirection = currentExchangeDirection;
-    setTimeout(() => lastDirection = null, 5000);
+    // Через 5 секунд сбрасываем
+    setTimeout(() => { lastDirection = null; }, 5000);
+
+    // Снова грузим актуальные данные (балансы, курс)
     await initExchange();
 
   } catch (error) {
