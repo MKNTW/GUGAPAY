@@ -3118,7 +3118,7 @@ notificationStyle.textContent = `
     display: block;
     position: absolute;
     left: 0; top: 0;
-    width: 6px;
+    width: 10px;
     height: 100%;
     border-radius: 12px 0 0 12px;   /* скругляем левую полосу */
   }
