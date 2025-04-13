@@ -974,7 +974,7 @@ function injectMainUIStyles() {
       transform: translateX(-50%);
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 8px;
     }
 
     .balance-card {
