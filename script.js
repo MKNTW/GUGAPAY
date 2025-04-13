@@ -756,22 +756,28 @@ function createMainUI() {
 
     // Кнопки "Перевести", "Запросить", "Оплатить"
     const actionContainer = document.createElement("div");
-    actionContainer.className = "action-container";
-    actionContainer.innerHTML = `
-      <button id="transferBtn" class="action-btn">
-        <img src="photo/81.png" class="action-icon"/>
-        <span>Перевести</span>
-      </button>
-      <button id="requestBtn" class="action-btn">
-        <img src="photo/82.png" class="action-icon"/>
-        <span>Запросить</span>
-      </button>
-      <button id="payQRBtn" class="action-btn">
-        <img src="photo/90.png" class="action-icon"/>
-        <span>Оплатить</span>
-      </button>
-    `;
-    headerEl.appendChild(actionContainer);
+actionContainer.className = "action-container";
+actionContainer.innerHTML = `
+  <button id="transferBtn" class="action-btn">
+    <div class="icon-wrap">
+      <img src="photo/81.png" class="action-icon"/>
+    </div>
+    <span>Перевести</span>
+  </button>
+  <button id="requestBtn" class="action-btn">
+    <div class="icon-wrap">
+      <img src="photo/82.png" class="action-icon"/>
+    </div>
+    <span>Запросить</span>
+  </button>
+  <button id="payQRBtn" class="action-btn">
+    <div class="icon-wrap">
+      <img src="photo/90.png" class="action-icon"/>
+    </div>
+    <span>Оплатить</span>
+  </button>
+`;
+headerEl.appendChild(actionContainer);
 
     // Обработчики
     actionContainer.querySelector("#transferBtn").addEventListener("click", () => {
@@ -932,14 +938,26 @@ function injectMainUIStyles() {
       opacity: 0.9;
     }
 
-    /* Иконки в квадрате с закруглёнными краями (как ваш дизайн) */
-    .action-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 8px; /* закруглённые углы */
-      object-fit: cover;
-      margin-bottom: 4px;
-    }
+    /* Контейнер для иконки-картинки (белый фон, закруглённые углы, центрирование) */
+.icon-wrap {
+  width: 50px;              /* «окно» (больше) */
+  height: 50px;
+  background: #fff;         /* белый фон */
+  border-radius: 12px;      /* закруглённые углы */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;       /* небольшой отступ снизу, чтобы текст шёл ниже */
+}
+
+/* Сама картинка (иконка) внутри */
+.action-icon {
+  width: 28px;              /* картинка поменьше */
+  height: 28px;
+  border-radius: 6px;       /* тоже скругляем, если хотите */
+  object-fit: cover;        /* обрезка/масштаб */
+}
+
 
     .header-divider {
       width: 100%;
