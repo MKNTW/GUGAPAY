@@ -759,22 +759,6 @@ function createMainUI() {
     userInfoContainer.id = "user-info";
     userInfoContainer.className = "user-info";
 
-    // Картинка пользователя
-    const userPhoto = document.createElement("img");
-    userPhoto.className = "user-photo";
-    userPhoto.style.width = "50px";
-    userPhoto.style.height = "50px";
-    userPhoto.style.borderRadius = "50%";
-    userPhoto.style.marginRight = "12px";
-
-    // Блок текстов (имя и ID)
-    const userTextWrap = document.createElement("div");
-    const userName = document.createElement("div");
-    userName.className = "user-name";
-    userName.style.fontWeight = "600";
-    userName.style.fontSize = "16px";
-    userName.textContent = "User Name"; // заполним динамически
-
     const userIdText = document.createElement("div");
     userIdText.id = "userIdDisplay";
     userIdText.className = "user-id";
@@ -1035,7 +1019,7 @@ function injectMainUIStyles() {
       margin-left: 8px;
     }
     .balance-amount {
-      font-size: 24px;
+      font-size: 20px;
       font-weight: 500;
       color: #000;
     }
