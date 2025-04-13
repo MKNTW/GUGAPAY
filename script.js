@@ -820,7 +820,7 @@ function createMainUI() {
     headerEl.appendChild(headerDivider);
   }
 
-// 4) Контейнер "balanceContainer" — крупные карточки для баланса
+// 4) Контейнер "balanceContainer"
   let balanceContainer = document.getElementById("balanceContainer");
   if (!balanceContainer) {
     balanceContainer = document.createElement("div");
@@ -832,7 +832,7 @@ function createMainUI() {
     const rubCard = document.createElement("div");
     rubCard.className = "balance-card rub";
     rubCard.innerHTML = 
-      <div class="balance-icon-wrap">
+        <div class="balance-icon-wrap">
         <img src="photo/18.png" alt="RUB" class="balance-icon">
       </div>
       <div class="balance-info">
