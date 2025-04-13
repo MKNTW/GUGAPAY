@@ -1702,8 +1702,6 @@ function parseQRCodeData(qrString) {
  **************************************************/
 let currentExchangeDirection = "coin_to_rub";
 let currentExchangeRate = 0;
-let lastDirection = null;
-let exchangeChartInstance = null;
 
 function openExchangeModal() {
   showGlobalLoading();
@@ -1927,6 +1925,7 @@ const exchangeStyles = `
   font-size: 16px;
   cursor: pointer;
   box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+  margin-bottom: 80px;
 }
 
 /* Небольшой отступ, чтобы кнопка не перекрывала нижнюю часть */
