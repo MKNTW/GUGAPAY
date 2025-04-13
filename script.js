@@ -2543,7 +2543,7 @@ function displayTransactionHistory(transactions) {
         amountSign = tx.direction === "rub_to_coin" ? "+" : "-";
         color = tx.direction === "rub_to_coin"
           ? "rgb(25, 150, 70)"
-          : "rgb(0, 0, 0)";
+          : "#666";
         amountValue = formatBalance(tx.amount, 5);
         currencySymbol = tx.direction === "rub_to_coin" ? "₲" : "₽";
       }
