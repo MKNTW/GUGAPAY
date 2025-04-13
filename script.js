@@ -3232,6 +3232,94 @@ function showNotification(message, type = "info", duration = 5000) {
   }
 }
 
+/**************************************************
+ * Обработчик входа пользователя.
+ **************************************************/
+async function login() {
+    const loginVal = document.getElementById("loginInput")?.value.trim();
+    const passVal = document.getElementById("passwordInput")?.value.trim();
+
+    if (!validateInput(loginVal, 1) || !validateInput(passVal, 6)) {
+        showNotification("Введите корректный логин (мин. 1 символ) и пароль (мин. 6 символов)", "error");
+        return;
+    }
+
+    try {
+        // Попытка авторизации как пользователь
+        const userData = await apiAuthRequest("login", { username: loginVal, password: passVal });
+
+        // -- BLOCKED LOGIC --
+        // Если в ответе userData.user.blocked === true, выбрасываем ошибку
+        if (userData.user && userData.user.blocked) {
+            throw new Error("Ваш аккаунт заблокирован. Обратитесь в поддержку.");
+        }
+
+        await fetchUserData();
+        closeAllAuthModals();
+        createMainUI();
+        updateUI();
+
+    } catch {
+        // Если первый запрос не был успешен — пробуем как мерчант
+        try {
+            const merchantData = await apiAuthRequest("merchantLogin", { username: loginVal, password: passVal });
+
+            // -- BLOCKED LOGIC для мерчанта —
+            // Если у мерчанта тоже есть флаг blocked, аналогично проверяем:
+            if (merchantData.merchant && merchantData.merchant.blocked) {
+                throw new Error("Мерчант заблокирован. Обратитесь в поддержку.");
+            }
+
+            await fetchMerchantData();
+            closeAllAuthModals();
+            openMerchantUI();
+
+        } catch (err) {
+            showNotification("Ошибка авторизации: " + err.message, "error");
+        }
+    }
+}
+
+
+/**************************************************
+ * Получение данных о пользователе
+ **************************************************/
+async function fetchUserData() {
+    try {
+        const [userResp, ratesResp] = await Promise.all([
+            fetch(`${API_URL}/user`, { credentials: "include" }),
+            fetch(`${API_URL}/exchangeRates?limit=1`)
+        ]);
+
+        const userData = await userResp.json();
+        const ratesData = await ratesResp.json();
+
+        if (userData.success && userData.user) {
+            // -- BLOCKED LOGIC --
+            // Если заблокирован, сразу показываем уведомление или выкидываем на модалку авторизации
+            if (userData.user.blocked) {
+                showNotification("Ваш аккаунт заблокирован. Доступ ограничен.", "error");
+                // Например, делаем logout() или открываем окно авторизации заново
+                logout(); 
+                return;
+            }
+
+            currentUserId = userData.user.user_id;
+            const coinBalance = userData.user.balance || 0;
+            const rubBalance = userData.user.rub_balance || 0;
+
+            // Дальше стандартная логика...
+            // ...
+        }
+    } catch (err) {
+        console.error("fetchUserData error:", err);
+        const balanceValue = document.getElementById("balanceValue");
+        if (balanceValue) {
+            balanceValue.textContent = "-- ₽";
+        }
+    }
+}
+
 window.addEventListener("beforeunload", () => {
   if (pendingMinedCoins > 0) {
     flushMinedCoins();
