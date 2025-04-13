@@ -730,20 +730,31 @@ function createMainUI() {
   // 1) Создаём/подключаем общий CSS для стилей
   injectMainUIStyles();
 
-  // 2) Профиль (иконка справа)
-  if (!currentMerchantId && !document.getElementById("profileIcon")) {
-    const profileIcon = document.createElement("img");
-    profileIcon.id = "profileIcon";
-    profileIcon.src = "photo/68.png";
-    profileIcon.style.position = "absolute";
-    profileIcon.style.top = "10px";
-    profileIcon.style.right = "10px";
-    profileIcon.style.width = "40px";
-    profileIcon.style.height = "40px";
-    profileIcon.style.cursor = "pointer";
-    profileIcon.style.zIndex = "9999";
-    document.body.appendChild(profileIcon);
-    profileIcon.addEventListener("click", openProfileModal);
+  // 2) Вместо profileIcon (справа) — создаём user-info (слева)
+  if (!document.getElementById("user-info")) {
+    const userInfoContainer = document.createElement("div");
+    userInfoContainer.id = "user-info";
+    userInfoContainer.className = "user-info";
+    // При клике на этот блок - открываем профиль
+    userInfoContainer.addEventListener("click", openProfileModal);
+
+    // Фото
+    const userPhoto = document.createElement("img");
+    userPhoto.id = "user-photo";
+    userPhoto.className = "user-photo";
+    userPhoto.src = ""; // по умолчанию пусто, обновится при fetchUserData()
+    userPhoto.alt = "User Photo";
+
+    // Имя
+    const userNameSpan = document.createElement("span");
+    userNameSpan.id = "user-name";
+    userNameSpan.className = "user-name";
+    userNameSpan.textContent = ""; // или "User Name", если нужно по умолчанию
+
+    userInfoContainer.appendChild(userPhoto);
+    userInfoContainer.appendChild(userNameSpan);
+
+    document.body.appendChild(userInfoContainer);
   }
 
   // 3) Контейнер "main-header" с градиентным фоном и закруглённым низом
@@ -756,28 +767,28 @@ function createMainUI() {
 
     // Кнопки "Перевести", "Запросить", "Оплатить"
     const actionContainer = document.createElement("div");
-actionContainer.className = "action-container";
-actionContainer.innerHTML = `
-  <button id="transferBtn" class="action-btn">
-    <div class="icon-wrap">
-      <img src="photo/81.png" class="action-icon"/>
-    </div>
-    <span>Перевести</span>
-  </button>
-  <button id="requestBtn" class="action-btn">
-    <div class="icon-wrap">
-      <img src="photo/82.png" class="action-icon"/>
-    </div>
-    <span>Запросить</span>
-  </button>
-  <button id="payQRBtn" class="action-btn">
-    <div class="icon-wrap">
-      <img src="photo/90.png" class="action-icon"/>
-    </div>
-    <span>Оплатить</span>
-  </button>
-`;
-headerEl.appendChild(actionContainer);
+    actionContainer.className = "action-container";
+    actionContainer.innerHTML = `
+      <button id="transferBtn" class="action-btn">
+        <div class="icon-wrap">
+          <img src="photo/81.png" class="action-icon"/>
+        </div>
+        <span>Перевести</span>
+      </button>
+      <button id="requestBtn" class="action-btn">
+        <div class="icon-wrap">
+          <img src="photo/82.png" class="action-icon"/>
+        </div>
+        <span>Запросить</span>
+      </button>
+      <button id="payQRBtn" class="action-btn">
+        <div class="icon-wrap">
+          <img src="photo/90.png" class="action-icon"/>
+        </div>
+        <span>Оплатить</span>
+      </button>
+    `;
+    headerEl.appendChild(actionContainer);
 
     // Обработчики
     actionContainer.querySelector("#transferBtn").addEventListener("click", () => {
@@ -793,7 +804,7 @@ headerEl.appendChild(actionContainer);
       openPayQRModal();
     });
 
-    // Добавим "разделитель" (или нижний отступ), если нужно
+    // Разделитель (опционально)
     const headerDivider = document.createElement("div");
     headerDivider.className = "header-divider";
     headerEl.appendChild(headerDivider);
@@ -905,6 +916,38 @@ function injectMainUIStyles() {
       font-family: "Oswald", sans-serif;
     }
 
+    /* Блок user-info (левый верхний угол) */
+    .user-info {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      border-radius: 8px;
+      padding: 6px 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      cursor: pointer; /* чтобы показывать, что кликабельно */
+    }
+    .user-photo {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #eee;
+    }
+    .user-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      max-width: 130px;  /* чтобы если имя длинное, переносилось */
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     /* Верхняя часть с градиентом */
     .main-header {
       width: 100%;
@@ -939,25 +982,24 @@ function injectMainUIStyles() {
     }
 
     /* Контейнер для иконки-картинки (белый фон, закруглённые углы, центрирование) */
-  .icon-wrap {
-    width: 50px;              
-    height: 50px;
-    background: #fff;         
-    border-radius: 12px;      
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 10px;       
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  }
+    .icon-wrap {
+      width: 50px;              
+      height: 50px;
+      background: #fff;         
+      border-radius: 12px;      
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;       
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
 
-  /* Сама картинка (иконка) внутри */
-  .action-icon {
-    width: 28px;              
-    height: 28px;
-    border-radius: 6px;       
-    object-fit: cover;        
-  }
+    .action-icon {
+      width: 28px;              
+      height: 28px;
+      border-radius: 6px;       
+      object-fit: cover;        
+    }
 
     .header-divider {
       width: 100%;
@@ -1048,7 +1090,6 @@ function injectMainUIStyles() {
   `;
   document.head.appendChild(style);
 }
-
 
 /**************************************************
  * ПОЛЬЗОВАТЕЛЬ
