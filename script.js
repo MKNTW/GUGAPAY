@@ -2559,8 +2559,8 @@ function displayTransactionHistory(transactions) {
       const iconImg = document.createElement("img");
       iconImg.src = iconSrc;
       iconImg.alt = "icon";
-      iconImg.style.width = "28px";
-      iconImg.style.height = "28px";
+      iconImg.style.width = "35px";
+      iconImg.style.height = "35px";
       leftDiv.appendChild(iconImg);
 
       // Центр (текст)
