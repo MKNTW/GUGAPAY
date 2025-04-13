@@ -446,8 +446,8 @@ function openRequestModal() {
     `,
     {
       showCloseBtn: true,
-      cornerTopMargin: 20,
-      cornerTopRadius: 24,
+      cornerTopMargin: 0,
+      cornerTopRadius: 0,
       hasVerticalScroll: true,
       defaultFromBottom: true,
       noRadiusByDefault: false,
@@ -985,6 +985,8 @@ function injectMainUIStyles() {
       display: flex;
       align-items: center;
       gap: 16px;
+      margin-left: -5px;
+      margin-right: -5px;
     }
     .balance-icon-wrap {
       width: 50px;
