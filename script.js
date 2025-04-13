@@ -860,10 +860,8 @@ function createMainUI() {
       <div class="balance-info">
         <div class="balance-label">
           GUGA 
-          <span id="gugaRate" class="balance-rate">(1 GUGA = 1.35 ₽)</span>
         </div>
         <div id="gugaBalanceValue" class="balance-amount">0.00000 ₲</div>
-        <div id="gugaEquivalent" class="balance-subtext">≈ 0.00 ₽</div>
       </div>
     `;
     balanceContainer.appendChild(gugaCard);
@@ -957,6 +955,7 @@ function injectMainUIStyles() {
       gap: 16px;
       justify-content: center;
       margin-bottom: 16px;
+      margin-top: 165px;
     }
     .action-btn {
       display: flex;
@@ -999,9 +998,9 @@ function injectMainUIStyles() {
     }
 
     .balance-card {
-      background: #fff;
+      background: #F8F9FB;
       border-radius: 15px;
-      padding: 16px;
+      padding: 10px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       display: flex;
       align-items: center;
@@ -1023,11 +1022,11 @@ function injectMainUIStyles() {
     .balance-info {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      
     }
     .balance-label {
-      font-size: 18px;
-      font-weight: 600;
+      font-size: 16px;
+      font-weight: 500;
       color: #1A1A1A;
     }
     .balance-rate {
@@ -1037,7 +1036,7 @@ function injectMainUIStyles() {
     }
     .balance-amount {
       font-size: 24px;
-      font-weight: 600;
+      font-weight: 500;
       color: #000;
     }
     .balance-subtext {
