@@ -920,7 +920,7 @@ function injectMainUIStyles() {
       gap: 16px;
       justify-content: center;
       margin-bottom: 16px;
-      margin-top: 165px;
+      margin-top: 175px;
     }
     .action-btn {
       display: flex;
@@ -930,7 +930,9 @@ function injectMainUIStyles() {
       background: none;
       cursor: pointer;
       color: #fff;
-      font-size: 14px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
     }
     .action-btn:hover {
       opacity: 0.9;
@@ -1002,7 +1004,7 @@ function injectMainUIStyles() {
     .balance-amount {
       font-size: 20px;
       font-weight: 500;
-      color: #000;
+      color: #666;
     }
     .balance-subtext {
       font-size: 14px;
