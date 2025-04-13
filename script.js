@@ -1004,12 +1004,12 @@ function injectMainUIStyles() {
       flex-direction: column;
     }
     .balance-label {
-      font-size: 16px;
+      font-size: 14px;
       font-weight: 500;
       color: #1A1A1A;
     }
     .balance-amount {
-      font-size: 20px;
+      font-size: 16px;
       font-weight: 500;
       color: #666;
     }
