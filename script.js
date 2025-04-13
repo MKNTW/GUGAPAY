@@ -3145,7 +3145,7 @@ notificationStyle.textContent = `
     color: #999;
     font-size: 20px;
     cursor: pointer;
-    margin-left: 10px;
+    margin-left: 8px;
     transition: color 0.2s;
   }
   .notification-close:hover {
