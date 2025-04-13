@@ -723,7 +723,8 @@ function openAuthModal() {
 }
 
 /**************************************************
- * ГЛАВНЫЙ ЭКРАН
+ * ГЛАВНЫЙ ЭКРАН (единый стиль с градиентом, 
+ * закруглённым верхом и крупными балансами)
  **************************************************/
 function createMainUI() {
   // 1) Создаём/подключаем общий CSS для стилей
@@ -749,7 +750,6 @@ function createMainUI() {
     userNameSpan.id = "user-name";
     userNameSpan.className = "user-name";
     userNameSpan.textContent = ""; // или "User Name", если нужно по умолчанию
-    userNameSpan.innerHTML = 'User Name <span class="arrow-right">></span>';
 
     userInfoContainer.appendChild(userPhoto);
     userInfoContainer.appendChild(userNameSpan);
