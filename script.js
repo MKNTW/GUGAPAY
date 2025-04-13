@@ -2236,7 +2236,7 @@ function hideGlobalLoading() {
   modal.addEventListener('click', (e) => {
     if (e.target === modal) modal.remove();
   });
-}
+
 
 
 /**************************************************
