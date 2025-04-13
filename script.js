@@ -2233,19 +2233,24 @@ function hideGlobalLoading() {
 }
 
 /**************************************************
- * ИСТОРИЯ (без кнопки закрытия, без радиуса)
+ * ИСТОРИЯ (единый стиль без кнопки закрытия, без радиуса)
  **************************************************/
+
 function openHistoryModal(horizontalSwitch) {
   createModal(
     "historyModal",
     `
-      <h2 style="text-align:center;">История</h2>
-      <div>
-        <ul id="transactionList" style="padding:0;list-style:none;margin:0;"></ul>
+      <div class="history-container">
+        <div class="history-header">
+          <h2 class="history-title">История</h2>
+        </div>
+        <div class="history-content">
+          <ul id="transactionList" class="transaction-list"></ul>
+        </div>
       </div>
     `,
     {
-      showCloseBtn: false, 
+      showCloseBtn: false, // без кнопки закрытия
       cornerTopMargin: 0,
       cornerTopRadius: 0,
       hasVerticalScroll: true,
@@ -2257,6 +2262,9 @@ function openHistoryModal(horizontalSwitch) {
   fetchTransactionHistory();
 }
 
+/**
+ * Запрашиваем историю транзакций и выводим в списке
+ */
 async function fetchTransactionHistory() {
   if (!currentUserId) return;
   showGlobalLoading();
@@ -2277,13 +2285,16 @@ async function fetchTransactionHistory() {
   }
 }
 
+/**
+ * Отрисовываем историю в DOM
+ */
 function displayTransactionHistory(transactions) {
   const list = document.getElementById("transactionList");
   if (!list) return;
   list.innerHTML = "";
 
   if (!transactions.length) {
-    list.innerHTML = "<li>Нет операций</li>";
+    list.innerHTML = "<li class='no-operations'>Нет операций</li>";
     return;
   }
 
@@ -2298,21 +2309,16 @@ function displayTransactionHistory(transactions) {
   const sortedDates = Object.keys(groups).sort((a, b) => {
     const dA = new Date(groups[a][0].client_time || groups[a][0].created_at);
     const dB = new Date(groups[b][0].client_time || groups[b][0].created_at);
-    return dB - dA;
+    return dB - dA; // более свежие сверху
   });
 
   sortedDates.forEach((dateStr) => {
     const dateItem = document.createElement("li");
-    dateItem.style.listStyle = "none";
-    dateItem.style.marginTop = "20px";
-    dateItem.style.padding = "0";
+    dateItem.className = "transaction-group";
 
     const dateHeader = document.createElement("div");
+    dateHeader.className = "transaction-date";
     dateHeader.textContent = dateStr;
-    dateHeader.style.fontWeight = "bold";
-    dateHeader.style.marginBottom = "10px";
-    dateHeader.style.fontSize = "16px";
-    dateHeader.style.color = "#333";
     dateItem.appendChild(dateHeader);
 
     groups[dateStr].forEach((tx) => {
@@ -2334,24 +2340,25 @@ function displayTransactionHistory(transactions) {
       if (tx.type === "merchant_payment") {
         iconSrc = "photo/92.png";
         titleText = "Оплата по QR";
-        detailsText = `Мерчант: ${tx.merchant_id || (tx.to_user_id && tx.to_user_id.replace("MERCHANT:", "")) || "???"}`;
+        detailsText = `Мерчант: ${
+          tx.merchant_id ||
+          (tx.to_user_id && tx.to_user_id.replace("MERCHANT:", "")) ||
+          "???"
+        }`;
         amountSign = "-";
-        color = "rgb(0 0 0)";
-
+        color = "#000";
       } else if (tx.from_user_id === currentUserId) {
         iconSrc = "photo/67.png";
         titleText = "Отправлено";
         detailsText = `Кому: ${tx.to_user_id}`;
         amountSign = "-";
-        color = "rgb(0 0 0)";
-
+        color = "#000";
       } else if (tx.to_user_id === currentUserId) {
         iconSrc = "photo/66.png";
         titleText = "Получено";
         detailsText = `От кого: ${tx.from_user_id}`;
         amountSign = "+";
-        color = "rgb(25 150 70)";
-
+        color = "rgb(25, 150, 70)";
       } else if (tx.type === "exchange") {
         iconSrc = "photo/67.png";
         titleText = "Обмен";
@@ -2359,77 +2366,65 @@ function displayTransactionHistory(transactions) {
           tx.direction === "rub_to_coin" ? "Рубли → Монеты" : "Монеты → Рубли"
         }`;
         amountSign = tx.direction === "rub_to_coin" ? "+" : "-";
-        color = tx.direction === "rub_to_coin" ? "rgb(25 150 70)" : "rgb(0 0 0)";
-        amountValue = formatBalance(tx.amount, 5); // для обменов пока оставляем в монетах
+        color = tx.direction === "rub_to_coin"
+          ? "rgb(25, 150, 70)"
+          : "rgb(0, 0, 0)";
+        amountValue = formatBalance(tx.amount, 5);
         currencySymbol = tx.direction === "rub_to_coin" ? "₲" : "₽";
       }
 
+      // Создаём "карточку" одной транзакции
       const cardDiv = document.createElement("div");
-      cardDiv.style.background = "#f7f7f7";
-      cardDiv.style.borderRadius = "8px";
-      cardDiv.style.display = "flex";
-      cardDiv.style.alignItems = "center";
-      cardDiv.style.padding = "10px";
-      cardDiv.style.marginBottom = "8px";
+      cardDiv.className = "transaction-card";
 
+      // Левая часть (иконка)
       const leftDiv = document.createElement("div");
-      leftDiv.style.width = "44px";
-      leftDiv.style.height = "44px";
-      leftDiv.style.minWidth = "44px";
-      leftDiv.style.minHeight = "44px";
-      leftDiv.style.borderRadius = "50%";
-      leftDiv.style.background = "#eeeeee";
-      leftDiv.style.display = "flex";
-      leftDiv.style.alignItems = "center";
-      leftDiv.style.justifyContent = "center";
-      leftDiv.style.marginRight = "10px";
+      leftDiv.className = "transaction-icon-wrap";
 
       const iconImg = document.createElement("img");
       iconImg.src = iconSrc;
       iconImg.alt = "icon";
-      iconImg.style.width = "35px";
-      iconImg.style.height = "35px";
+      iconImg.style.width = "28px";
+      iconImg.style.height = "28px";
       leftDiv.appendChild(iconImg);
 
+      // Центр (текст)
       const centerDiv = document.createElement("div");
-      centerDiv.style.flex = "1";
+      centerDiv.className = "transaction-text-wrap";
 
       const titleEl = document.createElement("div");
+      titleEl.className = "transaction-title";
       titleEl.textContent = titleText;
-      titleEl.style.fontWeight = "bold";
-      titleEl.style.marginBottom = "4px";
 
       const detailsEl = document.createElement("div");
+      detailsEl.className = "transaction-subtitle";
       detailsEl.textContent = detailsText;
-      detailsEl.style.fontSize = "14px";
-      detailsEl.style.color = "#666";
 
       centerDiv.appendChild(titleEl);
       centerDiv.appendChild(detailsEl);
 
+      // Правая часть (сумма + время)
       const rightDiv = document.createElement("div");
-      rightDiv.style.display = "flex";
-      rightDiv.style.flexDirection = "column";
-      rightDiv.style.alignItems = "flex-end";
+      rightDiv.className = "transaction-info-wrap";
 
       const amountEl = document.createElement("div");
-      amountEl.style.fontWeight = "bold";
+      amountEl.className = "transaction-amount";
       amountEl.style.color = color;
       amountEl.textContent = `${amountSign}${amountValue} ${currencySymbol}`;
 
       const timeEl = document.createElement("div");
+      timeEl.className = "transaction-time";
       timeEl.textContent = timeStr;
-      timeEl.style.fontSize = "12px";
-      timeEl.style.color = "#888";
-      timeEl.style.marginTop = "3px";
 
       rightDiv.appendChild(amountEl);
       rightDiv.appendChild(timeEl);
 
+      // Собираем карточку
       cardDiv.appendChild(leftDiv);
       cardDiv.appendChild(centerDiv);
       cardDiv.appendChild(rightDiv);
 
+      // Добавляем карточку в группу
       dateItem.appendChild(cardDiv);
     });
 
@@ -2437,6 +2432,9 @@ function displayTransactionHistory(transactions) {
   });
 }
 
+/**
+ * Форматируем дату как "Сегодня"/"Вчера"/"DD.MM.YYYY"
+ */
 function getDateLabel(dateObj) {
   const today = new Date();
   const yesterday = new Date();
