@@ -1130,6 +1130,13 @@ app.post('/auth/telegram', async (req, res) => {
   }
 });
 
+// Node.js пример (на сервере, при создании транзакции)
+const crypto = require('crypto');
+
+function generateTransactionHash(data) {
+  const base = `${data.fromUserId}-${data.toUserId}-${data.amount}-${Date.now()}`;
+  return crypto.createHash('sha256').update(base).digest('hex').slice(0, 20);
+}
 
 /* ========================
    Запуск сервера
