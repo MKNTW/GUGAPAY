@@ -21,9 +21,7 @@ redisClient.connect().catch(err => {
 
 const csrf = require('csurf');
 const csrfProtection = csrf({ cookie: true });
-app.use(csrfProtection);
 
-app.get('/csrf-token', (req, res) => {
   res.json({ csrfToken: req.csrfToken() });
 });
 
@@ -91,6 +89,8 @@ app.use(helmet());
 
 app.use(express.json());
 app.use(cookieParser());
+app.use(csrfProtection);
+app.get('/csrf-token', (req, res) => {
 
 const authLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
@@ -1279,6 +1279,12 @@ app.get('/sync', verifyToken, async (req, res) => {
 
     await redisClient.set(cacheKey, JSON.stringify(payload), { EX: 1 });
     res.json(payload);
+  } catch (err) {
+    console.error('[sync] Ошибка:', err);
+    res.status(500).json({ success: false, error: 'Ошибка синхронизации' });
+  }
+});
+
   } catch (err) {
     console.error('[sync] Ошибка:', err);
     res.status(500).json({ success: false, error: 'Ошибка синхронизации' });
