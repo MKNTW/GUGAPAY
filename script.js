@@ -714,12 +714,7 @@ function openAuthModal() {
             "Content-Type": "application/json",
             "X-CSRF-Token": csrfToken
           },
-          body: JSON.stringify({
-            telegramId: tgUser.id,
-            firstName: tgUser.first_name,
-            username: tgUser.username,
-            photoUrl: tgUser.photo_url
-          })
+          body: JSON.stringify(Telegram.WebApp.initDataUnsafe)
         });
         if (!response.ok) {
           const errorData = await response.json();
