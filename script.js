@@ -1,5 +1,5 @@
 /**************************************************
- * ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕt
+ * ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
  **************************************************/
 const API_URL = "https://api.mkntw.ru";
 
@@ -3247,10 +3247,14 @@ function showNotification(message, type = "info", duration = 5000) {
 
 async function showTransactionDetails(hash) {
   try {
-    const res = await fetch(`${API_URL}/transaction/${hash}`);
+    const res = await fetch(`${API_URL}/transaction/${hash}`, {
+      credentials: "include",
+    });
+
     const data = await res.json();
+
     if (!data.success || !data.transaction) {
-      return showNotification("Ошибка загрузки операции", "error");
+      return showNotification("Операция не найдена", "error");
     }
 
     const tx = data.transaction;
@@ -3258,28 +3262,28 @@ async function showTransactionDetails(hash) {
     createModal(
       "transactionDetailsModal",
       `
-        <h3>Детали операции</h3>
-        <div style="margin-top: 16px;">
+        <div style="padding: 24px;">
+          <h3 style="margin-bottom: 12px;">Детали операции</h3>
           <p><strong>Сумма:</strong> ${formatBalance(tx.amount, 5)} ${tx.currency || "₲"}</p>
           <p><strong>От:</strong> ${tx.from_user_id}</p>
           <p><strong>Кому:</strong> ${tx.to_user_id}</p>
-          <p><strong>Дата:</strong> ${new Date(tx.timestamp).toLocaleString()}</p>
-          <p><strong>Хеш:</strong> <code>${tx.hash}</code> 
-            <button onclick="navigator.clipboard.writeText('${tx.hash}')">Копировать</button>
-          </p>
+          <p><strong>Дата:</strong> ${new Date(tx.created_at || tx.client_time).toLocaleString()}</p>
+          <p><strong>Хеш:</strong> <code>${tx.hash}</code> <button onclick="navigator.clipboard.writeText('${tx.hash}')">Скопировать</button></p>
           ${tx.tags ? `<p><strong>Теги:</strong> ${tx.tags}</p>` : ''}
-          <a href="https://hash.mkntw.ru/tx/${tx.hash}" target="_blank">Посмотреть на hash.mkntw.ru</a>
+          <p style="margin-top: 16px;">
+            <a href="https://hash.mkntw.ru/tx/${tx.hash}" target="_blank">Посмотреть на hash.mkntw.ru</a>
+          </p>
         </div>
       `,
       {
         showCloseBtn: true,
         cornerTopMargin: 30,
-        cornerTopRadius: 20
+        cornerTopRadius: 20,
       }
     );
-  } catch (e) {
-    console.error("Ошибка получения данных транзакции:", e);
-    showNotification("Ошибка при открытии деталей", "error");
+  } catch (err) {
+    console.error("Ошибка при загрузке транзакции:", err);
+    showNotification("Ошибка при загрузке", "error");
   }
 }
 
