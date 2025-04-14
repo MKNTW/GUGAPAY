@@ -154,6 +154,66 @@ app.get('/', (req, res) => {
 });
 app.get('/ping', (req, res) => res.sendStatus(200));
 
+app.post('/auth/telegram', async (req, res) => {
+  try {
+    const data = req.body;
+    if (!data || !data.hash || !isTelegramAuthValid(data, TELEGRAM_BOT_TOKEN)) {
+      return res.status(401).json({ success: false, error: 'Неверная подпись Telegram' });
+    }
+
+    const telegramId = data.id;
+    const firstName = data.first_name || '';
+    const username = data.username || '';
+    const photoUrl = data.photo_url || '';
+
+    // Проверка: есть ли пользователь с таким telegram_id
+    let { data: existingUser } = await supabase
+      .from('users')
+      .select('*')
+      .eq('telegram_id', telegramId)
+      .single();
+
+    // Если нет — регистрируем
+    if (!existingUser) {
+      const newUserId = await generateSixDigitId();
+      const { error: insertErr } = await supabase.from('users').insert([{
+        user_id: newUserId,
+        telegram_id: telegramId,
+        username: username,
+        first_name: firstName,
+        photo_url: photoUrl,
+        balance: 0,
+        rub_balance: 0,
+        blocked: 0
+      }]);
+      if (insertErr) {
+        console.error('Ошибка создания пользователя через Telegram:', insertErr);
+        return res.status(500).json({ success: false, error: 'Ошибка создания пользователя' });
+      }
+      existingUser = {
+        user_id: newUserId,
+        telegram_id: telegramId,
+        username,
+        first_name,
+        photo_url
+      };
+    }
+
+    // Генерация токена
+    const token = jwt.sign({ userId: existingUser.user_id, role: 'user' }, JWT_SECRET, { expiresIn: '1h' });
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'None',
+      maxAge: 3600000
+    });
+    res.json({ success: true, user: existingUser });
+  } catch (err) {
+    console.error('[auth/telegram] Ошибка:', err);
+    res.status(500).json({ success: false, error: 'Ошибка авторизации Telegram' });
+  }
+});
+
 /* ========================
    1) РЕГИСТРАЦИЯ ПОЛЬЗОВАТЕЛЯ
 ======================== */
@@ -554,8 +614,8 @@ app.get('/transactions', verifyToken, async (req, res) => {
     }
     // Отбираем последние 20 транзакций
     allTransactions.sort((a, b) => new Date(b.display_time) - new Date(a.display_time));
-    const last20Transactions = allTransactions.slice(0, 20);
-    console.log('Последние 20 транзакций:', last20Transactions);
+    const last20Transactions = allTransactions.slice(0, 100);
+    // console.log('Последние 20 транзакций:', last20Transactions);
     res.json({ success: true, transactions: last20Transactions });
   } catch (err) {
     console.error('[transactions] Ошибка:', err);
