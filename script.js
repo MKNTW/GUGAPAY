@@ -696,42 +696,38 @@ function openAuthModal() {
     });
     // Telegram auth handler
     telegramBtn.addEventListener("click", async () => {
-      try {
-        showGlobalLoading();
-        Telegram.WebApp.ready();
-        const tgUser = Telegram.WebApp.initDataUnsafe?.user;
-        if (!tgUser?.id) {
-          throw new Error("Не удалось получить данные Telegram");
-        }
-        // Send Telegram auth data to server
-        if (!csrfToken) {
-          await fetchCsrfToken();
-        }
-        const response = await fetch(`${API_URL}/auth/telegram`, {
-  method: "POST",
-  credentials: "include",
-  headers: {
-    "Content-Type": "application/json",
-    "X-CSRF-Token": csrfToken
-  },
-  body: JSON.stringify(Object.fromEntries(new URLSearchParams(Telegram.WebApp.initData)))
-});
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Ошибка сервера");
-        }
-        // Close modal and update UI
-        document.getElementById("authModal")?.remove();
-        await fetchUserData();
-        createMainUI();
-        updateUI();
-      } catch (err) {
-        console.error("Telegram auth error:", err);
-        alert(err.message);
-      } finally {
-        hideGlobalLoading();
-      }
+  try {
+    showServerLoading();
+    Telegram.WebApp.ready();
+    const tgUser = Telegram.WebApp.initDataUnsafe?.user;
+    if (!tgUser?.id) throw new Error("Не удалось получить данные Telegram");
+    if (!csrfToken) await fetchCsrfToken();
+
+    const response = await fetch(`${API_URL}/auth/telegram`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken
+      },
+      body: JSON.stringify(Object.fromEntries(new URLSearchParams(Telegram.WebApp.initData)))
     });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Ошибка сервера");
+    }
+
+    document.getElementById("authModal")?.remove();
+    await fetchUserData();
+    createMainUI();
+    updateUI();
+  } catch (err) {
+    showNotification(err.message, "error");
+  } finally {
+    hideServerLoading();
+  }
+});
     document.getElementById("telegramBtnContainer").appendChild(telegramBtn);
   }
 
