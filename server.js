@@ -17,13 +17,11 @@ const redisClient = createRedisClient({ url: process.env.REDIS_URL || 'redis://l
 
 redisClient.connect().catch(err => {
   console.error('[Redis] Ошибка подключения:', err);
-});
 
 const csrf = require('csurf');
 const csrfProtection = csrf({ cookie: true });
 
   res.json({ csrfToken: req.csrfToken() });
-});
 
 // Проверка подписи Telegram (для /auth/telegram)
 function isTelegramAuthValid(data, botToken) {
