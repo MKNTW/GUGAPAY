@@ -3312,53 +3312,6 @@ window.addEventListener("beforeunload", () => {
   }
 });
 
-
-
-// === TOAST уведомление о соединении ===
-function createToastContainer() {
-  let toast = document.getElementById('toast-container');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'toast-container';
-    toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:9999;';
-    document.body.appendChild(toast);
-  }
-  return toast;
-}
-
-function showToast(msg, duration = 3000) {
-  const container = createToastContainer();
-  const toast = document.createElement('div');
-  toast.innerText = msg;
-  toast.style.cssText = 'background:#e74c3c;color:white;padding:10px 20px;margin-top:10px;border-radius:5px;box-shadow:0 2px 6px rgba(0,0,0,0.2);font-family:sans-serif;';
-  container.appendChild(toast);
-  setTimeout(() => toast.remove(), duration);
-}
-
-let lastConnectionErrorTime = 0;
-function showConnectionError() {
-  const now = Date.now();
-  if (now - lastConnectionErrorTime > 5000) {
-    showToast('Проблема с соединением...');
-    lastConnectionErrorTime = now;
-  }
-}
-function hideConnectionError() {
-  // Ничего не делаем — toast сам исчезает
-}
-
-const statusDiv = document.createElement('div');
-statusDiv.id = 'status';
-statusDiv.style.cssText = 'text-align:center;margin:5px;color:red;';
-document.body.prepend(statusDiv);
-
-function showConnectionError() {
-  statusDiv.innerText = 'Проблема с соединением...';
-}
-function hideConnectionError() {
-  statusDiv.innerText = '';
-}
-
 // === Универсальная синхронизация ===
 async function syncData() {
   try {
