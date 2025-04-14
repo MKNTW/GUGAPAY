@@ -725,7 +725,7 @@ function openAuthModal() {
   } catch (err) {
     showNotification(err.message, "error");
   } finally {
-    hideServerLoading();
+    hideGlobalLoading();
   }
 });
     document.getElementById("telegramBtnContainer").appendChild(telegramBtn);
