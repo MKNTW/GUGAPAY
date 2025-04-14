@@ -438,7 +438,7 @@ app.post('/transferRub', verifyToken, async (req, res) => {
     }
 
     const fromUserId = req.user.userId;
-    const { toUserId, amount } = req.body;
+    const { toUserId, amount, tags } = req.body;
 
     if (!toUserId || !amount || isNaN(amount) || amount <= 0) {
       return res.status(400).json({ success: false, error: 'Неверные данные' });
@@ -482,20 +482,22 @@ app.post('/transferRub', verifyToken, async (req, res) => {
       .update({ rub_balance: newToRub.toFixed(2) })
       .eq('user_id', toUserId);
 
-    const { error: insertError } = const crypto = require('crypto');
-const generateHash = () => crypto.randomBytes(16).toString('hex');
+    // Генерация уникального хеша
+    const crypto = require('crypto');
+    const generateHash = () => crypto.randomBytes(16).toString('hex');
+    const hash = generateHash();
 
-await supabase
-  .from('transactions')
-  .insert([{
-    from_user_id,
-    to_user_id,
-    amount,
-    hash: generateHash(),
-    tags: req.body.tags || null, // если передаются теги
-    type: 'sent',
-    currency: 'GUGA'
-  }]);
+    const { error: insertError } = await supabase
+      .from('transactions')
+      .insert([{
+        from_user_id: fromUserId,
+        to_user_id: toUserId,
+        amount,
+        hash,
+        tags: tags || null,
+        type: 'sent',
+        currency: 'RUB'
+      }]);
 
     if (insertError) {
       console.error('Ошибка вставки транзакции (RUB):', insertError);
@@ -503,7 +505,7 @@ await supabase
     }
 
     console.log(`[transferRub] ${fromUserId} → ${toUserId} = ${amount}₽`);
-    res.json({ success: true, newFromRub, newToRub });
+    res.json({ success: true, newFromRub, newToRub, hash });
   } catch (err) {
     console.error('[transferRub] Ошибка:', err);
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
