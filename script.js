@@ -2551,9 +2551,7 @@ function displayTransactionHistory(transactions) {
         iconSrc = "photo/92.png";
         titleText = "Оплата по QR";
         detailsText = `Мерчант: ${
-          tx.merchant_id ||
-          (tx.to_user_id && tx.to_user_id.replace("MERCHANT:", "")) ||
-          "???"
+          tx.merchant_id || (tx.to_user_id && tx.to_user_id.replace("MERCHANT:", "")) || "???"
         }`;
         amountSign = "-";
         color = "#000";
@@ -2578,16 +2576,20 @@ function displayTransactionHistory(transactions) {
         amountSign = tx.direction === "rub_to_coin" ? "+" : "-";
         color = tx.direction === "rub_to_coin"
           ? "rgb(25, 150, 70)"
-          : "rgb(102, 102, 102);";
+          : "rgb(102, 102, 102)";
         amountValue = formatBalance(tx.amount, 5);
         currencySymbol = tx.direction === "rub_to_coin" ? "₲" : "₽";
       }
 
-      // Создаём "карточку" одной транзакции
       const cardDiv = document.createElement("div");
       cardDiv.className = "transaction-card";
+      cardDiv.dataset.hash = tx.hash;
 
-      // Левая часть (иконка)
+      // Обработчик клика по операции — открывает модальное окно
+      cardDiv.addEventListener("click", () => {
+        if (tx.hash) showTransactionDetails(tx.hash);
+      });
+
       const leftDiv = document.createElement("div");
       leftDiv.className = "transaction-icon-wrap";
 
@@ -2598,7 +2600,6 @@ function displayTransactionHistory(transactions) {
       iconImg.style.height = "34px";
       leftDiv.appendChild(iconImg);
 
-      // Центр (текст)
       const centerDiv = document.createElement("div");
       centerDiv.className = "transaction-text-wrap";
 
@@ -2613,7 +2614,6 @@ function displayTransactionHistory(transactions) {
       centerDiv.appendChild(titleEl);
       centerDiv.appendChild(detailsEl);
 
-      // Правая часть (сумма + время)
       const rightDiv = document.createElement("div");
       rightDiv.className = "transaction-info-wrap";
 
@@ -2629,12 +2629,10 @@ function displayTransactionHistory(transactions) {
       rightDiv.appendChild(amountEl);
       rightDiv.appendChild(timeEl);
 
-      // Собираем карточку
       cardDiv.appendChild(leftDiv);
       cardDiv.appendChild(centerDiv);
       cardDiv.appendChild(rightDiv);
 
-      // Добавляем карточку в группу
       dateItem.appendChild(cardDiv);
     });
 
@@ -3244,6 +3242,44 @@ function showNotification(message, type = "info", duration = 5000) {
         notificationContainer.removeChild(notif);
       }
     }, duration);
+  }
+}
+
+async function showTransactionDetails(hash) {
+  try {
+    const res = await fetch(`${API_URL}/transaction/${hash}`);
+    const data = await res.json();
+    if (!data.success || !data.transaction) {
+      return showNotification("Ошибка загрузки операции", "error");
+    }
+
+    const tx = data.transaction;
+
+    createModal(
+      "transactionDetailsModal",
+      `
+        <h3>Детали операции</h3>
+        <div style="margin-top: 16px;">
+          <p><strong>Сумма:</strong> ${formatBalance(tx.amount, 5)} ${tx.currency || "₲"}</p>
+          <p><strong>От:</strong> ${tx.from_user_id}</p>
+          <p><strong>Кому:</strong> ${tx.to_user_id}</p>
+          <p><strong>Дата:</strong> ${new Date(tx.timestamp).toLocaleString()}</p>
+          <p><strong>Хеш:</strong> <code>${tx.hash}</code> 
+            <button onclick="navigator.clipboard.writeText('${tx.hash}')">Копировать</button>
+          </p>
+          ${tx.tags ? `<p><strong>Теги:</strong> ${tx.tags}</p>` : ''}
+          <a href="https://hash.mkntw.ru/tx/${tx.hash}" target="_blank">Посмотреть на hash.mkntw.ru</a>
+        </div>
+      `,
+      {
+        showCloseBtn: true,
+        cornerTopMargin: 30,
+        cornerTopRadius: 20
+      }
+    );
+  } catch (e) {
+    console.error("Ошибка получения данных транзакции:", e);
+    showNotification("Ошибка при открытии деталей", "error");
   }
 }
 
