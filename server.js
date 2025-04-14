@@ -380,15 +380,19 @@ app.post('/transfer', verifyToken, async (req, res) => {
       .from('users')
       .update({ balance: newToBalance.toFixed(5) })
       .eq('user_id', toUserId);
-    const { error: insertError } = await supabase
-      .from('transactions')
-      .insert([{
-        from_user_id: fromUserId,
-        to_user_id: toUserId,
-        amount,
-        type: 'sent',
-        currency: 'GUGA'
-      }]);
+    const { error: insertError } = const crypto = require('crypto');
+const generateHash = () => crypto.randomBytes(16).toString('hex');
+await supabase
+  .from('transactions')
+  .insert([{
+    from_user_id,
+    to_user_id,
+    amount,
+    hash: generateHash(),
+    tags: req.body.tags || null, // если передаются теги
+    type: 'sent',
+    currency: 'GUGA'
+  }]);
     if (insertError) {
       console.error('Ошибка вставки транзакции:', insertError);
       return res.status(500).json({ success: false, error: 'Ошибка записи транзакции' });
@@ -455,15 +459,20 @@ app.post('/transferRub', verifyToken, async (req, res) => {
       .update({ rub_balance: newToRub.toFixed(2) })
       .eq('user_id', toUserId);
 
-    const { error: insertError } = await supabase
-      .from('transactions')
-      .insert([{
-        from_user_id: fromUserId,
-        to_user_id: toUserId,
-        amount,
-        type: 'sent',
-        currency: 'RUB'
-      }]);
+    const { error: insertError } = const crypto = require('crypto');
+const generateHash = () => crypto.randomBytes(16).toString('hex');
+
+await supabase
+  .from('transactions')
+  .insert([{
+    from_user_id,
+    to_user_id,
+    amount,
+    hash: generateHash(),
+    tags: req.body.tags || null, // если передаются теги
+    type: 'sent',
+    currency: 'GUGA'
+  }]);
 
     if (insertError) {
       console.error('Ошибка вставки транзакции (RUB):', insertError);
@@ -1128,6 +1137,24 @@ app.post('/auth/telegram', async (req, res) => {
       error: 'Внутренняя ошибка сервера' 
     });
   }
+});
+
+//////////\\\\\\\\\
+\\\\\\\\\\/////////
+
+app.get('/transaction/:hash', async (req, res) => {
+  const { hash } = req.params;
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('hash', hash)
+    .single();
+
+  if (error || !data) {
+    return res.status(404).json({ success: false, error: 'Транзакция не найдена' });
+  }
+
+  res.json({ success: true, transaction: data });
 });
 
 /* ========================
