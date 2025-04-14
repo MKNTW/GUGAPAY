@@ -1,3 +1,20 @@
+
+// === CSRF token ===
+let csrfToken = "";
+
+async function fetchCsrfToken() {
+  try {
+    const res = await fetch(`${API_URL}/csrf-token`, { credentials: "include" });
+    const data = await res.json();
+    if (data.csrfToken) {
+      csrfToken = data.csrfToken;
+    }
+  } catch (err) {
+    console.error("Не удалось получить CSRF токен", err);
+  }
+}
+
+
 /**************************************************
  * ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
  **************************************************/
@@ -248,10 +265,15 @@ function removeAllModals() {
 async function apiAuthRequest(endpoint, payload) {
     try {
         showGlobalLoading();
+        if (!csrfToken) await fetchCsrfToken();
+
         const response = await fetch(`${API_URL}/${endpoint}`, {
             method: "POST",
             credentials: "include",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-Token": csrfToken
+            },
             body: JSON.stringify(payload),
         });
 
