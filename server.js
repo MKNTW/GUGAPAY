@@ -1284,9 +1284,3 @@ app.get('/sync', verifyToken, async (req, res) => {
     res.status(500).json({ success: false, error: 'Ошибка синхронизации' });
   }
 });
-
-  } catch (err) {
-    console.error('[sync] Ошибка:', err);
-    res.status(500).json({ success: false, error: 'Ошибка синхронизации' });
-  }
-});
