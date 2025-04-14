@@ -917,3 +917,73 @@ body {
   font-size: 12px;
   color: #888;
 }
+
+.tx-details-modal {
+  padding: 20px;
+  font-family: 'Inter', sans-serif;
+}
+
+.tx-header h2 {
+  font-size: 20px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  color: #202020;
+}
+
+.tx-info {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tx-row {
+  display: flex;
+  flex-direction: column;
+}
+
+.tx-label {
+  font-size: 13px;
+  color: #777;
+  margin-bottom: 4px;
+}
+
+.tx-value {
+  font-size: 15px;
+  font-weight: 500;
+  color: #111;
+  word-break: break-word;
+}
+
+.tx-amount {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2F80ED;
+}
+
+.hash-value {
+  font-family: monospace;
+  background: #f4f4f4;
+  padding: 6px 8px;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.tx-copy {
+  margin-top: 6px;
+  font-size: 13px;
+  background: none;
+  border: none;
+  color: #2F80ED;
+  cursor: pointer;
+  padding: 0;
+}
+
+.tx-link {
+  margin-top: 20px;
+}
+
+.tx-link a {
+  font-size: 14px;
+  color: #2F80ED;
+  text-decoration: underline;
+}
