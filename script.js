@@ -1,19 +1,18 @@
-
-// === CSRF token ===
 let csrfToken = "";
 
 async function fetchCsrfToken() {
   try {
     const res = await fetch(`${API_URL}/csrf-token`, { credentials: "include" });
     const data = await res.json();
-    if (data.csrfToken) {
-      csrfToken = data.csrfToken;
-    }
+    if (data.csrfToken) csrfToken = data.csrfToken;
   } catch (err) {
-    console.error("Не удалось получить CSRF токен", err);
+    console.error("CSRF токен не получен:", err);
   }
 }
 
+function showConnectionError(msg) {
+  showNotification(msg || "Ошибка соединения с сервером", "error");
+}
 
 /**************************************************
  * ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
@@ -265,19 +264,22 @@ function removeAllModals() {
 async function apiAuthRequest(endpoint, payload) {
     try {
         showGlobalLoading();
-        if (!csrfToken) await fetchCsrfToken();
-
-        const response = await fetch(`${API_URL}/${endpoint}`, {
+        const response = await fetch(`${
+    credentials: "include",API_URL}/${endpoint}`, {
             method: "POST",
             credentials: "include",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRF-Token": csrfToken
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
         });
 
-        const data = await response.json();
+        const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (err) {
+      showConnectionError("Ответ не является JSON");
+      throw err;
+    }
         if (!response.ok || !data.success) {
             throw new Error(data.error || "Неизвестная ошибка");
         }
@@ -350,7 +352,8 @@ async function register() {
  */
 async function logout() {
     try {
-        await fetch(`${API_URL}/logout`, {
+        await fetch(`${
+    credentials: "include",API_URL}/logout`, {
             method: "POST",
             credentials: "include",
         });
@@ -700,7 +703,8 @@ function openAuthModal() {
         }
 
         // 2. Отправляем запрос на сервер
-        const response = await fetch(`${API_URL}/auth/telegram`, {
+        const response = await fetch(`${
+    credentials: "include",API_URL}/auth/telegram`, {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -1224,7 +1228,8 @@ function mineCoins() {
 async function flushMinedCoins() {
   if (pendingMinedCoins <= 0) return;
   try {
-    const resp = await fetch(`${API_URL}/update`, {
+    const resp = await fetch(`${
+    credentials: "include",API_URL}/update`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -1538,7 +1543,8 @@ function openTransferModal() {
     const endpoint = (currentTransferCurrency === "GUGA") ? "/transfer" : "/transferRub";
 
     try {
-      const resp = await fetch(`${API_URL}${endpoint}`, {
+      const resp = await fetch(`${
+    credentials: "include",API_URL}${endpoint}`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -1754,7 +1760,8 @@ function confirmPayMerchantModal({ merchantId, amount, purpose }) {
   document.getElementById("confirmPayBtn").onclick = async () => {
     if (!currentUserId) return;
     try {
-      const resp = await fetch(`${API_URL}/payMerchantOneTime`, {
+      const resp = await fetch(`${
+    credentials: "include",API_URL}/payMerchantOneTime`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -1882,7 +1889,8 @@ async function confirmPayUserModal({ userId, amount, purpose }) {
         purpose: purpose || ""
       };
 
-      const resp = await fetch(`${API_URL}/transfer`, {
+      const resp = await fetch(`${
+    credentials: "include",API_URL}/transfer`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -2406,7 +2414,8 @@ async function performExchange() {
   showGlobalLoading();
 
   try {
-    const response = await fetch(`${API_URL}/exchange`, {
+    const response = await fetch(`${
+    credentials: "include",API_URL}/exchange`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -2416,7 +2425,14 @@ async function performExchange() {
       })
     });
 
-    const data = await response.json();
+    const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (err) {
+      showConnectionError("Ответ не является JSON");
+      throw err;
+    }
 
     if (!response.ok || !data.success) {
       throw new Error(data.error || 'Ошибка обмена');
@@ -2501,7 +2517,8 @@ async function fetchTransactionHistory() {
   if (!currentUserId) return;
   showGlobalLoading();
   try {
-    const resp = await fetch(`${API_URL}/transactions?userId=${currentUserId}`, {
+    const resp = await fetch(`${
+    credentials: "include",API_URL}/transactions?userId=${currentUserId}`, {
       credentials: "include",
     });
     const data = await resp.json();
@@ -2750,7 +2767,8 @@ async function openMerchantUI() {
 async function fetchMerchantData() {
   await fetchMerchantBalance();
   try {
-    const resp = await fetch(`${API_URL}/halvingInfo`, { credentials: "include" });
+    const resp = await fetch(`${
+    credentials: "include",API_URL}/halvingInfo`, { credentials: "include" });
     const data = await resp.json();
     if (data.success) {
       currentHalvingStep = data.halvingStep || 0;
@@ -2762,7 +2780,8 @@ async function fetchMerchantData() {
 
 async function fetchMerchantInfo() {
   try {
-    const resp = await fetch(`${API_URL}/merchant/info`, { credentials: "include" });
+    const resp = await fetch(`${
+    credentials: "include",API_URL}/merchant/info`, { credentials: "include" });
     const data = await resp.json();
     if (resp.ok && data.success && data.merchant) {
       currentMerchantId = data.merchant.merchant_id;
@@ -2775,7 +2794,8 @@ async function fetchMerchantInfo() {
 async function fetchMerchantBalance() {
   if (!currentMerchantId) return;
   try {
-    const resp = await fetch(`${API_URL}/merchantBalance?merchantId=${currentMerchantId}`, {
+    const resp = await fetch(`${
+    credentials: "include",API_URL}/merchantBalance?merchantId=${currentMerchantId}`, {
       credentials: "include",
     });
     const data = await resp.json();
@@ -2956,7 +2976,8 @@ function openMerchantTransferModal() {
       return;
     }
     try {
-      const resp = await fetch(`${API_URL}/merchantTransfer`, {
+      const resp = await fetch(`${
+    credentials: "include",API_URL}/merchantTransfer`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -3269,7 +3290,8 @@ function showNotification(message, type = "info", duration = 5000) {
 
 async function showTransactionDetails(hash) {
   try {
-    const res = await fetch(`${API_URL}/transaction/${hash}`, {
+    const res = await fetch(`${
+    credentials: "include",API_URL}/transaction/${hash}`, {
       credentials: "include",
     });
 
@@ -3337,7 +3359,8 @@ window.addEventListener("beforeunload", () => {
 // === Универсальная синхронизация ===
 async function syncData() {
   try {
-    const res = await fetch('/sync', { credentials: 'include' });
+    const res = await fetch('/sync', {
+    credentials: "include", credentials: 'include' });
     const data = await res.json();
     if (!data.success) throw new Error(data.error);
 
