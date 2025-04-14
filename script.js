@@ -266,11 +266,14 @@ async function apiAuthRequest(endpoint, payload) {
         showGlobalLoading();
         const response = await fetch(`${
     credentials: "include",API_URL}/${endpoint}`, {
-            method: "POST",
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
+    
             credentials: "include",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
-        });
+  });
 
         const text = await response.text();
     let data;
@@ -354,9 +357,12 @@ async function logout() {
     try {
         await fetch(`${
     credentials: "include",API_URL}/logout`, {
-            method: "POST",
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
+    
             credentials: "include",
-        });
+  });
         showNotification("Вы вышли из системы", "success");
     } catch (err) {
         console.error("Ошибка при выходе:", err);
@@ -705,7 +711,10 @@ function openAuthModal() {
         // 2. Отправляем запрос на сервер
         const response = await fetch(`${
     credentials: "include",API_URL}/auth/telegram`, {
-          method: "POST",
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
+    
           credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -713,7 +722,7 @@ function openAuthModal() {
             firstName: tgUser.first_name,
             username: tgUser.username,
             photoUrl: tgUser.photo_url
-          })
+  })
         });
 
         // 3. Обрабатываем ответ
@@ -1230,10 +1239,14 @@ async function flushMinedCoins() {
   try {
     const resp = await fetch(`${
     credentials: "include",API_URL}/update`, {
-      method: "POST",
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
+    
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount: pendingMinedCoins }),
+      body: JSON.stringify({ amount: pendingMinedCoins
+  }),
     });
     if (resp.ok) {
       // Сервер подтверждает успех
@@ -1545,10 +1558,14 @@ function openTransferModal() {
     try {
       const resp = await fetch(`${
     credentials: "include",API_URL}${endpoint}`, {
-        method: "POST",
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
+    
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ toUserId: toUser, amount })
+        body: JSON.stringify({ toUserId: toUser, amount
+  })
       });
       const data = await resp.json();
       if (data.success) {
@@ -1762,10 +1779,14 @@ function confirmPayMerchantModal({ merchantId, amount, purpose }) {
     try {
       const resp = await fetch(`${
     credentials: "include",API_URL}/payMerchantOneTime`, {
-        method: "POST",
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
+    
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: currentUserId, merchantId, amount, purpose }),
+        body: JSON.stringify({ userId: currentUserId, merchantId, amount, purpose
+  }),
       });
       const data = await resp.json();
       if (data.success) {
@@ -1891,11 +1912,14 @@ async function confirmPayUserModal({ userId, amount, purpose }) {
 
       const resp = await fetch(`${
     credentials: "include",API_URL}/transfer`, {
-        method: "POST",
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
+    
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
-      });
+  });
 
       const data = await resp.json();
       
@@ -2416,13 +2440,16 @@ async function performExchange() {
   try {
     const response = await fetch(`${
     credentials: "include",API_URL}/exchange`, {
-      method: 'POST',
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
+    
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         direction: currentExchangeDirection,
         amount
-      })
+  })
     });
 
     const text = await response.text();
@@ -2978,10 +3005,14 @@ function openMerchantTransferModal() {
     try {
       const resp = await fetch(`${
     credentials: "include",API_URL}/merchantTransfer`, {
-        method: "POST",
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
+    
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ merchantId: currentMerchantId, toUserId, amount }),
+        body: JSON.stringify({ merchantId: currentMerchantId, toUserId, amount
+  }),
       });
       const data = await resp.json();
       if (data.success) {
