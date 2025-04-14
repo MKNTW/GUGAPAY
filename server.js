@@ -1014,16 +1014,22 @@ app.post('/auth/telegram', async (req, res) => {
   if (!isTelegramAuthValid(req.body, TELEGRAM_BOT_TOKEN)) {
     return res.status(403).json({ success: false, error: 'Неверная подпись Telegram' });
   }
+
   try {
-    const { telegramId, firstName, username, photoUrl } = req.body;
-    // Поиск существующего пользователя по telegramId
+    const {
+      id: telegramId,
+      first_name: firstName,
+      username,
+      photo_url: photoUrl
+    } = req.body;
+
     const { data: existingUser } = await supabase
       .from('users')
       .select('*')
       .eq('telegram_id', telegramId)
       .maybeSingle();
+
     if (existingUser) {
-      // Пользователь уже зарегистрирован: выдаем токен и возвращаем существующий userId
       const token = jwt.sign({ userId: existingUser.user_id, role: 'user' }, JWT_SECRET, { expiresIn: '24h' });
       res.cookie('token', token, {
         httpOnly: true,
@@ -1033,9 +1039,9 @@ app.post('/auth/telegram', async (req, res) => {
       });
       return res.json({ success: true, userId: existingUser.user_id, isNewUser: false });
     }
-    // Регистрация нового пользователя через Telegram
+
     const userId = await generateSixDigitId();
-    // Генерация уникального имени пользователя (если username занят или отсутствует)
+
     const generateUniqueUsername = async (base) => {
       let candidate = (base || `user${Date.now()}`).substring(0, 15);
       let counter = 1;
@@ -1049,8 +1055,9 @@ app.post('/auth/telegram', async (req, res) => {
         candidate = `${base}_${counter++}`.substring(0, 15);
       }
     };
+
     const uniqueUsername = await generateUniqueUsername(username || firstName);
-    // Создание новой записи пользователя
+
     const { error } = await supabase.from('users').insert([{
       user_id: userId,
       telegram_id: telegramId,
@@ -1062,11 +1069,12 @@ app.post('/auth/telegram', async (req, res) => {
       blocked: false,
       password: null
     }]);
+
     if (error) {
       console.error('Supabase error:', error);
       return res.status(500).json({ success: false, error: 'Ошибка регистрации' });
     }
-    // Генерация JWT-токена для нового пользователя
+
     const token = jwt.sign({ userId, role: 'user' }, JWT_SECRET, { expiresIn: '24h' });
     res.cookie('token', token, {
       httpOnly: true,
@@ -1074,7 +1082,8 @@ app.post('/auth/telegram', async (req, res) => {
       sameSite: 'None',
       maxAge: 86400000
     });
-    res.json({ success: true, userId: userId, isNewUser: true });
+
+    res.json({ success: true, userId, isNewUser: true });
   } catch (error) {
     console.error('Telegram auth error:', error);
     res.status(500).json({ success: false, error: 'Внутренняя ошибка сервера' });
