@@ -334,7 +334,8 @@ app.get('/user', verifyToken, async (req, res) => {
 ======================== */
 const transferSchema = Joi.object({
   toUserId: Joi.string().required(),
-  amount: Joi.number().positive().required()
+  amount: Joi.number().positive().required(),
+  tags: Joi.string().allow('', null) // теги опциональны
 }).unknown(true);
 
 app.post('/transfer', verifyToken, async (req, res) => {
@@ -342,63 +343,85 @@ app.post('/transfer', verifyToken, async (req, res) => {
     if (req.user.role !== 'user') {
       return res.status(403).json({ success: false, error: 'Доступ запрещён' });
     }
+
     const fromUserId = req.user.userId;
     const { error, value } = transferSchema.validate(req.body);
     if (error) {
       return res.status(400).json({ success: false, error: error.details[0].message });
     }
-    const { toUserId, amount } = value;
+
+    const { toUserId, amount, tags } = value;
+
     if (fromUserId === toUserId) {
       return res.status(400).json({ success: false, error: 'Нельзя переводить самому себе' });
     }
+
     const { data: fromUser } = await supabase
       .from('users')
       .select('*')
       .eq('user_id', fromUserId)
       .single();
+
     if (!fromUser) {
       return res.status(404).json({ success: false, error: 'Отправитель не найден' });
     }
+
     if (parseFloat(fromUser.balance) < amount) {
       return res.status(400).json({ success: false, error: 'Недостаточно средств' });
     }
+
     const { data: toUser } = await supabase
       .from('users')
       .select('*')
       .eq('user_id', toUserId)
       .single();
+
     if (!toUser) {
       return res.status(404).json({ success: false, error: 'Получатель не найден' });
     }
+
     const newFromBalance = parseFloat(fromUser.balance) - amount;
     const newToBalance = parseFloat(toUser.balance) + amount;
+
     await supabase
       .from('users')
       .update({ balance: newFromBalance.toFixed(5) })
       .eq('user_id', fromUserId);
+
     await supabase
       .from('users')
       .update({ balance: newToBalance.toFixed(5) })
       .eq('user_id', toUserId);
-    const { error: insertError } = const crypto = require('crypto');
-const generateHash = () => crypto.randomBytes(16).toString('hex');
-await supabase
-  .from('transactions')
-  .insert([{
-    from_user_id,
-    to_user_id,
-    amount,
-    hash: generateHash(),
-    tags: req.body.tags || null, // если передаются теги
-    type: 'sent',
-    currency: 'GUGA'
-  }]);
+
+    // Генерация уникального хеша
+    const crypto = require('crypto');
+    const generateHash = () => crypto.randomBytes(16).toString('hex');
+    const hash = generateHash();
+
+    const { error: insertError } = await supabase
+      .from('transactions')
+      .insert([{
+        from_user_id: fromUserId,
+        to_user_id: toUserId,
+        amount,
+        hash,
+        tags: tags || null,
+        type: 'sent',
+        currency: 'GUGA'
+      }]);
+
     if (insertError) {
       console.error('Ошибка вставки транзакции:', insertError);
       return res.status(500).json({ success: false, error: 'Ошибка записи транзакции' });
     }
-    console.log(`[transfer] from=${fromUserId} to=${toUserId} amount=${amount}`);
-    res.json({ success: true, fromBalance: newFromBalance, toBalance: newToBalance });
+
+    console.log(`[transfer] ${fromUserId} → ${toUserId} = ${amount} GUGA, hash=${hash}`);
+    res.json({
+      success: true,
+      fromBalance: newFromBalance,
+      toBalance: newToBalance,
+      hash
+    });
   } catch (err) {
     console.error('[transfer] Ошибка:', err);
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
