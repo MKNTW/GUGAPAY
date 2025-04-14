@@ -3297,7 +3297,7 @@ async function showTransactionDetails(hash) {
       {
         showCloseBtn: false,
         cornerTopMargin: 0,
-        cornerTopRadius: 16,
+        cornerTopRadius: 0,
       }
     );
   } catch (err) {
