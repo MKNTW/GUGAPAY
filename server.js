@@ -12,6 +12,33 @@ const env = process.env.NODE_ENV || 'development';
 const { v4: uuidv4 } = require('uuid');
 require('dotenv').config();
 
+const { createClient: createRedisClient } = require('redis');
+const redisClient = createRedisClient({ url: process.env.REDIS_URL || 'redis://localhost:6379' });
+
+redisClient.connect().catch(err => {
+  console.error('[Redis] Ошибка подключения:', err);
+});
+
+const csrf = require('csurf');
+const csrfProtection = csrf({ cookie: true });
+app.use(csrfProtection);
+
+app.get('/csrf-token', (req, res) => {
+  res.json({ csrfToken: req.csrfToken() });
+});
+
+// Проверка подписи Telegram (для /auth/telegram)
+function isTelegramAuthValid(data, botToken) {
+  const crypto = require('crypto');
+  const checkHash = data.hash;
+  const { hash, ...rest } = data;
+  const sorted = Object.keys(rest).sort().map(key => `${key}=${rest[key]}`).join('\n');
+  const secret = crypto.createHash('sha256').update(botToken).digest();
+  const hmac = crypto.createHmac('sha256', secret).update(sorted).digest('hex');
+  return hmac === checkHash;
+}
+
+
 // Инициализация Telegram-бота (оставляем, если он используется для других задач)
 const TelegramBot = require('node-telegram-bot-api');
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || 'YOUR_TELEGRAM_BOT_TOKEN';
@@ -1060,6 +1087,9 @@ async function generateSixDigitId() {
    Эндпоинт Telegram Auth
 ======================== */
 app.post('/auth/telegram', async (req, res) => {
+  if (!isTelegramAuthValid(req.body, TELEGRAM_BOT_TOKEN)) {
+    return res.status(403).json({ success: false, error: 'Неверная подпись Telegram' });
+  }
   try {
     const { telegramId, firstName, username, photoUrl } = req.body;
 
@@ -1189,6 +1219,23 @@ app.listen(port, '0.0.0.0', () => {
 });
 
 
+
+app.use(async (req, res, next) => {
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const origin = req.headers.origin || req.headers.referer || '';
+  const ua = req.headers['user-agent'] || '';
+  const url = req.originalUrl;
+
+  if (origin && !origin.includes('mkntw.ru')) {
+    console.warn(`[SECURITY] Нарушение: ${ip} → ${url}, origin=${origin}`);
+    await supabase.from('security_logs').insert([{
+      ip, url, origin, user_agent: ua, timestamp: new Date().toISOString()
+    }]);
+  }
+
+  next();
+});
+
 // WAF: защита от внешних запросов
 app.use((req, res, next) => {
   const origin = req.headers.origin || req.headers.referer || '';
@@ -1204,22 +1251,40 @@ app.use((req, res, next) => {
 app.get('/ping', (req, res) => res.sendStatus(200));
 
 // Универсальный sync-эндпоинт
+
 app.get('/sync', verifyToken, async (req, res) => {
   try {
     const userId = req.user.userId;
+    const cacheKey = `sync:${userId}`;
+
+    const cached = await redisClient.get(cacheKey);
+    if (cached) {
+      return res.json(JSON.parse(cached));
+    }
+
     const [userData, txData, exchangeData, rateData] = await Promise.all([
       supabase.from('users').select('*').eq('user_id', userId).single(),
       supabase.from('transactions').select('*').or(`from_user_id.eq.${userId},to_user_id.eq.${userId}`).order('created_at', { ascending: false }).limit(10),
       supabase.from('exchange_transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
       supabase.from('exchange_rate_history').select('*').order('created_at', { ascending: false }).limit(1)
     ]);
-    res.json({
+
+    const payload = {
       success: true,
       user: userData.data,
       transactions: txData.data,
       exchange: exchangeData.data,
       latestRate: rateData.data[0]
-    });
+    };
+
+    await redisClient.set(cacheKey, JSON.stringify(payload), { EX: 1 });
+    res.json(payload);
+  } catch (err) {
+    console.error('[sync] Ошибка:', err);
+    res.status(500).json({ success: false, error: 'Ошибка синхронизации' });
+  }
+});
+
   } catch (err) {
     console.error('[sync] Ошибка:', err);
     res.status(500).json({ success: false, error: 'Ошибка синхронизации' });
