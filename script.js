@@ -3258,53 +3258,45 @@ async function showTransactionDetails(hash) {
     }
 
     const tx = data.transaction;
-    const amount = `${formatBalance(tx.amount, tx.currency === "RUB" ? 2 : 5)} ${tx.currency || "₲"}`;
-    const timestamp = new Date(tx.created_at || tx.client_time).toLocaleString();
+    const amount = `${tx.type === "sent" ? "-" : "+"}${formatBalance(tx.amount, tx.currency === "RUB" ? 2 : 5)} ${tx.currency || "₲"}`;
+    const timestamp = new Date(tx.created_at || tx.client_time).toLocaleString("ru-RU");
 
     createModal(
       "transactionDetailsModal",
       `
-        <div class="tx-details-modal">
-          <div class="tx-header">
-            <h2>Детали операции</h2>
+        <div class="tx-sheet">
+          <div class="tx-icon">
+            <img src="photo/${tx.currency === "RUB" ? "92" : "67"}.png" alt="icon" width="48" height="48" />
           </div>
-          <div class="tx-info">
-            <div class="tx-row">
-              <span class="tx-label">Сумма:</span>
-              <span class="tx-value tx-amount">${amount}</span>
+
+          <div class="tx-amount-main">${amount}</div>
+
+          <div class="tx-status success">Успешно</div>
+
+          <div class="tx-detail-box">
+            <div class="tx-detail-row">
+              <div class="tx-label">Дата и время</div>
+              <div class="tx-value">${timestamp}</div>
             </div>
-            <div class="tx-row">
-              <span class="tx-label">От:</span>
-              <span class="tx-value">${tx.from_user_id}</span>
-            </div>
-            <div class="tx-row">
-              <span class="tx-label">Кому:</span>
-              <span class="tx-value">${tx.to_user_id}</span>
-            </div>
-            <div class="tx-row">
-              <span class="tx-label">Дата:</span>
-              <span class="tx-value">${timestamp}</span>
-            </div>
-            <div class="tx-row">
-              <span class="tx-label">Хеш:</span>
-              <span class="tx-value hash-value">${tx.hash}</span>
-              <button class="tx-copy" onclick="navigator.clipboard.writeText('${tx.hash}')">Скопировать</button>
+            <div class="tx-detail-row">
+              <div class="tx-label">ID транзакции</div>
+              <div class="tx-value copyable">
+                <span>${tx.hash}</span>
+                <button onclick="navigator.clipboard.writeText('${tx.hash}')">📋</button>
+              </div>
             </div>
             ${tx.tags ? `
-              <div class="tx-row">
-                <span class="tx-label">Теги:</span>
-                <span class="tx-value">${tx.tags}</span>
-              </div>
-            ` : ""}
-            <div class="tx-link">
-              <a href="https://hash.mkntw.ru/tx/${tx.hash}" target="_blank">Открыть в обозревателе</a>
-            </div>
+              <div class="tx-detail-row">
+                <div class="tx-label">Теги</div>
+                <div class="tx-value">${tx.tags}</div>
+              </div>` : ""
+            }
           </div>
         </div>
       `,
       {
-        showCloseBtn: true,
-        cornerTopMargin: 30,
+        showCloseBtn: false,
+        cornerTopMargin: 0,
         cornerTopRadius: 16,
       }
     );
