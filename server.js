@@ -1251,7 +1251,6 @@ app.use((req, res, next) => {
 app.get('/ping', (req, res) => res.sendStatus(200));
 
 // Универсальный sync-эндпоинт
-
 app.get('/sync', verifyToken, async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -1279,12 +1278,6 @@ app.get('/sync', verifyToken, async (req, res) => {
 
     await redisClient.set(cacheKey, JSON.stringify(payload), { EX: 1 });
     res.json(payload);
-  } catch (err) {
-    console.error('[sync] Ошибка:', err);
-    res.status(500).json({ success: false, error: 'Ошибка синхронизации' });
-  }
-});
-
   } catch (err) {
     console.error('[sync] Ошибка:', err);
     res.status(500).json({ success: false, error: 'Ошибка синхронизации' });
