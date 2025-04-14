@@ -697,7 +697,7 @@ function openAuthModal() {
     // Telegram auth handler
     telegramBtn.addEventListener("click", async () => {
   try {
-    showServerLoading();
+    showGlobalLoading();
     Telegram.WebApp.ready();
     const tgUser = Telegram.WebApp.initDataUnsafe?.user;
     if (!tgUser?.id) throw new Error("Не удалось получить данные Telegram");
