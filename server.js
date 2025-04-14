@@ -114,7 +114,12 @@ app.use((req, res, next) => {
 
 // Маршрут для получения CSRF-токена
 app.get('/csrf-token', (req, res) => {
-  res.json({ csrfToken: req.csrfToken() });
+  try {
+    res.json({ csrfToken: req.csrfToken() });
+  } catch (err) {
+    console.error('[csrf-token] Ошибка получения CSRF:', err);
+    res.status(500).json({ success: false, error: 'Не удалось получить CSRF токен' });
+  }
 });
 
 // Ограничение количества запросов (Rate Limiting) для некоторых маршрутов авторизации
