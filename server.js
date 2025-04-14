@@ -105,7 +105,12 @@ app.use(helmet());
 app.use(express.json());
 app.use(cookieParser());
 // Включение защиты CSRF (Cross-Site Request Forgery)
-app.use(csrfProtection);
+app.use((req, res, next) => {
+  if (["POST", "PUT", "DELETE"].includes(req.method)) {
+    return csrfProtection(req, res, next);
+  }
+  next();
+});
 
 // Маршрут для получения CSRF-токена
 app.get('/csrf-token', (req, res) => {
