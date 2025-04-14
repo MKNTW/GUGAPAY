@@ -3311,3 +3311,36 @@ window.addEventListener("beforeunload", () => {
     flushMinedCoins();
   }
 });
+
+
+// === Индикатор соединения ===
+const statusDiv = document.createElement('div');
+statusDiv.id = 'status';
+statusDiv.style.cssText = 'text-align:center;margin:5px;color:red;';
+document.body.prepend(statusDiv);
+
+function showConnectionError() {
+  statusDiv.innerText = 'Проблема с соединением...';
+}
+function hideConnectionError() {
+  statusDiv.innerText = '';
+}
+
+// === Универсальная синхронизация ===
+async function syncData() {
+  try {
+    const res = await fetch('/sync', { credentials: 'include' });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+
+    updateBalance(data.user);
+    updateTransactions(data.transactions);
+    updateExchange(data.exchange);
+    updateRate(data.latestRate);
+    hideConnectionError();
+  } catch (err) {
+    console.error('Sync error:', err);
+    showConnectionError();
+  }
+}
+setInterval(syncData, 1000);

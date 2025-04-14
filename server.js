@@ -1187,3 +1187,41 @@ app.get('/transaction/:hash', async (req, res) => {
 app.listen(port, '0.0.0.0', () => {
   console.log(`[Server] Запущен на порту ${port}`);
 });
+
+
+// WAF: защита от внешних запросов
+app.use((req, res, next) => {
+  const origin = req.headers.origin || req.headers.referer || '';
+  if (origin && !origin.includes('mkntw.ru')) {
+    console.warn(`[WAF] Блокирован внешний запрос: ${origin}`);
+    return res.status(403).json({ error: 'Запрещённый источник' });
+  }
+  next();
+});
+
+
+// Endpoint для проверки соединения
+app.get('/ping', (req, res) => res.sendStatus(200));
+
+// Универсальный sync-эндпоинт
+app.get('/sync', verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const [userData, txData, exchangeData, rateData] = await Promise.all([
+      supabase.from('users').select('*').eq('user_id', userId).single(),
+      supabase.from('transactions').select('*').or(`from_user_id.eq.${userId},to_user_id.eq.${userId}`).order('created_at', { ascending: false }).limit(10),
+      supabase.from('exchange_transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
+      supabase.from('exchange_rate_history').select('*').order('created_at', { ascending: false }).limit(1)
+    ]);
+    res.json({
+      success: true,
+      user: userData.data,
+      transactions: txData.data,
+      exchange: exchangeData.data,
+      latestRate: rateData.data[0]
+    });
+  } catch (err) {
+    console.error('[sync] Ошибка:', err);
+    res.status(500).json({ success: false, error: 'Ошибка синхронизации' });
+  }
+});
