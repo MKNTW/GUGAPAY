@@ -1164,8 +1164,7 @@ app.post('/auth/telegram', async (req, res) => {
   }
 });
 
-//////////\\\\\\\\\
-\\\\\\\\\\/////////
+// === ENDPOINT: GET /transaction/:hash ===
 
 app.get('/transaction/:hash', async (req, res) => {
   const { hash } = req.params;
