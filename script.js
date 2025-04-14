@@ -3295,7 +3295,7 @@ async function showTransactionDetails(hash) {
         </div>
       `,
       {
-        showCloseBtn: false,
+        showCloseBtn: true,
         cornerTopMargin: 0,
         cornerTopRadius: 0,
       }
