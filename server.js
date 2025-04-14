@@ -113,13 +113,13 @@ app.use((req, res, next) => {
 });
 
 // Маршрут для получения CSRF-токена
-app.get('/csrf-token', (req, res) => {
+app.get('/csrf-token', csrfProtection, (req, res) => {
   try {
     const token = req.csrfToken();
     res.json({ csrfToken: token });
   } catch (err) {
-    console.error('[csrf-token] Ошибка получения CSRF:', err);
-    res.status(200).json({ csrfToken: '' }); // <-- безопасная заглушка
+    console.error('[csrf-token] Ошибка:', err);
+    res.status(200).json({ csrfToken: '' });
   }
 });
 
