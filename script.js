@@ -708,14 +708,14 @@ function openAuthModal() {
           await fetchCsrfToken();
         }
         const response = await fetch(`${API_URL}/auth/telegram`, {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRF-Token": csrfToken
-          },
-          body: JSON.stringify(Telegram.WebApp.initDataUnsafe)
-        });
+  method: "POST",
+  credentials: "include",
+  headers: {
+    "Content-Type": "application/json",
+    "X-CSRF-Token": csrfToken
+  },
+  body: JSON.stringify(Object.fromEntries(new URLSearchParams(Telegram.WebApp.initData)))
+});
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error || "Ошибка сервера");
