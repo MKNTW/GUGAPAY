@@ -150,18 +150,36 @@ app.post('/logout', (req, res) => {
 
 // Тестовый маршрут и проверка соединения
 app.get('/', (req, res) => {
-  res.send('BLAH BLAH BLAH BLE BLE BLE BLÖ BLÖ BLÖ 👾👾👾');
+  res.send('BLAH BLAH BLAH BLÈ BLÈ BLÈ BLÖ BLÖ BLÖ 👾👾👾');
 });
 app.get('/ping', (req, res) => res.sendStatus(200));
 
 app.post('/auth/telegram', async (req, res) => {
   try {
-    const data = req.body;
+    let data = req.body;
 
-    // Лог: полученные данные от Telegram
+    // === ЛОГ 1: Исходные данные от Telegram ===
     console.log("== [Telegram Auth] Получены данные ==");
     console.log(data);
 
+    // === Если это WebApp, парсим user из строки ===
+    if (typeof data.user === "string") {
+      try {
+        const userObj = JSON.parse(data.user);
+        data = {
+          ...userObj,
+          auth_date: data.auth_date,
+          hash: data.hash
+        };
+        console.log("== [Telegram Auth] Преобразованные данные (WebApp) ==");
+        console.log(data);
+      } catch (e) {
+        console.error("== [Telegram Auth] Ошибка парсинга user:", e);
+        return res.status(400).json({ success: false, error: 'Неверный формат данных Telegram' });
+      }
+    }
+
+    // === Проверка подписи ===
     const isValid = isTelegramAuthValid(data, TELEGRAM_BOT_TOKEN);
     console.log("== [Telegram Auth] Проверка подписи ==");
     console.log("Подпись валидна:", isValid);
@@ -171,11 +189,13 @@ app.post('/auth/telegram', async (req, res) => {
       return res.status(401).json({ success: false, error: 'Неверная подпись Telegram' });
     }
 
+    // === Извлечение данных пользователя ===
     const telegramId = data.id;
     const firstName = data.first_name || '';
     const username = data.username || '';
     const photoUrl = data.photo_url || '';
 
+    // === Поиск пользователя в Supabase ===
     const { data: existingUser, error: fetchError } = await supabase
       .from('users')
       .select('*')
@@ -183,12 +203,13 @@ app.post('/auth/telegram', async (req, res) => {
       .single();
 
     if (fetchError) {
-      console.error('== [Telegram Auth] Ошибка при запросе пользователя:', fetchError);
+      console.error('== [Telegram Auth] Ошибка запроса в базу:', fetchError);
       return res.status(500).json({ success: false, error: 'Ошибка базы данных' });
     }
 
     let user = existingUser;
 
+    // === Регистрация нового пользователя ===
     if (!existingUser) {
       const newUserId = await generateSixDigitId();
       const { error: insertErr } = await supabase.from('users').insert([{
@@ -207,7 +228,8 @@ app.post('/auth/telegram', async (req, res) => {
         return res.status(500).json({ success: false, error: 'Ошибка создания пользователя' });
       }
 
-      console.log("== [Telegram Auth] Новый пользователь зарегистрирован:", newUserId);
+      console.log("== [Telegram Auth] Зарегистрирован новый пользователь:", newUserId);
+
       user = {
         user_id: newUserId,
         telegram_id: telegramId,
@@ -216,11 +238,16 @@ app.post('/auth/telegram', async (req, res) => {
         photo_url: photoUrl
       };
     } else {
-      console.log("== [Telegram Auth] Пользователь найден:", existingUser.user_id);
+      console.log("== [Telegram Auth] Найден существующий пользователь:", user.user_id);
     }
 
-    // Генерация JWT токена
-    const token = jwt.sign({ userId: user.user_id, role: 'user' }, JWT_SECRET, { expiresIn: '1h' });
+    // === Генерация токена JWT ===
+    const token = jwt.sign(
+      { userId: user.user_id, role: 'user' },
+      JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
     res.cookie('token', token, {
       httpOnly: true,
       secure: isProduction,
@@ -228,10 +255,11 @@ app.post('/auth/telegram', async (req, res) => {
       maxAge: 3600000 // 1 час
     });
 
+    // === Успешный ответ ===
     return res.status(200).json({ success: true, user });
 
   } catch (err) {
-    console.error("== [Telegram Auth] Ошибка сервера:", err);
+    console.error("== [Telegram Auth] Общая ошибка сервера:", err);
     return res.status(500).json({ success: false, error: 'Ошибка авторизации Telegram' });
   }
 });
