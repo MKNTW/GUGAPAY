@@ -210,6 +210,9 @@ app.post('/auth/telegram', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Отсутствуют данные initData' });
     }
 
+    console.log("== [Telegram Auth] Токен на сервере:", process.env.TELEGRAM_BOT_TOKEN);
+    console.log("== [Telegram Auth] Принятое initData:", initData);
+
     const result = validateInitData(initData, process.env.TELEGRAM_BOT_TOKEN);
     if (!result.ok) {
       console.warn('== [Telegram Auth] Неверная подпись WebApp ==');
