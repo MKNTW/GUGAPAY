@@ -156,6 +156,7 @@ app.get('/', (req, res) => {
 app.get('/ping', (req, res) => res.sendStatus(200));
 
 // === Поддержка WebApp авторизации ===
+// Вместо вызова из пакета — используем локальную функцию:
 function validateInitData(initData, botToken) {
   if (!initData) return { ok: false };
 
@@ -188,17 +189,15 @@ function validateInitData(initData, botToken) {
   return { ok: isValid, user };
 }
 
-// === Telegram WebApp Авторизация ===
+// === Telegram WebApp Авторизация (оставляем один роут) ===
 app.post('/auth/telegram', async (req, res) => {
   try {
     const initData = req.body.initData;
-
     if (!initData) {
       return res.status(400).json({ success: false, error: 'Отсутствуют данные initData' });
     }
 
     const result = validateInitData(initData, process.env.TELEGRAM_BOT_TOKEN);
-
     if (!result.ok) {
       console.warn('== [Telegram Auth] Неверная подпись WebApp ==');
       return res.status(401).json({ success: false, error: 'Неверная подпись Telegram WebApp' });
@@ -264,7 +263,6 @@ app.post('/auth/telegram', async (req, res) => {
 
     // === Успешный ответ ===
     return res.status(200).json({ success: true, user });
-
   } catch (err) {
     console.error("== [Telegram Auth] Ошибка сервера:", err);
     return res.status(500).json({ success: false, error: 'Ошибка авторизации Telegram' });
