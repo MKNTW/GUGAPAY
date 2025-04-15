@@ -3261,3 +3261,4 @@ window.addEventListener("beforeunload", () => {
     flushMinedCoins();
   }
 });
+};
