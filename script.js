@@ -1414,9 +1414,11 @@ function openTransferModal() {
   }
   .transfer-amount input {
     flex: 1;
-    padding-right: 32px;
+    width: 100%;
+    padding: 12px 16px;
+    background: #fff;
     border: 1px solid #E6E6EB;
-    border-radius: 8px 0 0 8px;
+    border-radius: 8px;
     font-size: 16px;
     box-sizing: border-box;
   }
@@ -2043,7 +2045,7 @@ const exchangeStyles = `
   background: #F8F9FB;
   border: 2px solid #E6E6EB;
   border-radius: 50%;
-  margin: 16px auto;
+  margin: 1px auto;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2510,8 +2512,7 @@ function openHistoryModal(horizontalSwitch) {
   margin: 16px 0 8px;
 }
 .transaction-card {
-  background: #FFFFFF;
-  border: 1px solid #E6E6EB;
+  background: #E6E6EB;
   border-radius: 12px;
   padding: 12px;
   display: flex;
@@ -2521,7 +2522,7 @@ function openHistoryModal(horizontalSwitch) {
   cursor: pointer;
 }
 .transaction-card:hover {
-  background: #F8F9FB;
+  background: #E6E6EB;
 }
 .transaction-icon-wrap {
   flex-shrink: 0;
