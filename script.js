@@ -393,10 +393,10 @@ function validateInput(value, minLength = 1) {
 }
 
 /**
- * Close any open authentication modals.
+ * Closes all authentication modals.
  */
 function closeAllAuthModals() {
-  document.getElementById("authModal")?.remove();
+  document.querySelectorAll(".modal").forEach((modal) => modal.remove());
 }
 
 /**************************************************
@@ -623,35 +623,25 @@ function openAuthModal() {
   createModal(
     "authModal",
     `
-      <div style="
-        background:#f7f7f7;
-        border-radius:20px;
-        padding:20px;
-        max-width:400px;
-        margin:40px auto 0 auto;
-        box-shadow:0 2px 5px rgba(0,0,0,0.1);
-        display:flex;
-        flex-direction:column;
-        gap:16px;
-      ">
-        <h2 style="text-align:center; margin:0;">GUGACOIN</h2>
+      <div class="auth-container">
+        <h2>GUGACOIN</h2>
 
         <!-- Login -->
-        <div id="loginSection" style="display:flex; flex-direction:column; gap:8px;">
-          <input type="text" id="loginInput" placeholder="Логин">
-          <input type="password" id="passwordInput" placeholder="Пароль">
-          <button id="loginSubmitBtn">Войти</button>
+        <div id="loginSection">
+          <input type="text" id="loginInput" placeholder="Логин" class="auth-input">
+          <input type="password" id="passwordInput" placeholder="Пароль" class="auth-input">
+          <button id="loginSubmitBtn" class="auth-button">Войти</button>
         </div>
 
         <!-- Registration -->
-        <div id="registerSection" style="display:none; flex-direction:column; gap:8px;">
-          <input type="text" id="regLogin" placeholder="Логин">
-          <input type="password" id="regPassword" placeholder="Пароль">
-          <button id="registerSubmitBtn">Зарегистрироваться</button>
+        <div id="registerSection" style="display:none;">
+          <input type="text" id="regLogin" placeholder="Логин" class="auth-input">
+          <input type="password" id="regPassword" placeholder="Пароль" class="auth-input">
+          <button id="registerSubmitBtn" class="auth-button">Зарегистрироваться</button>
         </div>
 
         <!-- Toggle Auth Forms -->
-        <button id="toggleAuthBtn">Войти / Зарегистрироваться</button>
+        <button id="toggleAuthBtn" class="toggle-auth-btn">Войти / Зарегистрироваться</button>
 
         <!-- Telegram Login Button will be added here -->
         <div id="telegramBtnContainer" style="margin-top:15px;">
@@ -665,7 +655,8 @@ function openAuthModal() {
       cornerTopRadius: 0,
       hasVerticalScroll: true,
       defaultFromBottom: true,
-      noRadiusByDefault: true
+      noRadiusByDefault: true,
+      customStyles: { backgroundColor: "#f7f7f7" }
     }
   );
   // Standard auth button handlers
@@ -687,7 +678,7 @@ function openAuthModal() {
       backgroundColor: "#0088cc",
       color: "white",
       border: "none",
-      borderRadius: "8px",
+      borderRadius: "12px",
       cursor: "pointer",
       fontSize: "16px",
       display: "flex",
@@ -696,38 +687,38 @@ function openAuthModal() {
     });
     // Telegram auth handler
     telegramBtn.addEventListener("click", async () => {
-  try {
-    showGlobalLoading();
-    Telegram.WebApp.ready();
-    const tgUser = Telegram.WebApp.initDataUnsafe?.user;
-    if (!tgUser?.id) throw new Error("Не удалось получить данные Telegram");
-    if (!csrfToken) await fetchCsrfToken();
+      try {
+        showGlobalLoading();
+        Telegram.WebApp.ready();
+        const tgUser = Telegram.WebApp.initDataUnsafe?.user;
+        if (!tgUser?.id) throw new Error("Не удалось получить данные Telegram");
+        if (!csrfToken) await fetchCsrfToken();
 
-    const response = await fetch(`${API_URL}/auth/telegram`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRF-Token": csrfToken
-      },
-      body: JSON.stringify(Object.fromEntries(new URLSearchParams(Telegram.WebApp.initData)))
+        const response = await fetch(`${API_URL}/auth/telegram`, {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": csrfToken
+          },
+          body: JSON.stringify(Object.fromEntries(new URLSearchParams(Telegram.WebApp.initData)))
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Ошибка сервера");
+        }
+
+        document.getElementById("authModal")?.remove();
+        await fetchUserData();
+        createMainUI();
+        updateUI();
+      } catch (err) {
+        showNotification(err.message, "error");
+      } finally {
+        hideGlobalLoading();
+      }
     });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Ошибка сервера");
-    }
-
-    document.getElementById("authModal")?.remove();
-    await fetchUserData();
-    createMainUI();
-    updateUI();
-  } catch (err) {
-    showNotification(err.message, "error");
-  } finally {
-    hideGlobalLoading();
-  }
-});
     document.getElementById("telegramBtnContainer").appendChild(telegramBtn);
   }
 
@@ -737,6 +728,74 @@ function openAuthModal() {
     const registerSection = document.getElementById("registerSection");
     loginSection.style.display = loginSection.style.display === "none" ? "flex" : "none";
     registerSection.style.display = registerSection.style.display === "none" ? "flex" : "none";
+  }
+
+  // Inject styles for auth modal if not already done
+  if (!document.getElementById("authStyles")) {
+    const authStyles = `
+.auth-container {
+  max-width: 400px;
+  margin: 40px auto 0 auto;
+  padding: 20px;
+  background: #FFFFFF;
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.auth-container h2 {
+  text-align: center;
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #1A1A1A;
+}
+.auth-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: #FFFFFF;
+  border: 1px solid #E6E6EB;
+  border-radius: 8px;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+.auth-button {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(90deg, #2F80ED, #2D9CDB);
+  border: none;
+  border-radius: 12px;
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.auth-button:hover {
+  opacity: 0.9;
+}
+.auth-button:active {
+  transform: translateY(1px);
+}
+.toggle-auth-btn {
+  background: none;
+  border: none;
+  color: #2F80ED;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 14px;
+}
+#loginSection, #registerSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+`;
+    const styleEl = document.createElement("style");
+    styleEl.id = "authStyles";
+    styleEl.textContent = authStyles;
+    document.head.appendChild(styleEl);
   }
 }
 
