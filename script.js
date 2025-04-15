@@ -2160,6 +2160,7 @@ function updateRateDisplay(rates) {
     return;
   }
 
+  const currentRateElement = document.getElementById('currentRate');
   const arrowElement = document.getElementById('rateChangeArrow');
   const ratePercentElement = document.getElementById('rateChangePercent');
 
