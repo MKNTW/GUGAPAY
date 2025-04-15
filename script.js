@@ -618,7 +618,6 @@ function createUserQR(userId, amount, purpose) {
  * AUTH MODAL (Login/Register UI)
  **************************************************/
 function openAuthModal() {
-  hideMainUI();
   removeAllModals();
   createModal(
     "authModal",
