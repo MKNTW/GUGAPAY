@@ -2633,7 +2633,7 @@ function displayTransactionHistory(transactions) {
       if (tx.type === "merchant_payment") {
         iconSrc = "photo/92.png";
         titleText = "Оплата по QR";
-        detailsText = Мерчант: ${tx.merchant_id || (tx.to_user_id && tx.to_user_id.replace("MERCHANT:", "")) || "???"};
+        detailsText = `Мерчант: ${tx.merchant_id || (tx.to_user_id && tx.to_user_id.replace("MERCHANT:", "")) || "???"}`;
         amountSign = "-";
         color = "#000";
       }
