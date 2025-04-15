@@ -2155,27 +2155,48 @@ async function initExchange() {
  * UPDATE CURRENT RATE DISPLAY (+% change)
  **************************************************/
 function updateRateDisplay(rates) {
-  if (!rates || rates.length < 2) return;
-  const current = rates[0].exchange_rate;
-  const previous = rates[1].exchange_rate;
+  if (!rates || rates.length < 2) {
+    console.warn('Not enough data to update rates display.');
+    return;
+  }
+
+  const currentRateElement = document.getElementById('currentRate');
+  const arrowElement = document.getElementById('rateChangeArrow');
+  const ratePercentElement = document.getElementById('rateChangePercent');
+
+  const current = parseFloat(rates[0].exchange_rate);
+  const previous = parseFloat(rates[1].exchange_rate);
+
+  if (isNaN(current) || isNaN(previous)) {
+    console.error('Invalid rate data:', rates);
+    currentRateElement.textContent = 'Ошибка данных';
+    arrowElement.textContent = '-';
+    arrowElement.style.color = '#999';
+    ratePercentElement.textContent = '0.00%';
+    ratePercentElement.style.color = '#999';
+    return;
+  }
+
   const diff = current - previous;
-  const percent = (diff / previous) * 100;
+  const percent = ((diff / previous) * 100).toFixed(2);
 
-  document.getElementById('currentRate').textContent = `1 ₲ = ${formatBalance(current, 2)} ₽`;
-
-  const arrow = document.getElementById('rateChangeArrow');
-  const ratePercent = document.getElementById('rateChangePercent');
+  currentRateElement.textContent = `1 ₲ = ${formatBalance(current, 2)} ₽`;
 
   if (diff > 0) {
-    arrow.textContent = '↑';
-    arrow.style.color = '#4BA857';
-    ratePercent.textContent = `+${percent.toFixed(2)}%`;
-    ratePercent.style.color = '#4BA857';
+    arrowElement.textContent = '↑';
+    arrowElement.style.color = '#4BA857';
+    ratePercentElement.textContent = `+${percent}%`;
+    ratePercentElement.style.color = '#4BA857';
+  } else if (diff < 0) {
+    arrowElement.textContent = '↓';
+    arrowElement.style.color = '#D21B1B';
+    ratePercentElement.textContent = `${percent}%`;
+    ratePercentElement.style.color = '#D21B1B';
   } else {
-    arrow.textContent = '↓';
-    arrow.style.color = '#D21B1B';
-    ratePercent.textContent = `${percent.toFixed(2)}%`;
-    ratePercent.style.color = '#D21B1B';
+    arrowElement.textContent = '→';
+    arrowElement.style.color = '#999';
+    ratePercentElement.textContent = '0.00%';
+    ratePercentElement.style.color = '#999';
   }
 }
 
