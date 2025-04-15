@@ -158,45 +158,46 @@ app.get('/ping', (req, res) => res.sendStatus(200));
 function validateInitData(initData, botToken) {
   if (!initData) return { ok: false };
 
-  const urlParams = new URLSearchParams(initData);
-  const hash = urlParams.get('hash');
-  urlParams.delete('hash');
-  urlParams.delete('signature'); // если вдруг прилетает
+  const params = new URLSearchParams(initData);
+  const hash = params.get("hash");
+  params.delete("hash");
 
-  const dataCheckString = Array.from(urlParams.entries())
+  // Telegram требует сортировки параметров по алфавиту
+  const dataCheckString = [...params.entries()]
     .map(([key, value]) => `${key}=${value}`)
     .sort()
-    .join('\n');
+    .join("\n");
 
-  console.log("== [Telegram Auth] data_check_string:\n", dataCheckString);
-
-  const secret = crypto.createHash('sha256')
+  const secretKey = crypto
+    .createHash("sha256")
     .update(botToken)
     .digest();
 
-  const hmac = crypto.createHmac('sha256', secret)
+  const hmac = crypto
+    .createHmac("sha256", secretKey)
     .update(dataCheckString)
-    .digest('hex');
+    .digest("hex");
 
+  console.log("== [Telegram Auth] data_check_string:\n", dataCheckString);
   console.log("== [Telegram Auth] Ожидаемый HMAC (из данных):", hmac);
   console.log("== [Telegram Auth] Полученный hash (от Telegram):", hash);
 
-  const isValid = hmac.toLowerCase() === hash.toLowerCase(); // ← фикс
+  const isValid = hmac === hash;
 
   console.log("== [Telegram Auth] Подпись валидна:", isValid);
 
+  // Возвращаем объект пользователя, если он есть
   let user = undefined;
-  if (isValid && urlParams.get('user')) {
+  if (isValid && params.get("user")) {
     try {
-      user = JSON.parse(urlParams.get('user'));
+      user = JSON.parse(params.get("user"));
     } catch (e) {
-      console.warn("Ошибка парсинга user:", e);
+      console.warn("== [Telegram Auth] Ошибка парсинга user:", e);
     }
   }
 
   return { ok: isValid, user };
 }
-
 
 // === Telegram WebApp Авторизация (оставляем один роут) ===
 app.post('/auth/telegram', async (req, res) => {
