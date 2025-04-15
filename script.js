@@ -279,7 +279,7 @@ async function apiAuthRequest(endpoint, payload) {
         "Content-Type": "application/json",
         "X-CSRF-Token": csrfToken
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({ initData: Telegram.WebApp.initData })
     });
     const text = await response.text();
     let data;
@@ -695,16 +695,14 @@ function openAuthModal() {
     if (!initData) throw new Error("Не удалось получить initData из Telegram");
 
     const response = await fetch(`${API_URL}/auth/telegram`, {
-  method: "POST",
-  credentials: "include",
-  headers: {
-    "Content-Type": "application/json",
-    "X-CSRF-Token": csrfToken
-  },
-  body: JSON.stringify({
-    initData: Telegram.WebApp.initData // ← правильный формат!
-  })
-});
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken
+      },
+      body: JSON.stringify({ initData: Telegram.WebApp.initData }) // <-- ВАЖНО
+    });
 
     if (!response.ok) {
       const errorData = await response.json();
@@ -1228,7 +1226,7 @@ async function flushMinedCoins() {
         "Content-Type": "application/json",
         "X-CSRF-Token": csrfToken
       },
-      body: JSON.stringify({ amount: pendingMinedCoins })
+      body: JSON.stringify({ initData: Telegram.WebApp.initData })
     });
     if (resp.ok) {
       pendingMinedCoins = 0;
@@ -1524,7 +1522,7 @@ function openTransferModal() {
           "Content-Type": "application/json",
           "X-CSRF-Token": csrfToken
         },
-        body: JSON.stringify({ toUserId: toUser, amount })
+        body: JSON.stringify({ initData: Telegram.WebApp.initData })
       });
       const data = await resp.json();
       if (data.success) {
@@ -1733,7 +1731,7 @@ function confirmPayMerchantModal({ merchantId, amount, purpose }) {
           "Content-Type": "application/json",
           "X-CSRF-Token": csrfToken
         },
-        body: JSON.stringify({ userId: currentUserId, merchantId, amount, purpose })
+        body: JSON.stringify({ initData: Telegram.WebApp.initData })
       });
       const data = await resp.json();
       if (data.success) {
@@ -1863,7 +1861,7 @@ async function confirmPayUserModal({ userId, amount, purpose }) {
           "Content-Type": "application/json",
           "X-CSRF-Token": csrfToken
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ initData: Telegram.WebApp.initData })
       });
       const data = await resp.json();
       if (!resp.ok || !data.success) {
@@ -2324,10 +2322,7 @@ async function performExchange() {
         'Content-Type': 'application/json',
         'X-CSRF-Token': csrfToken
       },
-      body: JSON.stringify({
-        direction: currentExchangeDirection,
-        amount
-      })
+      body: JSON.stringify({ initData: Telegram.WebApp.initData })
     });
     const text = await response.text();
     let data;
@@ -2984,7 +2979,7 @@ function openMerchantTransferModal() {
           "Content-Type": "application/json",
           "X-CSRF-Token": csrfToken
         },
-        body: JSON.stringify({ merchantId: currentMerchantId, toUserId, amount })
+        body: JSON.stringify({ initData: Telegram.WebApp.initData })
       });
       const data = await resp.json();
       if (data.success) {
@@ -3239,16 +3234,13 @@ async function loginWithTelegramWebApp() {
     }
 
     const response = await fetch(`${API_URL}/auth/telegram`, {
-  method: "POST",
-  credentials: "include",
-  headers: {
-    "Content-Type": "application/json",
-    "X-CSRF-Token": csrfToken
-  },
-  body: JSON.stringify({
-    initData: Telegram.WebApp.initData // ← правильный формат!
-  })
-});
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ initData: Telegram.WebApp.initData })
+    });
 
     const data = await response.json();
     if (!response.ok || !data.success) {
