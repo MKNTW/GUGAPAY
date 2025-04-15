@@ -1115,9 +1115,6 @@ function injectMainUIStyles() {
   document.head.appendChild(style);
 }
 
-style);
-}
-
 /**************************************************
  * USER DATA & SYNC
  **************************************************/
