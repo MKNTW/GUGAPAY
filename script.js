@@ -695,14 +695,16 @@ function openAuthModal() {
     if (!initData) throw new Error("Не удалось получить initData из Telegram");
 
     const response = await fetch(`${API_URL}/auth/telegram`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRF-Token": csrfToken
-      },
-      body: JSON.stringify({ initData }) // <-- ВАЖНО
-    });
+  method: "POST",
+  credentials: "include",
+  headers: {
+    "Content-Type": "application/json",
+    "X-CSRF-Token": csrfToken
+  },
+  body: JSON.stringify({
+    initData: Telegram.WebApp.initData // ← правильный формат!
+  })
+});
 
     if (!response.ok) {
       const errorData = await response.json();
@@ -3237,13 +3239,16 @@ async function loginWithTelegramWebApp() {
     }
 
     const response = await fetch(`${API_URL}/auth/telegram`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ initData })
-    });
+  method: "POST",
+  credentials: "include",
+  headers: {
+    "Content-Type": "application/json",
+    "X-CSRF-Token": csrfToken
+  },
+  body: JSON.stringify({
+    initData: Telegram.WebApp.initData // ← правильный формат!
+  })
+});
 
     const data = await response.json();
     if (!response.ok || !data.success) {
