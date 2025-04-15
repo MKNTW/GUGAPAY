@@ -158,7 +158,7 @@ app.post('/auth/telegram', async (req, res) => {
   try {
     const data = req.body;
 
-    // Логируем входящие данные от Telegram
+    // Лог: полученные данные от Telegram
     console.log("== [Telegram Auth] Получены данные ==");
     console.log(data);
 
@@ -184,7 +184,10 @@ app.post('/auth/telegram', async (req, res) => {
 
     if (fetchError) {
       console.error('== [Telegram Auth] Ошибка при запросе пользователя:', fetchError);
+      return res.status(500).json({ success: false, error: 'Ошибка базы данных' });
     }
+
+    let user = existingUser;
 
     if (!existingUser) {
       const newUserId = await generateSixDigitId();
@@ -205,41 +208,31 @@ app.post('/auth/telegram', async (req, res) => {
       }
 
       console.log("== [Telegram Auth] Новый пользователь зарегистрирован:", newUserId);
-
-      return res.status(200).json({
-        success: true,
-        user: {
-          user_id: newUserId,
-          telegram_id: telegramId,
-          username,
-          first_name,
-          photo_url
-        }
-      });
+      user = {
+        user_id: newUserId,
+        telegram_id: telegramId,
+        username,
+        first_name: firstName,
+        photo_url: photoUrl
+      };
+    } else {
+      console.log("== [Telegram Auth] Пользователь найден:", existingUser.user_id);
     }
 
-    console.log("== [Telegram Auth] Пользователь найден:", existingUser.user_id);
-
-    return res.status(200).json({ success: true, user: existingUser });
-
-  } catch (err) {
-    console.error("== [Telegram Auth] Ошибка сервера:", err);
-    return res.status(500).json({ success: false, error: 'Ошибка сервера' });
-  }
-});
-
-    // Генерация токена
-    const token = jwt.sign({ userId: existingUser.user_id, role: 'user' }, JWT_SECRET, { expiresIn: '1h' });
+    // Генерация JWT токена
+    const token = jwt.sign({ userId: user.user_id, role: 'user' }, JWT_SECRET, { expiresIn: '1h' });
     res.cookie('token', token, {
       httpOnly: true,
       secure: isProduction,
       sameSite: 'None',
-      maxAge: 3600000
+      maxAge: 3600000 // 1 час
     });
-    res.json({ success: true, user: existingUser });
+
+    return res.status(200).json({ success: true, user });
+
   } catch (err) {
-    console.error('[auth/telegram] Ошибка:', err);
-    res.status(500).json({ success: false, error: 'Ошибка авторизации Telegram' });
+    console.error("== [Telegram Auth] Ошибка сервера:", err);
+    return res.status(500).json({ success: false, error: 'Ошибка авторизации Telegram' });
   }
 });
 
