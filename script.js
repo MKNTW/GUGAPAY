@@ -3261,9 +3261,22 @@ window.addEventListener("beforeunload", () => {
     flushMinedCoins();
   }
 });
-  document.addEventListener("DOMContentLoaded", () => {
-  fetchCsrfToken().then(() => {
-    openAuthModal(); // или createMainUI(), если уже авторизован
-  });
+};
+
+
+document.addEventListener("DOMContentLoaded", async () => {
+  await fetchCsrfToken();
+  try {
+    const resp = await fetch(`${API_URL}/user`, { credentials: "include" });
+    const data = await resp.json();
+    if (data.success && data.user) {
+      currentUserId = data.user.user_id;
+      createMainUI();
+      updateUI?.();
+    } else {
+      openAuthModal();
+    }
+  } catch {
+    openAuthModal();
+  }
 });
-}
