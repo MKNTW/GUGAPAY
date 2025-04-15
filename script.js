@@ -2636,6 +2636,7 @@ function displayTransactionHistory(transactions) {
         detailsText = Мерчант: ${tx.merchant_id || (tx.to_user_id && tx.to_user_id.replace("MERCHANT:", "")) || "???"};
         amountSign = "-";
         color = "#000";
+      }
       } else if (tx.from_user_id === currentUserId) {
         iconSrc = "photo/67.png";
         titleText = "Отправлено";
