@@ -687,38 +687,38 @@ function openAuthModal() {
     });
     // Telegram auth handler
     telegramBtn.addEventListener("click", async () => {
-      try {
-        showGlobalLoading();
-        Telegram.WebApp.ready();
-        const tgUser = Telegram.WebApp.initDataUnsafe?.user;
-        if (!tgUser?.id) throw new Error("Не удалось получить данные Telegram");
-        if (!csrfToken) await fetchCsrfToken();
+  try {
+    showGlobalLoading();
+    Telegram.WebApp.ready();
+    const initData = Telegram.WebApp.initData;
 
-        const response = await fetch(`${API_URL}/auth/telegram`, {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRF-Token": csrfToken
-          },
-          body: JSON.stringify(Object.fromEntries(new URLSearchParams(Telegram.WebApp.initData)))
-        });
+    if (!initData) throw new Error("Не удалось получить initData из Telegram");
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Ошибка сервера");
-        }
-
-        document.getElementById("authModal")?.remove();
-        await fetchUserData();
-        createMainUI();
-        updateUI();
-      } catch (err) {
-        showNotification(err.message, "error");
-      } finally {
-        hideGlobalLoading();
-      }
+    const response = await fetch(`${API_URL}/auth/telegram`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken
+      },
+      body: JSON.stringify({ initData }) // <-- ВАЖНО
     });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Ошибка сервера");
+    }
+
+    document.getElementById("authModal")?.remove();
+    await fetchUserData();
+    createMainUI();
+    updateUI();
+  } catch (err) {
+    showNotification(err.message, "error");
+  } finally {
+    hideGlobalLoading();
+  }
+});
     document.getElementById("telegramBtnContainer").appendChild(telegramBtn);
   }
 
@@ -2512,7 +2512,7 @@ function openHistoryModal(horizontalSwitch) {
   margin: 16px 0 8px;
 }
 .transaction-card {
-  background: #E6E6EB;
+  background: #F8F9FB;
   border-radius: 12px;
   padding: 12px;
   display: flex;
@@ -3223,6 +3223,44 @@ async function showTransactionDetails(hash) {
 } catch (err) {
   console.error("Ошибка при загрузке транзакции:", err);
   showNotification("Ошибка при загрузке", "error");
+}
+
+/**************************************************
+ * Telegram WebApp login handler
+ **************************************************/
+async function loginWithTelegramWebApp() {
+  try {
+    const initData = Telegram.WebApp.initData;
+    if (!initData) {
+      showNotification("Не удалось получить данные Telegram", "error");
+      return;
+    }
+
+    const response = await fetch(`${API_URL}/auth/telegram`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ initData })
+    });
+
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || "Ошибка Telegram авторизации");
+    }
+
+    // Успешная авторизация
+    console.log("Telegram авторизация прошла успешно:", data.user);
+    currentUserId = data.user.user_id;
+
+    closeAllAuthModals();
+    createMainUI();
+    updateUI();
+  } catch (err) {
+    console.error("Ошибка Telegram авторизации:", err);
+    showNotification("Ошибка Telegram входа: " + err.message, "error");
+  }
 }
 
 /**************************************************
