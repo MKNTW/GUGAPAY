@@ -3266,3 +3266,4 @@ window.addEventListener("beforeunload", () => {
     openAuthModal(); // или createMainUI(), если уже авторизован
   });
 });
+}
