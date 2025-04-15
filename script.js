@@ -2160,9 +2160,12 @@ function updateRateDisplay(rates) {
   const previous = rates[1].exchange_rate;
   const diff = current - previous;
   const percent = (diff / previous) * 100;
+
   document.getElementById('currentRate').textContent = `1 ₲ = ${formatBalance(current, 2)} ₽`;
+
   const arrow = document.getElementById('rateChangeArrow');
   const ratePercent = document.getElementById('rateChangePercent');
+
   if (diff > 0) {
     arrow.textContent = '↑';
     arrow.style.color = '#4BA857';
