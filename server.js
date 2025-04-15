@@ -162,7 +162,6 @@ app.post('/auth/telegram', async (req, res) => {
     console.log("== [Telegram Auth] Получены данные ==");
     console.log(data);
 
-    // Проверка подписи
     const isValid = isTelegramAuthValid(data, TELEGRAM_BOT_TOKEN);
     console.log("== [Telegram Auth] Проверка подписи ==");
     console.log("Подпись валидна:", isValid);
@@ -177,7 +176,6 @@ app.post('/auth/telegram', async (req, res) => {
     const username = data.username || '';
     const photoUrl = data.photo_url || '';
 
-    // Проверяем, существует ли уже пользователь
     const { data: existingUser, error: fetchError } = await supabase
       .from('users')
       .select('*')
@@ -188,13 +186,12 @@ app.post('/auth/telegram', async (req, res) => {
       console.error('== [Telegram Auth] Ошибка при запросе пользователя:', fetchError);
     }
 
-    // Если пользователь не найден — регистрируем нового
     if (!existingUser) {
       const newUserId = await generateSixDigitId();
       const { error: insertErr } = await supabase.from('users').insert([{
         user_id: newUserId,
         telegram_id: telegramId,
-        username: username,
+        username,
         first_name: firstName,
         photo_url: photoUrl,
         balance: 0,
@@ -209,16 +206,18 @@ app.post('/auth/telegram', async (req, res) => {
 
       console.log("== [Telegram Auth] Новый пользователь зарегистрирован:", newUserId);
 
-      return res.status(200).json({ success: true, user: {
-        user_id: newUserId,
-        telegram_id: telegramId,
-        username,
-        first_name,
-        photo_url
-      }});
+      return res.status(200).json({
+        success: true,
+        user: {
+          user_id: newUserId,
+          telegram_id: telegramId,
+          username,
+          first_name,
+          photo_url
+        }
+      });
     }
 
-    // Пользователь уже существует — авторизация успешна
     console.log("== [Telegram Auth] Пользователь найден:", existingUser.user_id);
 
     return res.status(200).json({ success: true, user: existingUser });
