@@ -158,138 +158,36 @@ app.get('/ping', (req, res) => res.sendStatus(200));
 function validateInitData(initData, botToken) {
   if (!initData) return { ok: false };
 
-  const params = new URLSearchParams(initData);
-  const hash = params.get("hash");
-  params.delete("hash");
-   params.delete("signature");
+  const urlParams = new URLSearchParams(initData);
+  const hash = urlParams.get('hash');
+  urlParams.delete('hash');
 
-  // Telegram требует сортировки параметров по алфавиту
-  const dataCheckString = [...params.entries()]
+  const dataCheckString = Array.from(urlParams.entries())
     .map(([key, value]) => `${key}=${value}`)
     .sort()
-    .join("\n");
+    .join('\n');
 
-  const secretKey = crypto
-    .createHash("sha256")
+  const secret = crypto.createHash('sha256')
     .update(botToken)
     .digest();
 
-  const hmac = crypto
-    .createHmac("sha256", secretKey)
+  const hmac = crypto.createHmac('sha256', secret)
     .update(dataCheckString)
-    .digest("hex");
-
-  console.log("== [Telegram Auth] data_check_string:\n", dataCheckString);
-  console.log("== [Telegram Auth] Ожидаемый HMAC (из данных):", hmac);
-  console.log("== [Telegram Auth] Полученный hash (от Telegram):", hash);
+    .digest('hex');
 
   const isValid = hmac === hash;
 
-  console.log("== [Telegram Auth] Подпись валидна:", isValid);
-
-  // Возвращаем объект пользователя, если он есть
   let user = undefined;
-  if (isValid && params.get("user")) {
+  if (isValid && urlParams.get('user')) {
     try {
-      user = JSON.parse(params.get("user"));
-    } catch (e) {
-      console.warn("== [Telegram Auth] Ошибка парсинга user:", e);
-    }
+      user = JSON.parse(urlParams.get('user'));
+    } catch (e) {}
   }
 
   return { ok: isValid, user };
 }
 
 // === Telegram WebApp Авторизация (оставляем один роут) ===
-app.post('/auth/telegram', async (req, res) => {
-  try {
-    const initData = req.body.initData;
-    if (!initData) {
-      return res.status(400).json({ success: false, error: 'Отсутствуют данные initData' });
-    }
-
-    console.log("== [Telegram Auth] Токен на сервере:", process.env.TELEGRAM_BOT_TOKEN);
-    console.log("== [Telegram Auth] Принятое initData:", initData);
-
-    const result = validateInitData(initData, process.env.TELEGRAM_BOT_TOKEN);
-    if (!result.ok) {
-      console.warn('== [Telegram Auth] Неверная подпись WebApp ==');
-      return res.status(401).json({ success: false, error: 'Неверная подпись Telegram WebApp' });
-    }
-
-    const tgUser = result.user;
-    console.log("== [Telegram Auth] Авторизация успешна! Пользователь:", tgUser);
-
-    // === Поиск пользователя в базе ===
-    const { data: existingUser, error: fetchError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('telegram_id', tgUser.id)
-      .single();
-
-    if (fetchError) {
-      console.error("Ошибка запроса к базе:", fetchError);
-    }
-
-    let user = existingUser;
-
-    // === Если нет — регистрируем ===
-    if (!existingUser) {
-      const newUserId = await generateSixDigitId();
-      const { error: insertErr } = await supabase.from('users').insert([{
-        user_id: newUserId,
-        telegram_id: tgUser.id,
-        username: tgUser.username || '',
-        first_name: tgUser.first_name || '',
-        photo_url: tgUser.photo_url || '',
-        balance: 0,
-        rub_balance: 0,
-        blocked: 0
-      }]);
-
-      if (insertErr) {
-        console.error('Ошибка создания пользователя:', insertErr);
-        return res.status(500).json({ success: false, error: 'Ошибка создания пользователя' });
-      }
-
-      user = {
-        user_id: newUserId,
-        telegram_id: tgUser.id,
-        username: tgUser.username,
-        first_name: tgUser.first_name,
-        photo_url: tgUser.photo_url
-      };
-    }
-
-    // === Генерация токена JWT ===
-    const token = jwt.sign(
-      { userId: user.user_id, role: 'user' },
-      JWT_SECRET,
-      { expiresIn: '1h' }
-    );
-
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'None',
-      maxAge: 3600000 // 1 час
-    });
-
-    // === Успешный ответ ===
-    return res.status(200).json({ success: true, user });
-  } catch (err) {
-    console.error("== [Telegram Auth] Ошибка сервера:", err);
-    return res.status(500).json({ success: false, error: 'Ошибка авторизации Telegram' });
-  }
-});
-
-/* ========================
-   1) РЕГИСТРАЦИЯ ПОЛЬЗОВАТЕЛЯ
-======================== */
-const registerSchema = Joi.object({
-  username: Joi.string().min(3).required(),
-  password: Joi.string().min(6).required()
-});
 app.post('/register', async (req, res) => {
   try {
     const { error, value } = registerSchema.validate(req.body);
@@ -1178,4 +1076,89 @@ app.get('/transaction/:hash', async (req, res) => {
 // Запуск сервера
 app.listen(port, '0.0.0.0', () => {
   console.log(`[Server] Запущен на порту ${port}`);
+});
+
+app.post('/auth/telegram', async (req, res) => {
+  const initData = req.body.initData;
+  console.log("== [Telegram Auth] initData:", initData);
+  console.log("== [Telegram Auth] Token:", TELEGRAM_BOT_TOKEN);
+
+  if (!initData) {
+    return res.status(400).json({ success: false, error: 'initData отсутствует' });
+  }
+
+  const urlParams = new URLSearchParams(initData);
+  const hash = urlParams.get("hash");
+  urlParams.delete("hash");
+  urlParams.delete("signature");
+
+  const dataCheckString = Array.from(urlParams.entries())
+    .map(([key, value]) => `${key}=${value}`)
+    .sort()
+    .join("\n");
+
+  console.log("== [Telegram Auth] data_check_string:\n", dataCheckString);
+
+  const secret = require("crypto").createHash("sha256").update(TELEGRAM_BOT_TOKEN).digest();
+  const hmac = require("crypto").createHmac("sha256", secret).update(dataCheckString).digest("hex");
+
+  console.log("== [Telegram Auth] Ожидаемый HMAC:", hmac);
+  console.log("== [Telegram Auth] Пришедший hash:", hash);
+
+  if (hmac !== hash) {
+    console.warn("== [Telegram Auth] Неверная подпись WebApp ==");
+    return res.status(401).json({ success: false, error: 'Неверная подпись WebApp' });
+  }
+
+  const userRaw = urlParams.get("user");
+  let user;
+  try {
+    user = JSON.parse(userRaw);
+  } catch (e) {
+    return res.status(400).json({ success: false, error: "Невалидные данные пользователя" });
+  }
+
+  console.log("== [Telegram Auth] Пользователь:", user);
+
+  try {
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('*')
+      .eq('telegram_id', user.id)
+      .maybeSingle();
+
+    let userId = existingUser?.user_id;
+    if (!existingUser) {
+      userId = await generateSixDigitId();
+      const { error } = await supabase.from('users').insert([{
+        user_id: userId,
+        telegram_id: user.id,
+        username: user.username || '',
+        first_name: user.first_name || '',
+        photo_url: user.photo_url || '',
+        balance: 0,
+        rub_balance: 0,
+        blocked: false,
+        password: null
+      }]);
+      if (error) {
+        console.error("Ошибка создания пользователя:", error);
+        return res.status(500).json({ success: false, error: "Ошибка базы данных" });
+      }
+    }
+
+    const token = jwt.sign({ userId, role: 'user' }, JWT_SECRET, { expiresIn: '24h' });
+
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'None',
+      maxAge: 86400000
+    });
+
+    res.json({ success: true, userId, isNewUser: !existingUser });
+  } catch (err) {
+    console.error("Ошибка Telegram авторизации:", err);
+    res.status(500).json({ success: false, error: 'Внутренняя ошибка сервера' });
+  }
 });
