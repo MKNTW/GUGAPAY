@@ -14,7 +14,6 @@ const Joi = require('joi');
 const { createClient: createRedisClient } = require('redis');
 const csrf = require('csurf');
 const crypto = require('crypto');
-const { validateInitData } = require('telegram-webapp-auth');
 
 const isProduction = process.env.NODE_ENV === 'production';
 const JWT_SECRET = process.env.JWT_SECRET || 'your_default_jwt_secret';
