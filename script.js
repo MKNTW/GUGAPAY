@@ -2636,23 +2636,22 @@ function displayTransactionHistory(transactions) {
         detailsText = `Мерчант: ${tx.merchant_id || (tx.to_user_id && tx.to_user_id.replace("MERCHANT:", "")) || "???"}`;
         amountSign = "-";
         color = "#000";
-      }
       } else if (tx.from_user_id === currentUserId) {
         iconSrc = "photo/67.png";
         titleText = "Отправлено";
-        detailsText = Кому: ${tx.to_user_id};
+        detailsText = `Кому: ${tx.to_user_id}`;
         amountSign = "-";
         color = "#000";
       } else if (tx.to_user_id === currentUserId) {
         iconSrc = "photo/66.png";
         titleText = "Получено";
-        detailsText = От кого: ${tx.from_user_id};
+        detailsText = `От кого: ${tx.from_user_id}`;
         amountSign = "+";
         color = "rgb(25, 150, 70)";
       } else if (tx.type === "exchange") {
         iconSrc = "photo/67.png";
         titleText = "Обмен";
-        detailsText = Направление: ${tx.direction === "rub_to_coin" ? "Рубли → Монеты" : "Монеты → Рубли"};
+        detailsText = `Направление: ${tx.direction === "rub_to_coin" ? "Рубли → Монеты" : "Монеты → Рубли"}`;
         amountSign = tx.direction === "rub_to_coin" ? "+" : "-";
         color = tx.direction === "rub_to_coin" ? "rgb(25, 150, 70)" : "rgb(102, 102, 102)";
         amountValue = formatBalance(tx.amount, 5);
