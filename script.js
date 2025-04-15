@@ -3096,7 +3096,7 @@ async function showTransactionDetails(hash) {
     const symbol = tx.currency === "RUB" ? "₽" : "₲";
     const amountValue = formatBalance(tx.amount, tx.currency === "RUB" ? 2 : 5);
     const sign = (tx.from_user_id === currentUserId) ? "-" : "+";
-    const amount = ${sign}${amountValue} ${symbol};
+    const amount = `${sign}${amountValue} ${symbol}`;
     const timestamp = new Date(tx.created_at || tx.client_time).toLocaleString("ru-RU");
     let fromLabel = tx.from_user_id;
     let toLabel = tx.to_user_id;
@@ -3106,6 +3106,11 @@ async function showTransactionDetails(hash) {
     if (typeof toLabel === "string" && toLabel.startsWith("MERCHANT:")) {
       toLabel = "Мерчант " + toLabel.replace("MERCHANT:", "");
     }
+    // Остальной код функции
+  } catch (error) {
+    console.error("Ошибка при получении данных транзакции:", error);
+  }
+}
     createModal(
       "transactionDetailsModal",
       `
