@@ -3214,15 +3214,14 @@ async function showTransactionDetails(hash) {
   transform: translateY(1px);
 }
 `;
-      const styleEl = document.createElement("style");
-      styleEl.id = "txDetailStyles";
-      styleEl.textContent = detailStyles;
-      document.head.appendChild(styleEl);
-    }
-  } catch (err) {
-    console.error("Ошибка при загрузке транзакции:", err);
-    showNotification("Ошибка при загрузке", "error");
-  }
+      try {
+  const styleEl = document.createElement("style");
+  styleEl.id = "txDetailStyles";
+  styleEl.textContent = detailStyles;
+  document.head.appendChild(styleEl);
+} catch (err) {
+  console.error("Ошибка при загрузке транзакции:", err);
+  showNotification("Ошибка при загрузке", "error");
 }
 
 /**************************************************
