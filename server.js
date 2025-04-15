@@ -166,6 +166,7 @@ function validateInitData(initData, botToken) {
   const urlParams = new URLSearchParams(initData);
   const hash = urlParams.get('hash');
   urlParams.delete('hash');
+  urlParams.delete('signature');
 
   const dataCheckString = Array.from(urlParams.entries())
     .map(([key, value]) => `${key}=${value}`)
