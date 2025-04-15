@@ -2686,7 +2686,7 @@ function displayTransactionHistory(transactions) {
       const amountEl = document.createElement("div");
       amountEl.className = "transaction-amount";
       amountEl.style.color = color;
-      amountEl.textContent = ${amountSign}${amountValue} ${currencySymbol};
+      amountEl.textContent = `${amountSign}${amountValue} ${currencySymbol}`;
       const timeEl = document.createElement("div");
       timeEl.className = "transaction-time";
       timeEl.textContent = timeStr;
