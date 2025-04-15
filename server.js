@@ -155,6 +155,40 @@ app.get('/', (req, res) => {
 });
 app.get('/ping', (req, res) => res.sendStatus(200));
 
+// === Поддержка WebApp авторизации ===
+function validateInitData(initData, botToken) {
+  if (!initData) return { ok: false };
+
+  const urlParams = new URLSearchParams(initData);
+  const hash = urlParams.get('hash');
+  urlParams.delete('hash');
+
+  const dataCheckString = Array.from(urlParams.entries())
+    .map(([key, value]) => `${key}=${value}`)
+    .sort()
+    .join('\n');
+
+  const secret = crypto.createHash('sha256')
+    .update(botToken)
+    .digest();
+
+  const hmac = crypto.createHmac('sha256', secret)
+    .update(dataCheckString)
+    .digest('hex');
+
+  const isValid = hmac === hash;
+
+  let user = undefined;
+  if (isValid && urlParams.get('user')) {
+    try {
+      user = JSON.parse(urlParams.get('user'));
+    } catch (e) {}
+  }
+
+  return { ok: isValid, user };
+}
+
+// === Telegram WebApp Авторизация ===
 app.post('/auth/telegram', async (req, res) => {
   try {
     const initData = req.body.initData;
@@ -186,6 +220,7 @@ app.post('/auth/telegram', async (req, res) => {
 
     let user = existingUser;
 
+    // === Если нет — регистрируем ===
     if (!existingUser) {
       const newUserId = await generateSixDigitId();
       const { error: insertErr } = await supabase.from('users').insert([{
@@ -213,27 +248,6 @@ app.post('/auth/telegram', async (req, res) => {
       };
     }
 
-    const token = jwt.sign(
-      { userId: user.user_id, role: 'user' },
-      JWT_SECRET,
-      { expiresIn: '1h' }
-    );
-
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'None',
-      maxAge: 3600000
-    });
-
-    return res.status(200).json({ success: true, user });
-
-  } catch (err) {
-    console.error("Ошибка Telegram авторизации:", err);
-    return res.status(500).json({ success: false, error: 'Ошибка сервера' });
-  }
-});
-
     // === Генерация токена JWT ===
     const token = jwt.sign(
       { userId: user.user_id, role: 'user' },
@@ -252,7 +266,7 @@ app.post('/auth/telegram', async (req, res) => {
     return res.status(200).json({ success: true, user });
 
   } catch (err) {
-    console.error("== [Telegram Auth] Общая ошибка сервера:", err);
+    console.error("== [Telegram Auth] Ошибка сервера:", err);
     return res.status(500).json({ success: false, error: 'Ошибка авторизации Telegram' });
   }
 });
