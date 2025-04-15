@@ -1115,6 +1115,9 @@ function injectMainUIStyles() {
   document.head.appendChild(style);
 }
 
+style);
+}
+
 /**************************************************
  * USER DATA & SYNC
  **************************************************/
@@ -1165,43 +1168,50 @@ async function fetchUserData() {
         newUserInfoContainer.appendChild(userNameEl);
         document.body.appendChild(newUserInfoContainer);
       }
-      // Legacy display updates
+      // Например, обновляем общий баланс
       const balanceValue = document.getElementById("balanceValue");
       if (balanceValue) {
         const totalRub = rubBalance + (coinBalance * currentRate);
         balanceValue.textContent = `${formatBalance(totalRub, 2)} ₽`;
       }
+      // Текущий userId
       const userIdEl = document.getElementById("userIdDisplay");
       if (userIdEl) {
         userIdEl.textContent = "ID: " + currentUserId;
       }
-      // Update RUB balance (old logic)
+      // RUB balance
       const rubBalanceInfo = document.getElementById("rubBalanceValue");
       if (rubBalanceInfo) {
         rubBalanceInfo.textContent = `${formatBalance(rubBalance, 2)} ₽`;
       }
-      // Update GUGA balance
+      // GUGA balance
       const gugaBalanceElement = document.getElementById("gugaBalanceValue");
       if (gugaBalanceElement) {
         gugaBalanceElement.textContent = `${formatBalance(coinBalance, 5)} ₲`;
       }
-      // Converted balance (coins in rubles)
-      const convertedBalanceElement = document.getElementById("convertedBalance");
-      if (convertedBalanceElement) {
-        convertedBalanceElement.textContent = `${formatBalance(coinBalance * currentRate, 2)} ₽`;
-      }
-      // Current rate display
-      const rateDisplayElement = document.getElementById("currentRateDisplay");
-      if (rateDisplayElement) {
-        rateDisplayElement.textContent = formatBalance(currentRate, 2);
-      }
+      // Halving step (если нужно)
+      currentHalvingStep = userData.user.halvingStep || 0;
+    } else {
+      console.error("User data fetch error:", userData.error);
     }
   } catch (err) {
     console.error("fetchUserData error:", err);
-    const balanceValue = document.getElementById("balanceValue");
-    if (balanceValue) {
-      balanceValue.textContent = "-- ₽";
+  }
+}
+
+/**
+ * Fetches merchant data (if logged in as merchant).
+ */
+async function fetchMerchantData() {
+  try {
+    const resp = await fetch(`${API_URL}/merchant/info`, { credentials: "include" });
+    const data = await resp.json();
+    if (data.success && data.merchant) {
+      currentMerchantId = data.merchant.merchant_id;
+      // ... populate merchant UI elements if needed
     }
+  } catch (err) {
+    console.error("fetchMerchantData error:", err);
   }
 }
 
@@ -2491,6 +2501,78 @@ function openHistoryModal(horizontalSwitch) {
     }
   );
   fetchTransactionHistory();
+
+  // Стили для истории (если их ещё нет в проекте)
+  if (!document.getElementById("historyStyles")) {
+    const historyStyles = `
+.transaction-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.transaction-group {
+  margin-bottom: 16px;
+}
+.transaction-date {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1A1A1A;
+  margin: 16px 0 8px;
+}
+.transaction-card {
+  background: #FFFFFF;
+  border: 1px solid #E6E6EB;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+.transaction-card:hover {
+  background: #F8F9FB;
+}
+.transaction-icon-wrap {
+  flex-shrink: 0;
+}
+.transaction-text-wrap {
+  flex: 1;
+  margin: 0 12px;
+  min-width: 0;
+}
+.transaction-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1A1A1A;
+}
+.transaction-subtitle {
+  font-size: 14px;
+  color: #909099;
+}
+.transaction-info-wrap {
+  text-align: right;
+}
+.transaction-amount {
+  font-size: 16px;
+  font-weight: 500;
+}
+.transaction-time {
+  font-size: 13px;
+  color: #909099;
+}
+.no-operations {
+  text-align: center;
+  color: #909099;
+  font-style: italic;
+  padding: 16px;
+}
+`;
+    const styleEl = document.createElement("style");
+    styleEl.id = "historyStyles";
+    styleEl.textContent = historyStyles;
+    document.head.appendChild(styleEl);
+  }
 }
 
 /**
@@ -2511,7 +2593,6 @@ async function fetchTransactionHistory() {
     }
   } catch (err) {
     console.error("fetchTransactionHistory error:", err);
-    showConnectionError("Не удалось загрузить историю");
   } finally {
     hideGlobalLoading();
   }
@@ -2560,6 +2641,7 @@ function displayTransactionHistory(transactions) {
         amountValue = formatBalance(tx.amount, 2);
         currencySymbol = "₽";
       }
+      // Отправитель, получатель, обмен — логика оформления
       if (tx.type === "merchant_payment") {
         iconSrc = "photo/92.png";
         titleText = "Оплата по QR";
@@ -2641,7 +2723,6 @@ function getDateLabel(dateObj) {
   if (dateObj.toDateString() === today.toDateString()) return "Сегодня";
   if (dateObj.toDateString() === yesterday.toDateString()) return "Вчера";
   return dateObj.toLocaleDateString("ru-RU");
-}
 
 /**************************************************
  * MERCHANT UI
@@ -3023,8 +3104,19 @@ async function showTransactionDetails(hash) {
       return showNotification("Операция не найдена", "error");
     }
     const tx = data.transaction;
-    const amount = `${tx.type === "sent" ? "-" : "+"}${formatBalance(tx.amount, tx.currency === "RUB" ? 2 : 5)} ${tx.currency || "₲"}`;
+    const symbol = tx.currency === "RUB" ? "₽" : "₲";
+    const amountValue = formatBalance(tx.amount, tx.currency === "RUB" ? 2 : 5);
+    const sign = (tx.from_user_id === currentUserId) ? "-" : "+";
+    const amount = `${sign}${amountValue} ${symbol}`;
     const timestamp = new Date(tx.created_at || tx.client_time).toLocaleString("ru-RU");
+    let fromLabel = tx.from_user_id;
+    let toLabel = tx.to_user_id;
+    if (typeof fromLabel === "string" && fromLabel.startsWith("MERCHANT:")) {
+      fromLabel = "Мерчант " + fromLabel.replace("MERCHANT:", "");
+    }
+    if (typeof toLabel === "string" && toLabel.startsWith("MERCHANT:")) {
+      toLabel = "Мерчант " + toLabel.replace("MERCHANT:", "");
+    }
     createModal(
       "transactionDetailsModal",
       `
@@ -3032,12 +3124,20 @@ async function showTransactionDetails(hash) {
           <div class="tx-icon">
             <img src="photo/${tx.currency === "RUB" ? "92" : "67"}.png" alt="icon" width="48" height="48" />
           </div>
-          <div class="tx-amount-main">${amount}</div>
+          <div class="tx-amount-main ${sign === '+' ? 'positive' : 'negative'}">${amount}</div>
           <div class="tx-status success">Успешно</div>
           <div class="tx-detail-box">
             <div class="tx-detail-row">
               <div class="tx-label">Дата и время</div>
               <div class="tx-value">${timestamp}</div>
+            </div>
+            <div class="tx-detail-row">
+              <div class="tx-label">Отправитель</div>
+              <div class="tx-value">${fromLabel}</div>
+            </div>
+            <div class="tx-detail-row">
+              <div class="tx-label">Получатель</div>
+              <div class="tx-value">${toLabel}</div>
             </div>
             <div class="tx-detail-row">
               <div class="tx-label">ID транзакции</div>
@@ -3061,6 +3161,70 @@ async function showTransactionDetails(hash) {
         cornerTopRadius: 0
       }
     );
+    // Стили для деталей транзакции
+    if (!document.getElementById("txDetailStyles")) {
+      const detailStyles = `
+.tx-icon {
+  text-align: center;
+  margin-bottom: 16px;
+}
+.tx-amount-main {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.tx-amount-main.positive {
+  color: rgb(25, 150, 70);
+}
+.tx-amount-main.negative {
+  color: #1A1A1A;
+}
+.tx-status {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+.tx-status.success {
+  color: #219653;
+}
+.tx-detail-box {
+  background: #F8F9FB;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: left;
+}
+.tx-detail-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.tx-label {
+  font-size: 14px;
+  color: #666;
+}
+.tx-value {
+  font-size: 14px;
+  color: #1A1A1A;
+  word-break: break-all;
+  text-align: right;
+}
+.copyable button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+.copyable button:active {
+  transform: translateY(1px);
+}
+`;
+      const styleEl = document.createElement("style");
+      styleEl.id = "txDetailStyles";
+      styleEl.textContent = detailStyles;
+      document.head.appendChild(styleEl);
+    }
   } catch (err) {
     console.error("Ошибка при загрузке транзакции:", err);
     showNotification("Ошибка при загрузке", "error");
