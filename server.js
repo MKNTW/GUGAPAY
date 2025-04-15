@@ -14,6 +14,7 @@ const Joi = require('joi');
 const { createClient: createRedisClient } = require('redis');
 const csrf = require('csurf');
 const crypto = require('crypto');
+const { validateInitData } = require('telegram-webapp-auth');
 
 const isProduction = process.env.NODE_ENV === 'production';
 const JWT_SECRET = process.env.JWT_SECRET || 'your_default_jwt_secret';
@@ -156,90 +157,82 @@ app.get('/ping', (req, res) => res.sendStatus(200));
 
 app.post('/auth/telegram', async (req, res) => {
   try {
-    let data = req.body;
+    const initData = req.body.initData;
 
-    // === ЛОГ 1: Исходные данные от Telegram ===
-    console.log("== [Telegram Auth] Получены данные ==");
-    console.log(data);
-
-    // === Если это WebApp, парсим user из строки ===
-    if (typeof data.user === "string") {
-      try {
-        const userObj = JSON.parse(data.user);
-        data = {
-          ...userObj,
-          auth_date: data.auth_date,
-          hash: data.hash
-        };
-        console.log("== [Telegram Auth] Преобразованные данные (WebApp) ==");
-        console.log(data);
-      } catch (e) {
-        console.error("== [Telegram Auth] Ошибка парсинга user:", e);
-        return res.status(400).json({ success: false, error: 'Неверный формат данных Telegram' });
-      }
+    if (!initData) {
+      return res.status(400).json({ success: false, error: 'Отсутствуют данные initData' });
     }
 
-    // === Проверка подписи ===
-    const isValid = isTelegramAuthValid(data, TELEGRAM_BOT_TOKEN);
-    console.log("== [Telegram Auth] Проверка подписи ==");
-    console.log("Подпись валидна:", isValid);
+    const result = validateInitData(initData, process.env.TELEGRAM_BOT_TOKEN);
 
-    if (!data || !data.hash || !isValid) {
-      console.warn("== [Telegram Auth] Неверная подпись ==");
-      return res.status(401).json({ success: false, error: 'Неверная подпись Telegram' });
+    if (!result.ok) {
+      console.warn('== [Telegram Auth] Неверная подпись WebApp ==');
+      return res.status(401).json({ success: false, error: 'Неверная подпись Telegram WebApp' });
     }
 
-    // === Извлечение данных пользователя ===
-    const telegramId = data.id;
-    const firstName = data.first_name || '';
-    const username = data.username || '';
-    const photoUrl = data.photo_url || '';
+    const tgUser = result.user;
+    console.log("== [Telegram Auth] Авторизация успешна! Пользователь:", tgUser);
 
-    // === Поиск пользователя в Supabase ===
+    // === Поиск пользователя в базе ===
     const { data: existingUser, error: fetchError } = await supabase
       .from('users')
       .select('*')
-      .eq('telegram_id', telegramId)
+      .eq('telegram_id', tgUser.id)
       .single();
 
     if (fetchError) {
-      console.error('== [Telegram Auth] Ошибка запроса в базу:', fetchError);
-      return res.status(500).json({ success: false, error: 'Ошибка базы данных' });
+      console.error("Ошибка запроса к базе:", fetchError);
     }
 
     let user = existingUser;
 
-    // === Регистрация нового пользователя ===
     if (!existingUser) {
       const newUserId = await generateSixDigitId();
       const { error: insertErr } = await supabase.from('users').insert([{
         user_id: newUserId,
-        telegram_id: telegramId,
-        username,
-        first_name: firstName,
-        photo_url: photoUrl,
+        telegram_id: tgUser.id,
+        username: tgUser.username || '',
+        first_name: tgUser.first_name || '',
+        photo_url: tgUser.photo_url || '',
         balance: 0,
         rub_balance: 0,
         blocked: 0
       }]);
 
       if (insertErr) {
-        console.error('== [Telegram Auth] Ошибка создания пользователя:', insertErr);
+        console.error('Ошибка создания пользователя:', insertErr);
         return res.status(500).json({ success: false, error: 'Ошибка создания пользователя' });
       }
 
-      console.log("== [Telegram Auth] Зарегистрирован новый пользователь:", newUserId);
-
       user = {
         user_id: newUserId,
-        telegram_id: telegramId,
-        username,
-        first_name: firstName,
-        photo_url: photoUrl
+        telegram_id: tgUser.id,
+        username: tgUser.username,
+        first_name: tgUser.first_name,
+        photo_url: tgUser.photo_url
       };
-    } else {
-      console.log("== [Telegram Auth] Найден существующий пользователь:", user.user_id);
     }
+
+    const token = jwt.sign(
+      { userId: user.user_id, role: 'user' },
+      JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'None',
+      maxAge: 3600000
+    });
+
+    return res.status(200).json({ success: true, user });
+
+  } catch (err) {
+    console.error("Ошибка Telegram авторизации:", err);
+    return res.status(500).json({ success: false, error: 'Ошибка сервера' });
+  }
+});
 
     // === Генерация токена JWT ===
     const token = jwt.sign(
