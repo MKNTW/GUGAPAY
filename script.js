@@ -3261,4 +3261,8 @@ window.addEventListener("beforeunload", () => {
     flushMinedCoins();
   }
 });
-};
+  document.addEventListener("DOMContentLoaded", () => {
+  fetchCsrfToken().then(() => {
+    openAuthModal(); // или createMainUI(), если уже авторизован
+  });
+});
