@@ -156,7 +156,12 @@ app.get('/ping', (req, res) => res.sendStatus(200));
 // === Поддержка WebApp авторизации ===
 // Вместо вызова из пакета — используем локальную функцию:
 function validateInitData(initData, botToken) {
-  if (!initData) return { ok: false };
+  if (!initData) {
+    console.warn("== [Telegram Auth] initData отсутствует ==");
+    return { ok: false };
+  }
+
+  console.log("== [Telegram Auth] СЫРОЙ initData (строка):", initData);
 
   const urlParams = new URLSearchParams(initData);
   const hash = urlParams.get('hash');
@@ -167,6 +172,8 @@ function validateInitData(initData, botToken) {
     .sort()
     .join('\n');
 
+  console.log("== [Telegram Auth] data_check_string:\n", dataCheckString);
+
   const secret = crypto.createHash('sha256')
     .update(botToken)
     .digest();
@@ -175,13 +182,20 @@ function validateInitData(initData, botToken) {
     .update(dataCheckString)
     .digest('hex');
 
+  console.log("== [Telegram Auth] Ожидаемый HMAC (из данных):", hmac);
+  console.log("== [Telegram Auth] Полученный hash (от Telegram):", hash);
+
   const isValid = hmac === hash;
+  console.log("== [Telegram Auth] Подпись валидна:", isValid);
 
   let user = undefined;
   if (isValid && urlParams.get('user')) {
     try {
       user = JSON.parse(urlParams.get('user'));
-    } catch (e) {}
+      console.log("== [Telegram Auth] Распарсенный пользователь:", user);
+    } catch (e) {
+      console.warn("== [Telegram Auth] Ошибка при парсинге user:", e);
+    }
   }
 
   return { ok: isValid, user };
