@@ -393,10 +393,10 @@ function validateInput(value, minLength = 1) {
 }
 
 /**
- * Closes all authentication modals.
+ * Close any open authentication modals.
  */
 function closeAllAuthModals() {
-  document.querySelectorAll(".modal").forEach((modal) => modal.remove());
+  document.getElementById("authModal")?.remove();
 }
 
 /**************************************************
@@ -618,29 +618,40 @@ function createUserQR(userId, amount, purpose) {
  * AUTH MODAL (Login/Register UI)
  **************************************************/
 function openAuthModal() {
+  hideMainUI();
   removeAllModals();
   createModal(
     "authModal",
     `
-      <div class="auth-container">
-        <h2>GUGACOIN</h2>
+      <div style="
+        background:#f7f7f7;
+        border-radius:20px;
+        padding:20px;
+        max-width:400px;
+        margin:40px auto 0 auto;
+        box-shadow:0 2px 5px rgba(0,0,0,0.1);
+        display:flex;
+        flex-direction:column;
+        gap:16px;
+      ">
+        <h2 style="text-align:center; margin:0;">GUGACOIN</h2>
 
         <!-- Login -->
-        <div id="loginSection">
-          <input type="text" id="loginInput" placeholder="Логин" class="auth-input">
-          <input type="password" id="passwordInput" placeholder="Пароль" class="auth-input">
-          <button id="loginSubmitBtn" class="auth-button">Войти</button>
+        <div id="loginSection" style="display:flex; flex-direction:column; gap:8px;">
+          <input type="text" id="loginInput" placeholder="Логин">
+          <input type="password" id="passwordInput" placeholder="Пароль">
+          <button id="loginSubmitBtn">Войти</button>
         </div>
 
         <!-- Registration -->
-        <div id="registerSection" style="display:none;">
-          <input type="text" id="regLogin" placeholder="Логин" class="auth-input">
-          <input type="password" id="regPassword" placeholder="Пароль" class="auth-input">
-          <button id="registerSubmitBtn" class="auth-button">Зарегистрироваться</button>
+        <div id="registerSection" style="display:none; flex-direction:column; gap:8px;">
+          <input type="text" id="regLogin" placeholder="Логин">
+          <input type="password" id="regPassword" placeholder="Пароль">
+          <button id="registerSubmitBtn">Зарегистрироваться</button>
         </div>
 
         <!-- Toggle Auth Forms -->
-        <button id="toggleAuthBtn" class="toggle-auth-btn">Войти / Зарегистрироваться</button>
+        <button id="toggleAuthBtn">Войти / Зарегистрироваться</button>
 
         <!-- Telegram Login Button will be added here -->
         <div id="telegramBtnContainer" style="margin-top:15px;">
@@ -654,8 +665,7 @@ function openAuthModal() {
       cornerTopRadius: 0,
       hasVerticalScroll: true,
       defaultFromBottom: true,
-      noRadiusByDefault: true,
-      customStyles: { backgroundColor: "#f7f7f7" }
+      noRadiusByDefault: true
     }
   );
   // Standard auth button handlers
@@ -677,7 +687,7 @@ function openAuthModal() {
       backgroundColor: "#0088cc",
       color: "white",
       border: "none",
-      borderRadius: "12px",
+      borderRadius: "8px",
       cursor: "pointer",
       fontSize: "16px",
       display: "flex",
@@ -686,38 +696,38 @@ function openAuthModal() {
     });
     // Telegram auth handler
     telegramBtn.addEventListener("click", async () => {
-      try {
-        showGlobalLoading();
-        Telegram.WebApp.ready();
-        const tgUser = Telegram.WebApp.initDataUnsafe?.user;
-        if (!tgUser?.id) throw new Error("Не удалось получить данные Telegram");
-        if (!csrfToken) await fetchCsrfToken();
+  try {
+    showGlobalLoading();
+    Telegram.WebApp.ready();
+    const tgUser = Telegram.WebApp.initDataUnsafe?.user;
+    if (!tgUser?.id) throw new Error("Не удалось получить данные Telegram");
+    if (!csrfToken) await fetchCsrfToken();
 
-        const response = await fetch(`${API_URL}/auth/telegram`, {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRF-Token": csrfToken
-          },
-          body: JSON.stringify(Object.fromEntries(new URLSearchParams(Telegram.WebApp.initData)))
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Ошибка сервера");
-        }
-
-        document.getElementById("authModal")?.remove();
-        await fetchUserData();
-        createMainUI();
-        updateUI();
-      } catch (err) {
-        showNotification(err.message, "error");
-      } finally {
-        hideGlobalLoading();
-      }
+    const response = await fetch(`${API_URL}/auth/telegram`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken
+      },
+      body: JSON.stringify(Object.fromEntries(new URLSearchParams(Telegram.WebApp.initData)))
     });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Ошибка сервера");
+    }
+
+    document.getElementById("authModal")?.remove();
+    await fetchUserData();
+    createMainUI();
+    updateUI();
+  } catch (err) {
+    showNotification(err.message, "error");
+  } finally {
+    hideGlobalLoading();
+  }
+});
     document.getElementById("telegramBtnContainer").appendChild(telegramBtn);
   }
 
@@ -727,74 +737,6 @@ function openAuthModal() {
     const registerSection = document.getElementById("registerSection");
     loginSection.style.display = loginSection.style.display === "none" ? "flex" : "none";
     registerSection.style.display = registerSection.style.display === "none" ? "flex" : "none";
-  }
-
-  // Inject styles for auth modal if not already done
-  if (!document.getElementById("authStyles")) {
-    const authStyles = `
-.auth-container {
-  max-width: 400px;
-  margin: 40px auto 0 auto;
-  padding: 20px;
-  background: #FFFFFF;
-  border-radius: 16px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-.auth-container h2 {
-  text-align: center;
-  margin: 0;
-  font-size: 24px;
-  font-weight: 600;
-  color: #1A1A1A;
-}
-.auth-input {
-  width: 100%;
-  padding: 12px 16px;
-  background: #FFFFFF;
-  border: 1px solid #E6E6EB;
-  border-radius: 8px;
-  font-size: 16px;
-  box-sizing: border-box;
-}
-.auth-button {
-  width: 100%;
-  padding: 12px;
-  background: linear-gradient(90deg, #2F80ED, #2D9CDB);
-  border: none;
-  border-radius: 12px;
-  color: #FFFFFF;
-  font-weight: 600;
-  font-size: 16px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.auth-button:hover {
-  opacity: 0.9;
-}
-.auth-button:active {
-  transform: translateY(1px);
-}
-.toggle-auth-btn {
-  background: none;
-  border: none;
-  color: #2F80ED;
-  cursor: pointer;
-  text-decoration: underline;
-  font-size: 14px;
-}
-#loginSection, #registerSection {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-`;
-    const styleEl = document.createElement("style");
-    styleEl.id = "authStyles";
-    styleEl.textContent = authStyles;
-    document.head.appendChild(styleEl);
   }
 }
 
@@ -1164,50 +1106,43 @@ async function fetchUserData() {
         newUserInfoContainer.appendChild(userNameEl);
         document.body.appendChild(newUserInfoContainer);
       }
-      // Например, обновляем общий баланс
+      // Legacy display updates
       const balanceValue = document.getElementById("balanceValue");
       if (balanceValue) {
         const totalRub = rubBalance + (coinBalance * currentRate);
         balanceValue.textContent = `${formatBalance(totalRub, 2)} ₽`;
       }
-      // Текущий userId
       const userIdEl = document.getElementById("userIdDisplay");
       if (userIdEl) {
         userIdEl.textContent = "ID: " + currentUserId;
       }
-      // RUB balance
+      // Update RUB balance (old logic)
       const rubBalanceInfo = document.getElementById("rubBalanceValue");
       if (rubBalanceInfo) {
         rubBalanceInfo.textContent = `${formatBalance(rubBalance, 2)} ₽`;
       }
-      // GUGA balance
+      // Update GUGA balance
       const gugaBalanceElement = document.getElementById("gugaBalanceValue");
       if (gugaBalanceElement) {
         gugaBalanceElement.textContent = `${formatBalance(coinBalance, 5)} ₲`;
       }
-      // Halving step (если нужно)
-      currentHalvingStep = userData.user.halvingStep || 0;
-    } else {
-      console.error("User data fetch error:", userData.error);
+      // Converted balance (coins in rubles)
+      const convertedBalanceElement = document.getElementById("convertedBalance");
+      if (convertedBalanceElement) {
+        convertedBalanceElement.textContent = `${formatBalance(coinBalance * currentRate, 2)} ₽`;
+      }
+      // Current rate display
+      const rateDisplayElement = document.getElementById("currentRateDisplay");
+      if (rateDisplayElement) {
+        rateDisplayElement.textContent = formatBalance(currentRate, 2);
+      }
     }
   } catch (err) {
     console.error("fetchUserData error:", err);
-  }
-}
-
-/**
- * Fetches merchant data (if logged in as merchant).
- */
-async function fetchMerchantData() {
-  try {
-    const resp = await fetch(`${API_URL}/merchant/info`, { credentials: "include" });
-    const data = await resp.json();
-    if (data.success && data.merchant) {
-      currentMerchantId = data.merchant.merchant_id;
-      // ... populate merchant UI elements if needed
+    const balanceValue = document.getElementById("balanceValue");
+    if (balanceValue) {
+      balanceValue.textContent = "-- ₽";
     }
-  } catch (err) {
-    console.error("fetchMerchantData error:", err);
   }
 }
 
@@ -2154,48 +2089,24 @@ async function initExchange() {
  * UPDATE CURRENT RATE DISPLAY (+% change)
  **************************************************/
 function updateRateDisplay(rates) {
-  if (!rates || rates.length < 2) {
-    console.warn('Not enough data to update rates display.');
-    return;
-  }
-
-  const currentRateElement = document.getElementById('currentRate');
-  const arrowElement = document.getElementById('rateChangeArrow');
-  const ratePercentElement = document.getElementById('rateChangePercent');
-
-  const current = parseFloat(rates[0].exchange_rate);
-  const previous = parseFloat(rates[1].exchange_rate);
-
-  if (isNaN(current) || isNaN(previous)) {
-    console.error('Invalid rate data:', rates);
-    currentRateElement.textContent = 'Ошибка данных';
-    arrowElement.textContent = '-';
-    arrowElement.style.color = '#999';
-    ratePercentElement.textContent = '0.00%';
-    ratePercentElement.style.color = '#999';
-    return;
-  }
-
+  if (!rates || rates.length < 2) return;
+  const current = rates[0].exchange_rate;
+  const previous = rates[1].exchange_rate;
   const diff = current - previous;
-  const percent = ((diff / previous) * 100).toFixed(2);
-
-  currentRateElement.textContent = `1 ₲ = ${formatBalance(current, 2)} ₽`;
-
+  const percent = (diff / previous) * 100;
+  document.getElementById('currentRate').textContent = `1 ₲ = ${formatBalance(current, 2)} ₽`;
+  const arrow = document.getElementById('rateChangeArrow');
+  const ratePercent = document.getElementById('rateChangePercent');
   if (diff > 0) {
-    arrowElement.textContent = '↑';
-    arrowElement.style.color = '#4BA857';
-    ratePercentElement.textContent = `+${percent}%`;
-    ratePercentElement.style.color = '#4BA857';
-  } else if (diff < 0) {
-    arrowElement.textContent = '↓';
-    arrowElement.style.color = '#D21B1B';
-    ratePercentElement.textContent = `${percent}%`;
-    ratePercentElement.style.color = '#D21B1B';
+    arrow.textContent = '↑';
+    arrow.style.color = '#4BA857';
+    ratePercent.textContent = `+${percent.toFixed(2)}%`;
+    ratePercent.style.color = '#4BA857';
   } else {
-    arrowElement.textContent = '→';
-    arrowElement.style.color = '#999';
-    ratePercentElement.textContent = '0.00%';
-    ratePercentElement.style.color = '#999';
+    arrow.textContent = '↓';
+    arrow.style.color = '#D21B1B';
+    ratePercent.textContent = `${percent.toFixed(2)}%`;
+    ratePercent.style.color = '#D21B1B';
   }
 }
 
@@ -2521,78 +2432,6 @@ function openHistoryModal(horizontalSwitch) {
     }
   );
   fetchTransactionHistory();
-
-  // Стили для истории (если их ещё нет в проекте)
-  if (!document.getElementById("historyStyles")) {
-    const historyStyles = `
-.transaction-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.transaction-group {
-  margin-bottom: 16px;
-}
-.transaction-date {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1A1A1A;
-  margin: 16px 0 8px;
-}
-.transaction-card {
-  background: #FFFFFF;
-  border: 1px solid #E6E6EB;
-  border-radius: 12px;
-  padding: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  cursor: pointer;
-}
-.transaction-card:hover {
-  background: #F8F9FB;
-}
-.transaction-icon-wrap {
-  flex-shrink: 0;
-}
-.transaction-text-wrap {
-  flex: 1;
-  margin: 0 12px;
-  min-width: 0;
-}
-.transaction-title {
-  font-size: 16px;
-  font-weight: 500;
-  color: #1A1A1A;
-}
-.transaction-subtitle {
-  font-size: 14px;
-  color: #909099;
-}
-.transaction-info-wrap {
-  text-align: right;
-}
-.transaction-amount {
-  font-size: 16px;
-  font-weight: 500;
-}
-.transaction-time {
-  font-size: 13px;
-  color: #909099;
-}
-.no-operations {
-  text-align: center;
-  color: #909099;
-  font-style: italic;
-  padding: 16px;
-}
-`;
-    const styleEl = document.createElement("style");
-    styleEl.id = "historyStyles";
-    styleEl.textContent = historyStyles;
-    document.head.appendChild(styleEl);
-  }
 }
 
 /**
@@ -2613,6 +2452,7 @@ async function fetchTransactionHistory() {
     }
   } catch (err) {
     console.error("fetchTransactionHistory error:", err);
+    showConnectionError("Не удалось загрузить историю");
   } finally {
     hideGlobalLoading();
   }
@@ -2661,7 +2501,6 @@ function displayTransactionHistory(transactions) {
         amountValue = formatBalance(tx.amount, 2);
         currencySymbol = "₽";
       }
-      // Отправитель, получатель, обмен — логика оформления
       if (tx.type === "merchant_payment") {
         iconSrc = "photo/92.png";
         titleText = "Оплата по QR";
@@ -2743,6 +2582,7 @@ function getDateLabel(dateObj) {
   if (dateObj.toDateString() === today.toDateString()) return "Сегодня";
   if (dateObj.toDateString() === yesterday.toDateString()) return "Вчера";
   return dateObj.toLocaleDateString("ru-RU");
+}
 
 /**************************************************
  * MERCHANT UI
@@ -3124,19 +2964,8 @@ async function showTransactionDetails(hash) {
       return showNotification("Операция не найдена", "error");
     }
     const tx = data.transaction;
-    const symbol = tx.currency === "RUB" ? "₽" : "₲";
-    const amountValue = formatBalance(tx.amount, tx.currency === "RUB" ? 2 : 5);
-    const sign = (tx.from_user_id === currentUserId) ? "-" : "+";
-    const amount = `${sign}${amountValue} ${symbol}`;
+    const amount = `${tx.type === "sent" ? "-" : "+"}${formatBalance(tx.amount, tx.currency === "RUB" ? 2 : 5)} ${tx.currency || "₲"}`;
     const timestamp = new Date(tx.created_at || tx.client_time).toLocaleString("ru-RU");
-    let fromLabel = tx.from_user_id;
-    let toLabel = tx.to_user_id;
-    if (typeof fromLabel === "string" && fromLabel.startsWith("MERCHANT:")) {
-      fromLabel = "Мерчант " + fromLabel.replace("MERCHANT:", "");
-    }
-    if (typeof toLabel === "string" && toLabel.startsWith("MERCHANT:")) {
-      toLabel = "Мерчант " + toLabel.replace("MERCHANT:", "");
-    }
     createModal(
       "transactionDetailsModal",
       `
@@ -3144,20 +2973,12 @@ async function showTransactionDetails(hash) {
           <div class="tx-icon">
             <img src="photo/${tx.currency === "RUB" ? "92" : "67"}.png" alt="icon" width="48" height="48" />
           </div>
-          <div class="tx-amount-main ${sign === '+' ? 'positive' : 'negative'}">${amount}</div>
+          <div class="tx-amount-main">${amount}</div>
           <div class="tx-status success">Успешно</div>
           <div class="tx-detail-box">
             <div class="tx-detail-row">
               <div class="tx-label">Дата и время</div>
               <div class="tx-value">${timestamp}</div>
-            </div>
-            <div class="tx-detail-row">
-              <div class="tx-label">Отправитель</div>
-              <div class="tx-value">${fromLabel}</div>
-            </div>
-            <div class="tx-detail-row">
-              <div class="tx-label">Получатель</div>
-              <div class="tx-value">${toLabel}</div>
             </div>
             <div class="tx-detail-row">
               <div class="tx-label">ID транзакции</div>
@@ -3181,70 +3002,6 @@ async function showTransactionDetails(hash) {
         cornerTopRadius: 0
       }
     );
-    // Стили для деталей транзакции
-    if (!document.getElementById("txDetailStyles")) {
-      const detailStyles = `
-.tx-icon {
-  text-align: center;
-  margin-bottom: 16px;
-}
-.tx-amount-main {
-  text-align: center;
-  font-size: 24px;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-.tx-amount-main.positive {
-  color: rgb(25, 150, 70);
-}
-.tx-amount-main.negative {
-  color: #1A1A1A;
-}
-.tx-status {
-  text-align: center;
-  font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 16px;
-}
-.tx-status.success {
-  color: #219653;
-}
-.tx-detail-box {
-  background: #F8F9FB;
-  border-radius: 12px;
-  padding: 16px;
-  text-align: left;
-}
-.tx-detail-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-.tx-label {
-  font-size: 14px;
-  color: #666;
-}
-.tx-value {
-  font-size: 14px;
-  color: #1A1A1A;
-  word-break: break-all;
-  text-align: right;
-}
-.copyable button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-}
-.copyable button:active {
-  transform: translateY(1px);
-}
-`;
-      const styleEl = document.createElement("style");
-      styleEl.id = "txDetailStyles";
-      styleEl.textContent = detailStyles;
-      document.head.appendChild(styleEl);
-    }
   } catch (err) {
     console.error("Ошибка при загрузке транзакции:", err);
     showNotification("Ошибка при загрузке", "error");
@@ -3258,24 +3015,5 @@ async function showTransactionDetails(hash) {
 window.addEventListener("beforeunload", () => {
   if (pendingMinedCoins > 0) {
     flushMinedCoins();
-  }
-});
-};
-
-
-document.addEventListener("DOMContentLoaded", async () => {
-  await fetchCsrfToken();
-  try {
-    const resp = await fetch(`${API_URL}/user`, { credentials: "include" });
-    const data = await resp.json();
-    if (data.success && data.user) {
-      currentUserId = data.user.user_id;
-      createMainUI();
-      updateUI?.();
-    } else {
-      openAuthModal();
-    }
-  } catch {
-    openAuthModal();
   }
 });
