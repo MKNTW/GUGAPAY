@@ -161,6 +161,7 @@ function validateInitData(initData, botToken) {
   const params = new URLSearchParams(initData);
   const hash = params.get("hash");
   params.delete("hash");
+   params.delete("signature");
 
   // Telegram требует сортировки параметров по алфавиту
   const dataCheckString = [...params.entries()]
