@@ -689,11 +689,18 @@ function openAuthModal() {
     telegramBtn.addEventListener("click", async () => {
   try {
     showGlobalLoading();
+
+    // Убедись, что Telegram WebApp готов
     Telegram.WebApp.ready();
+
+    // Получаем initData как СТРОКУ
     const initData = Telegram.WebApp.initData;
 
-    if (!initData) throw new Error("Не удалось получить initData из Telegram");
+    if (!initData || !initData.includes("hash")) {
+      throw new Error("Некорректные initData из Telegram");
+    }
 
+    // Отправляем строку initData на сервер
     const response = await fetch(`${API_URL}/auth/telegram`, {
       method: "POST",
       credentials: "include",
@@ -701,7 +708,7 @@ function openAuthModal() {
         "Content-Type": "application/json",
         "X-CSRF-Token": csrfToken
       },
-      body: JSON.stringify({ initData }) // <-- ВАЖНО
+      body: JSON.stringify({ initData }) // <-- не трогаем строку!
     });
 
     if (!response.ok) {
@@ -709,6 +716,7 @@ function openAuthModal() {
       throw new Error(errorData.error || "Ошибка сервера");
     }
 
+    // Успех — продолжаем
     document.getElementById("authModal")?.remove();
     await fetchUserData();
     createMainUI();
