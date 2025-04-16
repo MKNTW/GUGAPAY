@@ -14,6 +14,7 @@ const Joi = require('joi');
 const { createClient: createRedisClient } = require('redis');
 const csrf = require('csurf');
 const crypto = require('crypto');
+
 const isProduction = process.env.NODE_ENV === 'production';
 const JWT_SECRET = process.env.JWT_SECRET || 'your_default_jwt_secret';
 
@@ -45,16 +46,6 @@ if (!TELEGRAM_BOT_TOKEN) {
 /* ========================
    ФУНКЦИИ И ВАЛИДАЦИЯ
 ======================== */
-// Проверка подписи Telegram (для /auth/telegram)
-function isTelegramAuthValid(data, botToken) {
-  const checkHash = data.hash;
-  const { hash, ...rest } = data;
-  const sorted = Object.keys(rest).sort().map(key => `${key}=${rest[key]}`).join('\n');
-  const secret = crypto.createHash('sha256').update(botToken).digest();
-  const hmac = crypto.createHmac('sha256', secret).update(sorted).digest('hex');
-  return hmac === checkHash;
-}
-
 // Генерация уникального шестизначного ID пользователя
 async function generateSixDigitId() {
   let id;
@@ -87,7 +78,6 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-// Глобальные middleware
 app.use(helmet());
 app.use(express.json());
 app.use(cookieParser());
@@ -137,6 +127,7 @@ function verifyToken(req, res, next) {
 /* ========================
    AUTHENTICATION ENDPOINTS
 ======================== */
+
 // Выход из системы (logout)
 app.post('/logout', (req, res) => {
   res.clearCookie('token', {
@@ -153,41 +144,100 @@ app.get('/', (req, res) => {
 });
 app.get('/ping', (req, res) => res.sendStatus(200));
 
-// === Поддержка WebApp авторизации ===
-// Вместо вызова из пакета — используем локальную функцию:
-function validateInitData(initData, botToken) {
-  if (!initData) return { ok: false };
-
-  const urlParams = new URLSearchParams(initData);
-  const hash = urlParams.get('hash');
-  urlParams.delete('hash');
-
-  const dataCheckString = Array.from(urlParams.entries())
-    .map(([key, value]) => `${key}=${value}`)
-    .sort()
-    .join('\n');
-
-  const secret = crypto.createHash('sha256')
-    .update(botToken)
-    .digest();
-
-  const hmac = crypto.createHmac('sha256', secret)
-    .update(dataCheckString)
-    .digest('hex');
-
-  const isValid = hmac === hash;
-
-  let user = undefined;
-  if (isValid && urlParams.get('user')) {
-    try {
-      user = JSON.parse(urlParams.get('user'));
-    } catch (e) {}
+// ==== Новый маршрут авторизации Telegram WebApp ====
+app.post('/auth/telegram', async (req, res) => {
+  const initData = req.body.initData;
+  if (!initData) {
+    return res.status(400).json({ success: false, error: 'initData отсутствует' });
   }
 
-  return { ok: isValid, user };
-}
+  try {
+    // Парсим данные и удаляем hash/signature
+    const urlParams = new URLSearchParams(initData);
+    const hash = urlParams.get('hash');
+    urlParams.delete('hash');
+    urlParams.delete('signature'); // если вдруг есть
 
-// === Telegram WebApp Авторизация (оставляем один роут) ===
+    // Формируем data_check_string
+    const dataCheckString = Array.from(urlParams.entries())
+      .map(([key, value]) => `${key}=${value}`)
+      .sort()
+      .join('\n');
+
+    // Секрет для HMAC = SHA256 от bot_token
+    const secret = crypto.createHash('sha256')
+      .update(TELEGRAM_BOT_TOKEN)
+      .digest();
+
+    // Проверяем подпись
+    const hmac = crypto.createHmac('sha256', secret)
+      .update(dataCheckString)
+      .digest('hex');
+    if (hmac !== hash) {
+      console.error('[telegramAuth] Неверная подпись initData');
+      return res.status(401).json({ success: false, error: 'Неверная подпись WebApp' });
+    }
+
+    // Парсим объект user из initData (urlParams.get('user'))
+    let telegramUser;
+    try {
+      telegramUser = JSON.parse(urlParams.get('user'));
+    } catch (e) {
+      return res.status(400).json({ success: false, error: 'Невалидные данные пользователя' });
+    }
+
+    // Проверяем, есть ли такой пользователь в БД (по telegram_id)
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('*')
+      .eq('telegram_id', telegramUser.id)
+      .maybeSingle();
+
+    let userId = existingUser?.user_id;
+
+    // Если нет, создаём
+    if (!existingUser) {
+      userId = await generateSixDigitId();
+      const { error } = await supabase.from('users').insert([{
+        user_id: userId,
+        telegram_id: telegramUser.id,
+        username: telegramUser.username || '',
+        first_name: telegramUser.first_name || '',
+        photo_url: telegramUser.photo_url || '',
+        balance: 0,
+        rub_balance: 0,
+        blocked: false,
+        password: null
+      }]);
+      if (error) {
+        console.error('[TelegramAuth] Ошибка создания пользователя:', error);
+        return res.status(500).json({ success: false, error: 'Ошибка базы данных' });
+      }
+      console.log(`[TelegramAuth] Создан новый пользователь с ID ${userId}`);
+    }
+
+    // Генерируем JWT
+    const token = jwt.sign({ userId, role: 'user' }, JWT_SECRET, { expiresIn: '24h' });
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'None',
+      maxAge: 86400000
+    });
+
+    console.log(`[TelegramAuth] Успешный вход пользователя userId=${userId} (isNew=${!existingUser})`);
+    res.json({ success: true, userId, isNewUser: !existingUser });
+  } catch (err) {
+    console.error('Ошибка Telegram авторизации:', err);
+    res.status(500).json({ success: false, error: 'Внутренняя ошибка сервера' });
+  }
+});
+
+// === Стандартная регистрация пользователя ===
+const registerSchema = Joi.object({
+  username: Joi.string().required(),
+  password: Joi.string().required()
+});
 app.post('/register', async (req, res) => {
   try {
     const { error, value } = registerSchema.validate(req.body);
