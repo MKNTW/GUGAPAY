@@ -2119,7 +2119,7 @@ document.head.appendChild(style);
 async function initExchange() {
   try {
     const [ratesResp, userResp] = await Promise.all([
-      fetch(`${API_URL}/exchangeRates?limit=50`, { credentials: "include" }),
+      fetch(`${API_URL}/exchangeRates?limit=100`, { credentials: "include" }),
       fetch(`${API_URL}/user`, { credentials: "include" })
     ]);
     const ratesData = await ratesResp.json();
