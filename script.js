@@ -645,7 +645,7 @@ function openAuthModal() {
 
         <!-- Telegram Login Button will be added here -->
         <div id="telegramBtnContainer" style="margin-top:15px;">
-          <div style="text-align:center; color:#666; margin-bottom:8px;">Или</div>
+          <div style="text-align:center; color:#666; margin-bottom:30px;">Или</div>
         </div>
       </div>
     `,
