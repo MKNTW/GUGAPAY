@@ -1,0 +1,8 @@
+
+{
+  "rewrites": [
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/hash", "destination": "/hash.html" }
+  ],
+  "cleanUrls": true
+}
