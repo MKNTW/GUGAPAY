@@ -8,9 +8,10 @@ const cors = require('cors');
 
 const allowedOrigins = [
   'https://gugapay.ru',
+  'https://hash.gugapay.ru',
+  'https://test.gugapay.ru',
   'https://gugapay.online',
-  'https://mkntw.ru',
-  'https://gugacoin.vercel.app'
+  'https://mkntw.ru'
 ];
 
 const corsOptions = {
