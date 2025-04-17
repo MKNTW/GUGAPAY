@@ -1,3 +1,4 @@
+let currency = null;
 // CSRF token handling
 let csrfToken = "";
 const API_URL = "https://api.gugapay.ru";
@@ -119,7 +120,7 @@ const loadingIndicator = document.getElementById("loadingIndicator");
 function loadCSSStylesheet() {
   const link = document.createElement("link");
   link.rel = "stylesheet";
-  link.href = "styles.css"; // Ensure this path is correct
+  link.href = "/styles.css"; // Ensure this path is correct
   document.head.appendChild(link);
 }
 // Load CSS on page load
@@ -194,7 +195,12 @@ function createModal(
 
   // Insert content and close button
   contentDiv.innerHTML = `
-        ${showCloseBtn ? '<button class="modal-close-btn">&times;</button>' : ""}
+        ${showCloseBtn ? '<button class="modal-close-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" 
+     fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
+     style="width: 16px; height: 16px;">
+  <line x1="18" y1="6" x2="6" y2="18"/>
+  <line x1="6" y1="6" x2="18" y2="18"/>
+</svg></button>' : ""}
         ${content}
     `;
 
@@ -231,19 +237,32 @@ function createModal(
   }
 
   modal.appendChild(contentDiv);
-  document.body.appendChild(modal);
+  
+  // Hide bottombar if exists
+  const bottomBar = document.getElementById("bottomBar");
+  if (bottomBar) bottomBar.style.display = "none";
+
+document.body.appendChild(modal);
 
   // Close button event
   if (showCloseBtn && closeBtn) {
     closeBtn.addEventListener("click", () => {
-      modal.remove();
+      
+      const bottomBar = document.getElementById("bottomBar");
+      if (bottomBar) bottomBar.style.display = "flex";
+
+modal.remove();
       if (onClose) onClose();
     });
   }
   // Close on overlay click
   modal.addEventListener("click", (event) => {
     if (event.target === modal) {
-      modal.remove();
+      
+      const bottomBar = document.getElementById("bottomBar");
+      if (bottomBar) bottomBar.style.display = "flex";
+
+modal.remove();
       if (onClose) onClose();
     }
   });
@@ -1255,9 +1274,45 @@ function openProfileModal() {
   createModal(
     "profileModal",
     `
-      <h3 style="text-align:center;">Профиль</h3>
-      <button id="profileLogoutBtn" style="padding:10px;margin-top:20px;">Выйти из аккаунта</button>
-    `,
+<h3 style="text-align:center;">Профиль</h3>
+
+<div style="margin-top: 20px;">
+  <label for="nameInput" style="font-size:14px; color:#666;">Изменить имя</label>
+  <input id="nameInput" type="text" placeholder="Новое имя"
+         style="width:100%;padding:10px;margin-top:5px;border-radius:10px;border:1px solid #ccc;">
+  <button id="saveNameBtn" style="
+    margin-top:10px;
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(90deg, #2F80ED, #2D9CDB);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;">Сохранить имя</button>
+</div>
+
+<div style="margin-top: 20px;">
+  <label for="photoInput" style="font-size:14px; color:#666;">Изменить фото</label>
+  <input id="photoInput" type="file"
+         accept="image/*"
+         style="width:100%;margin-top:5px;">
+  <button id="uploadPhotoBtn" style="
+    margin-top:10px;
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(90deg, #2F80ED, #2D9CDB);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;">Загрузить фото</button>
+</div>
+
+<button id="profileLogoutBtn" style="padding:10px;margin-top:30px;background-color:#ccc;border-radius:10px;">Выйти из аккаунта</button>
+`,
     {
       showCloseBtn: true,
       cornerTopMargin: 0,
@@ -1268,6 +1323,62 @@ function openProfileModal() {
     }
   );
   document.getElementById("profileLogoutBtn").onclick = logout;
+  // Обработчик изменения имени
+  document.getElementById("saveNameBtn").onclick = async () => {
+    const newName = document.getElementById("nameInput").value.trim();
+    if (!newName) return alert("Введите имя");
+    try {
+      if (!csrfToken) await fetchCsrfToken();
+      const resp = await fetch(`${API_URL}/updateProfile`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": csrfToken
+        },
+        body: JSON.stringify({ first_name: newName })
+      });
+      const data = await resp.json();
+      if (data.success) {
+        alert("Имя обновлено");
+        fetchUserData();
+      } else {
+        alert("Ошибка: " + data.error);
+      }
+    } catch (err) {
+      console.error("Ошибка имени:", err);
+    }
+  };
+
+  // Обработчик загрузки фото
+  document.getElementById("uploadPhotoBtn").onclick = async () => {
+    const fileInput = document.getElementById("photoInput");
+    const file = fileInput.files[0];
+    if (!file) return alert("Выберите фото");
+    const formData = new FormData();
+    formData.append("photo", file);
+    try {
+      if (!csrfToken) await fetchCsrfToken();
+      const resp = await fetch(`${API_URL}/uploadPhoto`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "X-CSRF-Token": csrfToken
+        },
+        body: formData
+      });
+      const data = await resp.json();
+      if (data.success) {
+        alert("Фото обновлено");
+        fetchUserData();
+      } else {
+        alert("Ошибка: " + data.error);
+      }
+    } catch (err) {
+      console.error("Ошибка загрузки фото:", err);
+    }
+  };
+
 }
 
 /**************************************************
@@ -2455,7 +2566,12 @@ function showNotification(message, type = "info", duration = 5000) {
   // Close button
   const closeBtn = document.createElement("button");
   closeBtn.className = "notification-close";
-  closeBtn.innerHTML = "&times;";
+  closeBtn.innerHTML = "<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" 
+     fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
+     style="width: 16px; height: 16px;">
+  <line x1="18" y1="6" x2="6" y2="18"/>
+  <line x1="6" y1="6" x2="18" y2="18"/>
+</svg>";
   closeBtn.addEventListener("click", () => {
     if (notif.parentNode === notificationContainer) {
       notificationContainer.removeChild(notif);
