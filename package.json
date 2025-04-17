@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.7",
-    "telegram-webapp-auth": "github:Algram/telegram-webapp-auth",
+    "telegram-webapp-auth": "git+https://github.com/Algram/telegram-webapp-auth.git",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
