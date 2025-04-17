@@ -1,4 +1,3 @@
-const { validateTelegramWebAppData } = require('./index');
 /* ========================
    ИМПОРТЫ И НАСТРОЙКИ СЕРВЕРА
 ======================== */
@@ -6,6 +5,26 @@ require('dotenv').config();
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
+
+const allowedOrigins = [
+  'https://gugapay.ru',
+  'https://gugapay.online',
+  'https://mkntw.ru',
+  'https://gugacoin.vercel.app'
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-Token']
+};
 const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 const { createClient } = require('@supabase/supabase-js');
