@@ -25,55 +25,6 @@
   <div id="loadingIndicator" class="loading-indicator hidden">
   <img src="photo/25.gif" alt="Загрузка..." />
  </div>
-  <script src="script.js"></script>
-
-<!-- Интерфейс истории операций (отображается только на hash.gugapay.ru) -->
-<div id="hash-ui" style="display: none; padding: 20px;">
-  <h2>История операций с блоками</h2>
-  <ul id="block-history">
-    <li>Загрузка истории...</li>
-  </ul>
-</div>
-
-<script>
-  const hostname = window.location.hostname;
-  const API_URL = "https://api.gugapay.ru";
-
-  if (hostname === "hash.gugapay.ru") {
-    document.addEventListener("DOMContentLoaded", async () => {
-      // Скрываем основной интерфейс, если есть
-      const main = document.getElementById("main-ui");
-      if (main) main.style.display = "none";
-
-      // Показываем hash интерфейс
-      document.getElementById("hash-ui").style.display = "block";
-
-      const historyList = document.getElementById("block-history");
-
-      try {
-        const res = await fetch(`${API_URL}/history`, {
-          credentials: 'include'
-        });
-        const data = await res.json();
-        historyList.innerHTML = "";
-
-        if (Array.isArray(data) && data.length > 0) {
-          data.forEach(op => {
-            const li = document.createElement("li");
-            li.textContent = op.description || JSON.stringify(op);
-            historyList.appendChild(li);
-          });
-        } else {
-          historyList.innerHTML = "<li>Операции не найдены.</li>";
-        }
-      } catch (err) {
-        historyList.innerHTML = "<li>Ошибка загрузки истории.</li>";
-        console.error(err);
-      }
-    });
-  }
-</script>
-
-  <script src="/js/script.js"></script>
+  <script src="/public/js/script.js"></script>
 </body>
 </html>
