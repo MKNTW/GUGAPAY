@@ -1,3 +1,4 @@
+const { validateTelegramWebAppData } = require('./index');
 /* ========================
    ИМПОРТЫ И НАСТРОЙКИ СЕРВЕРА
 ======================== */
