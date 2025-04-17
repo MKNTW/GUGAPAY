@@ -701,7 +701,9 @@ function openAuthModal() {
     }
 
     // Отправляем строку initData на сервер
-    const response = await fetch(`${API_URL}/auth/telegram`, {
+    const response = await if (!csrfToken) await fetchCsrfToken();
+
+fetch(`${API_URL}/auth/telegram`, {
       method: "POST",
       credentials: "include",
       headers: {
@@ -3244,7 +3246,9 @@ async function loginWithTelegramWebApp() {
       return;
     }
 
-    const response = await fetch(`${API_URL}/auth/telegram`, {
+    const response = await if (!csrfToken) await fetchCsrfToken();
+
+fetch(`${API_URL}/auth/telegram`, {
       method: 'POST',
       credentials: 'include',
       headers: {
