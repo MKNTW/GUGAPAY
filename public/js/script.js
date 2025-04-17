@@ -314,7 +314,6 @@ async function apiAuthRequest(endpoint, payload) {
     return data;
   } catch (err) {
     console.error(`Auth request error at ${endpoint}:`, err);
-    showNotification(err.message, "error");
     throw err;
   } finally {
     hideGlobalLoading();
@@ -346,9 +345,7 @@ async function login() {
       await fetchMerchantData();
       closeAllAuthModals();
       openMerchantUI();
-    } catch (err) {
-      showNotification("Ошибка авторизации: " + err.message, "error");
-    }
+    } 
   }
 }
 
@@ -368,9 +365,7 @@ async function register() {
     showNotification(`Аккаунт успешно создан! Ваш userId: ${data.userId}`, "success");
     // Auto login after registration
     await login();
-  } catch (err) {
-    showNotification("Ошибка регистрации: " + err.message, "error");
-  }
+  } 
 }
 
 /**
@@ -643,7 +638,7 @@ function openAuthModal() {
     "authModal",
     `
       <div class="auth-container">
-        <h2>GUGACOIN</h2>
+        <h2>GUGAPAY</h2>
 
         <!-- Login -->
         <div id="loginSection">
