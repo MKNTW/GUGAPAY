@@ -422,7 +422,7 @@ function openRequestModal() {
           gap: 12px;
           margin-bottom: 32px;
         ">
-          <img src="photo/15.png" style="width: 40px; height: 40px;">
+          <img src="/photo/15.png" style="width: 40px; height: 40px;">
           <div>
             <div style="font-size: 20px; font-weight: 600; color: #1A1A1A;">GUGA</div>
             <div style="font-size: 16px; color: #666;">Запрос на перевод</div>
