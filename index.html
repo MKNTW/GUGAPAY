@@ -25,5 +25,51 @@
   <img src="photo/25.gif" alt="Загрузка..." />
  </div>
   <script src="script.js"></script>
+
+<!-- Панель истории операций (только для hash.gugapay.ru) -->
+<div id="hash-ui" style="display: none; padding: 20px;">
+  <h2>История операций с блоками</h2>
+  <ul id="block-history">
+    <li>Загрузка истории...</li>
+  </ul>
+</div>
+
+<script>
+  const hostname = window.location.hostname;
+  const API_URL = "https://api.gugapay.ru"; // Твой API
+
+  if (hostname === "hash.gugapay.ru") {
+    document.addEventListener("DOMContentLoaded", async () => {
+      document.getElementById("hash-ui").style.display = "block";
+      const mainUI = document.getElementById("main-ui");
+      if (mainUI) mainUI.style.display = "none";
+
+      const historyList = document.getElementById("block-history");
+      historyList.innerHTML = "<li>Загрузка истории...</li>";
+
+      try {
+        const res = await fetch(`${API_URL}/history`, {
+          credentials: 'include'
+        });
+        const data = await res.json();
+        historyList.innerHTML = "";
+
+        if (Array.isArray(data) && data.length > 0) {
+          data.forEach(op => {
+            const li = document.createElement("li");
+            li.textContent = op.description || JSON.stringify(op);
+            historyList.appendChild(li);
+          });
+        } else {
+          historyList.innerHTML = "<li>Операции не найдены.</li>";
+        }
+      } catch (err) {
+        historyList.innerHTML = "<li>Ошибка загрузки истории.</li>";
+        console.error(err);
+      }
+    });
+  }
+</script>
+
 </body>
 </html>
