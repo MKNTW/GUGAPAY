@@ -701,9 +701,7 @@ function openAuthModal() {
     }
 
     // Отправляем строку initData на сервер
-    const response = await if (!csrfToken) await fetchCsrfToken();
-
-fetch(`${API_URL}/auth/telegram`, {
+    const response = await fetch(`${API_URL}/auth/telegram`, {
       method: "POST",
       credentials: "include",
       headers: {
@@ -3127,7 +3125,7 @@ async function showTransactionDetails(hash) {
       `
         <div class="tx-sheet">
           <div class="tx-icon">
-            <img src="photo/${tx.currency === "RUB" ? "92" : "67"}.png" alt="icon" width="48" height="48" />
+            <img src="photo/${currency === "RUB" ? "92" : "67"}.png" alt="icon" width="48" height="48" />
           </div>
           <div class="tx-amount-main ${sign === '+' ? 'positive' : 'negative'}">${amount}</div>
           <div class="tx-status success">Успешно</div>
@@ -3246,9 +3244,7 @@ async function loginWithTelegramWebApp() {
       return;
     }
 
-    const response = await if (!csrfToken) await fetchCsrfToken();
-
-fetch(`${API_URL}/auth/telegram`, {
+    const response = await fetch(`${API_URL}/auth/telegram`, {
       method: 'POST',
       credentials: 'include',
       headers: {
