@@ -3200,31 +3200,43 @@ document.addEventListener("DOMContentLoaded", async () => {
 /**************************************************
  * TRANSACTION DETAILS MODAL
  **************************************************/
+    async function openTransactionDetails(txId) {
+  try {
+    const response = await fetch(`${API_URL}/transaction/${txId}`, {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken
+      }
+    });
+
+    const data = await response.json();
     const tx = data.transaction;
+
     const symbol = tx.currency === "RUB" ? "₽" : "₲";
     const amountValue = formatBalance(tx.amount, tx.currency === "RUB" ? 2 : 5);
     const sign = (tx.from_user_id === currentUserId) ? "-" : "+";
     const amount = `${sign}${amountValue} ${symbol}`;
     const timestamp = new Date(tx.created_at || tx.client_time).toLocaleString("ru-RU");
+
     let fromLabel = tx.from_user_id;
     let toLabel = tx.to_user_id;
+
     if (typeof fromLabel === "string" && fromLabel.startsWith("MERCHANT:")) {
       fromLabel = "Мерчант " + fromLabel.replace("MERCHANT:", "");
     }
     if (typeof toLabel === "string" && toLabel.startsWith("MERCHANT:")) {
       toLabel = "Мерчант " + toLabel.replace("MERCHANT:", "");
     }
-    // Остальной код функции
-  } catch (error) {
-    console.error("Ошибка при получении данных транзакции:", error);
-  }
-}
+
+    // Модалка с деталями транзакции
     createModal(
       "transactionDetailsModal",
       `
         <div class="tx-sheet">
           <div class="tx-icon">
-            <img src="photo/${currency === "RUB" ? "92" : "67"}.png" alt="icon" width="48" height="48" />
+            <img src="photo/${tx.currency === "RUB" ? "92" : "67"}.png" alt="icon" width="48" height="48" />
           </div>
           <div class="tx-amount-main ${sign === '+' ? 'positive' : 'negative'}">${amount}</div>
           <div class="tx-status success">Успешно</div>
@@ -3263,7 +3275,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         cornerTopRadius: 0
       }
     );
-    // Inject styles for transaction details if not already
+
+    // Добавление стилей (если ещё не добавлены)
     if (!document.getElementById("txDetailStyles")) {
       const detailStyles = `
 .tx-icon {
@@ -3322,14 +3335,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   transform: translateY(1px);
 }
 `;
-      try {
-  const styleEl = document.createElement("style");
-  styleEl.id = "txDetailStyles";
-  styleEl.textContent = detailStyles;
-  document.head.appendChild(styleEl);
-} catch (err) {
-  console.error("Ошибка при загрузке транзакции:", err);
-  showNotification("Ошибка при загрузке", "error");
+      const styleEl = document.createElement("style");
+      styleEl.id = "txDetailStyles";
+      styleEl.textContent = detailStyles;
+      document.head.appendChild(styleEl);
+    }
+
+  } catch (error) {
+    console.error("Ошибка при получении данных транзакции:", error);
+    showNotification("Ошибка при загрузке", "error");
+  }
 }
 
 /**************************************************
