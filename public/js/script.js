@@ -126,25 +126,26 @@ function loadCSSStylesheet() {
 // Load CSS on page load
 loadCSSStylesheet();
 
-/**************************************************
- * MODALS (Generic Modal Management)
- **************************************************/
 /**
  * Creates a modal window.
  * @param {string} id - Unique identifier for the modal.
  * @param {string} content - HTML content for the modal.
  * @param {Object} options - Modal options.
- * @param {boolean} [options.showCloseBtn=true] - Show close button.
- * @param {boolean} [options.hasVerticalScroll=true] - Enable vertical scroll.
- * @param {boolean} [options.defaultFromBottom=true] - Animate from bottom.
- * @param {number} [options.cornerTopMargin=0] - Top margin in px.
- * @param {number} [options.cornerTopRadius=0] - Corner radius for top corners.
- * @param {boolean} [options.noRadiusByDefault=false] - Remove default radius.
- * @param {Object} [options.customStyles] - Additional inline styles for modal container.
- * @param {Function} [options.onClose] - Callback on close.
  */
-function // removed misplaced modal code
+function createModal(id, content, options = {}) {
+  const {
+    showCloseBtn = true,
+    hasVerticalScroll = true,
+    defaultFromBottom = true,
+    cornerTopMargin = 0,
+    cornerTopRadius = 0,
+    noRadiusByDefault = false,
+    customStyles = {},
+    onClose = null,
+  } = options;
 
+  // Remove existing modal with same ID
+  const existingModal = document.getElementById(id);
   if (existingModal) {
     existingModal.remove();
   }
@@ -176,25 +177,24 @@ function // removed misplaced modal code
   contentDiv.style.background = "#fff";
   contentDiv.style.boxShadow = "0 2px 5px rgba(0,0,0,0.1)";
   contentDiv.style.padding = "20px";
-  // Apply any custom inline styles
   Object.assign(contentDiv.style, customStyles);
 
-  // Insert content and close button
- const closeBtnSVG = `
-  <button class="modal-close-btn">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" 
-      fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
-      style="width: 16px; height: 16px;">
-      <line x1="18" y1="6" x2="6" y2="18"/>
-      <line x1="6" y1="6" x2="18" y2="18"/>
-    </svg>
-  </button>
-`;
+  // Close button SVG
+  const closeBtnSVG = `
+    <button class="modal-close-btn">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" 
+        fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
+        style="width: 16px; height: 16px;">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  `;
 
-contentDiv.innerHTML = `
-  ${showCloseBtn ? closeBtnSVG : ""}
-  ${content}
-`;
+  contentDiv.innerHTML = `
+    ${showCloseBtn ? closeBtnSVG : ""}
+    ${content}
+  `;
 
   // Style close button if present
   const closeBtn = contentDiv.querySelector(".modal-close-btn");
@@ -217,7 +217,7 @@ contentDiv.innerHTML = `
       transition: "all 0.3s ease",
       zIndex: "1001",
     });
-    // Hover effects for close button
+
     closeBtn.addEventListener("mouseenter", () => {
       closeBtn.style.backgroundColor = "#333";
       closeBtn.style.transform = "scale(1.1)";
@@ -229,32 +229,29 @@ contentDiv.innerHTML = `
   }
 
   modal.appendChild(contentDiv);
-  
-  // Hide bottombar if exists
+
+  // Hide bottomBar if exists
   const bottomBar = document.getElementById("bottomBar");
   if (bottomBar) bottomBar.style.display = "none";
 
-document.body.appendChild(modal);
+  document.body.appendChild(modal);
 
   // Close button event
   if (showCloseBtn && closeBtn) {
     closeBtn.addEventListener("click", () => {
-      
       const bottomBar = document.getElementById("bottomBar");
       if (bottomBar) bottomBar.style.display = "flex";
-
-modal.remove();
+      modal.remove();
       if (onClose) onClose();
     });
   }
+
   // Close on overlay click
   modal.addEventListener("click", (event) => {
     if (event.target === modal) {
-      
       const bottomBar = document.getElementById("bottomBar");
       if (bottomBar) bottomBar.style.display = "flex";
-
-modal.remove();
+      modal.remove();
       if (onClose) onClose();
     }
   });
