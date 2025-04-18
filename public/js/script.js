@@ -360,7 +360,6 @@ async function register() {
     showNotification("Ошибка регистрации", "error");
   }
   } 
-}
 
 /**
  * Logout handler.
