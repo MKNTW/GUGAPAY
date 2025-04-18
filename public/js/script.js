@@ -359,7 +359,7 @@ async function register() {
   } catch (err) {
     showNotification("Ошибка регистрации", "error");
   }
-  } 
+}
 
 /**
  * Logout handler.
