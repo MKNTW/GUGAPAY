@@ -143,22 +143,8 @@ loadCSSStylesheet();
  * @param {Object} [options.customStyles] - Additional inline styles for modal container.
  * @param {Function} [options.onClose] - Callback on close.
  */
-function createModal(
-  id,
-  content,
-  {
-    showCloseBtn = true,
-    hasVerticalScroll = true,
-    defaultFromBottom = true,
-    cornerTopMargin = 0,
-    cornerTopRadius = 0,
-    noRadiusByDefault = false,
-    customStyles = {},
-    onClose = null,
-  } = {}
-) {
-  // Remove existing modal with same ID
-  const existingModal = document.getElementById(id);
+function // removed misplaced modal code
+
   if (existingModal) {
     existingModal.remove();
   }
@@ -3211,13 +3197,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 /**************************************************
  * TRANSACTION DETAILS MODAL
  **************************************************/
-async function showTransactionDetails(hash) {
-  try {
-    const res = await fetch(`${API_URL}/transaction/${hash}`, { credentials: "include" });
-    const data = await res.json();
-    if (!data.success || !data.transaction) {
-      return showNotification("Операция не найдена", "error");
-    }
     const tx = data.transaction;
     const symbol = tx.currency === "RUB" ? "₽" : "₲"; // [проверить использование currency]
     const amountValue = formatBalance(tx.amount, tx.currency === "RUB" ? 2 : 5); // [проверить использование currency]
@@ -3398,3 +3377,65 @@ window.addEventListener("beforeunload", () => {
   }
 });
     };
+/**************************************************
+ * TRANSACTION DETAILS MODAL
+ **************************************************/
+async function showTransactionDetails(hash) {
+  try {
+    const res = await fetch(`${API_URL}/transaction/${hash}`, { credentials: "include" });
+    const data = await res.json();
+    if (!data.success || !data.transaction) {
+      return showNotification("Операция не найдена", "error");
+    }
+    const tx = data.transaction;
+    const symbol = tx.currency === "RUB" ? "₽" : "₲";
+    const amountValue = formatBalance(tx.amount, tx.currency === "RUB" ? 2 : 5);
+    const sign = (tx.from_user_id === currentUserId) ? "-" : "+";
+    const amount = `${sign}${amountValue} ${symbol}`;
+    const timestamp = new Date(tx.created_at || tx.client_time).toLocaleString("ru-RU");
+    let fromLabel = tx.from_user_id;
+    let toLabel = tx.to_user_id;
+    if (typeof fromLabel === "string" && fromLabel.startsWith("MERCHANT:")) {
+      fromLabel = "Мерчант " + fromLabel.replace("MERCHANT:", "");
+    }
+    if (typeof toLabel === "string" && toLabel.startsWith("MERCHANT:")) {
+      toLabel = "Мерчант " + toLabel.replace("MERCHANT:", "");
+    }
+
+    createModal(
+      "transactionDetailsModal",
+      `
+        <div class="tx-sheet">
+          <div class="tx-icon">
+            <img src="photo/${tx.currency === "RUB" ? "92" : "67"}.png" alt="" width="48" height="48" />
+          </div>
+          <div class="tx-amount-main ${sign === '+' ? 'positive' : 'negative'}">${amount}</div>
+          <div class="tx-status success">Успешно</div>
+          <div class="tx-detail-box">
+            <div class="tx-detail-row">
+              <div class="tx-label">Дата и время</div>
+              <div class="tx-value">${timestamp}</div>
+            </div>
+            <div class="tx-detail-row">
+              <div class="tx-label">Отправитель</div>
+              <div class="tx-value">${fromLabel}</div>
+            </div>
+            <div class="tx-detail-row">
+              <div class="tx-label">Получатель</div>
+              <div class="tx-value">${toLabel}</div>
+            </div>
+            <div class="tx-detail-row">
+              <div class="tx-label">Hash</div>
+              <div class="tx-value">${hash}</div>
+            </div>
+          </div>
+        </div>
+      `,
+      () => {}
+    );
+
+  } catch (error) {
+    console.error("Ошибка при получении данных транзакции:", error);
+    showNotification("Ошибка при получении данных операции", "error");
+  }
+}
