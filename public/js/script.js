@@ -178,6 +178,7 @@ function createModal(id, content, options = {}) {
   contentDiv.style.boxShadow = "0 2px 5px rgba(0,0,0,0.1)";
   contentDiv.style.padding = "20px";
   Object.assign(contentDiv.style, customStyles);
+  if (options.contentMaxHeight) contentDiv.style.maxHeight = options.contentMaxHeight;
 
   // Close button SVG
   const closeBtnSVG = `
@@ -327,14 +328,15 @@ async function login() {
     closeAllAuthModals();
     createMainUI();
     updateUI();
-  } catch {
+  } catch (err) {
     try {
-      // Try as merchant
       await apiAuthRequest("merchantLogin", { username: loginVal, password: passVal });
       await fetchMerchantData();
       closeAllAuthModals();
       openMerchantUI();
-    } 
+    } catch (err2) {
+      showNotification("Неверный логин или пароль", "error");
+    }
   }
 }
 
@@ -1380,8 +1382,8 @@ function openTransferModal() {
     </div>
 
     <!-- Currency selection block -->
-    <div class="currency-select"> // [проверить использование currency]
-        <div id="btnCurrencyGUGA" class="currency-card"> // [проверить использование currency]
+    <div class="currency-select">
+        <div id="btnCurrencyGUGA" class="currency-card">
             <div style="display: flex; align-items: center; gap: 12px;">
                 <img src="photo/15.png" style="width: 32px; height: 32px; border-radius: 8px;">
                 <div>
@@ -1394,7 +1396,7 @@ function openTransferModal() {
             </div>
         </div>
         
-        <div id="btnCurrencyRUB" class="currency-card"> // [проверить использование currency]
+        <div id="btnCurrencyRUB" class="currency-card">
             <div style="display: flex; align-items: center; gap: 12px;">
                 <img src="photo/18.png" style="width: 32px; height: 32px; border-radius: 8px;">
                 <div>
@@ -1429,7 +1431,7 @@ function openTransferModal() {
                     type="number" 
                     id="transferAmountInput"
                     placeholder="0.00">
-                <span id="currencySymbol">₲</span> // [проверить использование currency]
+                <span id="currencySymbol">₲</span>
             </div>
         </div>
     </div>
@@ -1468,12 +1470,12 @@ function openTransferModal() {
     color: #1A1A1A;
     margin: 0;
   }
-  .currency-select { // [проверить использование currency]
+  .currency-select {
     display: flex;
     gap: 12px;
     margin-bottom: 30px;
   }
-  .currency-card { // [проверить использование currency]
+  .currency-card {
     flex: 1;
     padding: 16px;
     border: 1px solid #E6E6EB;
@@ -1481,7 +1483,7 @@ function openTransferModal() {
     cursor: pointer;
     transition: all 0.2s;
   }
-  .currency-card.active { // [проверить использование currency]
+  .currency-card.active {
     border-color: #2F80ED;
     background: #F5F9FF;
     box-shadow: 0 2px 8px rgba(47, 128, 237, 0.1);
@@ -1562,12 +1564,12 @@ function openTransferModal() {
   let currentTransferCurrency = "GUGA";
 
   const updateTransferUI = () => {
-    const currencySymbol = document.getElementById("currencySymbol"); // [проверить использование currency]
+    const currencySymbol = document.getElementById("currencySymbol");
     const balanceInfo = document.getElementById("transferBalanceInfo");
     const gugaBalance = document.getElementById("gugaBalance");
     const rubBalance = document.getElementById("rubBalance");
     // Remove active class from all currency cards
-    document.querySelectorAll('.currency-card').forEach(card => { // [проверить использование currency]
+    document.querySelectorAll('.currency-card').forEach(card => {
       card.classList.remove('active');
     });
     // Set active on selected currency card
@@ -1578,13 +1580,13 @@ function openTransferModal() {
     // Update symbol, input step, and balance display
     if (currentTransferCurrency === "GUGA") {
       const balance = parseFloat(document.getElementById("gugaBalanceValue")?.innerText || 0);
-      currencySymbol.textContent = '₲'; // [проверить использование currency]
+      currencySymbol.textContent = '₲';
       document.getElementById("transferAmountInput").step = "0.00001";
       gugaBalance.innerHTML = `Доступно: ${formatBalance(balance, 5)} ₲`;
       balanceInfo.textContent = `Макс: ${formatBalance(balance, 5)} ₲`;
     } else {
       const balance = parseFloat(document.getElementById("rubBalanceValue")?.innerText || 0);
-      currencySymbol.textContent = '₽'; // [проверить использование currency]
+      currencySymbol.textContent = '₽';
       document.getElementById("transferAmountInput").step = "0.01";
       rubBalance.innerHTML = `Доступно: ${formatBalance(balance, 2)} ₽`;
       balanceInfo.textContent = `Макс: ${formatBalance(balance, 2)} ₽`;
@@ -2035,9 +2037,9 @@ function openExchangeModal() {
         </div>
     </div>
     
-    <div class="currency-block from-currency"> // [проверить использование currency]
-        <div class="currency-header"> // [проверить использование currency]
-            <span class="currency-label">Отдаёте</span> // [проверить использование currency]
+    <div class="currency-block from-currency">
+        <div class="currency-header">
+            <span class="currency-label">Отдаёте</span>
             <span id="fromBalance" class="balance">0.00000 ₲</span>
         </div>
         <div class="input-group">
@@ -2045,10 +2047,10 @@ function openExchangeModal() {
                 type="number" 
                 id="amountInput" 
                 placeholder="0.00" 
-                class="currency-input"> // [проверить использование currency]
-            <div class="currency-display"> // [проверить использование currency]
-                <img src="photo/15.png" class="currency-icon"> // [проверить использование currency]
-                <span class="currency-symbol">GUGA</span> // [проверить использование currency]
+                class="currency-input">
+            <div class="currency-display">
+                <img src="photo/15.png" class="currency-icon">
+                <span class="currency-symbol">GUGA</span>
             </div>
         </div>
     </div>
@@ -2060,9 +2062,9 @@ function openExchangeModal() {
         </svg>
     </button>
 
-    <div class="currency-block to-currency"> // [проверить использование currency]
-        <div class="currency-header"> // [проверить использование currency]
-            <span class="currency-label">Получаете</span> // [проверить использование currency]
+    <div class="currency-block to-currency">
+        <div class="currency-header">
+            <span class="currency-label">Получаете</span>
             <span id="toBalance" class="balance">0.00 ₽</span>
         </div>
         <div class="input-group">
@@ -2070,11 +2072,11 @@ function openExchangeModal() {
                 type="text" 
                 id="toAmount" 
                 placeholder="0.00" 
-                class="currency-input" // [проверить использование currency]
+                class="currency-input"
                 disabled>
-            <div class="currency-display"> // [проверить использование currency]
-                <img src="photo/18.png" class="currency-icon"> // [проверить использование currency]
-                <span class="currency-symbol">RUB</span> // [проверить использование currency]
+            <div class="currency-display">
+                <img src="photo/18.png" class="currency-icon">
+                <span class="currency-symbol">RUB</span>
             </div>
         </div>
     </div>
@@ -2127,13 +2129,13 @@ const exchangeStyles = `
 .chart-wrapper canvas {
   height: 200px !important;
 }
-.currency-block { // [проверить использование currency]
+.currency-block {
   background: #F8F9FB;
   border-radius: 16px;
   padding: 16px;
   margin: 8px 0;
 }
-.currency-header { // [проверить использование currency]
+.currency-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -2170,7 +2172,7 @@ const exchangeStyles = `
   gap: 12px;
   align-items: center;
 }
-.currency-input { // [проверить использование currency]
+.currency-input {
   flex: 1;
   border: none;
   background: none;
@@ -2179,10 +2181,10 @@ const exchangeStyles = `
   color: #1A1A1A;
   font-weight: 500;
 }
-.currency-input::placeholder { // [проверить использование currency]
+.currency-input::placeholder {
   color: #B1B8C5;
 }
-.currency-display { // [проверить использование currency]
+.currency-display {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -2348,8 +2350,8 @@ function swapCurrencies() {
   swapBtn.style.animation = 'swapRotate 0.5s forwards ease';
   setTimeout(() => { swapBtn.style.animation = 'none'; }, 500);
   currentExchangeDirection = currentExchangeDirection === 'coin_to_rub' ? 'rub_to_coin' : 'coin_to_rub';
-  const fromDisplay = document.querySelector('.from-currency .currency-display'); // [проверить использование currency]
-  const toDisplay = document.querySelector('.to-currency .currency-display'); // [проверить использование currency]
+  const fromDisplay = document.querySelector('.from-currency .currency-display');
+  const toDisplay = document.querySelector('.to-currency .currency-display');
   const fromBalanceEl = document.getElementById('fromBalance');
   const toBalanceEl = document.getElementById('toBalance');
   const amountInput = document.getElementById('amountInput');
@@ -2359,21 +2361,21 @@ function swapCurrencies() {
   // Swap display currencies
   if (currentExchangeDirection === 'coin_to_rub') {
     fromDisplay.innerHTML = `
-      <img src="photo/15.png" class="currency-icon"> // [проверить использование currency]
-      <span class="currency-symbol">GUGA</span> // [проверить использование currency]
+      <img src="photo/15.png" class="currency-icon">
+      <span class="currency-symbol">GUGA</span>
     `;
     toDisplay.innerHTML = `
-      <img src="photo/18.png" class="currency-icon"> // [проверить использование currency]
-      <span class="currency-symbol">RUB</span> // [проверить использование currency]
+      <img src="photo/18.png" class="currency-icon">
+      <span class="currency-symbol">RUB</span>
     `;
   } else {
     fromDisplay.innerHTML = `
-      <img src="photo/18.png" class="currency-icon"> // [проверить использование currency]
-      <span class="currency-symbol">RUB</span> // [проверить использование currency]
+      <img src="photo/18.png" class="currency-icon">
+      <span class="currency-symbol">RUB</span>
     `;
     toDisplay.innerHTML = `
-      <img src="photo/15.png" class="currency-icon"> // [проверить использование currency]
-      <span class="currency-symbol">GUGA</span> // [проверить использование currency]
+      <img src="photo/15.png" class="currency-icon">
+      <span class="currency-symbol">GUGA</span>
     `;
   }
   // Swap balance values
@@ -2733,11 +2735,11 @@ function displayTransactionHistory(transactions) {
       let detailsText = "";
       let amountSign = "";
       let amountValue = formatBalance(tx.amount, 5);
-      let currencySymbol = "₲"; // [проверить использование currency]
+      let currencySymbol = "₲";
       let color = "#000";
-      if (tx.currency === "RUB") { // [проверить использование currency]
+      if (tx.currency === "RUB") {
         amountValue = formatBalance(tx.amount, 2);
-        currencySymbol = "₽"; // [проверить использование currency]
+        currencySymbol = "₽";
       }
       if (tx.type === "merchant_payment") {
         iconSrc = "/photo/92.png";
@@ -2764,7 +2766,7 @@ function displayTransactionHistory(transactions) {
         amountSign = tx.direction === "rub_to_coin" ? "+" : "-";
         color = tx.direction === "rub_to_coin" ? "rgb(25, 150, 70)" : "rgb(102, 102, 102)";
         amountValue = formatBalance(tx.amount, 5);
-        currencySymbol = tx.direction === "rub_to_coin" ? "₲" : "₽"; // [проверить использование currency]
+        currencySymbol = tx.direction === "rub_to_coin" ? "₲" : "₽";
       }
       const cardDiv = document.createElement("div");
       cardDiv.className = "transaction-card";
@@ -2795,7 +2797,7 @@ function displayTransactionHistory(transactions) {
       const amountEl = document.createElement("div");
       amountEl.className = "transaction-amount";
       amountEl.style.color = color;
-      amountEl.textContent = `${amountSign}${amountValue} ${currencySymbol}`; // [проверить использование currency]
+      amountEl.textContent = `${amountSign}${amountValue} ${currencySymbol}`;
       const timeEl = document.createElement("div");
       timeEl.className = "transaction-time";
       timeEl.textContent = timeStr;
@@ -3195,8 +3197,8 @@ document.addEventListener("DOMContentLoaded", async () => {
  * TRANSACTION DETAILS MODAL
  **************************************************/
     const tx = data.transaction;
-    const symbol = tx.currency === "RUB" ? "₽" : "₲"; // [проверить использование currency]
-    const amountValue = formatBalance(tx.amount, tx.currency === "RUB" ? 2 : 5); // [проверить использование currency]
+    const symbol = tx.currency === "RUB" ? "₽" : "₲";
+    const amountValue = formatBalance(tx.amount, tx.currency === "RUB" ? 2 : 5);
     const sign = (tx.from_user_id === currentUserId) ? "-" : "+";
     const amount = `${sign}${amountValue} ${symbol}`;
     const timestamp = new Date(tx.created_at || tx.client_time).toLocaleString("ru-RU");
@@ -3218,7 +3220,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       `
         <div class="tx-sheet">
           <div class="tx-icon">
-            <img src="photo/${currency === "RUB" ? "92" : "67"}.png" alt="icon" width="48" height="48" /> // [проверить использование currency]
+            <img src="photo/${currency === "RUB" ? "92" : "67"}.png" alt="icon" width="48" height="48" />
           </div>
           <div class="tx-amount-main ${sign === '+' ? 'positive' : 'negative'}">${amount}</div>
           <div class="tx-status success">Успешно</div>
