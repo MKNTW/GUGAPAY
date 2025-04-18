@@ -1,4 +1,4 @@
-// let currency = null; // [удалено как неиспользуемое]
+ // [удалено как неиспользуемое]
 // CSRF token handling
 let csrfToken = "";
 const API_URL = "https://api.gugapay.ru";
@@ -314,8 +314,8 @@ async function apiAuthRequest(endpoint, payload) {
  * User login handler.
  */
 async function login() {
-  const loginVal = document.getElementById("loginInput")?.value.trim();
-  const passVal = document.getElementById("passwordInput")?.value.trim();
+  const loginVal = (document.getElementById("loginInput")?.value || "").trim();
+  const passVal = (document.getElementById("passwordInput")?.value || "").trim();
 
   if (!validateInput(loginVal, 1) || !validateInput(passVal, 6)) {
     showNotification("Введите корректный логин (мин. 1 символ) и пароль (мин. 6 символов)", "error");
@@ -344,8 +344,8 @@ async function login() {
  * User registration handler.
  */
 async function register() {
-  const loginVal = document.getElementById("regLogin")?.value.trim();
-  const passVal = document.getElementById("regPassword")?.value.trim();
+  const loginVal = (document.getElementById("regLogin")?.value || "").trim();
+  const passVal = (document.getElementById("regPassword")?.value || "").trim();
 
   if (!validateInput(loginVal, 1) || !validateInput(passVal, 6)) {
     showNotification("Введите корректный логин (мин. 1 символ) и пароль (мин. 6 символов)", "error");
@@ -356,6 +356,9 @@ async function register() {
     showNotification(`Аккаунт успешно создан! Ваш userId: ${data.userId}`, "success");
     // Auto login after registration
     await login();
+  } catch (err) {
+    showNotification("Ошибка регистрации", "error");
+  }
   } 
 }
 
@@ -1605,7 +1608,7 @@ function openTransferModal() {
 
   // Send transfer button
   document.getElementById("sendTransferBtn").onclick = async () => {
-    const toUser = document.getElementById("toUserIdInput")?.value.trim();
+    const toUser = (document.getElementById("toUserIdInput")?.value || "").trim();
     const amount = parseFloat(document.getElementById("transferAmountInput")?.value);
     if (!toUser || !amount || amount <= 0) {
       alert("❌ Введите корректные данные!");
