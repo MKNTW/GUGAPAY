@@ -9,6 +9,10 @@ import Payment from './views/Payment.vue'
 import History from './views/History.vue'
 
 const routes = [
+  {
+    path: '/chat/:userId',
+    component: () => import('./views/ChatView.vue')
+  },
   { path: '/', component: Home },
   { path: '/transfer', component: Transfer },
   { path: '/request', component: Request },

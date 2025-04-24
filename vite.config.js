@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [vue()],
   server: {
     proxy: {
-      '/api': 'https://api.gugapay.ru',
+      '/api': 'https://apiforbeta.gugapay.ru',
     }
   }
 })
