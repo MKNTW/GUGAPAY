@@ -1,0 +1,35 @@
+
+/* Общие стили из inline-стилей */
+
+.modal-open {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.loading {
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+}
+
+.loading-hidden {
+  display: none !important;
+}
+
+.bottom-bar-hidden {
+  display: none !important;
+}
+
+.bottom-bar-visible {
+  display: flex !important;
+  justify-content: space-around;
+}
+
+.modal-content {
+  max-height: calc(100vh - 60px);
+  overflow-y: auto;
+}
+
+.close-btn:hover {
+  transform: scale(1.1);
+}
